@@ -73,11 +73,11 @@ beforeEach(() => {
 
 const lastSaleItem = () => tx.saleItem.create.mock.calls.at(-1)![0].data
 
-async function vendre(price: number, key: string) {
+async function vendre(price: number, key: string, clientType: 'retail' | 'semi' | 'wholesale' = 'retail') {
   const app = await buildApp(saleRoutes)
   const res = await app.inject({
     method: 'POST', url: '/api/sales',
-    payload: { items: [{ productId: 'p1', qty: 1, price }], paymentMode: 'cash', total: price, idempotencyKey: key },
+    payload: { items: [{ productId: 'p1', qty: 1, price, clientType }], paymentMode: 'cash', total: price, idempotencyKey: key },
   })
   expect(res.statusCode).toBe(200)
   return lastSaleItem()
@@ -122,12 +122,23 @@ describe('POST /api/sales — qualification « tarif précédent » vs divergenc
     expect(item.staleCatalogAt).toBeUndefined()
   })
 
-  it('le tarif précédent d’un AUTRE point de tarif (gros) est qualifié aussi', async () => {
+  it('le tarif précédent du MÊME point de tarif (gros déclaré) est qualifié', async () => {
     db.product.findMany.mockResolvedValue([produit({
       previousPricing: { sellPrice: 1000, semiWholesalePrice: null, wholesalePrice: 800, hasPromotion: false, promotionPrice: null, priceTiers: null },
     })])
-    const item = await vendre(800, 'gros-1')
+    const item = await vendre(800, 'gros-1', 'wholesale')
     expect(item.staleCatalogAt).toEqual(HIER)
+  })
+
+  it('ancien prix de GROS soumis sur une ligne DÉTAIL → NON qualifié', async () => {
+    // La qualification suit le tarif DÉCLARÉ. Accepter « un ancien tarif quelconque »
+    // rouvrirait côté audit le trou fermé côté facturation : un écart inexpliqué serait
+    // blanchi par un prix qui n'a jamais été celui de ce tarif-là.
+    db.product.findMany.mockResolvedValue([produit({
+      previousPricing: { sellPrice: 1000, semiWholesalePrice: null, wholesalePrice: 800, hasPromotion: false, promotionPrice: null, priceTiers: null },
+    })])
+    const item = await vendre(800, 'gros-2', 'retail')
+    expect(item.staleCatalogAt).toBeNull()
   })
 })
 

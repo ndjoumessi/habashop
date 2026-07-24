@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { reconcileSaleTotal, authoritativeTotal, detectCartPriceDrift, RECONCILE_TOLERANCE } from './saleReconcile'
+import { reconcileSaleTotal, authoritativeTotal, detectCartPriceDrift, toSaleItemPayload, RECONCILE_TOLERANCE } from './saleReconcile'
 
 // ⚠️ Chantier B, surface (c). Le serveur re-tarife quand le catalogue du terminal est périmé,
 // mais le front JETAIT sa réponse : caissier encaisse 1 000, vente enregistrée à 1 200, caisse
@@ -96,5 +96,34 @@ describe('authoritativeTotal — ce qu’on imprime pour le CLIENT', () => {
 
   it('zéro est une valeur VALIDE (vente entièrement remisée), pas une absence', () => {
     expect(authoritativeTotal(0, 1000)).toBe(0)
+  })
+})
+
+describe('toSaleItemPayload — chaque ligne déclare SON tarif', () => {
+  it('reprend le tarif figé de la ligne, pas un tarif global', () => {
+    const out = toSaleItemPayload([
+      { id: 'p1', qty: 2, price: 1300, tierLabel: 'x2', clientType: 'retail' },
+      { id: 'p2', qty: 1, price: 900,  clientType: 'wholesale' },
+    ])
+    expect(out[0]).toEqual({ productId: 'p1', qty: 2, price: 1300, tierLabel: 'x2', clientType: 'retail' })
+    expect(out[1]).toEqual({ productId: 'p2', qty: 1, price: 900,  tierLabel: null, clientType: 'wholesale' })
+  })
+
+  it('un panier MIXTE reste mixte (le piège de la dérive)', () => {
+    // Panier monté en Détail puis basculé en Grossiste sans appliquer la dérive :
+    // les lignes figées gardent « retail », les nouvelles portent « wholesale ».
+    const out = toSaleItemPayload([
+      { id: 'p1', qty: 1, price: 1300, clientType: 'retail' },
+      { id: 'p2', qty: 1, price: 900,  clientType: 'wholesale' },
+    ])
+    expect(out.map(l => l.clientType)).toEqual(['retail', 'wholesale'])
+  })
+
+  it('tarif absent → détail (le sélecteur POS démarre sur Détail)', () => {
+    expect(toSaleItemPayload([{ id: 'p1', qty: 1, price: 100 }])[0].clientType).toBe('retail')
+  })
+
+  it('ids numériques du catalogue de démonstration → identifiants serveur', () => {
+    expect(toSaleItemPayload([{ id: 7, qty: 1, price: 100 }])[0].productId).toBe('demo-PRD-007')
   })
 })

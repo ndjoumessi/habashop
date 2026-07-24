@@ -352,7 +352,7 @@ interface AppStore extends AppConfig {
   // Panier POS persisté (survit nav + refresh)
   cart: CartItem[]
   addCartItem:    (item: CartItem) => void
-  updateCartQty:  (id: number | string, delta: number, newPrice?: number, tierLabel?: string) => void
+  updateCartQty:  (id: number | string, delta: number, newPrice?: number, tierLabel?: string, clientType?: CartItem['clientType']) => void
   removeCartItem: (id: number | string) => void
   setCart:        (cart: CartItem[]) => void
   clearCart:      () => void
@@ -469,7 +469,7 @@ export const useAppStore = create<AppStore>()(
           : [...s.cart, item],
       })),
 
-      updateCartQty: (id, delta, newPrice, tierLabel) => set(s => ({
+      updateCartQty: (id, delta, newPrice, tierLabel, clientType) => set(s => ({
         cart: s.cart
           .map(i => i.id === id
             ? {
@@ -477,6 +477,9 @@ export const useAppStore = create<AppStore>()(
                 qty: i.qty + delta,
                 ...(newPrice !== undefined ? { price: newPrice } : {}),
                 ...(tierLabel !== undefined ? { tierLabel } : {}),
+                // Le tarif suit TOUJOURS le prix : recalculer l'un sans l'autre laisserait
+                // la ligne déclarer un tarif dont son prix n'est plus issu.
+                ...(clientType !== undefined ? { clientType } : {}),
               }
             : i)
           .filter(i => i.qty > 0),
