@@ -48,6 +48,34 @@ export function reconcileSaleTotal(
   return { gap, action: gap > 0 ? 'claim' : 'refund' }
 }
 
+// ── Dérive PRÉ-vente : un tarif a-t-il bougé pendant que le panier se montait ? ──────────
+// Le panier fige le prix de chaque ligne à l'AJOUT ; rafraîchir le catalogue ne corrige pas
+// seul ces prix figés. Pour prévenir le caissier AVANT qu'il encaisse (et pas seulement via
+// la réconciliation post-vente ci-dessus), on compare le prix capturé de chaque ligne au prix
+// FRAIS recalculé depuis le catalogue rafraîchi. ⚠️ Best-effort, jamais bloquant : si le
+// rafraîchissement n'a pas encore répondu, la liste est vide et reconcileSaleTotal prend le
+// relais après la vente.
+export type CartLineForDrift = { id: string | number; name: string; price: number; qty: number }
+export type PriceDrift = { id: string | number; name: string; oldPrice: number; newPrice: number; tierLabel: string | null }
+
+// `freshPrice(id, qty)` = prix frais + tierLabel pour ce produit à cette quantité, ou `null`
+// si le produit a disparu du catalogue (rien à comparer → on n'invente pas de dérive).
+// Comparaison à l'entier (le POS n'émet pas de sous-unité).
+export function detectCartPriceDrift(
+  cart: CartLineForDrift[],
+  freshPrice: (id: string | number, qty: number) => { price: number; tierLabel?: string } | null,
+): PriceDrift[] {
+  const out: PriceDrift[] = []
+  for (const line of cart) {
+    const fresh = freshPrice(line.id, line.qty)
+    if (!fresh) continue
+    if (Math.round(fresh.price) !== Math.round(line.price)) {
+      out.push({ id: line.id, name: line.name, oldPrice: line.price, newPrice: fresh.price, tierLabel: fresh.tierLabel ?? null })
+    }
+  }
+  return out
+}
+
 /**
  * Total à faire figurer sur les documents remis au CLIENT (ticket imprimé, reçu WhatsApp).
  * Le serveur fait foi dès qu'il a répondu — sinon la facture PDF (générée côté serveur)

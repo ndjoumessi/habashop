@@ -35,6 +35,10 @@ interface POSModalsProps {
   lang: string
   confirmSale: () => void
   isSaving: boolean; waSending: boolean
+  // Dérive de prix détectée AVANT l'encaissement (un tarif a bougé depuis l'ajout au panier).
+  // Vide = rien à signaler. onApplyPriceDrift = action EXPLICITE (bouton), jamais automatique.
+  priceDrift?: { id: string | number; name: string; oldPrice: number; newPrice: number; tierLabel: string | null }[]
+  onApplyPriceDrift?: () => void
   discount: any; payMode: string
   cashGiven: string; toXOF: (v: number) => number
   // ── Sélection du MODE DE PAIEMENT — vit dans cette feuille depuis l'item 11 (maquette) ──
@@ -77,7 +81,7 @@ interface POSModalsProps {
   onCardRetry: () => void
 }
 
-export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, cashierName = '', closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, discount, payMode, cashGiven, toXOF, PAY_MODES, setPayMode, isOnline = true, setCashGiven, monnaie, currencySymbol, mixedOn, mixedValid, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, paydunyaOk = false, onPaydunyaStart, tvaAmount = 0, tvaRate = 0, totalDisplay, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
+export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, cashierName = '', closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, priceDrift = [], onApplyPriceDrift, discount, payMode, cashGiven, toXOF, PAY_MODES, setPayMode, isOnline = true, setCashGiven, monnaie, currencySymbol, mixedOn, mixedValid, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, paydunyaOk = false, onPaydunyaStart, tvaAmount = 0, tvaRate = 0, totalDisplay, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
   // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
   const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
@@ -473,6 +477,36 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 </div>
               )}
             </div>
+
+            {/* ── DÉRIVE DE PRIX (avant encaissement) — un tarif a changé depuis l'ajout au
+                 panier (le catalogue vient d'être rafraîchi). VISIBLE et ATTRIBUÉ, jamais une
+                 mise à jour silencieuse : le caissier voit l'écart et décide. S'il ignore,
+                 la réconciliation post-vente le rattrape. ── */}
+            {priceDrift.length > 0 && (
+              <div role="status" style={{
+                background: 'var(--c-amber-bg)', border: '1px solid var(--c-amber-border)',
+                borderRadius: 12, padding: 12, marginBottom: 14,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--warn)', fontSize: 12, fontWeight: 'var(--fw-bold)', marginBottom: 6 }}>
+                  <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                  {lang === 'en' ? 'Price changed since added to cart' : lang === 'es' ? 'La tarifa cambió desde que se agregó' : lang === 'it' ? 'La tariffa è cambiata dopo l’aggiunta' : 'Le tarif a changé depuis l’ajout au panier'}
+                </div>
+                {priceDrift.map(d => (
+                  <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11, color: 'var(--text2)', flexWrap: 'wrap', padding: '1px 0' }}>
+                    <span>{d.name}</span>
+                    <span style={{ fontFamily: 'var(--mono)' }}>
+                      {fmt(d.oldPrice)} <span style={{ color: 'var(--text3)' }}>→</span> {fmt(d.newPrice)}
+                    </span>
+                  </div>
+                ))}
+                <button type="button" onClick={() => onApplyPriceDrift?.()}
+                  style={{ marginTop: 8, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    background: 'var(--warn)', border: 'none', color: '#fff', borderRadius: 'var(--r-md)',
+                    padding: '8px 12px', minHeight: 40, fontSize: 12, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: 'pointer' }}>
+                  <Check size={14} /> {lang === 'en' ? 'Update cart to new prices' : lang === 'es' ? 'Actualizar el carrito' : lang === 'it' ? 'Aggiorna il carrello' : 'Mettre à jour le panier'}
+                </button>
+              </div>
+            )}
 
             {/* ── MODE DE PAIEMENT — grille 3×2, Mixte en tuile pointillée (maquette 02) ── */}
             <div style={{ marginBottom: 14 }}>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { reconcileSaleTotal, authoritativeTotal, RECONCILE_TOLERANCE } from './saleReconcile'
+import { reconcileSaleTotal, authoritativeTotal, detectCartPriceDrift, RECONCILE_TOLERANCE } from './saleReconcile'
 
 // ⚠️ Chantier B, surface (c). Le serveur re-tarife quand le catalogue du terminal est périmé,
 // mais le front JETAIT sa réponse : caissier encaisse 1 000, vente enregistrée à 1 200, caisse
@@ -38,6 +38,43 @@ describe('reconcileSaleTotal', () => {
 
   it('total client illisible → aucune alerte', () => {
     expect(reconcileSaleTotal(1200, NaN)).toBeNull()
+  })
+})
+
+describe('detectCartPriceDrift — un tarif a-t-il bougé avant l’encaissement ?', () => {
+  const cart = [
+    { id: 'p1', name: 'Riz', price: 1000, qty: 2 },
+    { id: 'p2', name: 'Sucre', price: 800, qty: 1 },
+  ]
+
+  it('prix inchangés → aucune dérive', () => {
+    const drift = detectCartPriceDrift(cart, (id) => ({ price: id === 'p1' ? 1000 : 800 }))
+    expect(drift).toEqual([])
+  })
+
+  it('un tarif a monté → dérive signalée avec ancien/nouveau + tierLabel', () => {
+    const drift = detectCartPriceDrift(cart, (id) =>
+      id === 'p1' ? { price: 1200, tierLabel: 'détail' } : { price: 800 })
+    expect(drift).toEqual([{ id: 'p1', name: 'Riz', oldPrice: 1000, newPrice: 1200, tierLabel: 'détail' }])
+  })
+
+  it('produit disparu du catalogue (fresh = null) → ignoré, jamais une fausse dérive', () => {
+    const drift = detectCartPriceDrift(cart, (id) => (id === 'p1' ? null : { price: 800 }))
+    expect(drift).toEqual([])
+  })
+
+  it('écart de sous-unité (arrondi) → pas de dérive (POS en entiers)', () => {
+    const drift = detectCartPriceDrift(cart, (id) => ({ price: id === 'p1' ? 1000.4 : 799.6 }))
+    expect(drift).toEqual([])
+  })
+
+  it('tierLabel absent du frais → null (jamais undefined qui casserait updateCartQty)', () => {
+    const drift = detectCartPriceDrift([cart[0]], () => ({ price: 1200 }))
+    expect(drift[0].tierLabel).toBeNull()
+  })
+
+  it('panier vide → aucune dérive', () => {
+    expect(detectCartPriceDrift([], () => ({ price: 1 }))).toEqual([])
   })
 })
 
