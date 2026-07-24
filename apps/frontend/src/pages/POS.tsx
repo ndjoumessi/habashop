@@ -25,6 +25,7 @@ import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
 import { type PosProduct, type DiscountForm, CASHIER_TEXTS, computePosVat, toPosProduct } from '@/components/pos/posShared'
 import { reconcileSaleTotal, authoritativeTotal, detectCartPriceDrift, toSaleItemPayload } from '@/components/pos/saleReconcile'
 import { resolveScannedCode } from '@/components/pos/scanResolve'
+import { looksLikeScannedInput, typingElapsed } from '@/components/pos/wedgeScan'
 import { freshnessAge, freshnessLabel, oldestFreshness } from '@/lib/dataFreshness'
 
 export default function POS() {
@@ -87,6 +88,10 @@ export default function POS() {
   // cart est désormais dans useAppStore (persisté zustand). Voir destructuring ci-dessus.
   const [activeCat, setActiveCat] = useState('all')
   const [search, setSearch]       = useState('')
+  // Chronomètre de frappe pour distinguer une douchette (cadence machine) d'une main.
+  // Une `ref` : mesurer ne doit pas provoquer un rendu à chaque touche.
+  const firstKeyAtRef = useRef<number | null>(null)
+  const resetTyping = () => { firstKeyAtRef.current = null }
   const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mtn'>(() => (posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mtn')
   useEffect(() => { setPayMode((posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mtn') }, [posDefaultPayment])
   const [waCountryCode, setWaCountryCode]         = useState('+221')
@@ -1069,7 +1074,23 @@ export default function POS() {
                   ? (lang === 'en' ? 'Search or scan…' : lang === 'es' ? 'Buscar o escanear…' : lang === 'it' ? 'Cerca o scansiona…' : 'Rechercher ou scanner…')
                   : (lang === 'en' ? 'Search…' : lang === 'es' ? 'Buscar…' : lang === 'it' ? 'Cerca…' : 'Rechercher…')}
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={e => {
+                  if (firstKeyAtRef.current == null && e.target.value) firstKeyAtRef.current = Date.now()
+                  if (!e.target.value) resetTyping()
+                  setSearch(e.target.value)
+                }}
+                onKeyDown={e => {
+                  if (e.key !== 'Enter') return
+                  const elapsed = typingElapsed({ firstKeyAt: firstKeyAtRef.current, at: Date.now() })
+                  if (!looksLikeScannedInput(search, elapsed)) return // frappe humaine → filtre, comme avant
+                  e.preventDefault()
+                  const code = search
+                  // On vide le champ AVANT de résoudre : sinon, en cas d'échec, la grille
+                  // resterait filtrée sur le code — c'est-à-dire VIDE et muette, exactement
+                  // l'incident qu'on ferme. Le message porte l'explication.
+                  setSearch(''); resetTyping()
+                  void handleScan(code)
+                }}
               />
               {/* Scan produit — même handler que le scanner plein écran (handleScan), pas de
                   duplication de logique. Cible ≥ 44px (déborde le champ de 40px sans le
