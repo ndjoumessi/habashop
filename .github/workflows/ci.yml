@@ -59,6 +59,10 @@ jobs:
         run: npm run build --workspace=apps/frontend
         env:
           VITE_API_URL: https://habashop-production.up.railway.app
+      # Une règle de cache SW peut être valide en source et MORTE dans l'artefact (workbox =
+      # premier match). Invisible pour tsc, les tests et la revue → on inspecte le sw.js livré.
+      - name: Service worker — aucune règle de cache morte
+        run: npm run verify:sw-routes --workspace=apps/frontend
       - name: Bundle size check (< 100KB gzip)
         working-directory: apps/frontend
         run: |

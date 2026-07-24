@@ -92,9 +92,12 @@ Trois surfaces candidates, **une seule à la fois** :
   serveur-autoritaire : mémoriser prix précédent + date de changement sur `Product`, pour que
   le serveur puisse affirmer « ce prix ÉTAIT le tarif jusqu'à T » **sans dépendre d'une donnée
   client falsifiable** (≠ `clientCreatedAt`). Traite le point 5.
-- **(b) Réparer la couche cache** — supprimer la règle morte (#2). ⚠️ Raccourcir le TTL ne
-  change le comportement **que** hors-ligne / cold start, c'est-à-dire là où l'on VEUT le cache
-  pour ne jamais bloquer une vente. Effet réel faible : c'est un correctif de vérité de config.
+- ~~**(b) Réparer la couche cache**~~ — **FAIT** (PR3). Règle morte supprimée (et non remontée :
+  SWR servirait un prix périmé même en ligne et rapide) ; la règle API matche le **chemin**, plus
+  l'hôte en dur ; garde CI `verify:sw-routes` sur le `dist/sw.js` livré, vérifiée dans les deux
+  sens (règle occultée → « règle MORTE » ; règle mise en tête → mauvais cache détecté).
+  Le TTL n'a **pas** été raccourci : il ne joue qu'hors-ligne / cold start, c'est-à-dire
+  précisément là où l'on VEUT le cache pour ne jamais bloquer une vente.
 - **(c) Revalider les prix à l'encaissement** — échéance bornée fail-open, prévenir le caissier
   **avant** qu'il encaisse. Corrige la cause, mais **touche le parcours de vente** (surface la
   plus risquée du produit).

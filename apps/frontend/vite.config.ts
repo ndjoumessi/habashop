@@ -71,7 +71,18 @@ export default defineConfig(({ mode }) => {
             },
           },
           {
-            urlPattern: /^https:\/\/habashop-production\.up\.railway\.app\/api\//,
+            // TOUTES les requêtes d'API, quelle que soit l'ORIGINE. ⚠️ L'ancien motif codait
+            // l'hôte Railway en dur : si l'API déménage (cf. .env.production qui pointe déjà
+            // ailleurs), la règle cesse de matcher SANS BRUIT et le POS perd tout cache
+            // hors-ligne. On matche donc le chemin, pas l'hôte.
+            // ⚠️ Cette règle attrape aussi /api/products — c'était DÉJÀ le cas : une règle
+            // `products-cache` (StaleWhileRevalidate, 7 j) vivait ici mais était enregistrée
+            // APRÈS celle-ci, et workbox retourne le PREMIER match (workbox-routing/Router.js,
+            // findMatchingRoute) → elle n'a JAMAIS tourné en production. Supprimée plutôt que
+            // remontée : StaleWhileRevalidate servirait un prix périmé même en ligne et rapide,
+            // alors que NetworkFirst n'y retombe qu'au-delà du délai réseau. Pour un prix de
+            // caisse, la fraîcheur en ligne prime. Garde : scripts/verify-sw-routes.mjs.
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
@@ -79,17 +90,6 @@ export default defineConfig(({ mode }) => {
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 24 * 60 * 60,
-              },
-            },
-          },
-          {
-            urlPattern: /\/api\/products/,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'products-cache',
-              expiration: {
-                maxEntries: 500,
-                maxAgeSeconds: 7 * 24 * 60 * 60,
               },
             },
           },
