@@ -6,7 +6,7 @@ import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
 import { invalidateTenantCache } from '../lib/cache'
 import { getTenantId } from '../lib/tenantId'
-import { resolveTierPrice, type PriceTier } from '../utils/pricing'
+import { resolveTierPrice, legitimatePrices, toPricingSet, type PriceTier } from '../utils/pricing'
 import { pointsForAmount, tierForPoints, discountForTier, computeLoyaltyDiscount } from '../lib/loyalty'
 import { buildInvoicePdf, nextInvoiceNumber } from '../lib/invoicePdf'
 import { resolvePaymentSplit } from '../lib/paymentSplit'
@@ -48,6 +48,14 @@ const SALE_BODY = z.object({
 // ⚠️ clientCreatedAt est falsifiable : ce seuil n'est PAS une garantie de sécurité, la
 // protection est la TRACE (priceDivergence) exploitée en audit. Cf. CLAUDE.md.
 const REPLAY_THRESHOLD_MS = 90_000
+
+// Fenêtre de PLAUSIBILITÉ d'un catalogue POS en cache — sert à QUALIFIER une divergence,
+// jamais à excuser un prix. Le cache POS est le service worker (`api-cache`, NetworkFirst)
+// dont les entrées expirent à 24 h ; au-delà, un « tarif précédent » ne peut plus provenir
+// d'un catalogue en cache. 2× pour absorber la dérive d'horloge et un terminal resté sur
+// une entrée en fin de vie. ⚠️ Borne INDISPENSABLE : sans elle, un prix vieux de 3 mois
+// se ferait qualifier « tarif précédent » et l'écran d'audit exonérerait une vraie fraude.
+export const STALE_CATALOG_WINDOW_MS = 48 * 60 * 60 * 1000
 
 const REFUND_PARAMS = z.object({ id: z.string().min(1) })
 const REFUND_BODY = z.object({
@@ -137,6 +145,8 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
         id: true, name: true, stockQty: true,
         sellPrice: true, semiWholesalePrice: true, wholesalePrice: true,
         hasPromotion: true, promotionPrice: true, priceTiers: true,
+        // Tarifs PRÉCÉDENTS : servent uniquement à qualifier une divergence (jamais à facturer).
+        previousPricing: true, pricingChangedAt: true,
       },
     })
     const productMap = new Map(productsList.map(p => [p.id, p]))
@@ -160,7 +170,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     //    Sinon = DIVERGENCE (prix arbitraire, ex. caissier forgeant la requête) : en ligne on
     //    FACTURE le prix serveur détail ; offline (honorClientPrice) on honore le montant encaissé.
     //    Dans TOUS les cas de divergence : TRACE (submitted/catalog) + flag pour l'audit. ──
-    type ItemRow = { productId: string; qty: number; unitPrice: number; total: number; tierLabel: string | null; submittedPrice?: number; catalogPrice?: number }
+    type ItemRow = { productId: string; qty: number; unitPrice: number; total: number; tierLabel: string | null; submittedPrice?: number; catalogPrice?: number; staleCatalogAt?: Date | null }
     let anyDivergence = false
     const itemsData: ItemRow[] = items.map((item: any): ItemRow => {
       const submitted = Number(item.price) || 0
@@ -173,10 +183,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       const promo = { active: !!p.hasPromotion, price: p.promotionPrice }
       const retail = resolveTierPrice(item.qty, p.sellPrice, tiers, promo) // référence catalogue (détail)
       // Ensemble des prix LÉGITIMES = chaque tarif défini, résolu via palier/promo à cette qté.
-      const legit = new Set<number>()
-      for (const base of [p.sellPrice, p.semiWholesalePrice, p.wholesalePrice]) {
-        if (base != null) legit.add(Math.round(resolveTierPrice(item.qty, base, tiers, promo).price))
-      }
+      const legit = legitimatePrices(item.qty, { ...p, priceTiers: tiers })
       if (legit.has(Math.round(submitted))) {
         // Prix soumis = un tarif serveur légitime → autorisé, facturé tel quel (pas de trace).
         return { productId: item.productId, qty: item.qty, unitPrice: submitted, total: submitted * item.qty, tierLabel: item.tierLabel ?? null }
@@ -185,11 +192,25 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       anyDivergence = true
       const charged = honorClientPrice ? submitted : retail.price
       const tierLabel = honorClientPrice ? (item.tierLabel ?? null) : (retail.tierLabel ?? null)
-      console.warn(`[sales][integrity] divergence prix ${p.id} par user ${userId}: soumis=${submitted} catalogue=${retail.price} → facturé=${charged}${honorClientPrice ? ' (offline honoré)' : ''}`)
+      // ── QUALIFICATION (n'influence RIEN de ce qui est facturé) : le prix soumis était-il un
+      //    tarif catalogue LÉGITIME avant le dernier changement de prix, assez récemment pour
+      //    qu'un catalogue POS en cache l'explique ? Entièrement serveur-autoritaire : instantané
+      //    écrit par nos routes d'écriture + date serveur, aucune donnée fournie par le client
+      //    (≠ clientCreatedAt, falsifiable). Les DEUX conditions sont requises — la fenêtre seule
+      //    n'excuse rien, l'appartenance seule laisserait passer un prix arbitrairement ancien.
+      //    Non concluant ⇒ null ⇒ comportement historique (« à regarder »), jamais une innocence.
+      let staleCatalogAt: Date | null = null
+      const changedAt = p.pricingChangedAt
+      if (changedAt && Date.now() - changedAt.getTime() <= STALE_CATALOG_WINDOW_MS) {
+        const prev = toPricingSet(p.previousPricing as Record<string, unknown> | null)
+        if (prev && legitimatePrices(item.qty, prev).has(Math.round(submitted))) staleCatalogAt = changedAt
+      }
+      console.warn(`[sales][integrity] divergence prix ${p.id} par user ${userId}: soumis=${submitted} catalogue=${retail.price} → facturé=${charged}${honorClientPrice ? ' (offline honoré)' : ''}${staleCatalogAt ? ' [tarif précédent]' : ''}`)
       return {
         productId: item.productId, qty: item.qty,
         unitPrice: charged, total: charged * item.qty, tierLabel,
         submittedPrice: submitted, catalogPrice: retail.price, // TRACE (audit)
+        staleCatalogAt,                                        // QUALIFICATION (audit)
       }
     })
 

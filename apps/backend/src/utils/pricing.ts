@@ -29,6 +29,74 @@ export function resolveTierPrice(
     : { price: basePrice }
 }
 
+// ── Jeu de tarifs d'un produit à un instant donné ────────────────────────────────────
+// Tout ce dont dépend l'ensemble des prix unitaires légitimes. Nommé parce qu'on en
+// manipule DEUX : les tarifs COURANTS (ce qu'on facture) et les tarifs PRÉCÉDENTS
+// (pour qualifier factuellement une divergence en vente — cf. sales.ts).
+export type PricingSet = {
+  sellPrice: number
+  semiWholesalePrice?: number | null
+  wholesalePrice?: number | null
+  hasPromotion?: boolean | null
+  promotionPrice?: number | null
+  priceTiers?: PriceTier[] | null
+}
+
+// Champs qui définissent le jeu de tarifs. Toute colonne de prix ajoutée à Product doit
+// être ajoutée ICI, sinon un changement de prix cesse d'être instantané­isé (donc une
+// divergence légitime cesse d'être qualifiable).
+export const PRICING_FIELDS = [
+  'sellPrice', 'semiWholesalePrice', 'wholesalePrice',
+  'hasPromotion', 'promotionPrice', 'priceTiers',
+] as const
+
+// Extrait le jeu de tarifs d'un enregistrement produit (ou d'un instantané JSON relu).
+export function toPricingSet(src: Record<string, unknown> | null | undefined): PricingSet | null {
+  if (!src || typeof src !== 'object') return null
+  const sell = Number((src as { sellPrice?: unknown }).sellPrice)
+  if (!Number.isFinite(sell)) return null
+  const num = (v: unknown): number | null => (v == null || v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null)
+  const tiers = (src as { priceTiers?: unknown }).priceTiers
+  return {
+    sellPrice: sell,
+    semiWholesalePrice: num((src as { semiWholesalePrice?: unknown }).semiWholesalePrice),
+    wholesalePrice: num((src as { wholesalePrice?: unknown }).wholesalePrice),
+    hasPromotion: !!(src as { hasPromotion?: unknown }).hasPromotion,
+    promotionPrice: num((src as { promotionPrice?: unknown }).promotionPrice),
+    priceTiers: Array.isArray(tiers) ? (tiers as PriceTier[]) : null,
+  }
+}
+
+// Ensemble des prix unitaires LÉGITIMES à cette quantité : chaque tarif défini
+// (détail / demi-gros / gros) résolu via palier + promo. Arrondi à l'entier — le POS
+// n'émet pas de sous-unité, et la comparaison se fait sur des entiers des deux côtés.
+// ⚠️ Une promo active COURT-CIRCUITE les trois tarifs (cf. resolveTierPrice) : l'ensemble
+// se réduit alors au seul prix promo. C'est voulu, pas un oubli.
+export function legitimatePrices(qty: number, p: PricingSet): Set<number> {
+  const tiers = p.priceTiers?.length ? p.priceTiers : null
+  const promo = { active: !!p.hasPromotion, price: p.promotionPrice }
+  const out = new Set<number>()
+  for (const base of [p.sellPrice, p.semiWholesalePrice, p.wholesalePrice]) {
+    if (base != null) out.add(Math.round(resolveTierPrice(qty, base, tiers, promo).price))
+  }
+  return out
+}
+
+// Deux jeux de tarifs produisent-ils la même tarification ? Sert à n'instantané­iser un
+// « précédent » que lorsqu'un prix a RÉELLEMENT bougé (renommer un produit ne doit pas
+// consommer la profondeur 1 de l'instantané).
+export function samePricing(a: PricingSet | null, b: PricingSet | null): boolean {
+  if (!a || !b) return a === b
+  return (
+    a.sellPrice === b.sellPrice &&
+    (a.semiWholesalePrice ?? null) === (b.semiWholesalePrice ?? null) &&
+    (a.wholesalePrice ?? null) === (b.wholesalePrice ?? null) &&
+    !!a.hasPromotion === !!b.hasPromotion &&
+    (a.promotionPrice ?? null) === (b.promotionPrice ?? null) &&
+    JSON.stringify(a.priceTiers ?? null) === JSON.stringify(b.priceTiers ?? null)
+  )
+}
+
 // Valide + normalise (tri ASC, doublons interdits, types stricts).
 export function validatePriceTiers(
   tiers: unknown,

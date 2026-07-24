@@ -6,7 +6,7 @@ import { writeAudit } from '../lib/writeAudit'
 import { getTenantId } from '../lib/tenantId'
 import { authenticate } from '../middleware/authenticate'
 import { invalidateTenantCache } from '../lib/cache'
-import { validatePriceTiers } from '../utils/pricing'
+import { validatePriceTiers, toPricingSet, samePricing, PRICING_FIELDS } from '../utils/pricing'
 import { isValidBarcode, normalizeBarcode } from '../lib/barcode'
 
 // Valide un code-barres (EAN-13 + unicité par tenant) et renvoie sa forme
@@ -188,6 +188,38 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
       const bc = await checkBarcode(prisma, tenantId, data.barcode, id)
       if (bc.error) return reply.code(bc.error.code).send({ error: bc.error.message, code: bc.error.code === 409 ? 'DUPLICATE_BARCODE' : 'INVALID_BARCODE' })
       data.barcode = bc.barcode
+    }
+    // ── Instantané des tarifs PRÉCÉDENTS (audit des divergences de prix) ──
+    // Si ce PUT modifie RÉELLEMENT la tarification, on mémorise le jeu de tarifs sortant +
+    // la date serveur. C'est ce qui permet ensuite d'affirmer factuellement « ce prix ÉTAIT
+    // le tarif catalogue jusqu'au T » face à une vente arrivée avec un catalogue en cache
+    // (cf. sales.ts § QUALIFICATION). Renommer un produit ne consomme PAS l'instantané —
+    // la profondeur est de 1, on ne la gaspille pas sur une écriture non tarifaire.
+    // Ces deux colonnes sont hors de PRODUCT_UPDATE (liste blanche stricte) : inatteignables
+    // depuis le corps de la requête, donc l'instantané ne peut pas être forgé par un client.
+    // Un PUT qui ne touche aucun champ de prix ne relit RIEN (cas majoritaire : stock, code-barres,
+    // renommage) → pas de requête supplémentaire sur le chemin courant.
+    const touchesPricing = PRICING_FIELDS.some(f => f in (data as Record<string, unknown>))
+    const before = touchesPricing
+      ? await prisma.product.findFirst({
+          where: { id, tenantId },
+          select: { sellPrice: true, semiWholesalePrice: true, wholesalePrice: true, hasPromotion: true, promotionPrice: true, priceTiers: true },
+        })
+      : null
+    const prevSet = toPricingSet(before as Record<string, unknown> | null)
+    if (prevSet) {
+      // Le PUT est PARTIEL : le jeu entrant = l'ancien surchargé par les seuls champs de
+      // prix réellement présents dans le corps (`priceTiers` y est déjà normalisé ci-dessus).
+      const merged: Record<string, unknown> = { ...(before as Record<string, unknown>) }
+      for (const f of PRICING_FIELDS) {
+        if (f in (data as Record<string, unknown>)) merged[f] = (data as Record<string, unknown>)[f]
+      }
+      const nextSet = toPricingSet(merged)
+      if (nextSet && !samePricing(prevSet, nextSet)) {
+        const d = data as Record<string, unknown>
+        d.previousPricing = prevSet as unknown as object
+        d.pricingChangedAt = new Date()
+      }
     }
     const updated = await prisma.product.update({ where: { id, tenantId }, data: data as any })
     invalidateTenantCache(tenantId).catch(() => {})
