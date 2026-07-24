@@ -167,7 +167,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
       console.error('Create product error:', err)
       return reply.code(500).send({
         error: 'Erreur création produit',
-        details: err.message,
+        details: (err as Error).message,
       })
     }
   })
