@@ -23,7 +23,7 @@ import POSSuccessModal from '@/components/pos/POSSuccessModal'
 import POSPaydunyaOverlay from '@/components/pos/POSPaydunyaOverlay'
 import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
 import { type PosProduct, CASHIER_TEXTS, computePosVat } from '@/components/pos/posShared'
-import { reconcileSaleTotal, authoritativeTotal } from '@/components/pos/saleReconcile'
+import { reconcileSaleTotal, authoritativeTotal, detectCartPriceDrift } from '@/components/pos/saleReconcile'
 
 export default function POS() {
   const {
@@ -300,6 +300,15 @@ export default function POS() {
     if (showModal) setSendWhatsApp(posAutoWhatsApp)
   }, [showModal, posAutoWhatsApp])
 
+  // À l'ouverture de la feuille d'encaissement : rafraîchit le catalogue en tâche de fond
+  // (best-effort, JAMAIS bloquant). Le caissier choisit son mode de paiement pendant ce temps ;
+  // si un tarif a changé depuis le montage, le refresh met à jour productById → la dérive de
+  // prix (ci-dessous) se révèle AVANT l'encaissement. S'il ne répond pas à temps (cold start
+  // Railway), rien n'est bloqué : la réconciliation post-vente (reconcileSaleTotal) prend le relais.
+  useEffect(() => {
+    if (showModal) void loadProducts()
+  }, [showModal, loadProducts])
+
   // Fond de caisse : l'input est dans la devise configurée, stockage direct
   const inputValue  = parseFloat(openingFundInput) || 0
   const displayFund = formatInCurrency(inputValue, currency)
@@ -333,6 +342,23 @@ export default function POS() {
     () => new Map<number | string, PosProduct>(posProducts.map(p => [p.id, p] as [number | string, PosProduct])),
     [posProducts],
   )
+
+  // Dérive de prix PRÉ-vente : le prix figé de chaque ligne du panier vs le prix FRAIS du
+  // catalogue (rafraîchi à l'ouverture de la feuille). Recalculée quand le panier OU le
+  // catalogue OU le type de client change. Vide tant que rien n'a bougé → aucune alerte.
+  const priceDrift = useMemo(
+    () => detectCartPriceDrift(cart, (id, qty) => {
+      const p = productById.get(id)
+      return p ? computePriceForItem(p, qty) : null
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cart, productById, clientType],
+  )
+  // Applique les prix frais aux lignes concernées — action EXPLICITE du caissier (bouton),
+  // jamais une mutation silencieuse : delta 0 = on ne touche que le prix + le tierLabel.
+  const applyPriceDrift = () => {
+    for (const d of priceDrift) updateCartQty(d.id, 0, d.newPrice, d.tierLabel ?? undefined)
+  }
 
   // Actions panier — calcul price+tierLabel via computePriceForItem (logique métier
   // qui dépend de clientType + promo + tiers), puis délégation au store pour mutation.
@@ -1216,6 +1242,7 @@ export default function POS() {
         mixedAmt1={mixedAmt1} setMixedAmt1={setMixedAmt1} mixedAmt2XOF={mixedAmt2XOF}
         paydunyaOk={paydunyaOk} onPaydunyaStart={startPaydunyaPayment}
         tvaAmount={tva} tvaRate={posTaxRate} totalDisplay={fromXOF(netTotal)}
+        priceDrift={priceDrift} onApplyPriceDrift={applyPriceDrift}
         mtnPhone={mtnPhone} setMtnPhone={handleMtnPhone}
         mtnStatus={mtnStatus} mtnError={mtnError}
         startMtnPayment={startMtnPayment} onMtnRetry={onMtnRetry}
