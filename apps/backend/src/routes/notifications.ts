@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/authenticate'
 import { getTenantId } from '../lib/tenantId'
 import { isUserActive } from '../lib/userStatus'
 import { decideWsAuth } from '../lib/wsAuth'
+import { getVapidPublicKey } from '../services/webPush'
 
 // Sockets actifs regroupés par tenant : un broadcast ne touche que la boutique concernée.
 const tenantSockets = new Map<string, Set<any>>()
@@ -30,6 +31,14 @@ export async function notificationRoutes(app: FastifyInstance): Promise<void> {
       update: { tenantId, userId, platform: platform ?? 'unknown', deviceId: deviceId ?? null },
     })
     return { success: true, id: saved.id }
+  })
+
+  // Clé publique VAPID pour l'abonnement Web Push (PWA). `configured:false` si l'env n'a
+  // pas la paire VAPID → le front masque/désactive le toggle plutôt que d'échouer à subscribe.
+  // Clé PUBLIQUE (non secrète) mais gardée par auth : on ne s'abonne que connecté.
+  app.get('/api/notifications/vapid-public-key', { preHandler: authenticate }, async () => {
+    const publicKey = getVapidPublicKey()
+    return { configured: publicKey !== null, publicKey }
   })
 
   // Désenregistre le token push de cet appareil (appelé au logout mobile).

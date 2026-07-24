@@ -1,5 +1,6 @@
 import { Expo, type ExpoPushMessage } from 'expo-server-sdk'
 import { basePrisma, prisma } from '../db'
+import { sendWebPush, parseWebSubscription, type WebPushSubscription } from './webPush'
 
 // Service d'envoi de notifications push Expo (serveur → appareils mobiles via exp.host).
 // ⚠️ FIRE-AND-FORGET : tout est fail-silent — une erreur push ne doit JAMAIS faire échouer
@@ -37,6 +38,31 @@ async function tokensForRoles(tenantId: string, roles: string[]): Promise<string
     console.warn('[push] tokensForRoles échec (non bloquant):', err)
     return []
   }
+}
+
+// Subscriptions WEB (PWA) des rôles ciblés — pendant de tokensForRoles pour le canal navigateur.
+// Même opt-in tenant (notifPushAll). NE JAMAIS lever (fire-and-forget).
+async function webSubsForRoles(tenantId: string, roles: string[]): Promise<WebPushSubscription[]> {
+  try {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { notifPushAll: true } })
+    if (tenant?.notifPushAll === false) return []
+    const upper = roles.map((r) => r.toUpperCase())
+    const rows = await prisma.pushToken.findMany({
+      where: { tenantId, platform: 'web', user: { role: { in: upper } } },
+      select: { token: true },
+    })
+    return rows.map((r) => parseWebSubscription(r.token)).filter((s): s is WebPushSubscription => s !== null)
+  } catch (err) {
+    console.warn('[push] webSubsForRoles échec (non bloquant):', err)
+    return []
+  }
+}
+
+// Orchestrateur UNIQUE : fanne une notification vers le mobile (Expo) ET le web (VAPID).
+// Les canaux sont indépendants et fail-silent chacun → l'un peut échouer sans affecter l'autre.
+async function dispatch(tenantId: string, roles: string[], title: string, body: string, data: PushData): Promise<void> {
+  const [expoTokens, webSubs] = await Promise.all([tokensForRoles(tenantId, roles), webSubsForRoles(tenantId, roles)])
+  await Promise.all([sendPush(expoTokens, title, body, data), sendWebPush(webSubs, title, body, data)])
 }
 
 // Envoi bas niveau : chunk par 100 (limite Expo), tickets inspectés pour purger les tokens
@@ -91,9 +117,7 @@ const fmtAmount = (xof: number) => `${(Number(xof) || 0).toLocaleString('fr-FR')
 
 // ⚠️ Rupture/stock bas → MANAGER + ADMIN (+ SUPER_ADMIN superset).
 export async function sendStockAlert(tenantId: string, productName: string, stock: number): Promise<void> {
-  const tokens = await tokensForRoles(tenantId, ['MANAGER', 'ADMIN', 'SUPER_ADMIN'])
-  await sendPush(
-    tokens,
+  await dispatch(tenantId, ['MANAGER', 'ADMIN', 'SUPER_ADMIN'],
     '⚠️ Rupture de stock',
     `${productName} — stock : ${stock}`,
     { type: 'low_stock', productName, stock },
@@ -102,9 +126,7 @@ export async function sendStockAlert(tenantId: string, productName: string, stoc
 
 // 💰 Paiement reçu (mobile money / carte) → ADMIN (+ SUPER_ADMIN).
 export async function sendPaymentReceived(tenantId: string, amountXOF: number, method: string): Promise<void> {
-  const tokens = await tokensForRoles(tenantId, ['ADMIN', 'SUPER_ADMIN'])
-  await sendPush(
-    tokens,
+  await dispatch(tenantId, ['ADMIN', 'SUPER_ADMIN'],
     '💰 Paiement reçu',
     `${fmtAmount(amountXOF)} via ${method}`,
     { type: 'payment_received', amount: amountXOF, method },
@@ -113,9 +135,7 @@ export async function sendPaymentReceived(tenantId: string, amountXOF: number, m
 
 // 📋 Demande de congé en attente → ADMIN (+ SUPER_ADMIN).
 export async function sendLeavePending(tenantId: string, employeeName: string): Promise<void> {
-  const tokens = await tokensForRoles(tenantId, ['ADMIN', 'SUPER_ADMIN'])
-  await sendPush(
-    tokens,
+  await dispatch(tenantId, ['ADMIN', 'SUPER_ADMIN'],
     '📋 Congé en attente',
     `${employeeName} a soumis une demande`,
     { type: 'leave_pending', employeeName },
@@ -124,9 +144,7 @@ export async function sendLeavePending(tenantId: string, employeeName: string): 
 
 // ⏰ Essai expirant dans N jours → ADMIN (+ SUPER_ADMIN). Envoyé depuis le cron trial reminders.
 export async function sendTrialExpiring(tenantId: string, daysLeft: number): Promise<void> {
-  const tokens = await tokensForRoles(tenantId, ['ADMIN', 'SUPER_ADMIN'])
-  await sendPush(
-    tokens,
+  await dispatch(tenantId, ['ADMIN', 'SUPER_ADMIN'],
     '⏰ Essai expire bientôt',
     `Votre essai HabaShop expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
     { type: 'trial_expiring', daysLeft },
@@ -135,9 +153,7 @@ export async function sendTrialExpiring(tenantId: string, daysLeft: number): Pro
 
 // ↔ Transfert confirmé par la destination → MANAGER + ADMIN de la boutique SOURCE.
 export async function sendTransferConfirmed(sourceTenantId: string, destShopName: string, productName: string, quantity: number): Promise<void> {
-  const tokens = await tokensForRoles(sourceTenantId, ['MANAGER', 'ADMIN', 'SUPER_ADMIN'])
-  await sendPush(
-    tokens,
+  await dispatch(sourceTenantId, ['MANAGER', 'ADMIN', 'SUPER_ADMIN'],
     '✅ Transfert confirmé',
     `${destShopName} a reçu ${quantity} × ${productName}`,
     { type: 'stock_transfer', status: 'completed', productName, quantity },
@@ -146,9 +162,7 @@ export async function sendTransferConfirmed(sourceTenantId: string, destShopName
 
 // ↔ Transfert annulé → MANAGER + ADMIN d'une boutique (appelé pour source ET destination).
 export async function sendTransferCancelled(tenantId: string, byShopName: string, productName: string): Promise<void> {
-  const tokens = await tokensForRoles(tenantId, ['MANAGER', 'ADMIN', 'SUPER_ADMIN'])
-  await sendPush(
-    tokens,
+  await dispatch(tenantId, ['MANAGER', 'ADMIN', 'SUPER_ADMIN'],
     '❌ Transfert annulé',
     `${byShopName} a annulé le transfert de ${productName}`,
     { type: 'stock_transfer', status: 'cancelled', productName },
@@ -162,13 +176,11 @@ export async function sendStockAlertBatch(
   products: Array<{ name: string; stockQty: number }>,
 ): Promise<void> {
   if (products.length === 0) return
-  const tokens = await tokensForRoles(tenantId, ['MANAGER', 'ADMIN', 'SUPER_ADMIN'])
   const worst = products[0]
   const body = products.length === 1
     ? `${worst.name} — stock : ${worst.stockQty}`
     : `${worst.name} et ${products.length - 1} autre${products.length > 2 ? 's' : ''}`
-  await sendPush(
-    tokens,
+  await dispatch(tenantId, ['MANAGER', 'ADMIN', 'SUPER_ADMIN'],
     `⚠️ ${products.length} produit${products.length > 1 ? 's' : ''} en rupture`,
     body,
     { type: 'low_stock', productName: worst.name, stock: worst.stockQty },
