@@ -64,6 +64,9 @@ export const PRODUCTS = [
   { id:12, name:'Lait concentré 397g',     price:1100,  priceWholesale:880,  priceSemiWholesale:990,  cat:'dairy',   emoji:'🥤', stock:95,  promotion:false, promotionPrice:0,    promotionEnd:'' },
 ]
 
+// Formulaire de remise manuelle (feuille d'encaissement POS).
+export type DiscountForm = { type: 'percent' | 'amount'; value: number; reason: string }
+
 export type PosProduct = typeof PRODUCTS[0] & {
   id: number | string
   sku?: string

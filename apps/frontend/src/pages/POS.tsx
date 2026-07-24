@@ -22,7 +22,7 @@ import TicketZModal from '@/components/pos/TicketZModal'
 import POSSuccessModal from '@/components/pos/POSSuccessModal'
 import POSPaydunyaOverlay from '@/components/pos/POSPaydunyaOverlay'
 import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
-import { type PosProduct, CASHIER_TEXTS, computePosVat } from '@/components/pos/posShared'
+import { type PosProduct, type DiscountForm, CASHIER_TEXTS, computePosVat } from '@/components/pos/posShared'
 import { reconcileSaleTotal, authoritativeTotal, detectCartPriceDrift } from '@/components/pos/saleReconcile'
 
 export default function POS() {
@@ -133,7 +133,7 @@ export default function POS() {
   const [clientType, setClientType] = useState<'retail'|'wholesale'|'semi'>('retail')
   const [discount, setDiscount] = useState<{ type:'percent'|'amount'; value:number; reason:string } | null>(null)
   const [showDiscountModal, setShowDiscountModal] = useState(false)
-  const [discountForm, setDiscountForm] = useState({ type:'percent' as 'percent'|'amount', value:0, reason:'' })
+  const [discountForm, setDiscountForm] = useState<DiscountForm>({ type:'percent' as 'percent'|'amount', value:0, reason:'' })
   const [isSaving, setIsSaving] = useState(false)
   // ── MTN MoMo POS ──────────────────────────────────────────────────────────
   const [mtnPhone, setMtnPhone]   = useState('')

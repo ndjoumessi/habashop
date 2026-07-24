@@ -17,6 +17,27 @@ export type ProductItem = {
   promotionEnd?: string
 }
 
+// État du formulaire produit (Stock.tsx `useState` + prop `form`/`setForm` de StockModals).
+// Typé pour le strict TS : les callbacks `setForm(f => …)` en héritent (plus d'implicit any).
+export type StockForm = {
+  sku: string; name: string; description: string; category: string; unit: string
+  buy: number; sell: number; priceWholesale: number; priceSemiWholesale: number
+  stock: number; threshold: number; supplier: string; supplierId: string
+  barcode: string; taxRate: number; isActive: boolean
+  hasPromotion: boolean; promotionPrice: number; promotionEnd: string
+  image: string; notes: string
+  priceTiers: { minQty: number; price: number; label?: string }[]
+}
+
+// Formulaire de catégorie (modale Stock) + config d'étiquettes (impression) + catégorie.
+export type CatForm = { name: string; color: string; icon: string; description: string }
+export type LabelConfig = {
+  size: 'small' | 'medium' | 'large'
+  showPrice: boolean; showSku: boolean; showBarcode: boolean; copies: number
+  averyPreset: 'L7160' | 'L7163' | 'L7165' | 'L7651' | 'CUSTOM' | 'THERMAL_40x30'
+}
+export type Category = { id: number; name: string; color: string; icon: string; productsCount: number; description: string }
+
 // Un produit a-t-il une promotion EFFECTIVE (activée + non expirée) ? Source unique pour
 // le badge PROMO de la liste ET le filtre « En promotion » → les deux ne peuvent pas
 // diverger. `now` injecté (défaut new Date()). Réutilise isPromotionActive (miroir back/front).

@@ -6,11 +6,11 @@ import { customersApi } from '@/lib/api'
 import ViewField from '@/components/ui/ViewField'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, type Dispatch, type SetStateAction } from 'react'
 // Lazy : LoyaltyCardDigital embarque html2canvas + qrcode (~45 Ko gz) — hors du chunk Customers
 const LoyaltyCardDigital = lazy(() => import('@/components/ui/LoyaltyCardDigital'))
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
-import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyNextThreshold } from '@/components/customers/customersShared'
+import { type Customer, type ClientType, type CustomerForm, type EditCustomerForm, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyNextThreshold } from '@/components/customers/customersShared'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { announce } from '@/lib/announce'
 
@@ -23,10 +23,10 @@ interface CustomersModalsProps {
   setDetailCustomer: (c: any) => void; setShowDetailModal: (b: boolean) => void
   showEditCustModal: boolean; editCustomer: Customer | null; setShowEditCustModal: (b: boolean) => void
   custEditMode: boolean; setCustEditMode: (b: boolean) => void
-  editCustForm: any; setEditCustForm: (v: any) => void
-  setCustomers: (v: any) => void
+  editCustForm: EditCustomerForm; setEditCustForm: Dispatch<SetStateAction<EditCustomerForm>>
+  setCustomers: Dispatch<SetStateAction<Customer[]>>
   showCreate: boolean; setShowCreate: (b: boolean) => void
-  form: any; setForm: (v: any) => void
+  form: CustomerForm; setForm: Dispatch<SetStateAction<CustomerForm>>
   handleCreateCustomer: () => void; resetCustForm: () => void
   showDetailModal: boolean; detailCustomer: Customer | null
   setEditCustomer: (c: any) => void

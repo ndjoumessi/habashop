@@ -7,7 +7,7 @@ import { type Employee, labelStyle } from '@/components/hr/hrShared'
 interface Props {
   lang: string
   employees: Employee[]
-  leaveForm: any; setLeaveForm: (v: any) => void
+  leaveForm: import("@/components/hr/hrShared").LeaveForm; setLeaveForm: import("react").Dispatch<import("react").SetStateAction<import("@/components/hr/hrShared").LeaveForm>>
   setShowLeaveModal: (b: boolean) => void
   onSubmitLeave: (form: any) => void  // Phase 6 : POST /api/leave-requests géré par le parent
 }

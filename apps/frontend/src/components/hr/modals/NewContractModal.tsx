@@ -2,7 +2,7 @@ import { X } from 'lucide-react'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
-import { type Employee, COLORS, DEPT_COLORS, labelStyle, deptLabel, contractLabel } from '@/components/hr/hrShared'
+import { type Employee, type ContractForm, COLORS, DEPT_COLORS, labelStyle, deptLabel, contractLabel } from '@/components/hr/hrShared'
 
 interface Props {
   lang: string
@@ -11,8 +11,8 @@ interface Props {
   // la devise vue à l'écran, converti en XOF au submit (storage inchangé, base XOF).
   currencySymbol: string
   toXOF: (n: number) => number
-  employees: Employee[]; setEmployees: (v: any) => void
-  contractForm: any; setContractForm: (v: any) => void
+  employees: Employee[]; setEmployees: import("react").Dispatch<import("react").SetStateAction<Employee[]>>
+  contractForm: ContractForm; setContractForm: import("react").Dispatch<import("react").SetStateAction<ContractForm>>
   setShowNewContractModal: (b: boolean) => void
 }
 

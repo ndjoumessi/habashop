@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useMemo, useEffect, useRef, type CSSProperties } from 'react'
+import { lazy, Suspense, useState, useMemo, useEffect, useRef, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
 import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search, Copy, Check, Trash2, AlertTriangle } from 'lucide-react'
 import JsBarcode from 'jsbarcode'
 import toast from 'react-hot-toast'
@@ -7,7 +7,7 @@ import { printProductLabels } from '@/utils/export'
 import { printThermalLabels } from '@/utils/thermalLabel'
 import ViewField from '@/components/ui/ViewField'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
-import { type ProductItem, stockCatLabel } from '@/components/stock/stockShared'
+import { type ProductItem, type StockForm, type CatForm, type LabelConfig, type Category, stockCatLabel } from '@/components/stock/stockShared'
 import { lookupProductByEan } from '@/lib/productLookup'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { normalizeBarcode, isValidBarcode, barcodeFormat, generateEAN13, quietZonePx } from '@/lib/barcode'
@@ -18,21 +18,21 @@ interface StockModalsProps {
   showModal: boolean; setShowModal: (b: boolean) => void
   resetForm: () => void
   editingSku: string | null
-  form: any; setForm: (v: any) => void
+  form: StockForm; setForm: Dispatch<SetStateAction<StockForm>>
   productEditMode: boolean; setProductEditMode: (b: boolean) => void
-  modalTab: 'general' | 'prix' | 'avance'; setModalTab: (v: any) => void
-  categories: any[]; setCategories: (v: any) => void
+  modalTab: 'general' | 'prix' | 'avance'; setModalTab: (v: 'general' | 'prix' | 'avance') => void
+  categories: Category[]; setCategories: Dispatch<SetStateAction<Category[]>>
   showScanner: boolean; setShowScanner: (b: boolean) => void
   fmt: (n: number) => string
   products: ProductItem[]
   saveProduct: () => void
   showCatModal: boolean; setShowCatModal: (b: boolean) => void
   editCat: any
-  catForm: any; setCatForm: (v: any) => void
+  catForm: CatForm; setCatForm: Dispatch<SetStateAction<CatForm>>
   showLabelModal: boolean; setShowLabelModal: (b: boolean) => void
   lang: string
-  labelConfig: any; setLabelConfig: (v: any) => void
-  selectedForLabel: string[]; setSelectedForLabel: (v: any) => void
+  labelConfig: LabelConfig; setLabelConfig: Dispatch<SetStateAction<LabelConfig>>
+  selectedForLabel: string[]; setSelectedForLabel: Dispatch<SetStateAction<string[]>>
   suppliers: { id: string; name: string }[]
   hideProductSelection?: boolean
   onOpenBackfill?: () => void
@@ -794,7 +794,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 <select
                   className="input"
                   value={labelConfig.averyPreset ?? 'L7160'}
-                  onChange={e => setLabelConfig(f => ({ ...f, averyPreset: e.target.value }))}
+                  onChange={e => setLabelConfig(f => ({ ...f, averyPreset: e.target.value as LabelConfig['averyPreset'] }))}
                   style={{ fontSize: 13 }}
                 >
                   <option value="L7160">Avery L7160 — 63.5×38.1mm — 21/page</option>
@@ -987,7 +987,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   if (labelConfig.averyPreset === 'THERMAL_40x30') {
                     void printThermalLabels(selectedProducts, fmt, cfg)
                   } else {
-                    printProductLabels(selectedProducts, fmt, cfg)
+                    // Branche non-thermique : averyPreset ne peut PAS être 'THERMAL_40x30' ici,
+                    // mais TS ne narrow pas `cfg` → on l'exclut explicitement pour le type A4.
+                    printProductLabels(selectedProducts, fmt, { ...cfg, averyPreset: cfg.averyPreset === 'THERMAL_40x30' ? undefined : cfg.averyPreset })
                   }
                   setShowLabelModal(false)
                 }}>
