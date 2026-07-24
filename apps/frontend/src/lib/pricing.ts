@@ -12,6 +12,24 @@ export type Promotion = {
   price?: number | null
 }
 
+// Miroir EXACT de apps/backend/src/utils/pricing.ts (cas partagés
+// docs/shared-fixtures/promotion-active-cases.json). Une promo est active tant que
+// `hasPromotion` ET que la date du jour (UTC, YYYY-MM-DD) n'a pas dépassé `promotionEnd`
+// (INCLUSIF). Pas d'échéance ('' / null) = promo sans fin (comportement historique).
+// `now` INJECTÉ → pure, jamais de littéral de date.
+function dayUTC(v: string | Date): string {
+  return (typeof v === 'string' ? v : v.toISOString()).slice(0, 10)
+}
+export function isPromotionActive(
+  hasPromotion: boolean | null | undefined,
+  promotionEnd: string | Date | null | undefined,
+  now: Date,
+): boolean {
+  if (!hasPromotion) return false
+  if (promotionEnd == null || promotionEnd === '') return true
+  return dayUTC(now) <= dayUTC(promotionEnd)
+}
+
 export function resolveTierPrice(
   qty: number,
   basePrice: number,

@@ -9,8 +9,32 @@ export type Promotion = {
   price?: number | null
 }
 
+// ── Expiration d'une promotion ───────────────────────────────────────────────────────
+// Une promo est active tant que `hasPromotion` ET que la date du jour n'a pas dépassé
+// `promotionEnd` (INCLUSIF : une promo « jusqu'au 31/05 » court tout le 31/05). Comparaison
+// au JOUR calendaire en UTC (YYYY-MM-DD) → insensible à l'heure et robuste aux fuseaux
+// (le Sénégal est à UTC±0 ; un décalage d'≤1 h fait au pire traîner une promo un peu, jamais
+// la couper trop tôt). `promotionEnd` absent ('' ou null) = promo SANS échéance = comportement
+// historique (active tant que hasPromotion). Miroir EXACT de apps/frontend/src/lib/pricing.ts
+// (cas partagés docs/shared-fixtures/promotion-active-cases.json). ⚠️ `now` est INJECTÉ (pas de
+// new Date() interne) → fonction pure, testable, jamais de littéral de date.
+function dayUTC(v: string | Date): string {
+  return (typeof v === 'string' ? v : v.toISOString()).slice(0, 10)
+}
+export function isPromotionActive(
+  hasPromotion: boolean | null | undefined,
+  promotionEnd: string | Date | null | undefined,
+  now: Date,
+): boolean {
+  if (!hasPromotion) return false
+  if (promotionEnd == null || promotionEnd === '') return true // pas d'échéance = sans fin
+  return dayUTC(now) <= dayUTC(promotionEnd) // inclusif
+}
+
 // Résout le prix unitaire selon (qty, basePrice, paliers, promotion).
 // Priorité : promo active → palier matchant qty → basePrice fallback.
+// ⚠️ `promotion.active` doit DÉJÀ intégrer l'expiration (cf. isPromotionActive) — cette
+// fonction reste pure et sans notion de temps ; l'appelant lui passe le booléen effectif.
 export function resolveTierPrice(
   qty: number,
   basePrice: number,

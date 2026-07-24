@@ -1,0 +1,14 @@
+{
+  "_comment": "SOURCE UNIQUE des cas de test de isPromotionActive. Lu par apps/backend/src/tests/pricing.test.ts ET apps/frontend/src/lib/pricing.test.ts. Objectif anti-dérive : la règle d'expiration d'une promo (échéance INCLUSIVE au jour calendaire, comparaison en date UTC YYYY-MM-DD, promo sans date = sans fin) doit rester identique des deux côtés. Ne pas modifier sans mettre à jour les deux implémentations (apps/backend/src/utils/pricing.ts + apps/frontend/src/lib/pricing.ts). Le miroir MOBILE (mobile/src) suivra quand son flux POS portera promotionEnd — cf. handoff. `now` et `end` sont des chaînes ISO ; `end: null` = pas de date de fin.",
+  "cases": [
+    { "label": "pas de promo → inactive quelle que soit la date", "hasPromotion": false, "end": "2026-12-31", "now": "2026-01-01T10:00:00.000Z", "expected": false },
+    { "label": "promo sans date de fin → active (comportement historique préservé)", "hasPromotion": true, "end": null, "now": "2030-01-01T00:00:00.000Z", "expected": true },
+    { "label": "promo, date de fin dans le futur → active", "hasPromotion": true, "end": "2026-12-31", "now": "2026-06-15T10:00:00.000Z", "expected": true },
+    { "label": "LE jour de fin (inclusif) → encore active", "hasPromotion": true, "end": "2026-06-15", "now": "2026-06-15T23:59:59.000Z", "expected": true },
+    { "label": "début du jour de fin → active", "hasPromotion": true, "end": "2026-06-15", "now": "2026-06-15T00:00:00.000Z", "expected": true },
+    { "label": "lendemain du jour de fin → EXPIRÉE", "hasPromotion": true, "end": "2026-06-15", "now": "2026-06-16T00:00:00.000Z", "expected": false },
+    { "label": "date de fin passée depuis longtemps → EXPIRÉE (promo zombie)", "hasPromotion": true, "end": "2026-05-31", "now": "2026-07-24T09:00:00.000Z", "expected": false },
+    { "label": "date de fin au format ISO complet → tronquée au jour", "hasPromotion": true, "end": "2026-06-15T00:00:00.000Z", "now": "2026-06-15T14:00:00.000Z", "expected": true },
+    { "label": "date de fin vide ('') → traitée comme absence → active", "hasPromotion": true, "end": "", "now": "2030-01-01T00:00:00.000Z", "expected": true }
+  ]
+}
