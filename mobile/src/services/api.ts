@@ -42,6 +42,12 @@ export function apiErrorStatus(err: unknown): number | undefined {
   return (err as AxiosError)?.response?.status
 }
 
+// Code APPLICATIF renvoyé par le backend (ex. `UNKNOWN_PRODUCT`, `VALIDATION`), distinct
+// du statut HTTP. Sert à dire au commerçant POURQUOI une vente n'a pas pu être enregistrée.
+export function apiErrorCode(err: unknown): string | undefined {
+  return (err as AxiosError<{ code?: string }>)?.response?.data?.code
+}
+
 // Une erreur mérite-t-elle un retry / une bascule offline ? OUI pour les pannes
 // réseau (timeout axios = pas de `response`) et les 5xx serveur. NON pour les 4xx
 // (validation/auth) — retenter une vente invalide bouclerait sans fin.
