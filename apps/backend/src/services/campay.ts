@@ -1,3 +1,5 @@
+import { appUrl } from '../lib/appUrl'
+
 const ENV      = process.env.CAMPAY_ENVIRONMENT ?? 'demo'
 const BASE_URL = ENV === 'production' ? 'https://campay.net' : 'https://demo.campay.net'
 
@@ -141,8 +143,8 @@ export async function getPaymentLink(opts: {
       first_name:           opts.firstName         ?? 'Client',
       last_name:            opts.lastName          ?? '',
       email:                '',
-      redirect_url:         opts.redirectUrl        ?? 'https://habashop.vercel.app/app/pos',
-      failure_redirect_url: opts.failureRedirectUrl ?? 'https://habashop.vercel.app/app/pos',
+      redirect_url:         opts.redirectUrl        ?? appUrl('/app/pos'),
+      failure_redirect_url: opts.failureRedirectUrl ?? appUrl('/app/pos'),
       payment_options:      opts.paymentOptions    ?? 'CARD',
     }),
   })

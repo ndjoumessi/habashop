@@ -5,8 +5,10 @@ import { prisma } from '../db'
 import {
   IS_TEST, paydunyaConfigured, createInvoice, confirmInvoice, verifyIpnHash, normalizeStatus,
 } from '../services/paydunya'
+import { appBaseUrl } from '../lib/appUrl'
 
-const FRONT_URL = process.env.FRONTEND_URL ?? 'https://habashop.vercel.app'
+// Lecture unique via `lib/appUrl` (adossée à FRONTEND_URL) — plus de repli local dupliqué.
+const FRONT_URL = appBaseUrl()
 const PAYDUNYA_METHODS = ['Wave', 'Orange Money', 'Free Money', 'Expresso', 'Djamo', 'Visa/MC']
 
 export async function paydunyaPaymentRoutes(app: FastifyInstance): Promise<void> {

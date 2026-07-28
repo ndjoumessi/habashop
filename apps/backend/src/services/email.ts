@@ -1,4 +1,5 @@
 import { sendTenantEmail, sendPlatformEmail } from '../lib/spend/resendClient'
+import { appUrl, appBaseUrl, appHost } from '../lib/appUrl'
 
 /**
  * Envois d'e-mails. Le SDK Resend vit dans `lib/spend/resendClient` (goulot gardé).
@@ -57,7 +58,7 @@ function baseTemplate(content: string): string {
 <body>
   <div class="wrapper">
     <div class="header">
-      <p class="header-logo"><img src="https://habashop.vercel.app/pwa-192x192.png" width="34" height="34" alt="" style="vertical-align:middle;border-radius:8px;margin-right:9px;display:inline-block"/>HabaShop</p>
+      <p class="header-logo"><img src="${appUrl('/pwa-192x192.png')}" width="34" height="34" alt="" style="vertical-align:middle;border-radius:8px;margin-right:9px;display:inline-block"/>HabaShop</p>
       <p class="header-sub">Gestion commerciale pour l'Afrique</p>
     </div>
     <div class="body">${content}</div>
@@ -65,12 +66,12 @@ function baseTemplate(content: string): string {
       <div class="flag-row">🇸🇳 🇨🇮 🇲🇱 🇧🇫 🇬🇳 🇨🇲</div>
       <p>© 2026 HabaShop · Logiciel SaaS pour commerces africains</p>
       <p>
-        <a href="https://habashop.vercel.app">habashop.vercel.app</a> ·
-        <a href="https://habashop.vercel.app/login">Se connecter</a>
+        <a href="${appBaseUrl()}">${appHost()}</a> ·
+        <a href="${appUrl('/login')}">Se connecter</a>
       </p>
       <p style="font-size:11px;color:#AAAACC;margin-top:12px;">
         Vous recevez cet email car vous avez créé un compte HabaShop.
-        <a href="https://habashop.vercel.app/unsubscribe">Se désabonner</a>
+        <a href="${appUrl('/unsubscribe')}">Se désabonner</a>
       </p>
     </div>
   </div>
@@ -91,7 +92,7 @@ export async function sendWelcomeEmail(opts: {
   const firstName = ownerName.split(' ')[0]
   const eFirst    = escHtml(firstName)
   const eShop     = escHtml(shopName)
-  const loginUrl  = 'https://habashop.vercel.app/login'
+  const loginUrl  = appUrl('/login')
 
   const html = baseTemplate(`
     <h1>Bienvenue sur HabaShop, ${eFirst} ! 🎉</h1>
@@ -99,7 +100,7 @@ export async function sendWelcomeEmail(opts: {
     Vous bénéficiez d'un <strong>essai gratuit de 14 jours</strong>
     pour explorer toutes les fonctionnalités.</p>
 
-    <div style="text-align:center;margin:16px 0;"><img src="https://habashop.vercel.app/pwa-192x192.png" width="48" height="48" alt="HabaShop" style="border-radius:12px;display:inline-block"/></div>
+    <div style="text-align:center;margin:16px 0;"><img src="${appUrl('/pwa-192x192.png')}" width="48" height="48" alt="HabaShop" style="border-radius:12px;display:inline-block"/></div>
 
     <p>Avec HabaShop vous pouvez :</p>
     <ul style="color:#444464;font-size:15px;line-height:2;padding-left:20px;">
@@ -149,7 +150,7 @@ export async function sendTrialReminder7Days(opts: {
   const firstName   = ownerName.split(' ')[0]
   const eFirst      = escHtml(firstName)
   const eShop       = escHtml(shopName)
-  const upgradeUrl  = 'https://habashop.vercel.app/app/upgrade'
+  const upgradeUrl  = appUrl('/app/upgrade')
 
   const html = baseTemplate(`
     <h1>Plus que 7 jours d'essai, ${eFirst}</h1>
@@ -210,7 +211,7 @@ export async function sendTrialReminder3Days(opts: {
   const firstName  = ownerName.split(' ')[0]
   const eFirst     = escHtml(firstName)
   const eShop      = escHtml(shopName)
-  const upgradeUrl = 'https://habashop.vercel.app/app/upgrade'
+  const upgradeUrl = appUrl('/app/upgrade')
 
   const html = baseTemplate(`
     <h1>🚨 Plus que 3 jours — ${eFirst}</h1>
@@ -264,7 +265,7 @@ export async function sendUpgradeConfirmation(opts: {
   const { to, shopName, ownerName, plan, amount, method, ref } = opts
   const firstName  = ownerName.split(' ')[0]
   const planLabel  = plan === 'pro' ? 'Pro' : 'Enterprise'
-  const loginUrl   = 'https://habashop.vercel.app/login'
+  const loginUrl   = appUrl('/login')
 
   const methodLabels: Record<string,string> = {
     wave:         'Wave 🌊',
@@ -338,7 +339,7 @@ export async function sendTrialExpired(opts: {
   const firstName  = ownerName.split(' ')[0]
   const eFirst     = escHtml(firstName)
   const eShop      = escHtml(shopName)
-  const upgradeUrl = 'https://habashop.vercel.app/app/upgrade'
+  const upgradeUrl = appUrl('/app/upgrade')
 
   const html = baseTemplate(`
     <h1>Votre essai a expiré, ${eFirst}</h1>
@@ -397,7 +398,7 @@ export async function sendStockAlertEmail(opts: {
   products:     { name: string; stockQty: number; stockMin: number }[]
 }): Promise<boolean> {
   const { to, shopName, products } = opts
-  const stockUrl = 'https://habashop.vercel.app/app/stock'
+  const stockUrl = appUrl('/app/stock')
   const eShop = escHtml(shopName)
   const totalCount = products.length
   const outOfStock = products.filter(p => p.stockQty === 0).length
@@ -492,7 +493,7 @@ export async function sendUserInvitationEmail(opts: {
 }): Promise<boolean> {
   const { to, inviteeName, shopName, tempPassword, invitedBy } = opts
   const firstName = inviteeName.split(' ')[0]
-  const loginUrl  = 'https://habashop.vercel.app/login'
+  const loginUrl  = appUrl('/login')
 
   // Toutes les valeurs interpolées dans le HTML viennent de données tenant/admin
   // potentiellement contrôlées — on les échappe pour éviter HTML/script injection.
@@ -567,7 +568,7 @@ export async function sendWeeklyReport(opts: {
   const evolLabel = evolution >= 0
     ? `+${evolution}% vs semaine dernière 📈`
     : `${evolution}% vs semaine dernière 📉`
-  const dashUrl = 'https://habashop.vercel.app/app/dashboard'
+  const dashUrl = appUrl('/app/dashboard')
 
   const html = baseTemplate(`
     <h1>📊 Rapport de la semaine — ${escHtml(shopName)}</h1>
