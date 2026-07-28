@@ -5,7 +5,8 @@ import { useNetworkStatus } from './useNetworkStatus'
 import {
   getQueue, removeAction, incrementRetries, MAX_QUEUE_RETRIES,
 } from '@/services/offlineQueue'
-import { salesApi, isRetryableApiError, apiErrorMessage } from '@/services/api'
+import { salesApi, isRetryableApiError, apiErrorMessage, apiErrorCode } from '@/services/api'
+import { recordFailedSale, getFailedCount } from '@/services/failedSales'
 
 // Signal émis après une resync : `count` actions synchronisées avec succès à l'instant `at`
 // (le timestamp sert de nonce → deux batches de même taille re-déclenchent bien le toast).
@@ -15,12 +16,15 @@ export function useOfflineSync() {
   const { isOnline } = useNetworkStatus()
   const qc = useQueryClient()
   const [pendingCount, setPendingCount] = useState(0)
+  // Ventes ENCAISSÉES mais jamais enregistrées (abandons). Durable, soldable à la main.
+  const [failedCount, setFailedCount] = useState(0)
   const [lastSync, setLastSync] = useState<SyncSignal | null>(null)
   // Garde anti-double-sync : reconnexion réseau ET filet 30 s peuvent tomber en même temps.
   const syncing = useRef(false)
 
   const refreshPending = useCallback(async () => {
     setPendingCount((await getQueue()).length)
+    setFailedCount(await getFailedCount())
   }, [])
 
   const sync = useCallback(async () => {
@@ -39,15 +43,29 @@ export function useOfflineSync() {
           synced++
         } catch (err) {
           if (!isRetryableApiError(err)) {
-            // 4xx (validation/auth) : rejouer ne corrigera jamais → on retire + log,
-            // sinon une vente invalide bouclerait indéfiniment toutes les 30 s.
-            logger.error(`Sync ${action.id} rejetée (4xx, abandon) :`, apiErrorMessage(err))
+            // 4xx (validation/auth, produit inconnu) : rejouer ne corrigera jamais → on
+            // sort de la file, sinon une vente invalide bouclerait toutes les 30 s.
+            // ⚠️ Mais l'argent est DANS LE TIROIR : l'abandon est consigné dans un registre
+            // DURABLE avant d'être retiré. Un `logger.error` seul partait dans logcat, que
+            // personne ne lit en release — la vente disparaissait sans laisser de trace.
+            await recordFailedSale({
+              id: action.id, payload: action.payload, reason: 'rejected',
+              code: apiErrorCode(err), message: apiErrorMessage(err),
+              failedAt: new Date().toISOString(), total: action.payload.total,
+            })
+            logger.error(`Sync ${action.id} rejetée (4xx) → registre des ventes non enregistrées :`, apiErrorMessage(err))
             await removeAction(action.id)
             continue
           }
           if (action.retries + 1 >= MAX_QUEUE_RETRIES) {
             // Réseau/5xx persistant après N tentatives → abandon (évite la boucle infinie).
-            logger.error(`Sync ${action.id} abandonnée après ${MAX_QUEUE_RETRIES} tentatives :`, err)
+            // Même perte que la 4xx, donc même registre : encaissé, jamais enregistré.
+            await recordFailedSale({
+              id: action.id, payload: action.payload, reason: 'exhausted',
+              code: apiErrorCode(err), message: apiErrorMessage(err),
+              failedAt: new Date().toISOString(), total: action.payload.total,
+            })
+            logger.error(`Sync ${action.id} abandonnée après ${MAX_QUEUE_RETRIES} tentatives → registre :`, err)
             await removeAction(action.id)
             continue
           }
@@ -87,5 +105,5 @@ export function useOfflineSync() {
     return () => clearInterval(id)
   }, [sync, refreshPending])
 
-  return { isOnline, sync, pendingCount, lastSync }
+  return { isOnline, sync, pendingCount, lastSync, failedCount, refreshPending }
 }

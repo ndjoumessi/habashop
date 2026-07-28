@@ -8,6 +8,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { asyncStoragePersister, shouldDehydrateQuery, PERSIST_MAX_AGE } from '@/services/queryPersist'
 import SyncToast from '@/components/ui/SyncToast'
+import FailedSalesBanner from '@/components/ui/FailedSalesBanner'
 // Imports subpath (pas le barrel) : le barrel `@expo-google-fonts/*` fait bundler
 // par Metro TOUTES les graisses (.ttf) du package — ~2 MB de polices mortes.
 import { useFonts } from '@expo-google-fonts/outfit/useFonts'
@@ -39,8 +40,15 @@ const qc = new QueryClient({
 // Doit vivre SOUS le provider Query (useOfflineSync utilise useQueryClient). Rend aussi le
 // toast « X vente(s) synchronisée(s) » piloté par le signal de resync de la file offline.
 function OfflineSyncBridge() {
-  const { lastSync } = useOfflineSync() // sync auto de la file offline au retour réseau
-  return <SyncToast signal={lastSync} />
+  const { lastSync, failedCount } = useOfflineSync() // sync auto de la file offline au retour réseau
+  return (
+    <>
+      <SyncToast signal={lastSync} />
+      {/* Ventes encaissées jamais enregistrées : bandeau DURABLE (pas un toast) —
+          `failedCount` sert de clé de rafraîchissement après chaque cycle de sync. */}
+      <FailedSalesBanner refreshKey={failedCount} />
+    </>
+  )
 }
 
 export default function RootLayout() {

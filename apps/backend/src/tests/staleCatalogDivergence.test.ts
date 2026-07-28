@@ -177,3 +177,56 @@ describe('PUT /api/products/:id — instantané des tarifs précédents', () => 
     expect(data.pricingChangedAt).toBeUndefined()
   })
 })
+
+/**
+ * PROFONDEUR 1 — la limite qui décide si l'ARGENT peut s'y adosser.
+ *
+ * L'instantané ne retient QUE le jeu de tarifs sortant du DERNIER changement. Après deux
+ * changements rapprochés, le prix d'avant-avant n'est plus reconnaissable : le mécanisme
+ * répond « non concluant », ce qui doit dégrader vers la re-tarification (comportement
+ * historique, sûr) et JAMAIS vers une exonération par défaut.
+ *
+ * On rejoue ici la CHAÎNE réelle : deux PUT successifs, puis des ventes aux trois prix.
+ */
+describe('PROFONDEUR 1 — deux changements successifs', () => {
+  const put = async (existant: Record<string, unknown>, payload: Record<string, unknown>) => {
+    const app = await buildApp(productRoutes)
+    db.product.findFirst.mockResolvedValue(existant)
+    db.product.update.mockResolvedValue({ id: 'p1' })
+    const res = await app.inject({ method: 'PUT', url: '/api/products/p1', payload })
+    expect(res.statusCode).toBe(200)
+    return db.product.update.mock.calls.at(-1)![0].data
+  }
+  const nu = (sellPrice: number) => ({ sellPrice, semiWholesalePrice: null, wholesalePrice: null, hasPromotion: false, promotionPrice: null, priceTiers: null })
+
+  it('le 2e changement ÉCRASE l’instantané : il retient 1200, pas 1000', async () => {
+    const apres1 = await put(nu(1000), { sellPrice: 1200 })
+    expect(apres1.previousPricing).toMatchObject({ sellPrice: 1000 })
+    const apres2 = await put(nu(1200), { sellPrice: 1400 })
+    expect(apres2.previousPricing).toMatchObject({ sellPrice: 1200 })
+    expect(apres2.previousPricing).not.toMatchObject({ sellPrice: 1000 })
+  })
+
+  it('vente au prix IMMÉDIATEMENT précédent (1200) → qualifiée', async () => {
+    db.product.findMany.mockResolvedValue([produit({ sellPrice: 1400, previousPricing: nu(1200), pricingChangedAt: HIER })])
+    const item = await vendre(1200, 'prof-1')
+    expect(item.unitPrice).toBe(1400)          // facturation INCHANGÉE : prix serveur
+    expect(item.staleCatalogAt).toEqual(HIER)  // mais l'écart est EXPLIQUÉ
+  })
+
+  it('vente au prix d’AVANT-AVANT (1000) → NON qualifiée : dégrade vers re-tarifer', async () => {
+    db.product.findMany.mockResolvedValue([produit({ sellPrice: 1400, previousPricing: nu(1200), pricingChangedAt: HIER })])
+    const item = await vendre(1000, 'prof-2')
+    expect(item.unitPrice).toBe(1400)
+    expect(item.staleCatalogAt).toBeNull()     // non concluant ⇒ jamais une innocence
+    expect(item.submittedPrice).toBe(1000)     // la trace subsiste pour l'audit
+  })
+
+  it('⚠️ un terminal resté 3 jours hors-ligne retombe donc sur « non qualifié »', async () => {
+    // Deux effets se cumulent : la fenêtre de 48 h ET la profondeur 1. C'est la borne
+    // de ce mécanisme — toute décision de facturation qui s'y adosse hérite d'elle.
+    db.product.findMany.mockResolvedValue([produit({ sellPrice: 1400, previousPricing: nu(1200), pricingChangedAt: VIEUX })])
+    const item = await vendre(1200, 'prof-3')
+    expect(item.staleCatalogAt).toBeNull()
+  })
+})
