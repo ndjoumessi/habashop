@@ -65,7 +65,23 @@ Repli d'URGENCE seulement, si l'auto-deploy est *démontré* cassé (pas suppos�
 
 **Déploiement couplé** : le push `main` déclenche les deux auto-deploys. Si le backend introduit une rupture d'API, l'ordre n'est pas garanti — vérifier que le back sert bien la version neuve **avant** de conclure que le front est bon.
 
-⚠️ **Vercel — la PROD s'auto-déploie sur push `main`** (vérifié 2026-07-19). L'ancienne inférence « prod = manuelle » (basée sur PR #49 : déploiements prod sans métadonnée git) était **FAUSSE** : ces prod-là venaient bien du CLI **parce qu'on lançait `vercel --prod` en plus**, pas parce que l'auto-deploy manquait ; l'absence de prod après certains merges venait du **QUOTA épuisé**, pas d'une config absente. Donc : **rien à lancer à la main** — au prochain push sur `main` (quota revenu), la prod part seule. Le rôle de Claude = **VÉRIFIER** (`vercel ls --prod` → un déploiement **plus récent que le merge** et `Ready`), jamais conclure « déployé » sans ça, et **ne JAMAIS relancer `vercel --prod`**. **Preview branch tracking DÉSACTIVÉ** (Settings → Git) — il était sur « All unassigned git branches » = 1 preview par PR = la moitié du quota. Cible = **1 déploiement prod par merge, zéro preview, zéro geste manuel**. **Free-tier = 100 déploiements/jour.**
+⚠️ **Vercel — la PROD s'auto-déploie sur push `main`** (vérifié 2026-07-19). L'ancienne inférence « prod = manuelle » (basée sur PR #49 : déploiements prod sans métadonnée git) était **FAUSSE** : ces prod-là venaient bien du CLI **parce qu'on lançait `vercel --prod` en plus**, pas parce que l'auto-deploy manquait ; l'absence de prod après certains merges venait du **QUOTA épuisé**, pas d'une config absente. Donc : **rien à lancer à la main** — au prochain push sur `main` (quota revenu), la prod part seule. Le rôle de Claude = **VÉRIFIER** (`vercel ls --prod` → un déploiement **plus récent que le merge** et `Ready`), jamais conclure « déployé » sans ça, et **ne JAMAIS relancer `vercel --prod`**. **Free-tier = 100 déploiements/jour.**
+
+#### Modèle de déploiement RÉEL (mesuré 2026-07-28 : 12 déploiements, 5 merges, 5 PR)
+
+| Événement | Effet | État |
+|---|---|---|
+| Push sur `main` | **1 déploiement prod** (auto, back Railway + front Vercel) | ✅ conforme, **zéro geste manuel** (5/5) |
+| Push sur une branche **AVEC une PR** | **1 preview Vercel** — **PAR CONCEPTION** de l'intégration GitHub de Vercel, **indépendant** du branch tracking. Un **force-push** (rebase) en coûte **une de plus** | 7/7 portaient un `githubPrId` ; 2 des 5 PR en ont consommé 2 |
+| Branche **SANS PR** | **0 preview** — « All unassigned branches » est bien désactivé | 0/12 branches orphelines n'a déployé |
+
+⚠️ **Le réglage n'est PAS cassé — ne plus chercher un réglage à réparer.** L'ancienne cible
+« 1 prod par merge, **zéro preview**, zéro geste manuel » était une **erreur de doc** : elle
+confondait le **branch tracking** (désactivé, et qui tient) avec les **previews de PR** (créées
+par conception). Aucun geste ne rend « zéro preview » atteignable par ce levier.
+
+**Les previews de PR ont une VALEUR** : chaque build de PR prouve que le front **compile** avec
+le changement — signal que la CI unitaire ne donne pas. Les supprimer coûterait cette garantie.
 
 **Rituel commit** : `npx tsc --noEmit` (0) → `npm test` (verts) → `npm run build` (OK) → commit/push `main`. Git : push direct sur `main`, pas de feature branch.
 
