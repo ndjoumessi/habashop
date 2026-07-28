@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
+import { normalizeCountry } from '../lib/country'
 import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
 import { sendWelcomeEmail } from '../services/email'
@@ -164,7 +165,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         data: {
           name: shopName ?? resolvedName,
           currency: currency ?? 'XOF',
-          country: country ?? 'SN',
+          // ISO-2 canonique. Le repli 'SN' est HISTORIQUE et assumé (colonne non nullable) —
+          // mais il ne doit jamais transformer un libellé en pays deviné : `normalizeCountry`
+          // rend null sur l'inconnu, et c'est ce null qui retombe sur le défaut, explicitement.
+          country: normalizeCountry(country) ?? 'SN',
           plan: 'starter',
           status: 'trial',
           isActive: true,

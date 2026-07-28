@@ -358,11 +358,24 @@ au lieu de refuser (seul `isValid()` écarte) · « Twilio rejettera un numéro 
 (un `+` à l'aveugle produit des numéros étrangers **livrables**). Donc « on ne normalise pas » ne
 vaut **jamais** « on n'envoie pas » : il faut refuser d'envoyer, explicitement.
 
-⚠️ **Dette restante** : `Tenant.country` (`String @default("SN")` non nullable) contient en prod
-`CI`, `SN` **et `France`** — `Onboarding.tsx` PATCHe des noms FR là où `SignupPage` envoie de
-l'ISO-2. `resolveRecipient` s'en protège (`isSupportedCountry()` écarte « France » → refus), mais
-le CHAMP reste incohérent : à normaliser dans sa propre surface si le flux commerçant doit couvrir
-ces tenants. `Customer` n'a **aucun** champ pays (rien ne permettrait de résoudre un national de client).
+✅ **Dette `Tenant.country` : TRAITÉE** (surface propre). Le champ contenait `CI`, `SN` **et
+`France`** : `Onboarding.tsx` PATCHait la `value` de son `<select>`, laquelle était le LIBELLÉ
+français, là où `SignupPage` envoyait de l'ISO-2 — deux formats, aucune validation au milieu.
+Conséquence NON cosmétique : `resolveRecipient` n'accepte que l'ISO-2, donc un tenant « France »
+ne recevait **ni WhatsApp ni SMS**, en silence (le garde faisait son travail, la donnée mentait).
+Désormais **`lib/country.ts`** (`normalizeCountry`, `SUPPORTED_COUNTRIES`) est le seul juge, appelé
+par les **3** chemins d'écriture (`PATCH /api/tenant` → **400** sur l'irrésolvable, register, admin).
+⚠️ **Liste blanche, PAS `^[A-Z]{2}$`** : la regex accepterait `XX`, remplaçant une valeur invalide
+*bruyante* par une *silencieuse*. ⚠️ **`null` ≠ repli** — un défaut implicite sur `SN` est ce qui
+rend indistinguables un choix et une valeur jamais saisie. ⚠️ **Ne PAS y importer
+`libphonenumber-js`** (`isSupportedCountry`) : un second point d'entrée rouvrirait ce que
+`phoneChokepoint.test.ts` ferme. Table des libellés hérités conservée (une PWA en cache les envoie
+encore) — ensemble CLOS de nos propres anciennes `value`, pas une inférence sur du texte libre.
+Front : `Onboarding` et **le champ Réglages → Boutique** (qui était en TEXTE LIBRE, donc 400 garanti)
+passent par le sélecteur `utils/countryList.ts`, valeur ISO-2 / libellé affiché. Verrou :
+`tenantCountryIso.test.ts` (12, **3 sabotages** : regex au lieu de la liste blanche · repli implicite
+sur `SN` · route stockant la valeur brute). `Customer` n'a toujours **aucun** champ pays (rien ne
+permettrait de résoudre un national de client — c'est voulu, cf. flux client).
 
 ⚠️ **Méthode — la leçon la plus chère, valable au-delà du téléphone** : ne JAMAIS poser une garantie
 de sûreté par RAISONNEMENT. Les trois échecs ont le même motif — une affirmation plausible écrite en
@@ -373,7 +386,7 @@ l'exercer, et être vérifié **dans les deux sens**.
 ## Dette ouverte
 
 ### 🔴 Critique
-- ✅ **Numéros WhatsApp : RÉSOLU** (sous-surface 1, PR #100) — la normalisation par « à qui appartient ce numéro » (`resolveRecipient`, param `owner` obligatoire) a remplacé le `+` aveugle et le `replace(/^0/)`. Cf. § Normalisation téléphonique (+ `docs/lessons/normalisation-telephonique.md`). Le seul reste est la dette `Tenant.country` (noms FR en prod, dont `resolveRecipient` se protège par `isSupportedCountry()`).
+- ✅ **Numéros WhatsApp : RÉSOLU** (sous-surface 1, PR #100) — la normalisation par « à qui appartient ce numéro » (`resolveRecipient`, param `owner` obligatoire) a remplacé le `+` aveugle et le `replace(/^0/)`. Cf. § Normalisation téléphonique (+ `docs/lessons/normalisation-telephonique.md`). La dette `Tenant.country` qui subsistait est elle aussi traitée (cf. § Normalisation téléphonique, fin).
 - ✅ **SMS : IMPLÉMENTÉ** (Africa's Talking). `lib/spend/smsClient.ts` = SEUL module important `africastalking` (ajouté à l'allowlist `spendGuardAllowlist.test.ts`), calqué sur `twilioClient` : garde de dépense (`SpendKind` **`sms`**, quotas `QUOTA_TRIAL_SMS`/`QUOTA_ACTIVE_SMS` défauts 20/200 placeholder) + **`resolveRecipient` obligatoire** (`owner` requis — un SMS part vers un numéro, même sécurité téléphonique que WhatsApp), ne throw jamais, rend les unités des envois échoués/écartés. `services/sms.ts` `notifyStockAlertSms(tenantId, products)` = **digest QUOTIDIEN** au gérant (câblé dans le cron stock de `server.ts`, PAS par vente → un SMS/jour, pas un par vente ; gardé opt-in tenant `notifSmsStock` + `ownerPhone`, flux commerçant normalisé avec `tenant.country`). Filet `mockPaidSdks.ts` mocke aussi `africastalking`. ⚠️ **À ACTIVER (Nelson)** : compte Africa's Talking + `SMS_API_KEY` (+ `SMS_USERNAME` défaut `sandbox`, `SMS_SENDER_ID` optionnel) sur Railway — absente = feature inerte (`SMS_NOT_CONFIGURED`, fail-safe). Verrou : `smsClient.test.ts` (6 : refus téléphone client/pays non supporté, normalisation commerçant, quota refusé, réserve N, fail-safe clé absente ; sabotage vérifié). *(`notifSmsSales` = résumé ventes, fast-follow trivial via la même infra.)*
 - ✅ **Push PWA : IMPLÉMENTÉ** (Web Push VAPID). Canal navigateur DISTINCT du push Expo mobile : `services/webPush.ts` (SEUL module important `web-push`, fail-silent, VAPID lu à chaud depuis l'env → no-op si absent) ; `pushService.dispatch()` fanne chaque notif vers Expo (mobile) ET web (subscriptions `platform='web'`, subscription JSON stockée dans `PushToken.token`). Front : `utils/webPush.ts` (permission → clé VAPID serveur → `pushManager.subscribe` → POST token), toggle « Recevoir sur cet appareil » dans `SectionNotif` (distinct de l'opt-in tenant `notifPushAll`), handlers SW dans `public/push-sw.js` (chargé via workbox `importScripts` — le SW généré n'accepte pas de listeners en config ; exclu du precache). Endpoint `GET /api/notifications/vapid-public-key`. ⚠️ **À ACTIVER (Nelson)** : poser `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (+ `VAPID_SUBJECT` optionnel) sur Railway — clés absentes = feature inerte (fail-safe). Verrous : `webPush.test.ts` (back : parse/fail-safe/purge 404-410) + `webPush.test.ts` (front : décodage base64url VAPID).
 - **Wave webhook** : code **fail-CLOSED** (`if (!secret) return false`) ✅ — reste à poser `WAVE_WEBHOOK_SECRET` Railway pour activer la vérif en prod. **S**
