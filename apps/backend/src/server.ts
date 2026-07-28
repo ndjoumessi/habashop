@@ -49,17 +49,10 @@ import { leaveRequestRoutes } from './routes/leaveRequests'
 import { subscriptionRoutes } from './routes/subscriptions'
 import { integrationRoutes }  from './routes/integrations'
 import { publicRoutes }       from './routes/public'
-import {
-  sendTrialReminder7Days,
-  sendTrialReminder3Days,
-  sendTrialExpired,
-  sendWeeklyReport,
-  sendStockAlertEmail,
-} from './services/email'
+import { sendWeeklyReport } from './services/email'
 import { runMonthlyPayrollReports } from './services/payrollReport'
 import { payrollRoutes } from './routes/payroll'
-import { sendTrialExpiring, sendStockAlertBatch } from './services/pushService'
-import { notifyStockAlertSms } from './services/sms'
+import { runTrialReminders, runDailyStockAlerts } from './services/notificationCrons'
 
 // ─── Validation des variables d'environnement obligatoires ───
 const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET']
@@ -329,55 +322,6 @@ async function start() {
 }
 
 // ─── Logique des crons email ─────────────────────────────────────────────
-async function runTrialReminders(): Promise<void> {
-  const now     = new Date()
-  const in7days = new Date(now.getTime() + 7 * 24 * 3600 * 1000)
-  const in3days = new Date(now.getTime() + 3 * 24 * 3600 * 1000)
-  const window30 = 30 * 60 * 1000 // ±30 min pour éviter les doublons
-
-  // Essai expirant dans ~7 jours
-  const remind7 = await prisma.tenant.findMany({
-    where: { status: 'trial', trialEnds: { gte: new Date(in7days.getTime() - window30), lte: new Date(in7days.getTime() + window30) } },
-    include: { users: { where: { role: 'ADMIN' }, take: 1 } },
-  })
-  for (const tenant of remind7) {
-    const admin = tenant.users[0]
-    if (!admin?.email) continue
-    const sales = await prisma.sale.aggregate({ where: { tenantId: tenant.id }, _sum: { total: true }, _count: { id: true } })
-    await sendTrialReminder7Days({
-      to: admin.email, shopName: tenant.name, ownerName: admin.name ?? tenant.name,
-      caToday: sales._sum.total ?? 0, txCount: sales._count.id ?? 0, currency: 'XOF',
-    }).catch(() => {})
-  }
-
-  // Essai expirant dans ~3 jours
-  const remind3 = await prisma.tenant.findMany({
-    where: { status: 'trial', trialEnds: { gte: new Date(in3days.getTime() - window30), lte: new Date(in3days.getTime() + window30) } },
-    include: { users: { where: { role: 'ADMIN' }, take: 1 } },
-  })
-  for (const tenant of remind3) {
-    const admin = tenant.users[0]
-    if (!admin?.email) continue
-    await sendTrialReminder3Days({ to: admin.email, shopName: tenant.name, ownerName: admin.name ?? tenant.name }).catch(() => {})
-    void sendTrialExpiring(tenant.id, 3)
-  }
-
-  // Essai venant d'expirer (dernière fenêtre) → suspension + email
-  const expired = await prisma.tenant.findMany({
-    where: { status: 'trial', trialEnds: { gte: new Date(now.getTime() - window30), lte: now } },
-    include: { users: { where: { role: 'ADMIN' }, take: 1 } },
-  })
-  for (const tenant of expired) {
-    await prisma.tenant.update({ where: { id: tenant.id }, data: { status: 'suspended', isActive: false, suspendedAt: new Date(), suspendReason: 'trial_expired' } }).catch(() => {})
-    const admin = tenant.users[0]
-    if (!admin?.email) continue
-    await sendTrialExpired({ to: admin.email, shopName: tenant.name, ownerName: admin.name ?? tenant.name }).catch(() => {})
-  }
-
-  if (remind7.length + remind3.length + expired.length > 0) {
-    console.log('📧 Cron emails:', { remind7: remind7.length, remind3: remind3.length, expired: expired.length })
-  }
-}
 
 async function runWeeklyReports(): Promise<void> {
   const now          = new Date()
@@ -428,64 +372,6 @@ async function runWeeklyReports(): Promise<void> {
 }
 
 // ─── Alertes stock quotidiennes ──────────────────────────────────────────
-async function runDailyStockAlerts(): Promise<void> {
-  // Tenants actifs/trial avec préférence notifEmailStock activée
-  const tenants = await prisma.tenant.findMany({
-    where: {
-      isActive: true,
-      status: { in: ['trial', 'active'] },
-      notifEmailStock: true,
-    },
-    select: { id: true, name: true },
-  })
-
-  let sent = 0
-  for (const tenant of tenants) {
-    try {
-      // Produits actifs en rupture (stockQty = 0) ou stock bas (stockQty <= stockMin)
-      const lowStockProducts = await prisma.product.findMany({
-        where: {
-          tenantId: tenant.id,
-          isActive: true,
-          deletedAt: null,
-          stockQty: { lte: prisma.product.fields.stockMin },
-        },
-        select: { name: true, stockQty: true, stockMin: true },
-        orderBy: [{ stockQty: 'asc' }, { name: 'asc' }],
-      })
-
-      if (lowStockProducts.length === 0) continue
-
-      // Email admin du tenant
-      const admin = await prisma.user.findFirst({
-        where: {
-          tenantId: tenant.id,
-          role: { in: ['ADMIN', 'SUPER_ADMIN'] },
-          isActive: true,
-          deletedAt: null,
-        },
-        select: { email: true, name: true },
-      })
-
-      if (!admin?.email) continue
-
-      const ok = await sendStockAlertEmail({
-        tenantId: tenant.id,
-        to: admin.email,
-        shopName: tenant.name,
-        products: lowStockProducts,
-      })
-      if (ok) sent++
-      void sendStockAlertBatch(tenant.id, lowStockProducts)
-      // SMS digest quotidien au gérant (gardé opt-in notifSmsStock + garde de dépense).
-      void notifyStockAlertSms(tenant.id, lowStockProducts)
-    } catch (err: any) {
-      console.warn(`⚠️ Stock alert failed for tenant ${tenant.id}:`, err?.message)
-    }
-  }
-
-  console.log(`📦 Alertes stock envoyées: ${sent}/${tenants.length} tenants`)
-}
 
 // Filets de sécurité process : on logge toujours ; en prod on ne crashe pas
 // sur une promesse rejetée non gérée (Railway garde le service en ligne).
