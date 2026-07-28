@@ -51,6 +51,12 @@ mobile/*.apk
 mobile/*.aab
 mobile/.env
 
+# Graphify — graphe de connaissance GÉNÉRÉ (graph.json, GRAPH_REPORT.md, wiki/).
+# Artefact dérivé du code, reconstruit par `graphify update .` : il ne se commit pas
+# (il périmerait à chaque merge et gonflerait le repo).
+graphify-out/
+**/graphify-out/
+
 # Config locale Claude Code — à tout niveau (racine + apps/*/.claude, etc.).
 # mobile/.claude/settings.json reste suivi (déjà tracké ; .gitignore ne dé-tracke pas).
 .claude/

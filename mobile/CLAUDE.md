@@ -2,10 +2,11 @@
 
 # CLAUDE.md — HabaShop Mobile
 
-> Guide Claude Code. CDC produit : `../habashop/MOBILE_APP_CDC.md` · Backend : `../habashop/CLAUDE.md`.
+> Guide Claude Code. CDC produit : `../MOBILE_APP_CDC.md` · Guide racine (web + backend + règles transverses) : `../CLAUDE.md`.
+> ⚠️ **`mobile/` vit dans le monorepo `habashop`** depuis juillet 2026 (fusion `git subtree` de `habashop-mobile`), mais **hors workspaces npm** : `npm ci` / `npx jest` / EAS se lancent **depuis `mobile/`**.
 
 App mobile React Native (iOS + Android) — caisse POS, stock, dashboard, clients. API Railway, JWT multi-tenant.
-- **GitHub :** https://github.com/ndjoumessi/habashop-mobile · **Backend :** https://habashop-production.up.railway.app · **Env :** `EXPO_PUBLIC_API_URL` dans `.env`
+- **GitHub :** https://github.com/ndjoumessi/habashop (répertoire `mobile/`) · **Backend :** https://habashop-production.up.railway.app · **Env :** `EXPO_PUBLIC_API_URL` dans `.env`
 
 ---
 
