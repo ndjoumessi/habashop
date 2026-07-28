@@ -8,10 +8,10 @@ import { priceDivergenceRows, priceGapLevel, staleUntilLabel, promoBadgeVisible,
 // (mêler expliqué et inexpliqué reste « à regarder »).
 
 const ligne = (over: Partial<DivRow> = {}): DivRow => ({
-  name: 'Café', qty: 1, submitted: 1000, catalog: 1200, corrected: true, deltaXOF: -200, staleAt: null, ...over,
+  name: 'Café', qty: 1, submitted: 1000, catalog: 1200, corrected: true, deltaXOF: -200, staleAt: null, honored: false, ...over,
 })
 
-describe('priceGapLevel — trois traitements distincts', () => {
+describe('priceGapLevel — quatre traitements distincts', () => {
   it('écart EN LIGNE que le serveur n’explique pas → « à regarder »', () => {
     expect(priceGapLevel([ligne()])).toBe('look')
   })
@@ -109,5 +109,52 @@ describe('staleUntilLabel', () => {
 
   it('date invalide → chaîne vide (jamais « Invalid Date » à l’écran)', () => {
     expect(staleUntilLabel('pas-une-date', 'fr')).toBe('')
+  })
+})
+
+// ── Rejeu hors-ligne HONORÉ (option A) ────────────────────────────────────────────
+// Le serveur a facturé le montant ENCAISSÉ, pas son prix courant : l'argent a bougé.
+// Avant ce niveau, ces lignes tombaient dans « tarif précédent » (bleu, « fait établi »)
+// — la lecture exactement inverse de ce qu'il faut : là, il n'y a rien à établir, il y a
+// une caisse à vérifier. Sans ce niveau, la trace de l'option A serait stockée sans
+// jamais être regardée, et l'argument « borné ET surveillé » tomberait.
+describe('priceGapLevel — écart HONORÉ (l’argent a bougé)', () => {
+  it('ligne honorée → niveau « honored », JAMAIS « previous »', () => {
+    const r = ligne({ corrected: false, honored: true, staleAt: '2026-07-27T08:00:00.000Z' })
+    expect(priceGapLevel([r])).toBe('honored')
+    expect(priceGapLevel([r])).not.toBe('previous')
+  })
+
+  it('PRUDENCE : honoré + inexpliqué en ligne → reste « à regarder »', () => {
+    const honoree = ligne({ corrected: false, honored: true, staleAt: '2026-07-27T08:00:00.000Z' })
+    const inexpliquee = ligne({ corrected: true, staleAt: null })
+    expect(priceGapLevel([honoree, inexpliquee])).toBe('look')
+  })
+
+  it('le serveur a re-tarifé une ligne qualifiée (argent JUSTE) → reste « previous »', () => {
+    expect(priceGapLevel([ligne({ corrected: true, honored: false, staleAt: '2026-07-27T08:00:00.000Z' })])).toBe('previous')
+  })
+
+  it('ventes HISTORIQUES (honorées avant l’option A, sans qualification) → « offline »', () => {
+    expect(priceGapLevel([ligne({ corrected: false, honored: false, staleAt: null })])).toBe('offline')
+  })
+
+  it('priceDivergenceRows lit pricingHonored depuis la ligne serveur', () => {
+    const sale = { items: [
+      { product: { name: 'Café' }, qty: 2, unitPrice: 1000, submittedPrice: 1000, catalogPrice: 1200, staleCatalogAt: '2026-07-27T08:00:00.000Z', pricingHonored: true },
+      { product: { name: 'Sucre' }, qty: 1, unitPrice: 500, submittedPrice: 50, catalogPrice: 500, staleCatalogAt: null, pricingHonored: false },
+    ] }
+    const rows = priceDivergenceRows(sale)
+    expect(rows[0]).toMatchObject({ honored: true, deltaXOF: -400 })
+    expect(rows[1]).toMatchObject({ honored: false })
+    // La vente MÊLE honoré et inexpliqué → prudence : « à regarder ».
+    expect(priceGapLevel(rows)).toBe('look')
+  })
+
+  it('champ absent (ventes d’avant la migration) → honored=false, pas undefined', () => {
+    const rows = priceDivergenceRows({ items: [
+      { product: { name: 'Café' }, qty: 1, unitPrice: 1200, submittedPrice: 1000, catalogPrice: 1200 },
+    ] })
+    expect(rows[0].honored).toBe(false)
   })
 })

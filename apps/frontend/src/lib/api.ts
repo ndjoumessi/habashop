@@ -200,7 +200,13 @@ export const stockTransfersApi = {
 
 export const salesApi = {
   // opts.priceDivergence → n'renvoie que les ventes avec un écart prix soumis/catalogue (audit ADMIN).
-  list:   (opts?: { priceDivergence?: boolean }) => api.get<any[]>(`/api/sales${opts?.priceDivergence ? '?priceDivergence=true' : ''}`),
+  // opts.pricingHonored → ventes dont une ligne a été facturée au montant SOUMIS (rejeu honoré).
+  // ⚠️ Filtre SERVEUR : filtrer côté client ne verrait que la page chargée (50), donc un écart
+  // honoré ancien serait introuvable — la trace doit rester retrouvable quel que soit son âge.
+  list:   (opts?: { priceDivergence?: boolean; pricingHonored?: boolean }) => {
+    const qs = [opts?.priceDivergence && 'priceDivergence=true', opts?.pricingHonored && 'pricingHonored=true'].filter(Boolean).join('&')
+    return api.get<any[]>(`/api/sales${qs ? `?${qs}` : ''}`)
+  },
   create: (data: any) => api.post<any>('/api/sales', data),
   refund: (id: string, data: { reason: string; restock: boolean }) =>
     api.post<{ ok: boolean; id: string; status: string; restocked: boolean }>(`/api/sales/${id}/refund`, data),

@@ -7,6 +7,7 @@ import {
 } from '@/services/offlineQueue'
 import { salesApi, isRetryableApiError, apiErrorMessage, apiErrorCode } from '@/services/api'
 import { recordFailedSale, getFailedCount } from '@/services/failedSales'
+import { replayQueuedSale } from '@/services/saleReplay'
 
 // Signal émis après une resync : `count` actions synchronisées avec succès à l'instant `at`
 // (le timestamp sert de nonce → deux batches de même taille re-déclenchent bien le toast).
@@ -38,7 +39,14 @@ export function useOfflineSync() {
       // FIFO strict : on rejoue dans l'ordre d'insertion (les ventes s'appliquent en séquence).
       for (const action of queue) {
         try {
-          if (action.type === 'SALE') await salesApi.create(action.payload)
+          if (action.type === 'SALE') {
+            // Rejeu : pose `offlineReplay` ET consomme la réponse (le serveur peut avoir
+            // re-tarifé hors bornes → entrée durable « à vérifier »). Cf. `saleReplay.ts`.
+            const out = await replayQueuedSale(action, { create: salesApi.create })
+            if (out.repriced) {
+              logger.warn(`Rejeu ${action.id} : encaissé ${action.payload.total} ≠ facturé ${out.serverTotal} → registre (à vérifier)`)
+            }
+          }
           await removeAction(action.id)   // succès serveur (ou doublon idempotent renvoyé)
           synced++
         } catch (err) {

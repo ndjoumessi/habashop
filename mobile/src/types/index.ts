@@ -167,13 +167,14 @@ export interface SalePayload {
   discount?: SaleDiscount
   customerId?: string
   /**
-   * Horodatage (ISO) de la vente CÔTÉ DEVICE, figé à la confirmation. Sert au backend à
-   * distinguer une vente en ligne d'un rejeu offline (délai de rejeu) → en cas de divergence
-   * de prix, honorer le montant réellement encaissé offline plutôt que re-tarifer. ⚠️ NON
-   * vérifiable (falsifiable) : ce n'est pas un signal de sécurité, la protection est la trace
-   * serveur (priceDivergence). Cf. backend `sales.ts` + CLAUDE.md § Intégrité prix.
+   * REJEU HORS-LIGNE : posé UNIQUEMENT par `useOfflineSync` quand il vide la file d'attente
+   * (jamais par une vente en ligne directe). Le serveur n'honore le montant encaissé que si,
+   * EN PLUS, le prix soumis était réellement celui du tarif déclaré il y a moins de 48 h
+   * (`staleCatalogAt`, fait serveur). Sans qualification → re-tarification + avertissement.
+   * ⚠️ Falsifiable : ce n'est pas un signal de sécurité, la protection est le cadre serveur
+   * + la trace. Cf. backend `sales.ts` + CLAUDE.md § Intégrité prix.
    */
-  clientCreatedAt?: string
+  offlineReplay?: boolean
   // Paiement mixte (paymentMode='mixed') : ventilation en XOF base, somme = total.
   // Le backend dédup/valide (≥2 seaux non nuls, somme ±1).
   cashAmount?: number

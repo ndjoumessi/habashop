@@ -365,6 +365,11 @@ model SaleItem {
   // ⚠️ Ce n'est PAS une affirmation d'innocence — c'est un fait daté à présenter à l'auditeur.
   // null = divergence NON qualifiée (comportement historique, à regarder).
   staleCatalogAt DateTime?
+  // true = le montant SOUMIS a été facturé tel quel (rejeu hors-ligne honoré : `offlineReplay`
+  // ET `staleCatalogAt` non-null). false = ligne re-tarifée au prix serveur, ou aucune divergence.
+  // ⚠️ Sans cette colonne, l'audit ne peut pas distinguer « honoré » de « re-tarifé » autrement
+  //    qu'en recomparant des montants — et l'argent a bougé, donc la ligne doit être VÉRIFIÉE.
+  pricingHonored Boolean @default(false)
 
   sale    Sale    @relation(fields: [saleId], references: [id])
   product Product @relation(fields: [productId], references: [id])

@@ -179,7 +179,12 @@ export default function POS() {
   // une tentative du caissier → ne pas lui montrer ce qui est marqué (sinon il apprend le seuil).
   const canAuditPrices = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role ?? '')
   const [histDivergenceOnly, setHistDivergenceOnly] = useState(false)
-  const toggleDivergenceFilter = (v: boolean) => { setHistDivergenceOnly(v); fetchHistory(v) }
+  // Sous-filtre d'audit résolu CÔTÉ SERVEUR : « honored » interroge la base entière, pas la
+  // page de 50 (un écart honoré ancien doit rester retrouvable). « look » reste un affinage
+  // client sur les écarts déjà chargés — le serveur ne sait pas ce qu'il « n'explique pas ».
+  const [histGapFilter, setHistGapFilter] = useState<'none' | 'look' | 'honored'>('none')
+  const toggleDivergenceFilter = (v: boolean) => { setHistDivergenceOnly(v); if (!v) setHistGapFilter('none'); fetchHistory(v, v ? histGapFilter : 'none') }
+  const changeGapFilter = (f: 'none' | 'look' | 'honored') => { setHistGapFilter(f); fetchHistory(histDivergenceOnly, f) }
   const [refunding, setRefunding] = useState(false)
 
   const doRefund = async (reason: string, restock: boolean) => {
@@ -257,10 +262,11 @@ export default function POS() {
     return () => document.removeEventListener('mousedown', handleOutside)
   }, [])
 
-  const fetchHistory = async (divergenceOnly = histDivergenceOnly) => {
+  const fetchHistory = async (divergenceOnly = histDivergenceOnly, gapFilter: 'none' | 'look' | 'honored' = histGapFilter) => {
     setLoadingHistory(true)
     try {
-      const data = await salesApi.list(divergenceOnly ? { priceDivergence: true } : undefined)
+      const honoredOnly = gapFilter === 'honored'
+      const data = await salesApi.list(divergenceOnly || honoredOnly ? { priceDivergence: divergenceOnly || undefined, pricingHonored: honoredOnly || undefined } : undefined)
       setSalesHistory(data ?? [])
     } catch {
       setSalesHistory([{
@@ -1210,6 +1216,7 @@ export default function POS() {
           loadingHistory={loadingHistory}
           salesHistory={salesHistory}
           canAuditPrices={canAuditPrices} divergenceOnly={histDivergenceOnly} onToggleDivergence={toggleDivergenceFilter}
+          gapFilter={histGapFilter} onGapFilterChange={changeGapFilter}
           canRefund={canRefund} onRefundClick={setRefundSale}
           canCloseDay={canRefund} onCloseDay={() => setShowTicketZ(true)}
           isMobile={isMobile} mobileView={mobileView}

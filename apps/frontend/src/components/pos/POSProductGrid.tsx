@@ -29,6 +29,10 @@ interface POSProductGridProps {
   onToggleDivergence: (v: boolean) => void
   canRefund: boolean
   onRefundClick: (sale: any) => void
+  // Sous-filtre d'audit REMONTÉ au parent : « honored » déclenche une requête serveur
+  // (`?pricingHonored=true`) pour couvrir toute la base, pas seulement la page chargée.
+  gapFilter?: 'none' | 'look' | 'honored'
+  onGapFilterChange?: (f: 'none' | 'look' | 'honored') => void
   canCloseDay?: boolean; onCloseDay?: () => void
   isMobile: boolean; mobileView: string
   totalProducts: number; loadingProducts: boolean
@@ -44,7 +48,7 @@ interface POSProductGridProps {
 // l'explique. Sans elle, un cache périmé produisait la MÊME ligne ambre qu'un prix forgé —
 // donc l'écran accusait un caissier honnête.
 // Vocabulaire FACTUEL : « écart de prix », « tarif précédent » ; jamais « suspect »/« fraude ».
-export type DivRow = { name: string; qty: number; submitted: number; catalog: number; corrected: boolean; deltaXOF: number; staleAt: string | null }
+export type DivRow = { name: string; qty: number; submitted: number; catalog: number; corrected: boolean; deltaXOF: number; staleAt: string | null; honored: boolean }
 export function priceDivergenceRows(sale: any): DivRow[] {
   return (sale?.items ?? [])
     .filter((it: any) => it?.submittedPrice != null && it?.catalogPrice != null && it.submittedPrice !== it.catalogPrice)
@@ -56,6 +60,7 @@ export function priceDivergenceRows(sale: any): DivRow[] {
       corrected: it.unitPrice === it.catalogPrice, // en ligne : prix serveur facturé (soumis rejeté)
       deltaXOF: (it.submittedPrice - it.catalogPrice) * it.qty, // signé (base XOF) : <0 = sous le catalogue
       staleAt: it.staleCatalogAt ?? null,          // qualifié « tarif précédent » par le SERVEUR
+      honored: it.pricingHonored === true,         // le montant SOUMIS a été facturé → l'argent a bougé
     }))
 }
 
@@ -85,9 +90,22 @@ export function promoBadgeVisible(
   return isPromotionActive(promotion, promotionEnd, now) && clientType === 'retail'
 }
 
-export type PriceGapLevel = 'look' | 'previous' | 'offline'
+// ⚠️ QUATRE traitements depuis le rejeu hors-ligne honoré (option A). L'ordre est un ordre
+// de PRUDENCE, du plus exigeant au plus bénin :
+//  1. 'look'     — un écart EN LIGNE que le serveur n'a pas su expliquer. Prime sur tout le reste :
+//                  une vente qui mêle expliqué et inexpliqué reste à regarder.
+//  2. 'honored'  — le montant encaissé a été facturé tel quel au rejeu (`pricingHonored`).
+//                  ⚠️ NE PAS le ranger avec 'previous' : là-bas le serveur a re-tarifé, donc
+//                  l'argent est juste et le bleu se lit « fait établi ». ICI L'ARGENT A BOUGÉ —
+//                  c'est la contrepartie assumée de l'option A, et elle doit être VÉRIFIÉE.
+//                  Sans ce niveau, la trace serait stockée sans que personne ne la regarde,
+//                  et tout l'argument de A (« borné ET surveillé ») tomberait.
+//  3. 'previous' — écart expliqué par un tarif précédent, serveur re-tarifé : fait, pas alerte.
+//  4. 'offline'  — montant honoré sans qualification (ventes HISTORIQUES, avant l'option A).
+export type PriceGapLevel = 'look' | 'honored' | 'previous' | 'offline'
 export function priceGapLevel(rows: DivRow[]): PriceGapLevel {
   if (rows.some(r => r.corrected && !r.staleAt)) return 'look'
+  if (rows.some(r => r.honored)) return 'honored'
   if (rows.some(r => r.staleAt)) return 'previous'
   return 'offline'
 }
@@ -243,18 +261,29 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
   )
 })
 
-export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, clientType, setClientType, fmt, amountLabel, curSuffix, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canAuditPrices, divergenceOnly, onToggleDivergence, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
+export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, clientType, setClientType, fmt, amountLabel, curSuffix, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canAuditPrices, divergenceOnly, onToggleDivergence, gapFilter: gapFilterProp, onGapFilterChange, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
   // Audit écarts (ADMIN) : « à regarder » = filtre CLIENT sur la liste chargée (le filtre
   // serveur `divergenceOnly` renvoie TOUS les écarts ; on affine ici).
   // ⚠️ Ce sous-filtre ne garde QUE les écarts que le serveur n'a pas su expliquer. Il visait
   // déjà « ce qu'il faut regarder » — depuis la qualification `staleCatalogAt`, garder tous
   // les écarts « en ligne » y ferait entrer des caches périmés, c.-à-d. du bruit qui ressemble
   // à une tentative. Même dérivation que le badge (priceGapLevel) → jamais de désaccord.
-  const [onlineGapsOnly, setOnlineGapsOnly] = useState(false)
+  // Deux sous-filtres, deux questions DIFFÉRENTES — ne pas les fusionner :
+  //  · « à regarder » : le serveur n'explique pas l'écart (tentative possible) ;
+  //  · « écarts honorés » : le serveur a facturé le montant encaissé au rejeu — l'argent a
+  //    bougé dans le cadre prévu, mais il faut pouvoir CONSULTER ces lignes, sinon la trace
+  //    n'est qu'un stockage et l'option A perd sa contrepartie.
+  const [gapFilterLocal, setGapFilterLocal] = useState<'none' | 'look' | 'honored'>('none')
+  const gapFilter = gapFilterProp ?? gapFilterLocal
+  const setGapFilter = onGapFilterChange ?? setGapFilterLocal
   const historyToShow = useMemo(() => {
-    if (!canAuditPrices || !onlineGapsOnly) return salesHistory
-    return salesHistory.filter(s => priceGapLevel(priceDivergenceRows(s)) === 'look')
-  }, [salesHistory, canAuditPrices, onlineGapsOnly])
+    if (!canAuditPrices || gapFilter === 'none') return salesHistory
+    // 'honored' est DÉJÀ résolu par le SERVEUR (la liste ne contient que des ventes honorées).
+    // Ré-appliquer `priceGapLevel` ici masquerait celles qui mêlent honoré et inexpliqué —
+    // classées 'look' par prudence, donc absentes de leur propre filtre. On garde tout.
+    if (gapFilter === 'honored') return salesHistory
+    return salesHistory.filter(s => priceGapLevel(priceDivergenceRows(s)) === gapFilter)
+  }, [salesHistory, canAuditPrices, gapFilter])
   // Quantités panier indexées par produit (first-wins = même sémantique que cart.find)
   const qtyById = useMemo(() => {
     const m = new Map<string | number, number>()
@@ -471,14 +500,22 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                       border:`1px solid ${divergenceOnly ? 'var(--c-amber-border)' : 'var(--border)'}` }}>
                     <Tag size={13} /> {lang === 'en' ? 'Price gaps' : lang === 'es' ? 'Diferencias de precio' : lang === 'it' ? 'Scarti di prezzo' : 'Écarts de prix'}
                   </button>
-                  {divergenceOnly && (
-                    <button type="button" onClick={() => setOnlineGapsOnly(v => !v)} aria-pressed={onlineGapsOnly}
-                      style={{ fontSize:12, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer', borderRadius:'var(--r-full)', padding:'5px 12px', minHeight:32,
-                        background: onlineGapsOnly ? 'var(--c-purple-bg)' : 'var(--card)', color: onlineGapsOnly ? 'var(--p2)' : 'var(--text2)',
-                        border:`1px solid ${onlineGapsOnly ? 'var(--border3)' : 'var(--border)'}` }}>
-                      {lang === 'en' ? 'Needs a look' : lang === 'es' ? 'Para revisar' : lang === 'it' ? 'Da verificare' : 'À regarder'}
-                    </button>
-                  )}
+                  {divergenceOnly && ([
+                    { key: 'look' as const, label: lang === 'en' ? 'Needs a look' : lang === 'es' ? 'Para revisar' : lang === 'it' ? 'Da rivedere' : 'À regarder' },
+                    // Écarts HONORÉS : l'argent a bougé dans le cadre du rejeu hors-ligne.
+                    // Consultables explicitement — une trace qu'on ne peut pas filtrer ne protège personne.
+                    { key: 'honored' as const, label: lang === 'en' ? 'Honored gaps' : lang === 'es' ? 'Importes respetados' : lang === 'it' ? 'Importi onorati' : 'Écarts honorés' },
+                  ].map(f => {
+                    const on = gapFilter === f.key
+                    return (
+                      <button key={f.key} type="button" onClick={() => setGapFilter(on ? 'none' : f.key)} aria-pressed={on}
+                        style={{ fontSize:12, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer', borderRadius:'var(--r-full)', padding:'5px 12px', minHeight:32,
+                          background: on ? 'var(--c-purple-bg)' : 'var(--card)', color: on ? 'var(--p2)' : 'var(--text2)',
+                          border:`1px solid ${on ? 'var(--border3)' : 'var(--border)'}` }}>
+                        {f.label}
+                      </button>
+                    )
+                  }))}
                 </div>
               )}
               {loadingHistory ? (
@@ -505,9 +542,12 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                     const gap = priceGapLevel(divRows)
                     // Ambre = « à regarder » et RIEN d'autre. Un écart expliqué par un tarif
                     // précédent est bleu (fait), un montant honoré hors-ligne reste gris (bénin).
-                    const gapBg = gap === 'look' ? 'var(--c-amber-bg)' : gap === 'previous' ? 'var(--c-blue-bg)' : 'var(--bg5)'
-                    const gapFg = gap === 'look' ? 'var(--warn)' : gap === 'previous' ? 'var(--info)' : 'var(--text3)'
-                    const gapBd = gap === 'look' ? 'var(--c-amber-border)' : gap === 'previous' ? 'var(--c-blue-border)' : 'var(--border)'
+                    // 'honored' partage l'ambre de 'look' : dans les deux cas il y a quelque chose
+                    // à VÉRIFIER. Le bleu reste réservé à ce que le serveur a corrigé lui-même.
+                    const gapAlert = gap === 'look' || gap === 'honored'
+                    const gapBg = gapAlert ? 'var(--c-amber-bg)' : gap === 'previous' ? 'var(--c-blue-bg)' : 'var(--bg5)'
+                    const gapFg = gapAlert ? 'var(--warn)' : gap === 'previous' ? 'var(--info)' : 'var(--text3)'
+                    const gapBd = gapAlert ? 'var(--c-amber-border)' : gap === 'previous' ? 'var(--c-blue-border)' : 'var(--border)'
                     const totalDeltaXOF = divRows.reduce((s, r) => s + r.deltaXOF, 0)
                     return (
                       <div key={sale.id ?? i} style={{
@@ -529,9 +569,12 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                                 <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px',
                                   background: gapBg, color: gapFg, border:`1px solid ${gapBd}` }}>
                                   {gap === 'previous' ? <History size={10} /> : <Tag size={10} />}
-                                  {gap === 'previous'
+                                  {gap === 'honored'
+                                    ? (lang === 'en' ? 'Amount honored' : lang === 'es' ? 'Importe respetado' : lang === 'it' ? 'Importo onorato' : 'Montant honoré')
+                                    : gap === 'previous'
                                     ? (lang === 'en' ? 'Previous price' : lang === 'es' ? 'Tarifa anterior' : lang === 'it' ? 'Tariffa precedente' : 'Tarif précédent')
                                     : (lang === 'en' ? 'Price gap' : lang === 'es' ? 'Diferencia de precio' : lang === 'it' ? 'Scarto di prezzo' : 'Écart de prix')}
+                                  {gap === 'honored' && ` · ${lang === 'en' ? 'to check' : lang === 'es' ? 'a verificar' : lang === 'it' ? 'da verificare' : 'à vérifier'}`}
                                   {gap === 'offline' && ` · ${lang === 'en' ? 'offline' : lang === 'es' ? 'sin conexión' : lang === 'it' ? 'offline' : 'hors-ligne'}`}
                                 </span>
                               )}
@@ -583,6 +626,9 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                               <span style={{ fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', color: gapFg }}>
                                 {gap === 'look'
                                   ? (lang === 'en' ? 'Price corrected (online)' : lang === 'es' ? 'Precio corregido (en línea)' : lang === 'it' ? 'Prezzo corretto (online)' : 'Prix corrigé (en ligne)')
+                                  : gap === 'honored'
+                                  /* L'argent a bougé : le libellé le DIT, et dit le geste attendu. */
+                                  ? (lang === 'en' ? 'Collected amount billed as is (offline replay) — check' : lang === 'es' ? 'Importe cobrado facturado tal cual (reenvío sin conexión) — verificar' : lang === 'it' ? 'Importo incassato fatturato tale quale (reinvio offline) — verificare' : 'Montant encaissé facturé tel quel (rejeu hors-ligne) — à vérifier')
                                   : gap === 'previous'
                                   ? (lang === 'en' ? 'Catalog price had just changed' : lang === 'es' ? 'La tarifa acababa de cambiar' : lang === 'it' ? 'La tariffa era appena cambiata' : 'Le tarif venait de changer')
                                   : (lang === 'en' ? 'Amount honored (offline)' : lang === 'es' ? 'Monto respetado (sin conexión)' : lang === 'it' ? 'Importo onorato (offline)' : 'Montant honoré (hors-ligne)')}
