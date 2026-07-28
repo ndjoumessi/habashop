@@ -7,7 +7,8 @@ import { sendSms } from '../lib/spend/smsClient'
 // délègue. Le numéro cible est celui du GÉRANT (ownerPhone) → flux commerçant, normalisable
 // avec tenant.country (resolveRecipient refuse si le pays n'est pas supporté).
 
-// Digest QUOTIDIEN d'alerte stock au gérant (appelé depuis le cron stock, pas par vente →
+// Digest QUOTIDIEN d'alerte stock au gérant (appelé depuis `services/notificationCrons.ts`,
+// pas par vente →
 // un seul SMS/jour, pas un par vente). Gardé par l'opt-in tenant `notifSmsStock`.
 export async function notifyStockAlertSms(
   tenantId: string,
