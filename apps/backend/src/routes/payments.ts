@@ -13,9 +13,10 @@ import {
   verifyOrangeWebhook,
 } from '../services/orangeMoney'
 import { sendUpgradeConfirmation } from '../services/email'
+import { appBaseUrl } from '../lib/appUrl'
 
-const FRONTEND_URL = process.env.FRONTEND_URL
-  ?? 'https://habashop.vercel.app'
+// Lecture unique via `lib/appUrl` (adossée à FRONTEND_URL) — plus de repli local dupliqué.
+const FRONTEND_URL = appBaseUrl()
 const BACKEND_URL = process.env.BACKEND_URL
   ?? 'https://habashop-production.up.railway.app'
 
