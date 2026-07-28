@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import type { AdminReviewBody } from '../types'
 import bcrypt from 'bcryptjs'
 import { prisma, basePrisma } from '../db'
+import { normalizeCountry } from '../lib/country'
 import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import {
@@ -77,7 +78,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     // il est désormais rejeté 400 { code:'VALIDATION' } avant le handler.
     const { name, currency, country, plan, adminEmail, adminPassword } = request.body as z.infer<typeof ADMIN_CREATE_TENANT>
     const tenant = await prisma.tenant.create({
-      data: { name, currency: currency ?? 'XOF', country: country ?? 'SN', plan: plan ?? 'starter' },
+      data: { name, currency: currency ?? 'XOF', country: normalizeCountry(country) ?? 'SN', plan: plan ?? 'starter' },
     })
     if (adminEmail && adminPassword) {
       await prisma.user.create({

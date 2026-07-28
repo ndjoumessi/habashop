@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useState, useEffect } from 'react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import { COUNTRIES, countryLabel } from '@/utils/countryList'
 import Skeleton from '@/components/ui/skeleton'
 import toast from 'react-hot-toast'
 import { useConfig, useAppStore } from '@/stores/appStore'
@@ -134,14 +135,25 @@ export default function SectionShop() {
               {editMode ? (
                 <div style={{ position: 'relative' }}>
                   <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', color: 'var(--text3)', pointerEvents: 'none' }}>{f.icon}</span>
-                  <input aria-label={f.label} type={f.type} className="input" style={{ paddingLeft: 36, width: '100%', boxSizing: 'border-box' }} placeholder={f.ph}
-                    value={(shopData as any)[f.key] ?? ''} onChange={e => setShopData(d => ({ ...d, [f.key]: e.target.value }))} />
+                  {f.key === 'country' ? (
+                    /* ⚠️ Sélecteur, PAS un champ libre : l'API n'accepte que l'ISO-2 (cf. backend
+                       `lib/country.ts`). Un texte libre laisserait taper « France » et rendrait
+                       un 400 au commerçant — ou pire, remettrait un libellé en base. */
+                    <select aria-label={f.label} className="input" style={{ paddingLeft: 36, width: '100%', boxSizing: 'border-box' }}
+                      value={shopData.country ?? ''} onChange={e => setShopData(d => ({ ...d, country: e.target.value }))}>
+                      <option value="">{i('Non renseigné', 'Not set', 'No especificado', 'Non impostato')}</option>
+                      {COUNTRIES.map(c => <option key={c.iso} value={c.iso}>{c.flag} {c.name}</option>)}
+                    </select>
+                  ) : (
+                    <input aria-label={f.label} type={f.type} className="input" style={{ paddingLeft: 36, width: '100%', boxSizing: 'border-box' }} placeholder={f.ph}
+                      value={(shopData as any)[f.key] ?? ''} onChange={e => setShopData(d => ({ ...d, [f.key]: e.target.value }))} />
+                  )}
                 </div>
               ) : (
                 <div style={{ padding: '10px 14px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 13, color: 'var(--text2)', fontWeight: 'var(--fw-regular)', display: 'flex', alignItems: 'center', gap: 8, minHeight: 42 }}>
                   <span style={{ opacity: .5, display: 'flex', flexShrink: 0 }}>{f.icon}</span>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {(shopData as any)[f.key] || <span style={{ color: 'var(--text4)', fontStyle: 'italic' }}>{i('Non renseigné', 'Not set', 'No especificado', 'Non impostato')}</span>}
+                    {(f.key === 'country' ? countryLabel(shopData.country) : (shopData as any)[f.key]) || <span style={{ color: 'var(--text4)', fontStyle: 'italic' }}>{i('Non renseigné', 'Not set', 'No especificado', 'Non impostato')}</span>}
                   </span>
                 </div>
               )}

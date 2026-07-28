@@ -3,6 +3,7 @@ import type { TenantUpdateBody, InviteUserBody } from '../types'
 import { isValidSlug, RESERVED_SLUGS } from '../utils/slug'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
+import { normalizeCountry } from '../lib/country'
 import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
 import { getTenantId, getActiveTenantId } from '../lib/tenantId'
@@ -194,12 +195,24 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     // '' normalisé en null (efface le champ) — même convention que ownerPhone.
     const legal = (v: string | null | undefined) => v === undefined ? undefined : (v?.trim() || null)
 
+    // `country` : ISO-2 UNIQUEMENT. C'est cette route qui a introduit « France » en base —
+    // l'Onboarding PATCHait le LIBELLÉ de son sélecteur. Un libellé hérité est converti
+    // (une PWA en cache continue de l'envoyer) ; tout le reste est REFUSÉ plutôt que stocké,
+    // sinon la donnée redevient inexploitable par `resolveRecipient` (→ COUNTRY_UNKNOWN,
+    // donc aucun WhatsApp ni SMS commerçant, en silence).
+    let country: string | undefined
+    if (data.country !== undefined) {
+      const iso = normalizeCountry(data.country)
+      if (!iso) return reply.code(400).send({ error: 'country : code pays ISO-3166-1 alpha-2 attendu (ex. SN, CI, CM)', code: 'VALIDATION' })
+      country = iso
+    }
+
     return prisma.tenant.update({
       where: { id: tenantId },
       data: {
         name:     data.name,
         currency: data.currency,
-        country:  data.country,
+        country,   // normalisé ISO-2 ci-dessus (jamais la valeur brute du client)
         vatRate:  data.vatRate,
         address:  data.address,
         phone:    data.phone,

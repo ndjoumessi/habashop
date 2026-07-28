@@ -28,7 +28,7 @@ export default function Onboarding() {
   const [currencyTouched, setCurrencyTouched] = useState(false)
   const [form, setForm] = useState({
     shopName: '', ownerName: '', shopType: 'grocery',
-    country: 'Sénégal', city: '', address: '', phone: '',
+    country: 'SN', city: '', address: '', phone: '',
     currency: 'XOF' as Currency, language: storeLang as Lang, taxRate: 18,
     productName: '', productPrice: 0, productStock: 0, skipProduct: false,
   })
@@ -157,7 +157,13 @@ export default function Onboarding() {
             <label style={lbl} htmlFor="ob-country">{i('Pays', 'Country', 'País', 'Paese')}</label>
             <select id="ob-country" className="input" style={inputStyle} value={form.country}
               onChange={e => { const sug = suggestedCurrencyForCountry(e.target.value); set({ country: e.target.value, ...(!currencyTouched && sug ? { currency: sug } : {}) }) }}>
-              {[['Sénégal', '🇸🇳'], ["Côte d'Ivoire", '🇨🇮'], ['Mali', '🇲🇱'], ['Burkina Faso', '🇧🇫'], ['Guinée', '🇬🇳'], ['Cameroun', '🇨🇲'], ['Congo RDC', '🇨🇩'], ['Gabon', '🇬🇦'], ['Togo', '🇹🇬'], ['Bénin', '🇧🇯'], ['Niger', '🇳🇪'], ['Tchad', '🇹🇩'], ['France', '🇫🇷'], ['Belgique', '🇧🇪'], ['Canada', '🇨🇦'], ['Autre', '🌍']].map(([c, f]) => <option key={c} value={c}>{f} {c}</option>)}
+              {/* ⚠️ La `value` est le code ISO-2, le LIBELLÉ reste français. C'est ce sélecteur
+                  qui a écrit « France » dans `Tenant.country` : il PATCHait son propre libellé.
+                  Le pays sert à normaliser le téléphone du commerçant (`resolveRecipient`), qui
+                  n'accepte que l'ISO-2 — un libellé y devient COUNTRY_UNKNOWN, donc plus aucun
+                  WhatsApp ni SMS, en silence. Ne jamais remettre le libellé en `value`.
+                  « Autre » est retiré : il ne désigne aucun pays, il ne peut donc rien écrire. */}
+              {[['SN', 'Sénégal', '🇸🇳'], ['CI', "Côte d'Ivoire", '🇨🇮'], ['ML', 'Mali', '🇲🇱'], ['BF', 'Burkina Faso', '🇧🇫'], ['GN', 'Guinée', '🇬🇳'], ['CM', 'Cameroun', '🇨🇲'], ['CD', 'Congo RDC', '🇨🇩'], ['GA', 'Gabon', '🇬🇦'], ['TG', 'Togo', '🇹🇬'], ['BJ', 'Bénin', '🇧🇯'], ['NE', 'Niger', '🇳🇪'], ['TD', 'Tchad', '🇹🇩'], ['FR', 'France', '🇫🇷'], ['BE', 'Belgique', '🇧🇪'], ['CA', 'Canada', '🇨🇦']].map(([iso, c, f]) => <option key={iso} value={iso}>{f} {c}</option>)}
             </select>
 
             <label style={lbl} htmlFor="ob-city">{i('Ville', 'City', 'Ciudad', 'Città')}</label>
