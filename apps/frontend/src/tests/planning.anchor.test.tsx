@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 
 // ── Mocks réseau (fixtures déterministes ; hoisted pour les factories vi.mock) ──
@@ -33,11 +33,28 @@ vi.mock('@/stores/appStore', async (orig) => {
 import Planning from '@/pages/Planning'
 import { shiftsApi } from '@/lib/api'
 
+// ⚠️ `shiftsApi.list(mois)` FILTRE PAR MOIS côté serveur : la requête « 2026-08 » ne renvoie PAS
+// un shift daté du 27/07. Or `Planning.loadWeek` charge TOUS les mois couverts par la plage
+// affichée — donc DEUX appels quand la semaine enjambe une fin de mois. Un mock qui rend le même
+// shift à tous les mois le fait apparaître en DOUBLE dans la case (`results.flat()`), ce qui
+// rendait ce fichier rouge ~78 jours par an. Le mock doit modéliser le filtre, pas l'ignorer.
+const mockShifts = (rows: { id: string; employeeId: string; date: string; shiftTypeKey: string }[]) =>
+  (shiftsApi.list as any).mockImplementation((month: string) =>
+    Promise.resolve(rows.filter(r => r.date.slice(0, 7) === month)))
+
 beforeEach(() => {
+  // Horloge GELÉE sur un mardi dont la semaine (lun. 27/07 → dim. 02/08) enjambe deux mois : la
+  // configuration qui a fait tomber le test reste ainsi exercée en PERMANENCE, au lieu de ne
+  // l'être qu'une semaine par mois. Seul `Date` est simulé — `setTimeout` reste RÉEL, sinon les
+  // `waitFor` de testing-library ne progresseraient plus.
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-07-28T10:00:00Z'))
   vi.clearAllMocks()
   localStorage.clear()
   ;(shiftsApi.list as any).mockResolvedValue([]) // défaut : aucun shift (réinitialisé par test)
 })
+
+afterEach(() => { vi.useRealTimers() })
 
 describe('Planning — test d’ancrage (comportement à figer avant/après découpe)', () => {
   it('charge et affiche les employés actifs (inactifs exclus)', async () => {
@@ -66,7 +83,7 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
 
   it('le filtre par type de shift réduit la liste (employés sans ce shift exclus)', async () => {
     // Marie (emp1) a un shift "matin" lundi (via /api/shifts) ; Kofi (emp2) aucun.
-    (shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
+    mockShifts([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
     render(<Planning />)
     await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
     const shiftSelect = screen.getByDisplayValue('Tous les shifts')
@@ -114,7 +131,7 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
   })
 
   it('Phase 7 — "Copier → suiv." duplique les shifts à J+7 (upsert /api/shifts)', async () => {
-    (shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
+    mockShifts([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
     render(<Planning />)
     await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
     // attend que le shift source soit chargé dans la grille (cellule + légende = ≥2 occurrences)
@@ -128,7 +145,7 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
 
   it('Phase 7 — drag&drop : déplace le shift (upsert cible + delete source)', async () => {
     // Marie (emp1) a un shift matin lundi (id s1) ; on le glisse vers la case lundi de Kofi (emp2).
-    (shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
+    mockShifts([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
     const { container } = render(<Planning />)
     await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
     await waitFor(() => expect(screen.getAllByText('08:00-13:00').length).toBeGreaterThanOrEqual(2))
@@ -150,7 +167,7 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
 
   it('multi-shift : cliquer une case déjà pleine AJOUTE le shift actif (les deux types coexistent)', async () => {
     // Marie a un shift matin lundi ; le shift actif par défaut = "full" (Journée).
-    (shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
+    mockShifts([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
     const { container } = render(<Planning />)
     await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
     await waitFor(() => expect(screen.getAllByText('08:00-13:00').length).toBeGreaterThanOrEqual(2))
