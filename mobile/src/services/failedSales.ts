@@ -19,10 +19,17 @@ import type { SalePayload } from '@/types'
 
 const KEY = 'habashop_failed_sales'
 
-/** Pourquoi la vente n'a pas pu être enregistrée. */
+/** Pourquoi la vente demande une intervention humaine. */
 export type FailedSaleReason =
   | 'rejected'   // 4xx définitive (produit inconnu, validation) — rejouer n'y changera rien
   | 'exhausted'  // réseau/5xx persistant après MAX_QUEUE_RETRIES
+  // ⚠️ `repriced` n'est PAS un échec : la vente EXISTE côté serveur. C'est le MONTANT qui
+  // diffère de ce qui a été encaissé — rejeu hors bornes (changement de prix > 48 h, deux
+  // changements pendant la coupure, tarif non qualifié, ou vente mixte partiellement
+  // qualifiée). Le geste attendu est de VÉRIFIER LA CAISSE, pas de ressaisir la vente :
+  // fusionner ce motif avec `rejected` ferait ressaisir une vente déjà enregistrée, donc
+  // la compterait deux fois. Les deux libellés doivent rester distincts.
+  | 'repriced'
 
 export interface FailedSale {
   id: string
@@ -34,9 +41,15 @@ export interface FailedSale {
   message?: string
   /** Horodatage de l'abandon (device). Indicatif : sert à ordonner, pas à décider. */
   failedAt: string
-  /** Montant ENCAISSÉ au comptoir — c'est lui qui doit être ressaisi. */
+  /** Montant ENCAISSÉ au comptoir — c'est lui qui doit être ressaisi (ou vérifié). */
   total: number
+  /** `repriced` seulement : montant réellement FACTURÉ par le serveur. L'écart avec `total`
+   *  est ce qui manque (ou ce qui est en trop) dans le tiroir. */
+  serverTotal?: number
 }
+
+/** La vente existe-t-elle côté serveur ? `repriced` = oui (à vérifier), les autres = non (à ressaisir). */
+export const isRecorded = (reason: FailedSaleReason): boolean => reason === 'repriced'
 
 export async function getFailedSales(): Promise<FailedSale[]> {
   try {

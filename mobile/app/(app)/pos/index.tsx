@@ -301,10 +301,10 @@ export default function POSScreen() {
         cardAmount: override.cardAmount,
       } : {}),
       idempotencyKey: newIdempotencyKey(),
-      // Figé à la confirmation → un rejeu offline porte l'heure RÉELLE de la vente (le backend
-      // honore alors le montant encaissé au lieu de re-tarifer). Non vérifiable → la sécurité
-      // reste la trace serveur (priceDivergence), pas cet horodatage. Cf. § Intégrité prix.
-      clientCreatedAt: new Date().toISOString(),
+      // ⚠️ AUCUN marqueur de rejeu ici. `offlineReplay` est posé UNIQUEMENT par `saleReplay.ts`
+      // quand la file est vidée : une vente confirmée au comptoir (en ligne ou mise en file)
+      // ne doit jamais le porter, sinon le serveur cesserait de re-tarifer alors que le client
+      // est encore là pour qu'on lui réclame la différence. Cf. CLAUDE.md § Intégrité prix.
     }
     // Hors-ligne dur (NetInfo) → file directe, pas d'aller-retour réseau inutile.
     if (!isOnline) {

@@ -73,19 +73,34 @@ describe('POST /api/sales — intégrité prix (trou de fraude fermé)', () => {
     expect(lastSale().priceDivergence).toBe(true)
   })
 
-  it('OFFLINE (horodatage ancien) : honore le montant encaissé (1) MAIS trace l’écart', async () => {
+  // ⚠️ RÉGRESSION de la porte dormante (option A) : `clientCreatedAt` + un horodatage antidaté
+  // honoraient AUTREFOIS n'importe quel prix soumis, sans aucune borne — 1 F pour un produit à
+  // 1300. Le champ n'existe plus ; même envoyé, il ne doit RIEN déclencher. Ce test échouerait
+  // si on ré-introduisait un honneur adossé à une horloge client.
+  it('antidatage client (clientCreatedAt) : N\'honore PLUS rien → prix serveur facturé', async () => {
     const app = await buildApp()
-    const old = new Date(Date.now() - 10 * 60 * 1000).toISOString() // 10 min → au-delà du seuil de rejeu
+    const old = new Date(Date.now() - 10 * 60 * 1000).toISOString()
     const res = await app.inject({
       method: 'POST', url: '/api/sales',
       payload: { items: [{ productId: 'p1', qty: 1, price: 1 }], paymentMode: 'cash', total: 1, idempotencyKey: 'forge-2', clientCreatedAt: old },
     })
     expect(res.statusCode).toBe(200)
-    // Montant réellement encaissé honoré (précision 1 : pas de re-tarification au rejeu)…
-    expect(lastSaleItem()).toMatchObject({ unitPrice: 1, submittedPrice: 1, catalogPrice: 1300 })
-    expect(lastSale().total).toBe(1)
-    // … mais l’écart reste TRACÉ (c’est la trace qui protège, pas la branche).
+    expect(lastSaleItem()).toMatchObject({ unitPrice: 1300, submittedPrice: 1, catalogPrice: 1300, pricingHonored: false })
+    expect(lastSale().total).toBe(1300)
     expect(lastSale().priceDivergence).toBe(true)
+  })
+
+  // Le drapeau de rejeu SEUL ne suffit pas : sans qualification serveur (`staleCatalogAt`, ici
+  // null car le produit n'a aucun instantané de tarif précédent), on re-tarife.
+  it('offlineReplay SANS qualification serveur : prix serveur facturé, rien d\'honoré', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/sales',
+      payload: { items: [{ productId: 'p1', qty: 1, price: 1 }], paymentMode: 'cash', total: 1, idempotencyKey: 'forge-3', offlineReplay: true },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(lastSaleItem()).toMatchObject({ unitPrice: 1300, submittedPrice: 1, catalogPrice: 1300, pricingHonored: false })
+    expect(lastSale().total).toBe(1300)
   })
 
   it('prix LÉGITIME (= sellPrice) → aucune divergence, aucune trace', async () => {

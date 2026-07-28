@@ -37,9 +37,13 @@ const SALE_BODY = z.object({
   discount:    z.object({ amount: z.coerce.number().optional(), type: z.string().nullish() }).nullish(),
   customerId:  z.string().nullish(),
   idempotencyKey: z.string().nullish(),
-  // Horodatage client (ISO) : NON vérifiable → sert seulement à honorer un prix offline
-  // en cas de divergence (cf. handler + CLAUDE.md § Intégrité prix). Falsifiable = la trace protège.
-  clientCreatedAt:   z.string().nullish(),
+  // Drapeau de REJEU HORS-LIGNE : posé UNIQUEMENT par la file d'attente mobile qui rejoue une
+  // vente déjà encaissée au comptoir. Il n'AUTORISE rien à lui seul — il ouvre la porte que
+  // `staleCatalogAt` (fait serveur, par tarif déclaré) garde. Sans lui, le chemin en ligne
+  // direct reste celui de #145 : re-tarification serveur. ⚠️ Déclaré par le client, donc
+  // FALSIFIABLE — cf. CLAUDE.md § Intégrité prix pour ce que cette falsifiabilité permet
+  // réellement (un vrai changement de prix de moins de 48 h, tracé et auditable).
+  offlineReplay:     z.boolean().nullish(),
   cashAmount:        z.coerce.number().optional(),
   mobileMoneyAmount: z.coerce.number().optional(),
   cardAmount:        z.coerce.number().optional(),
@@ -47,12 +51,6 @@ const SALE_BODY = z.object({
   campayReference:   z.string().nullish(),
   paydunyaReference: z.string().nullish(),
 }).passthrough()
-
-// Au-delà de ce délai de rejeu (now − clientCreatedAt), une vente est considérée « offline
-// rejouée » → en cas de divergence prix on HONORE le montant encaissé (sinon prix serveur).
-// ⚠️ clientCreatedAt est falsifiable : ce seuil n'est PAS une garantie de sécurité, la
-// protection est la TRACE (priceDivergence) exploitée en audit. Cf. CLAUDE.md.
-const REPLAY_THRESHOLD_MS = 90_000
 
 // Fenêtre de PLAUSIBILITÉ d'un catalogue POS en cache — sert à QUALIFIER une divergence,
 // jamais à excuser un prix. Le cache POS est le service worker (`api-cache`, NetworkFirst)
@@ -79,13 +77,23 @@ class RefundConflict extends Error {}
 export async function saleRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/sales', { preHandler: authenticate }, async (request) => {
     const tenantId = getTenantId(request)
-    const { limit = 50, offset = 0, priceDivergence } = request.query as { limit?: number; offset?: number; priceDivergence?: string }
+    const { limit = 50, offset = 0, priceDivergence, pricingHonored } = request.query as { limit?: number; offset?: number; priceDivergence?: string; pricingHonored?: string }
     // Filtre d'AUDIT : `?priceDivergence=true` → ventes dont un prix soumis ≠ prix catalogue
     // (le détail submitted/catalog vit sur chaque SaleItem, renvoyé via include). Rend la trace
     // exploitable dès l'API (l'UI propriétaire suivra) — pas un journal write-only.
     const divergenceOnly = priceDivergence === 'true' || priceDivergence === '1'
+    // `?pricingHonored=true` → ventes dont AU MOINS UNE ligne a été facturée au montant SOUMIS
+    // (rejeu hors-ligne honoré). ⚠️ Filtre SERVEUR indispensable : un filtrage côté client ne
+    // voit que la page chargée (50 ventes), donc un écart honoré vieux de quelques jours
+    // deviendrait introuvable — une trace qu'on ne peut pas retrouver ne protège personne, et
+    // c'est précisément la contrepartie qui rend l'option A défendable.
+    const honoredOnly = pricingHonored === 'true' || pricingHonored === '1'
     return prisma.sale.findMany({
-      where: { tenantId, ...(divergenceOnly ? { priceDivergence: true } : {}) },
+      where: {
+        tenantId,
+        ...(divergenceOnly ? { priceDivergence: true } : {}),
+        ...(honoredOnly ? { items: { some: { pricingHonored: true } } } : {}),
+      },
       // cashier.name : requis par l'audit des écarts de prix (« question au caissier »).
       include: { items: { include: { product: true } }, cashier: { select: { name: true } } },
       orderBy: { createdAt: 'desc' },
@@ -110,14 +118,12 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     const body = request.body as SaleBody
     const manualDiscount = Number(discount?.amount) || 0
 
-    // Horodatage client (offline) : sert UNIQUEMENT à décider quel prix FACTURER en cas de
-    // divergence (honorer le montant encaissé offline vs prix serveur en ligne). ⚠️ NON
-    // VÉRIFIABLE — un client peut le falsifier. La protection anti-fraude n'est PAS cette
-    // branche mais la TRACE (submittedPrice/catalogPrice/priceDivergence), écrite dans les
-    // DEUX cas → audit a posteriori. Cf. CLAUDE.md § Intégrité prix.
-    const clientCreatedAt = String((request.body as SaleBody)?.clientCreatedAt ?? '').trim()
-    const replayMs = clientCreatedAt ? (Date.now() - Date.parse(clientCreatedAt)) : 0
-    const honorClientPrice = Number.isFinite(replayMs) && replayMs > REPLAY_THRESHOLD_MS
+    // Rejeu HORS-LIGNE : la vente a déjà été encaissée au comptoir, la file mobile la rejoue.
+    // Ce drapeau n'honore RIEN par lui-même — il conditionne l'honneur à `staleCatalogAt`
+    // (fait serveur, qualifié PAR TARIF DÉCLARÉ) dans la branche de divergence plus bas.
+    // ⚠️ Falsifiable : la protection n'est pas le drapeau mais le CADRE qu'il ne peut pas
+    // franchir (prix ayant réellement été celui de ce tarif il y a < 48 h) + la TRACE.
+    const offlineReplay = (request.body as SaleBody)?.offlineReplay === true
 
     // ── Config tenant (fidélité + TVA POS + WhatsApp/devise pour l'après-vente) ──
     const tCfg = await prisma.tenant.findUnique({
@@ -186,10 +192,10 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     // ── INTÉGRITÉ PRIX (A/E) : le prix de base est SERVEUR-autoritaire. On accepte le prix
     //    soumis SEULEMENT s'il correspond à un point de tarif serveur légitime (détail / demi-gros
     //    / gros, chacun résolu via palier+promo à cette quantité) → pas besoin du clientType.
-    //    Sinon = DIVERGENCE (prix arbitraire, ex. caissier forgeant la requête) : en ligne on
-    //    FACTURE le prix serveur détail ; offline (honorClientPrice) on honore le montant encaissé.
+    //    Sinon = DIVERGENCE (prix arbitraire, ex. caissier forgeant la requête) : on FACTURE le
+    //    prix serveur du tarif déclaré — SAUF rejeu hors-ligne QUALIFIÉ (cf. `honored` plus bas).
     //    Dans TOUS les cas de divergence : TRACE (submitted/catalog) + flag pour l'audit. ──
-    type ItemRow = { productId: string; qty: number; unitPrice: number; total: number; tierLabel: string | null; submittedPrice?: number; catalogPrice?: number; staleCatalogAt?: Date | null }
+    type ItemRow = { productId: string; qty: number; unitPrice: number; total: number; tierLabel: string | null; submittedPrice?: number; catalogPrice?: number; staleCatalogAt?: Date | null; pricingHonored?: boolean }
     let anyDivergence = false
     const now = new Date() // une seule horloge serveur pour l'expiration des promos de la vente
     const itemsData: ItemRow[] = items.map((item: any): ItemRow => {
@@ -218,9 +224,12 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       }
       // DIVERGENCE : prix soumis hors de tout tarif serveur.
       anyDivergence = true
-      const charged = honorClientPrice ? submitted : expected.price
-      const tierLabel = honorClientPrice ? (item.tierLabel ?? null) : (expected.tierLabel ?? null)
-      // ── QUALIFICATION (n'influence RIEN de ce qui est facturé) : le prix soumis était-il un
+      // ⚠️ ORDRE LOAD-BEARING : la QUALIFICATION est calculée AVANT la décision de facturation,
+      //    parce que la décision en DÉPEND désormais (rejeu honoré). Calculer `charged` d'abord
+      //    (ordre historique, avant l'option A) rendrait `staleCatalogAt` inutilisable pour la
+      //    décision et honorerait sur le seul drapeau client — c.-à-d. n'importe quel prix.
+      //    Verrou : `offlineReplayHonor.test.ts` (sabotage « ordre inversé » vérifié).
+      // ── QUALIFICATION (ne décide PAS seule de ce qui est facturé) : le prix soumis était-il un
       //    tarif catalogue LÉGITIME avant le dernier changement de prix, assez récemment pour
       //    qu'un catalogue POS en cache l'explique ? Entièrement serveur-autoritaire : instantané
       //    écrit par nos routes d'écriture + date serveur, aucune donnée fournie par le client
@@ -236,12 +245,25 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
         // qu'on vient de fermer côté facturation.
         if (prev && Math.round(expectedPrice(item.qty, prev, tariff).price) === Math.round(submitted)) staleCatalogAt = changedAt
       }
-      console.warn(`[sales][integrity] divergence prix ${p.id} par user ${userId}: soumis=${submitted} attendu(${tariff})=${expected.price} → facturé=${charged}${honorClientPrice ? ' (offline honoré)' : ''}${staleCatalogAt ? ' [tarif précédent]' : ''}`)
+      // ── DÉCISION DE FACTURATION. Les DEUX conditions sont requises :
+      //    · `offlineReplay` — la vente a déjà été encaissée, il n'y a plus de client au comptoir
+      //      à qui réclamer la différence (en ligne, `reconcileSaleTotal` le fait, donc on
+      //      re-tarife : #145 intact) ;
+      //    · `staleCatalogAt` — le montant soumis a RÉELLEMENT été le prix de CE tarif il y a
+      //      moins de 48 h. C'est un fait serveur ; le client ne peut pas le fabriquer.
+      //    Le drapeau seul n'honore rien : sans qualification, on re-tarife. C'est ce qui
+      //    remplace l'ancienne branche `honorClientPrice` — qui, elle, honorait N'IMPORTE QUEL
+      //    prix sur un simple horodatage antidaté.
+      const honored = offlineReplay && staleCatalogAt !== null
+      const charged = honored ? submitted : expected.price
+      const tierLabel = honored ? (item.tierLabel ?? null) : (expected.tierLabel ?? null)
+      console.warn(`[sales][integrity] divergence prix ${p.id} par user ${userId}: soumis=${submitted} attendu(${tariff})=${expected.price} → facturé=${charged}${honored ? ' (rejeu hors-ligne HONORÉ)' : ''}${staleCatalogAt ? ' [tarif précédent]' : ''}`)
       return {
         productId: item.productId, qty: item.qty,
         unitPrice: charged, total: charged * item.qty, tierLabel,
         submittedPrice: submitted, catalogPrice: expected.price, // TRACE (audit)
         staleCatalogAt,                                        // QUALIFICATION (audit)
+        pricingHonored: honored,                               // l'argent a bougé → à VÉRIFIER
       }
     })
 

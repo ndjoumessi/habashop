@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useI18n, useTheme, useFmt } from '@/stores/appStore'
 import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
-import { getFailedSales, dismissFailedSale, type FailedSale } from '@/services/failedSales'
+import { getFailedSales, dismissFailedSale, isRecorded, type FailedSale } from '@/services/failedSales'
 
 /**
  * Bandeau des ventes ENCAISSÉES mais JAMAIS ENREGISTRÉES.
@@ -35,6 +35,11 @@ export default function FailedSalesBanner({ refreshKey }: { refreshKey?: number 
   if (list.length === 0) return null
 
   const total = list.reduce((sum, e) => sum + (e.total || 0), 0)
+  // DEUX gestes différents, jamais confondus : une vente `repriced` EXISTE côté serveur
+  // (à VÉRIFIER — l'écart est dans le tiroir), les autres n'existent pas (à RESSAISIR).
+  // Un libellé unique ferait ressaisir une vente déjà enregistrée, donc la compterait deux fois.
+  const aVerifier = list.filter(e => isRecorded(e.reason)).length
+  const aRessaisir = list.length - aVerifier
 
   const solder = async (id: string) => {
     await dismissFailedSale(id)
@@ -58,8 +63,10 @@ export default function FailedSalesBanner({ refreshKey }: { refreshKey?: number 
         <View style={s.banner}>
           <Ionicons name="alert-circle" size={18} color={C.white} />
           <Text style={s.txt} numberOfLines={2}>
-            {list.length} {i('vente non enregistrée', 'sale not recorded', 'venta sin registrar', 'vendita non registrata')}
-            {list.length > 1 ? 's' : ''} · {fmt(total)} — {i('à ressaisir', 'to re-enter', 'volver a introducir', 'da reinserire')}
+            {aRessaisir > 0 && `${aRessaisir} ${i('à ressaisir', 'to re-enter', 'a reintroducir', 'da reinserire')}`}
+            {aRessaisir > 0 && aVerifier > 0 ? ' · ' : ''}
+            {aVerifier > 0 && `${aVerifier} ${i('à vérifier', 'to check', 'a verificar', 'da verificare')}`}
+            {' · '}{fmt(total)}
           </Text>
           <Ionicons name="chevron-forward" size={16} color={C.white} />
         </View>
@@ -82,10 +89,10 @@ export default function FailedSalesBanner({ refreshKey }: { refreshKey?: number 
 
               <Text style={s.help}>
                 {i(
-                  "Ces montants ont été encaissés mais le serveur n'a pas pu enregistrer la vente. Ressaisissez-les, puis marquez-les comme traités.",
-                  'These amounts were collected but the server could not record the sale. Re-enter them, then mark as handled.',
-                  'Estos importes se cobraron pero el servidor no pudo registrar la venta. Vuelva a introducirlos y márquelos como tratados.',
-                  'Questi importi sono stati incassati ma il server non ha potuto registrare la vendita. Reinseriscili, poi segnali come trattati.',
+                  "À RESSAISIR : le serveur n'a pas pu enregistrer la vente, l'argent est encaissé sans qu'aucune vente existe. À VÉRIFIER : la vente est enregistrée, mais à un montant différent de celui encaissé — comparez la caisse.",
+                  'TO RE-ENTER: the server could not record the sale, the money was collected but no sale exists. TO CHECK: the sale is recorded, but for a different amount than collected — compare the till.',
+                  'A REINTRODUCIR: el servidor no pudo registrar la venta, se cobró pero no existe ninguna venta. A VERIFICAR: la venta está registrada, pero por un importe distinto al cobrado — compare la caja.',
+                  'DA REINSERIRE: il server non ha potuto registrare la vendita, incassata ma nessuna vendita esiste. DA VERIFICARE: la vendita è registrata, ma con un importo diverso da quello incassato — confronta la cassa.',
                 )}
               </Text>
 
@@ -95,9 +102,11 @@ export default function FailedSalesBanner({ refreshKey }: { refreshKey?: number 
                     <View style={{ flex: 1 }}>
                       <Text style={s.amount}>{fmt(e.total)}</Text>
                       <Text style={s.reason} numberOfLines={2}>
-                        {e.message ?? (e.reason === 'exhausted'
-                          ? i('Réseau indisponible', 'Network unavailable', 'Red no disponible', 'Rete non disponibile')
-                          : i('Refusée par le serveur', 'Rejected by server', 'Rechazada por el servidor', 'Rifiutata dal server'))}
+                        {e.reason === 'repriced'
+                          ? `${i('Enregistrée à', 'Recorded at', 'Registrada a', 'Registrata a')} ${fmt(e.serverTotal ?? 0)} — ${i('vérifiez la caisse', 'check the till', 'verifique la caja', 'controlla la cassa')}`
+                          : e.message ?? (e.reason === 'exhausted'
+                            ? i('Réseau indisponible', 'Network unavailable', 'Red no disponible', 'Rete non disponibile')
+                            : i('Refusée par le serveur', 'Rejected by server', 'Rechazada por el servidor', 'Rifiutata dal server'))}
                       </Text>
                       <Text style={s.meta}>{new Date(e.failedAt).toLocaleString()}</Text>
                     </View>

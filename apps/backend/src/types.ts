@@ -52,8 +52,9 @@ export interface SaleBody {
   discount?: { amount?: number; type?: string }
   customerId?: string | null
   idempotencyKey?: string | null
-  // Horodatage client (ISO) — NON vérifiable ; honore un prix offline en cas de divergence (cf. sales.ts).
-  clientCreatedAt?: string | null
+  // Rejeu HORS-LIGNE (file mobile). N'honore rien seul : conditionné à `staleCatalogAt`
+  // (fait serveur, par tarif déclaré) dans la branche de divergence. Cf. sales.ts.
+  offlineReplay?: boolean | null
   // Paiement mixte (split) — renseignés quand paymentMode='mixed'.
   cashAmount?: number; mobileMoneyAmount?: number; cardAmount?: number
   // MTN MoMo — UUID retourné par /api/payments/mtn/request (traçabilité).
