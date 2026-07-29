@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node scripts/gen-seo.mjs",
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx",
     "test": "vitest run",
@@ -17,7 +17,8 @@
     "verify:demo-flag": "node scripts/verify-demo-flag.mjs",
     "verify:sw-routes": "node scripts/verify-sw-routes.mjs",
     "shot:subscriptions": "node e2e/subscriptions-modal.shot.mjs",
-    "shot:freshness": "node e2e/pos-freshness.shot.mjs"
+    "shot:freshness": "node e2e/pos-freshness.shot.mjs",
+    "verify:seo-urls": "node scripts/verify-seo-urls.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
