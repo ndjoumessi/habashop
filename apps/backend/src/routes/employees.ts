@@ -90,7 +90,24 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
       await prisma.employee.delete({ where: { id, tenantId } })
       return { success: true }
     } catch (err) {
-      return reply.code(500).send({ error: (err as Error).message })
+      // ⚠️ Ceci est un HARD delete : les FK vers Employee décident du sort des données liées.
+      // Présences, shifts, congés, primes et historique de salaire partent en CASCADE ; les
+      // BULLETINS DE PAIE, eux, sont en RESTRICT (`model Payroll`) — ils sont la preuve de ce
+      // qui a été versé et ne doivent pas disparaître avec la fiche. La contrainte refuse donc
+      // la suppression, et ce refus doit être LISIBLE : un 500 au message Prisma brut ferait
+      // conclure à une panne, pas à une règle (et fuiterait du détail interne, cf. § P1.6).
+      if ((err as { code?: string }).code === 'P2003') {
+        return reply.code(409).send({
+          error: "Cet employé a des bulletins de paie : suppression impossible. Désactivez la fiche plutôt que de la supprimer.",
+          code: 'EMPLOYEE_HAS_PAYROLL',
+        })
+      }
+      // P2025 : la fiche n'existe pas, ou appartient à une autre boutique (le `where` est
+      // scopé) → 404, jamais un 500.
+      if ((err as { code?: string }).code === 'P2025') {
+        return reply.code(404).send({ error: 'Employé introuvable' })
+      }
+      throw err   // le handler global journalise et masque le détail interne
     }
   })
 }

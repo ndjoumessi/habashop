@@ -3,7 +3,7 @@ import { calcNet, calcBrut, payrollBreakdown, CNSS_RATE, type PayRecord } from '
 
 // Calcul paie (base XOF) — brut = base+primes+heures sup ; net = brut − retenues − pénalité d'absence.
 const rec = (over: Partial<PayRecord> = {}): PayRecord => ({
-  id: 1, employee: 'X', avatar: 'X', color: '#000', role: 'Caissier',
+  id: 'pay1', employeeId: 'emp1', employee: 'X', avatar: 'X', color: '#000', role: 'Caissier',
   baseSalary: 260000, bonus: 0, overtime: 0, deductions: 0, absences: 0,
   status: 'EN ATTENTE', paidAt: null, month: 'Mai 2026', ...over,
 })

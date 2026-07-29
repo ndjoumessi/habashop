@@ -32,7 +32,7 @@ const SCOPED_MODELS = new Set([
   'Product', 'Sale', 'Customer', 'Supplier', 'PurchaseOrder', 'Employee',
   'Attendance', 'Shift', 'LeaveRequest', 'Expense', 'Goal', 'Subscription',
   'Campaign', 'TicketZ', 'LoyaltyTransaction', 'EmployeeBonus', 'SalaryHistory',
-  'PushToken', 'AuditLog',
+  'PushToken', 'AuditLog', 'Payroll',
 ])
 
 // Opérations dont le `where` accepte un filtre non-unique → injection sûre.

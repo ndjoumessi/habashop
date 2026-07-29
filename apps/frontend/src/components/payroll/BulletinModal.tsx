@@ -8,7 +8,7 @@ import type { PayRecord } from './payrollShared'
 export default function BulletinModal({ record, onClose, onPay, fmt }: {
   record: PayRecord
   onClose: () => void
-  onPay: (id: number) => void
+  onPay: (id: string) => void
   fmt: (n: number) => string
 }) {
   const { lang } = useConfig()
