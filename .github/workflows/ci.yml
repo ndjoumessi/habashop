@@ -197,7 +197,13 @@ jobs:
           path: apps/frontend/playwright-report/
           retention-days: 7
 
-  # ─── Résumé post-CI (déploiement MANUEL) ──
+  # ─── Résumé post-CI (déploiement AUTOMATIQUE sur push main) ──
+  # ⚠️ Ce résumé disait le CONTRAIRE jusqu'ici (« déploiement pas automatique, à déclencher
+  # manuellement »). C'était faux ET nuisible : `main` auto-déploie sur les DEUX plateformes,
+  # donc le geste manuel qu'il conseillait produisait un SECOND déploiement du même commit et
+  # brûlait le quota Vercel (free-tier = 100/jour). Mesuré le 2026-07-23 : la prod servait la
+  # version neuve 17 s après le push, alors que le `railway up --ci` lancé « pour forcer »
+  # était encore en build. Cf. CLAUDE.md § « APRÈS UN MERGE : ne rien lancer ».
   summary:
     name: Résumé déploiement
     runs-on: ubuntu-latest
@@ -218,9 +224,17 @@ jobs:
         run: |
           echo "## ✅ CI réussie" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "⚠️ Le déploiement n'est **pas** automatique sur push — à déclencher manuellement :" >> $GITHUB_STEP_SUMMARY
-          echo "- Backend (Railway) : \`cd apps/backend && railway up --ci\`" >> $GITHUB_STEP_SUMMARY
-          echo "- Frontend (Vercel) : \`cd apps/frontend && vercel --prod\`" >> $GITHUB_STEP_SUMMARY
+          echo "Le déploiement est **automatique** sur push \`main\` — Railway (back) ET Vercel (front)." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚠️ Ne rien lancer. Vérifier, c'est tout." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**NE PAS** lancer \`railway up --ci\` ni \`vercel --prod\` : le geste manuel produit un" >> $GITHUB_STEP_SUMMARY
+          echo "**second** déploiement du même commit et brûle le quota Vercel (free-tier = 100/jour)." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**À vérifier** :" >> $GITHUB_STEP_SUMMARY
+          echo "- Back — \`npm run smoke:version --workspace=apps/backend\` (le \`/health\` déployé == version source)." >> $GITHUB_STEP_SUMMARY
+          echo "  ⚠️ Le smoke reste VERT si la version n'a pas bougé : la preuve réelle d'un redémarrage est l'\`uptime\` d'\`/api/health-extended\` remis à zéro." >> $GITHUB_STEP_SUMMARY
+          echo "- Front — un déploiement \`● Ready\` **plus récent que le merge** (\`vercel ls --prod\`)." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Item | Valeur |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
