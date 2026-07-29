@@ -1,17 +1,18 @@
 import { Download, FileText, DollarSign, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { useConfig, convertFromXOF } from '@/stores/appStore'
+import { useConfig, convertFromXOF, CURRENCY_DECIMALS } from '@/stores/appStore'
 import { type Employee, EmpAvatar, roleLabel } from '@/components/hr/hrShared'
 import { sanitizeCsv } from '@/lib/csv'
 // ⚠️ Ce fichier définissait SES PROPRES taux en se déclarant « source unique (cf. payroll-calc) »
 // — alors que payroll-calc appliquait 5,6 % sur une autre assiette avec un IRPP résiduel. Le
 // commentaire affirmait l'unicité, le code la contredisait. Les taux et le calcul viennent
 // désormais de `payrollShared`, pour de vrai.
-import { payrollBreakdown, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
+import { payrollDisplay, fmtDisplay, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
 
-/** Retenues d'un employé du mois — passe par la source unique, jamais un calcul local. */
-const empBreakdown = (salary: number, bonus: number) =>
-  payrollBreakdown({ baseSalary: Number(salary) || 0, bonus, overtime: 0, deductions: 0, absences: 0 })
+/** Retenues d'un employé du mois, en devise d'AFFICHAGE — cohérentes entre elles
+ *  (total = somme des lignes). Jamais un calcul local, jamais une reconversion. */
+const empBreakdown = (salary: number, bonus: number, currency: string) =>
+  payrollDisplay({ baseSalary: Number(salary) || 0, bonus, overtime: 0, deductions: 0, absences: 0 }, currency)
 
 interface Props {
   employees: Employee[]
@@ -23,16 +24,25 @@ interface Props {
   setSalaryTarget: (v: any) => void; setShowSalaryModal: (b: boolean) => void
 }
 
-export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPayrollMonth, bonuses, generateAllPayslips, setSalaryTarget, setShowSalaryModal }: Props) {
+export default function PayrollGrid({ employees, fmt: _fmt, lang, payrollMonth, setPayrollMonth, bonuses, generateAllPayslips, setSalaryTarget, setShowSalaryModal }: Props) {
   const { currency } = useConfig()
+  // ⚠️ Montants DÉJÀ convertis par `payrollDisplay` → formatage SANS reconversion. Le `fmt`
+  // reçu en prop convertirait depuis XOF (double conversion).
+  const fmt = (v: number) => fmtDisplay(v, currency)
+  const dec = CURRENCY_DECIMALS[currency as keyof typeof CURRENCY_DECIMALS] ?? 2
+  const arr = (x: number) => Math.round(x * 10 ** dec) / 10 ** dec
 
   // Totaux des KPIs — somme des retenues PAR EMPLOYÉ (arrondi à l'unité par bulletin, comme
   // ce que reçoit chacun), jamais un pourcentage appliqué à la masse globale : les deux
   // divergent dès qu'un arrondi tombe, et c'est le total par employé qui est versé.
   const totaux = (employees ?? []).filter(e => e.active).reduce((acc, e) => {
-    const bd = empBreakdown(Number(e.salary) || 0, bonuses[String(e.id)] ?? 0)
-    return { brut: acc.brut + bd.brut, cnss: acc.cnss + bd.cnss, ir: acc.ir + bd.ir, net: acc.net + bd.net }
-  }, { brut: 0, cnss: 0, ir: 0, net: 0 })
+    const bd = empBreakdown(Number(e.salary) || 0, bonuses[String(e.id)] ?? 0, currency)
+    return {
+      base: arr(acc.base + bd.baseSalary), bonus: arr(acc.bonus + bd.bonus),
+      brut: arr(acc.brut + bd.brut), cnss: arr(acc.cnss + bd.cnss),
+      ir: arr(acc.ir + bd.ir), net: arr(acc.net + bd.net),
+    }
+  }, { base: 0, bonus: 0, brut: 0, cnss: 0, ir: 0, net: 0 })
 
   return (
     <>
@@ -59,8 +69,9 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
             ...activeEmps.map(emp => {
               const brut  = emp.salary
               const bonus = bonuses[String(emp.id)] ?? 0
-              const { cnss, ir, net } = empBreakdown(brut, bonus)
-              return [emp.name, roleLabel(emp.role, lang), cv(brut), cv(bonus), cv(cnss), cv(ir), cv(net)]
+              const d = empBreakdown(brut, bonus, currency)
+              // ⚠️ `cv` convertit depuis XOF ; `d` est DÉJÀ converti → on écrit `d` tel quel.
+              return [emp.name, roleLabel(emp.role, lang), cv(brut), cv(bonus), d.cnss, d.ir, d.net]
             }),
           ]
           // ⚠️ `sanitizeCsv` sur chaque cellule : sans lui, un nom saisi par l'utilisateur
@@ -126,7 +137,7 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
                 const empId = String(emp.id)
                 const brut  = Number(emp.salary)||0
                 const bonus = bonuses[empId] ?? 0
-                const { cnss, ir, net } = empBreakdown(brut, bonus)
+                const { cnss, ir, net } = empBreakdown(brut, bonus, currency)
                 return (
                   <tr key={emp.id}>
                     <td>
@@ -170,8 +181,8 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
                     arrondis par bulletin — or c'est le bulletin qui est versé. On lit `totaux`,
                     agrégé employé par employé. Le brut inclut désormais les primes, comme la
                     colonne « Net » de chaque ligne. */}
-                <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', color:'var(--p2)', padding:'12px 14px' }}>{fmt(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0))}</td>
-                <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}</td>
+                <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', color:'var(--p2)', padding:'12px 14px' }}>{fmt(totaux.base)}</td>
+                <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc2)', padding:'12px 14px' }}>{fmt(totaux.bonus)}</td>
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', padding:'12px 14px' }}>− {fmt(totaux.cnss)}</td>
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', padding:'12px 14px' }}>− {fmt(totaux.ir)}</td>
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', fontSize:15, color:'var(--acc2)', padding:'12px 14px' }}>{fmt(totaux.net)}</td>

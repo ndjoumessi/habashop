@@ -1,7 +1,10 @@
-import { useConfig, useFormatAmount } from '@/stores/appStore'
+import { useConfig, formatInCurrency } from '@/stores/appStore'
 import { DollarSign, TrendingDown, FileText, CheckCircle } from 'lucide-react'
 
 interface Props {
+  /** ⚠️ DÉJÀ converti en devise d'affichage (somme des lignes de la table) — pas du XOF.
+   *  Reconvertir ici produirait une double conversion, et un KPI qui ne correspond pas à
+   *  l'addition de la colonne NET juste en dessous. */
   totalBrut: number
   totalNet: number
   generated: number
@@ -10,8 +13,8 @@ interface Props {
 }
 
 export default function PayrollKpis({ totalBrut, totalNet, generated, paid, totalCount }: Props) {
-  const { lang } = useConfig()
-  const fmt = useFormatAmount()
+  const { lang, currency } = useConfig()
+  const fmt = (v: number) => formatInCurrency(v, currency)
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
