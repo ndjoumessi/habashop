@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { appUrl, appUrlHost } from '@/lib/appUrl'
 
 export default function Privacy() {
   useEffect(() => {
@@ -37,9 +38,9 @@ export default function Privacy() {
           HabaShop est un logiciel SaaS de gestion commerciale
           édité par Nelson Djoumessi (romel.djoumessi@gmail.com).
           L'application est accessible sur{' '}
-          <a href="https://habashop.vercel.app"
+          <a href={appUrl()}
             style={{ color: '#6C47FF' }}>
-            habashop.vercel.app
+            {appUrlHost()}
           </a>{' '}
           et sur mobile (Android / iOS).
         </p>
@@ -225,9 +226,9 @@ export default function Privacy() {
             romel.djoumessi@gmail.com
           </a><br/>
           Site :{' '}
-          <a href="https://habashop.vercel.app"
+          <a href={appUrl()}
             style={{ color: '#6C47FF' }}>
-            habashop.vercel.app
+            {appUrlHost()}
           </a>
         </p>
       </section>
