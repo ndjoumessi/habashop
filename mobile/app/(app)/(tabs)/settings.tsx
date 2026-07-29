@@ -524,7 +524,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
 
   section: { paddingHorizontal: Spacing.xl, marginTop: Spacing.lg },
-  sectionTitle: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.sm },
+  sectionTitle: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.sm },
   card: { backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, overflow: 'hidden', ...Shadow.sm },
 
   // Profil
@@ -533,11 +533,11 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border,
     padding: Spacing.lg, ...Shadow.sm,
   },
-  profileName: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
-  profileEmail: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 1 },
+  profileName: { fontSize: FontSize.lg, fontFamily: 'Geist_800ExtraBold', color: C.text },
+  profileEmail: { fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text3, marginTop: 1 },
   badgeRow: { flexDirection: 'row', gap: Spacing.xs, marginTop: Spacing.xs },
   badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full, borderWidth: 1 },
-  badgeTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_800ExtraBold', letterSpacing: 0.5 },
+  badgeTxt: { fontSize: FontSize.xs, fontFamily: 'Geist_800ExtraBold', letterSpacing: 0.5 },
 
   // Langue grid 2x2
   grid2: { flexDirection: 'row', flexWrap: 'wrap', padding: Spacing.sm, gap: Spacing.sm },
@@ -547,7 +547,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.bg3, borderWidth: 1.5, borderColor: C.border, position: 'relative',
   },
   gridItemOn: { backgroundColor: withAlpha(C.primary, 0.12), borderColor: C.primary },
-  gridLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
+  gridLabel: { fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.text2 },
   gridLabelOn: { color: C.primary3 },
   gridCheck: { position: 'absolute', top: 4, right: 4 },
 
@@ -558,11 +558,11 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, borderWidth: 1,
     backgroundColor: C.card,
   },
-  themeLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold' },
+  themeLabel: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold' },
 
   // Caisse / kiosque
   kioskBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md },
-  kioskBtnText: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text },
+  kioskBtnText: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.text },
 
   // Devise / listes
   listRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md },
@@ -570,7 +570,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   listRowBorder: { borderBottomWidth: 1, borderBottomColor: C.border },
   listRowBorderTop: { borderTopWidth: 1, borderTopColor: C.border },
   curCode: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: C.text, width: 44 },
-  curName: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text2 },
+  curName: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text2 },
   rateInfo: {
     margin: Spacing.md,
     padding: 10, // spécifique (entre sm=8 et md=12) — laissé volontairement
@@ -579,27 +579,27 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: withAlpha(C.primary, 0.2),
   },
-  rateText: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.primary3, textAlign: 'center' },
-  rateSubText: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', marginTop: 3 },
+  rateText: { fontSize: FontSize.sm, fontFamily: 'Geist_700Bold', color: C.primary3, textAlign: 'center' },
+  rateSubText: { fontSize: FontSize.xs, fontFamily: 'Geist_400Regular', color: C.text3, textAlign: 'center', marginTop: 3 },
 
   // Boutique info
   infoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.md, gap: Spacing.md },
-  infoKey: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3 },
-  infoVal: { flex: 1, textAlign: 'right', fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text },
+  infoKey: { fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text3 },
+  infoVal: { flex: 1, textAlign: 'right', fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.text },
 
   // Toggles
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, minHeight: 48 },
-  toggleLabel: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text },
+  toggleLabel: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.text },
   testNotifBtn: { margin: Spacing.md, paddingVertical: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: withAlpha(C.primary, 0.12), borderWidth: 1, borderColor: withAlpha(C.primary, 0.3), alignItems: 'center' },
-  testNotifText: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.primary3 },
+  testNotifText: { fontSize: FontSize.sm, fontFamily: 'Geist_700Bold', color: C.primary3 },
 
   // Actions
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md },
-  actionTxt: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text },
+  actionTxt: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.text },
 
   // Suppression de compte (ligne d'alerte)
   deleteAccountRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md },
-  deleteAccountTxt: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.danger },
+  deleteAccountTxt: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Geist_700Bold', color: C.danger },
 
   // Skeleton header (pendant l'hydratation user/tenant)
   skelAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.bg3 },

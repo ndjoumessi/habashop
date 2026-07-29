@@ -133,21 +133,21 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.lg, backgroundColor: C.danger, ...Shadow.md,
   },
-  txt: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.white },
+  txt: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Geist_700Bold', color: C.white },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: C.card, borderTopLeftRadius: BorderRadius.lg, borderTopRightRadius: BorderRadius.lg,
     padding: Spacing.md, maxHeight: '80%',
   },
   sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.xs },
-  sheetTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_700Bold', color: C.text },
+  sheetTitle: { fontSize: FontSize.lg, fontFamily: 'Geist_700Bold', color: C.text },
   help: { fontSize: FontSize.sm, color: C.text2, marginBottom: Spacing.md, lineHeight: 20 },
   scroll: { maxHeight: 340 },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     paddingVertical: Spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.border,
   },
-  amount: { fontSize: FontSize.md, fontFamily: 'Outfit_700Bold', color: C.text },
+  amount: { fontSize: FontSize.md, fontFamily: 'Geist_700Bold', color: C.text },
   reason: { fontSize: FontSize.sm, color: C.text2, marginTop: 2 },
   meta: { fontSize: FontSize.xs, color: C.text3, marginTop: 2 },
   done: {
@@ -155,5 +155,5 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full, backgroundColor: C.accent2,
   },
-  doneTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.white },
+  doneTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_700Bold', color: C.white },
 })

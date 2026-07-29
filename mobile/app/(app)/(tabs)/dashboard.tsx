@@ -352,12 +352,12 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   greeting: {
     fontSize:FontSize.xl,
-    fontFamily:'Outfit_800ExtraBold',
+    fontFamily:'Geist_800ExtraBold',
     color:C.text,
   },
   shopName: {
     fontSize:FontSize.sm,
-    fontFamily:'Outfit_400Regular',
+    fontFamily:'Geist_400Regular',
     color:C.text3, marginTop:2,
   },
   offlineBadge: {
@@ -368,7 +368,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth:1, borderColor:withAlpha(C.danger, 0.25),
   },
   offlineBadgeText: {
-    fontSize:FontSize.xs, fontFamily:'Outfit_700Bold',
+    fontSize:FontSize.xs, fontFamily:'Geist_700Bold',
     color:C.danger, textTransform:'uppercase', letterSpacing:0.4,
   },
   searchBtn: {
@@ -389,7 +389,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   trialText: {
     fontSize:FontSize.sm,
-    fontFamily:'Outfit_700Bold',
+    fontFamily:'Geist_700Bold',
     color:C.warn,
   },
   section: {
@@ -398,7 +398,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   sectionTitle: {
     fontSize:FontSize.xs,
-    fontFamily:'Outfit_700Bold',
+    fontFamily:'Geist_700Bold',
     color:C.text3,
     textTransform:'uppercase',
     letterSpacing:0.6,
@@ -432,7 +432,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   kpiLabel: {
     fontSize:FontSize.xs,
-    fontFamily:'Outfit_600SemiBold',
+    fontFamily:'Geist_600SemiBold',
     color:C.text3,
   },
   kpiValue: {
@@ -442,7 +442,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   kpiSub: {
     fontSize:FontSize.xs,
-    fontFamily:'Outfit_400Regular',
+    fontFamily:'Geist_400Regular',
     color:C.text3,
     marginTop:2,
   },
@@ -463,7 +463,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   actionLabel: {
     fontSize:FontSize.xs,
-    fontFamily:'Outfit_600SemiBold',
+    fontFamily:'Geist_600SemiBold',
     color:C.text3,
     textAlign:'center',
   },
@@ -487,7 +487,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   alertName: {
     flex:1,
     fontSize:FontSize.sm,
-    fontFamily:'Outfit_600SemiBold',
+    fontFamily:'Geist_600SemiBold',
     color:C.text,
   },
   alertQty: {
@@ -516,7 +516,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   topName: {
     flex:1,
     fontSize:FontSize.sm,
-    fontFamily:'Outfit_600SemiBold',
+    fontFamily:'Geist_600SemiBold',
     color:C.text,
   },
   topCa: {

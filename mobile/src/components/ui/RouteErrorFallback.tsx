@@ -64,13 +64,13 @@ export default function RouteErrorFallback({ error, retry }: ErrorBoundaryProps)
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
   emoji: { fontSize: 56, marginBottom: Spacing.xl },
-  title: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.text, textAlign: 'center', marginBottom: Spacing.md },
-  desc: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', lineHeight: 22, marginBottom: Spacing.xxl },
+  title: { fontSize: FontSize.xl, fontFamily: 'Geist_800ExtraBold', color: C.text, textAlign: 'center', marginBottom: Spacing.md },
+  desc: { fontSize: FontSize.md, fontFamily: 'Geist_400Regular', color: C.text3, textAlign: 'center', lineHeight: 22, marginBottom: Spacing.xxl },
   devBox: { maxHeight: 120, alignSelf: 'stretch', backgroundColor: C.card, borderRadius: BorderRadius.md, marginBottom: Spacing.xl },
   devInner: { padding: Spacing.md },
   devTxt: { fontSize: FontSize.xs, fontFamily: 'JetBrainsMono_400Regular', color: C.danger },
   btnPrimary: { alignSelf: 'stretch', backgroundColor: C.primary, paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, alignItems: 'center', marginBottom: Spacing.md },
-  btnPrimaryTxt: { color: C.white, fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold' },
+  btnPrimaryTxt: { color: C.white, fontSize: FontSize.md, fontFamily: 'Geist_800ExtraBold' },
   btnGhost: { alignSelf: 'stretch', paddingVertical: Spacing.md, alignItems: 'center' },
-  btnGhostTxt: { color: C.text3, fontSize: FontSize.md, fontFamily: 'Outfit_600SemiBold' },
+  btnGhostTxt: { color: C.text3, fontSize: FontSize.md, fontFamily: 'Geist_600SemiBold' },
 })
