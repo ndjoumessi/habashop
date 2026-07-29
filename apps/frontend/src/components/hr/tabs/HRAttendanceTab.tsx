@@ -1,5 +1,6 @@
 import { Clock, CheckCircle, XCircle, AlertTriangle, CheckCheck, Download, Umbrella, Coffee } from 'lucide-react'
 import { type Employee, type AttendUiStatus, roleLabel, attendStatusLabel } from '@/components/hr/hrShared'
+import { sanitizeCsv } from '@/lib/csv'
 
 type AttendEntry = { in: string | null; out: string | null; status: AttendUiStatus }
 interface Props {
@@ -41,7 +42,9 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
       lang === 'en' ? 'Departure' : lang === 'es' ? 'Salida' : lang === 'it' ? 'Uscita' : 'Départ',
     ]
     const lines = [header, ...rows]
-    const csv = lines.map(r => r.join(';')).join('\n')
+    // ⚠️ `sanitizeCsv` sur chaque cellule : sans lui, un nom saisi par l'utilisateur
+    // et commençant par `=`/`+`/`-`/`@` s'exécute comme formule à l'ouverture (#173).
+    const csv = lines.map(r => r.map(sanitizeCsv).join(';')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')

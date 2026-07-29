@@ -1,6 +1,7 @@
 import JsBarcode from 'jsbarcode'
 import { useAppStore, convertAmount, formatInCurrency } from '@/stores/appStore'
 import { barcodeFormat, normalizeBarcode, quietZonePx } from '@/lib/barcode'
+import { sanitizeCsv } from '@/lib/csv'
 
 const LOCALES: Record<string, string> = {
   fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT',
@@ -182,7 +183,9 @@ export function exportCSV(
   const csv = BOM + [
     headers.join(';'),
     ...rows.map(row =>
-      row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(';')
+      // ⚠️ `sanitizeCsv` AVANT l'échappement : les guillemets ci-dessous NE protègent pas
+      // de l'injection de formule (le tableur les retire puis évalue). Cf. lib/csv.ts.
+      row.map(cell => `"${sanitizeCsv(cell).replace(/"/g, '""')}"`).join(';')
     ),
   ].join('\r\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -734,17 +737,24 @@ export function exportAccountingExcel(
   ])
   const expTotal = ['', 'TOTAL', '', '', '', cv(totalExpenses).toFixed(2), '', '']
 
+  // ⚠️ SECOND producteur de CSV de ce fichier — le nom trompe : `exportAccountingExcel`
+  // n'écrit PAS de .xlsx, il écrit un `text/csv`. Il a survécu à la première passe de #173
+  // parce que le méta-test raisonnait par FICHIER : `export.ts` contenait déjà `sanitizeCsv`
+  // (pour `exportCSV`, 500 lignes plus haut), donc le fichier passait — et `e.label`, saisi
+  // librement par le commerçant, partait nu. Le méta-test raisonne désormais par SITE
+  // D'ÉCRITURE. Toute cellule passe par le garde, en-têtes comprises (no-op sur nos libellés).
+  const cell = (c: unknown) => `"${sanitizeCsv(c).replace(/"/g, '""')}"`
   const csvLines = [
-    ...summary.map(row => row.join(';')),
-    [`=== ${i('VENTES', 'SALES', 'VENTAS', 'VENDITE')} ===`],
-    salesHeader.join(';'),
-    ...salesRows.map(row => row.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';')),
-    salesTotal.map(c => `"${c}"`).join(';'),
+    ...summary.map(row => row.map(sanitizeCsv).join(';')),
+    [sanitizeCsv(`=== ${i('VENTES', 'SALES', 'VENTAS', 'VENDITE')} ===`)],
+    salesHeader.map(sanitizeCsv).join(';'),
+    ...salesRows.map(row => row.map(cell).join(';')),
+    salesTotal.map(cell).join(';'),
     [],
-    [`=== ${i('DÉPENSES', 'EXPENSES', 'GASTOS', 'SPESE')} ===`],
-    expHeader.join(';'),
-    ...expRows.map(row => row.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';')),
-    expTotal.map(c => `"${c}"`).join(';'),
+    [sanitizeCsv(`=== ${i('DÉPENSES', 'EXPENSES', 'GASTOS', 'SPESE')} ===`)],
+    expHeader.map(sanitizeCsv).join(';'),
+    ...expRows.map(row => row.map(cell).join(';')),
+    expTotal.map(cell).join(';'),
   ]
 
   const csv = BOM + csvLines.join('\r\n')

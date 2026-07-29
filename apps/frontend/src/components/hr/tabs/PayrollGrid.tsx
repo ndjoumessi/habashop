@@ -2,6 +2,7 @@ import { Download, FileText, DollarSign, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useConfig, convertFromXOF } from '@/stores/appStore'
 import { type Employee, EmpAvatar, roleLabel } from '@/components/hr/hrShared'
+import { sanitizeCsv } from '@/lib/csv'
 
 // Taux légaux appliqués partout dans la paie (cf. payroll-calc) — source unique pour calculs ET libellés
 const CNSS_RATE = 0.08
@@ -51,7 +52,9 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
               return [emp.name, roleLabel(emp.role, lang), cv(brut), cv(bonus), cv(cnss), cv(ir), cv(net)]
             }),
           ]
-          const csv = BOM + rows.map(r => r.join(';')).join('\r\n')
+          // ⚠️ `sanitizeCsv` sur chaque cellule : sans lui, un nom saisi par l'utilisateur
+          // et commençant par `=`/`+`/`-`/`@` s'exécute comme formule à l'ouverture (#173).
+          const csv = BOM + rows.map(r => r.map(sanitizeCsv).join(';')).join('\r\n')
           const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' })
           const url = URL.createObjectURL(blob)
           const a = document.createElement('a')

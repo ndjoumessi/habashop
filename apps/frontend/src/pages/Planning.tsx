@@ -14,6 +14,7 @@ import PlanningGrid from '@/components/planning/PlanningGrid'
 import PlanningMonth from '@/components/planning/PlanningMonth'
 import AssignShiftModal from '@/components/planning/AssignShiftModal'
 import PlanningStats from '@/components/planning/PlanningStats'
+import { sanitizeCsv } from '@/lib/csv'
 
 const cellKey = (empId: string, date: string) => `${empId}_${date}`
 
@@ -218,7 +219,9 @@ export default function Planning() {
         ...days.map(d=>(shiftsByDate[cellKey(emp.id, ymd(d))] ?? []).map(s => `${shiftLabel(s.type, lang)} ${SHIFT_TYPES[s.type].hours}`.trim()).join(' + '))
       ])
     ]
-    const csv = '﻿' + rows.map(r=>r.join(';')).join('\r\n')
+    // ⚠️ `sanitizeCsv` sur chaque cellule : sans lui, un nom saisi par l'utilisateur
+    // et commençant par `=`/`+`/`-`/`@` s'exécute comme formule à l'ouverture (#173).
+    const csv = '﻿' + rows.map(r=>r.map(sanitizeCsv).join(';')).join('\r\n')
     const blob = new Blob([csv],{type:'text/csv;charset=utf-8'})
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
