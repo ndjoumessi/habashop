@@ -14,7 +14,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.habashop.app",
-      "buildNumber": "5",
       "infoPlist": {
         "NSCameraUsageDescription": "HabaShop utilise la caméra pour scanner les codes-barres, photographier les profils et numériser les factures fournisseurs.",
         "NSPhotoLibraryUsageDescription": "HabaShop accède à vos photos pour les photos de profil et l'import de factures fournisseurs.",
@@ -27,7 +26,6 @@
     },
     "android": {
       "package": "com.habashop.app",
-      "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#6C47FF"
