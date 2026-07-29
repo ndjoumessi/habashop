@@ -31,6 +31,21 @@ vi.mock('../db', () => ({
     employee: {
       findMany: vi.fn(async ({ where }: { where: Row }) =>
         employees.filter(e => e.tenantId === where.tenantId && e.isActive === where.isActive)),
+      // ⚠️ le mock APPLIQUE le RESTRICT : il lève P2003 si des bulletins référencent
+      // l'employé. Un mock qui rendrait toujours succès resterait vert même si la FK
+      // disparaissait du schéma — il décrirait un monde qui n'existe pas.
+      delete: vi.fn(async ({ where }: { where: Row }) => {
+        const e = employees.find(x => x.id === where.id && x.tenantId === where.tenantId)
+        if (!e) throw Object.assign(new Error('Record not found'), { code: 'P2025' })
+        if (payrolls.some(p => p.employeeId === where.id)) {
+          throw Object.assign(
+            new Error('Foreign key constraint failed on the field: `Payroll_employeeId_fkey`'),
+            { code: 'P2003' },
+          )
+        }
+        employees = employees.filter(x => x.id !== where.id)
+        return e
+      }),
     },
     payroll: {
       findMany: vi.fn(async ({ where }: { where: Row }) =>
@@ -229,5 +244,45 @@ describe('garde de rôle — miroir de ROLE_PERMISSIONS[\'payroll\'] côté fron
     expect((await app.inject({ method: 'GET', url: '/api/payroll?month=2026-07' })).statusCode).toBe(403)
     expect((await app.inject({ method: 'POST', url: '/api/payroll/generate', payload: { month: '2026-07' } })).statusCode).toBe(403)
     expect(payrolls).toHaveLength(0)
+  })
+})
+
+/**
+ * ⚠️ CONTREPARTIE du RESTRICT sur `Payroll.employeeId`.
+ *
+ * `DELETE /api/employees/:id` est un HARD delete (MESURÉ : `prisma.employee.delete`), et les
+ * 5 autres FK vers `Employee` sont en CASCADE. La paie, elle, est en RESTRICT : un bulletin
+ * est la preuve de ce qui a été versé. Supprimer un employé qui en a ÉCHOUE donc — et ce
+ * refus doit être lisible (409 nommé), pas un 500 au message Prisma brut qui ferait conclure
+ * à une panne et fuiterait du détail interne.
+ */
+describe('suppression d’un employé — le refus est LISIBLE', () => {
+  it('P2003 (bulletins existants) → 409 EMPLOYEE_HAS_PAYROLL, pas 500', async () => {
+    const { employeeRoutes } = await import('../routes/employees')
+    // on génère d'abord les bulletins du mois : c'est ce qui rend la suppression impossible
+    const payApp = await buildApp()
+    await payApp.inject({ method: 'POST', url: '/api/payroll/generate', payload: { month: '2026-07' } })
+    expect(payrolls.some(p => p.employeeId === 'e1')).toBe(true)
+
+    const app = Fastify()
+    app.setValidatorCompiler(validatorCompiler)
+    await app.register(employeeRoutes)
+    await app.ready()
+    const res = await app.inject({ method: 'DELETE', url: '/api/employees/e1' })
+    expect(res.statusCode).toBe(409)
+    expect(res.json().code).toBe('EMPLOYEE_HAS_PAYROLL')
+    // Le message Prisma brut ne doit JAMAIS atteindre le client.
+    expect(res.json().error).not.toMatch(/constraint|foreign key|Payroll_/i)
+  })
+
+  it('CONTRÔLE POSITIF — sans bulletin, la suppression PASSE (sinon le 409 ne prouve rien)', async () => {
+    const { employeeRoutes } = await import('../routes/employees')
+    const app = Fastify()
+    app.setValidatorCompiler(validatorCompiler)
+    await app.register(employeeRoutes)
+    await app.ready()
+    expect(payrolls).toHaveLength(0)
+    const res = await app.inject({ method: 'DELETE', url: '/api/employees/e1' })
+    expect(res.statusCode).toBe(200)
   })
 })

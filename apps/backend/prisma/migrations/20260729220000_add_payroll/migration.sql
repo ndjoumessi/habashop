@@ -39,13 +39,19 @@ CREATE INDEX IF NOT EXISTS "Payroll_tenantId_idx"       ON "Payroll"("tenantId")
 CREATE INDEX IF NOT EXISTS "Payroll_tenantId_month_idx" ON "Payroll"("tenantId", "month");
 CREATE INDEX IF NOT EXISTS "Payroll_employeeId_idx"     ON "Payroll"("employeeId");
 
--- FK employé : un bulletin suit son employé (CASCADE à la suppression du compte).
+-- FK employé — RESTRICT, pas CASCADE.
+-- ⚠️ Divergence ASSUMÉE avec les 5 autres FK vers Employee (Attendance, Shift, LeaveRequest,
+-- EmployeeBonus, SalaryHistory : toutes CASCADE). MESURÉ : `DELETE /api/employees/:id` fait un
+-- HARD delete (`prisma.employee.delete`), le CASCADE s'appliquerait donc réellement. Un
+-- bulletin est la preuve de ce qui a été versé — supprimer une fiche ne doit pas effacer
+-- l'historique de paie. RESTRICT garde `employeeId` NON-NULLABLE, donc l'unicité
+-- (tenantId, employeeId, month) reste intacte, ce qu'un SET NULL aurait cassé.
 DO $$
 BEGIN
     ALTER TABLE "Payroll"
         ADD CONSTRAINT "Payroll_employeeId_fkey"
         FOREIGN KEY ("employeeId") REFERENCES "Employee"("id")
-        ON DELETE CASCADE ON UPDATE CASCADE;
+        ON DELETE RESTRICT ON UPDATE CASCADE;
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;

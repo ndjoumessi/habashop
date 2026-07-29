@@ -587,7 +587,16 @@ model Payroll {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  // ⚠️ RESTRICT, pas CASCADE — DIVERGENCE ASSUMÉE avec les 5 autres FK vers Employee
+  // (Attendance, Shift, LeaveRequest, EmployeeBonus, SalaryHistory : toutes CASCADE).
+  // MESURÉ : `DELETE /api/employees/:id` fait un HARD delete (`prisma.employee.delete`),
+  // le CASCADE se déclencherait donc pour de vrai. Un bulletin est la PREUVE de ce qui a été
+  // versé : supprimer une fiche employé ne doit pas effacer l'historique de paie. RESTRICT
+  // garde aussi `employeeId` NON-NULLABLE, donc l'unicité (tenantId, employeeId, month)
+  // reste intacte — ce qu'un SET NULL aurait cassé.
+  // Contrepartie assumée : supprimer un employé qui a des bulletins ÉCHOUE (409, cf.
+  // `routes/employees.ts`) — on désactive la fiche au lieu de la supprimer.
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
   // ⚠️ FK tenant OBLIGATOIRE. `EmployeeBonus` et `SalaryHistory` n'en ont pas — ce sont les
   // 2 EXCEPTIONS sur 23 tables scopées (MESURÉ en prod : 20 tables portent bien la FK). Sans
   // elle, un tenantId pointant vers une boutique inexistante est ACCEPTÉ par la base : la
