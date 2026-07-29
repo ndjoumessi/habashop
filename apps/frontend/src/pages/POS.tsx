@@ -25,7 +25,7 @@ import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
 import { type PosProduct, type DiscountForm, CASHIER_TEXTS, computePosVat, toPosProduct } from '@/components/pos/posShared'
 import { reconcileSaleTotal, authoritativeTotal, detectCartPriceDrift, toSaleItemPayload } from '@/components/pos/saleReconcile'
 import { resolveScannedCode } from '@/components/pos/scanResolve'
-import { looksLikeScannedInput, typingElapsed } from '@/components/pos/wedgeScan'
+import { looksLikeScannedInput, looksLikeScannerBurst, typingElapsed, WEDGE_IDLE_MS } from '@/components/pos/wedgeScan'
 import { freshnessAge, freshnessLabel, oldestFreshness } from '@/lib/dataFreshness'
 
 export default function POS() {
@@ -91,7 +91,12 @@ export default function POS() {
   // Chronomètre de frappe pour distinguer une douchette (cadence machine) d'une main.
   // Une `ref` : mesurer ne doit pas provoquer un rendu à chaque touche.
   const firstKeyAtRef = useRef<number | null>(null)
-  const resetTyping = () => { firstKeyAtRef.current = null }
+  const lastKeyAtRef  = useRef<number>(0)
+  // Douchette SANS terminateur : détecteur d'inactivité après la rafale (cf. WEDGE_IDLE_MS).
+  const scanIdleRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const clearScanIdle = () => { if (scanIdleRef.current) { clearTimeout(scanIdleRef.current); scanIdleRef.current = null } }
+  const resetTyping = () => { firstKeyAtRef.current = null; clearScanIdle() }
+  useEffect(() => () => { if (scanIdleRef.current) clearTimeout(scanIdleRef.current) }, [])
   const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mtn'>(() => (posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mtn')
   useEffect(() => { setPayMode((posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mtn') }, [posDefaultPayment])
   const [waCountryCode, setWaCountryCode]         = useState('+221')
@@ -1081,12 +1086,35 @@ export default function POS() {
                   : (lang === 'en' ? 'Search…' : lang === 'es' ? 'Buscar…' : lang === 'it' ? 'Cerca…' : 'Rechercher…')}
                 value={search}
                 onChange={e => {
-                  if (firstKeyAtRef.current == null && e.target.value) firstKeyAtRef.current = Date.now()
-                  if (!e.target.value) resetTyping()
-                  setSearch(e.target.value)
+                  const val = e.target.value
+                  clearScanIdle()
+                  if (firstKeyAtRef.current == null && val) firstKeyAtRef.current = Date.now()
+                  if (!val) { resetTyping(); setSearch(val); return }
+                  lastKeyAtRef.current = Date.now()
+                  setSearch(val)
+                  // Douchette SANS terminateur : elle tape la rafale sans envoyer Entrée. Passé
+                  // WEDGE_IDLE_MS sans nouvelle touche, on tranche — `elapsed` figé à la dernière
+                  // touche (jamais jusqu'ici, sinon le délai fausserait la cadence).
+                  // ⚠️ `looksLikeScannerBurst` (cadence SEULE), jamais `looksLikeScannedInput` :
+                  // la voie FORME validerait le préfixe 12c d'un EAN-13 en cours de recopie —
+                  // un UPC-A valide une fois sur dix (mesuré) — et ajouterait un AUTRE produit.
+                  // La recopie manuelle reste servie par Entrée, où la saisie est finie.
+                  const first = firstKeyAtRef.current, last = lastKeyAtRef.current
+                  scanIdleRef.current = setTimeout(() => {
+                    scanIdleRef.current = null
+                    if (looksLikeScannerBurst(val, typingElapsed({ firstKeyAt: first, at: last }))) {
+                      setSearch(''); resetTyping(); void handleScan(val)
+                    }
+                  }, WEDGE_IDLE_MS)
                 }}
                 onKeyDown={e => {
                   if (e.key !== 'Enter') return
+                  // Garde le RETOUR ANTICIPÉ ci-dessous (Entrée sur une frappe humaine), qui ne
+                  // passe pas par `resetTyping`. Sur le chemin scan, c'est `resetTyping` qui
+                  // annule le minuteur — deux gardes redondantes, et c'est voulu : retirer une
+                  // seule des deux laisse la suite VERTE (vérifié), il faut les deux pour
+                  // provoquer le double-tir. Ceinture et bretelles sur une erreur d'ARGENT.
+                  clearScanIdle()
                   const elapsed = typingElapsed({ firstKeyAt: firstKeyAtRef.current, at: Date.now() })
                   if (!looksLikeScannedInput(search, elapsed)) return // frappe humaine → filtre, comme avant
                   e.preventDefault()
