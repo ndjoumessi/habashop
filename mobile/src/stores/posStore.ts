@@ -59,7 +59,7 @@ export function isPromotionActive(
 ): boolean {
   if (!hasPromotion) return false
   if (promotionEnd == null || promotionEnd === '') return true
-  return dayUTC(now) <= dayUTC(promotionEnd)
+  return dayUTC(now) < dayUTC(promotionEnd)
 }
 
 // Résout le prix unitaire selon (qty, base, paliers, promo) — MIROIR EXACT du backend
