@@ -8,53 +8,65 @@ export async function exportRoutes(app: FastifyInstance): Promise<void> {
     const tenantId = request.tenantId
     const lang = (request.query as { lang?: string })?.lang ?? 'fr'
 
-    let data: any[] = []
+    // ⚠️ `let data: any[]` a été SUPPRIMÉ ici. C'est lui qui laissait passer quatre lectures
+    // de champs INEXISTANTS — mesuré contre `prisma/schema.prisma` le 2026-07-29 :
+    //   · `Supplier.specialty`              → la colonne « Spécialité » du CSV fournisseurs
+    //     était TOUJOURS VIDE (le modèle porte `categories`) — c'est le bug de #170 ;
+    //   · `Product.buy_price` / `sell_price` → replis snake_case morts derrière `buyPrice` /
+    //     `sellPrice`, qui existent : sans effet, mais ils affirment un modèle faux ;
+    //   · `Customer.totalCA`                 → idem derrière `totalRevenue`.
+    // Chaque `case` construit désormais ses lignes là où Prisma a typé sa requête : lire un
+    // champ absent devient une erreur de compilation (TS2339), pas une colonne vide en prod.
     let filename = ''
     let headers: string[] = []
+    let rows: (string | number)[][] = []
 
     switch (resource) {
-      case 'products':
-        data = await prisma.product.findMany({ where: { tenantId, isActive: true, deletedAt: null }, orderBy: { name: 'asc' } })
+      case 'products': {
+        const data = await prisma.product.findMany({ where: { tenantId, isActive: true, deletedAt: null }, orderBy: { name: 'asc' } })
         filename = `stock-${new Date().toISOString().slice(0,10)}.csv`
         headers = lang==='fr' ? ['Nom','Catégorie','Stock','Min','Prix achat','Prix vente'] : ['Name','Category','Stock','Min','Buy price','Sell price']
+        rows = data.map(p => [p.name, p.category, p.stockQty, p.stockMin, p.buyPrice, p.sellPrice])
         break
-      case 'customers':
-        data = await prisma.customer.findMany({ where: { tenantId, deletedAt: null }, orderBy: { createdAt: 'desc' } })
+      }
+      case 'customers': {
+        const data = await prisma.customer.findMany({ where: { tenantId, deletedAt: null }, orderBy: { createdAt: 'desc' } })
         filename = `clients-${new Date().toISOString().slice(0,10)}.csv`
         headers = lang==='fr' ? ['Nom','Téléphone','Email','Type','CA Total','Points'] : ['Name','Phone','Email','Type','Revenue','Points']
+        rows = data.map(c => [c.name, c.phone ?? '', c.email ?? '', c.type ?? '', c.totalRevenue, c.loyaltyPoints])
         break
-      case 'suppliers':
-        data = await prisma.supplier.findMany({ where: { tenantId, deletedAt: null }, orderBy: { name: 'asc' } })
+      }
+      case 'suppliers': {
+        const data = await prisma.supplier.findMany({ where: { tenantId, deletedAt: null }, orderBy: { name: 'asc' } })
         filename = `fournisseurs-${new Date().toISOString().slice(0,10)}.csv`
-        headers = lang==='fr' ? ['Nom','Spécialité','Téléphone','Email','Rating','Délai'] : ['Name','Specialty','Phone','Email','Rating','Lead time']
+        // ⚠️ En-tête « Catégorie », PAS « Spécialité » : c'est le champ réel, et c'est déjà le
+        // vocabulaire de l'export CSV frontend (`t('col_category')`, `Suppliers.tsx`). Deux
+        // exports du même objet annonçaient deux noms différents pour la même donnée.
+        headers = lang==='fr' ? ['Nom','Catégorie','Téléphone','Email','Rating','Délai'] : ['Name','Category','Phone','Email','Rating','Lead time']
+        // `categories` est déjà la chaîne saisie par le commerçant (« Riz, Huile ») : telle quelle.
+        rows = data.map(s => [s.name, s.categories ?? '', s.phone ?? '', s.email ?? '', s.rating, s.leadTime])
         break
-      case 'sales':
-        data = await prisma.sale.findMany({ where: { tenantId }, include: { items: true }, orderBy: { createdAt: 'desc' }, take: 1000 })
+      }
+      case 'sales': {
+        const data = await prisma.sale.findMany({ where: { tenantId }, include: { items: true }, orderBy: { createdAt: 'desc' }, take: 1000 })
         filename = `ventes-${new Date().toISOString().slice(0,10)}.csv`
         headers = lang==='fr' ? ['Date','Réf','Articles','Total','Paiement'] : ['Date','Ref','Items','Total','Payment']
+        rows = data.map(v => [new Date(v.createdAt).toLocaleDateString('fr-FR'), v.id.slice(-6), v.items.length, v.total, v.paymentMode ?? ''])
         break
-      case 'employees':
-        data = await prisma.employee.findMany({ where: { tenantId }, orderBy: { name: 'asc' } })
+      }
+      case 'employees': {
+        const data = await prisma.employee.findMany({ where: { tenantId }, orderBy: { name: 'asc' } })
         filename = `employes-${new Date().toISOString().slice(0,10)}.csv`
         headers = lang==='fr' ? ['Nom','Rôle','Département','Salaire','Type'] : ['Name','Role','Department','Salary','Type']
+        rows = data.map(e => [e.name, e.role, e.dept, e.salary, e.type])
         break
+      }
       default:
         return reply.code(400).send({ error: `Resource non supportée: ${resource}` })
     }
 
-    const rows = data.map((item) => {
-      switch (resource) {
-        case 'products':   return [item.name, item.category, item.stockQty, item.stockMin, item.buyPrice??item.buy_price??0, item.sellPrice??item.sell_price??0]
-        case 'customers':  return [item.name, item.phone??'', item.email??'', item.type??'', item.totalRevenue??item.totalCA??0, item.loyaltyPoints??0]
-        case 'suppliers':  return [item.name, item.specialty??'', item.phone??'', item.email??'', item.rating??0, item.leadTime??'']
-        case 'sales':      return [new Date(item.createdAt).toLocaleDateString('fr-FR'), item.id.slice(-6), item.items?.length??0, item.total, item.paymentMode??'']
-        case 'employees':  return [item.name, item.role??'', item.dept??'', item.salary??0, item.type??'CDI']
-        default: return []
-      }
-    })
-
     const BOM = '\uFEFF'
-    const csv = BOM + headers.join(';') + '\n' + rows.map((row: any[]) =>
+    const csv = BOM + headers.join(';') + '\n' + rows.map((row) =>
       row.map((cell) => {
         const s = String(cell??'').replace(/"/g,'""')
         return s.includes(';')||s.includes('"') ? `"${s}"` : s
