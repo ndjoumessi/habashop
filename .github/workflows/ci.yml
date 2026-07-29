@@ -74,6 +74,44 @@ jobs:
           fi
           echo "✅ Bundle OK: ${SIZE} bytes"
 
+  # ─── Tests mobile (Expo — HORS workspaces npm) ───
+  # ⚠️ `mobile/` a son propre package.json ET son propre package-lock.json : il n'est PAS
+  # couvert par le `npm ci` racine des deux jobs ci-dessus. Sans ce job, ses 239 tests ne
+  # tournaient que sur la machine de qui pensait à les lancer (#163) — une PR mobile pouvait
+  # être VERTE en cassant tout le mobile.
+  #
+  # ⚠️ Ce qui rend l'absence coûteuse, ce ne sont pas les tests en nombre, ce sont les
+  # JUMEAUX : `barcodeShared`, `loyaltyDiscountShared` et `promotionActiveShared` lisent
+  # `docs/shared-fixtures/*.json` et n'existent QUE pour rougir quand une règle bouge d'un
+  # seul côté. Ce rouge-là n'arrivait jamais — la protection anti-dérive était à sens unique.
+  #
+  # ⚠️ AUCUN filtre de chemin, délibérément. Restreindre à `mobile/**` rouvrirait le trou
+  # qu'on ferme : un changement de fixture partagée vit dans `docs/`, pas dans `mobile/`, et
+  # n'aurait donc PAS déclenché le job. MESURÉ : install à froid 28 s, suite 5 s — la taxe
+  # sur une PR web ne justifie pas de rendre le verrou borgne.
+  #
+  # ⚠️ NE PAS intégrer `mobile/` aux workspaces npm pour « simplifier » : la séparation est
+  # délibérée (builds EAS, résolution des versions Expo). Le job séparé est la bonne forme.
+  unit-tests-mobile:
+    name: Unit Tests — Mobile
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4 # complet : les jumeaux lisent ../../../docs/shared-fixtures
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json # lockfile PROPRE, pas celui de la racine
+      - name: Install (DANS mobile/, lockfile dédié)
+        run: npm ci
+      - name: TypeScript check
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: npm test
+
   # ─── Sécurité ────────────────────────────
   security:
     name: Security Scan
@@ -159,11 +197,17 @@ jobs:
           path: apps/frontend/playwright-report/
           retention-days: 7
 
-  # ─── Résumé post-CI (déploiement MANUEL) ──
+  # ─── Résumé post-CI (déploiement AUTOMATIQUE sur push main) ──
+  # ⚠️ Ce résumé disait le CONTRAIRE jusqu'ici (« déploiement pas automatique, à déclencher
+  # manuellement »). C'était faux ET nuisible : `main` auto-déploie sur les DEUX plateformes,
+  # donc le geste manuel qu'il conseillait produisait un SECOND déploiement du même commit et
+  # brûlait le quota Vercel (free-tier = 100/jour). Mesuré le 2026-07-23 : la prod servait la
+  # version neuve 17 s après le push, alors que le `railway up --ci` lancé « pour forcer »
+  # était encore en build. Cf. CLAUDE.md § « APRÈS UN MERGE : ne rien lancer ».
   summary:
     name: Résumé déploiement
     runs-on: ubuntu-latest
-    needs: [unit-tests-backend, unit-tests-frontend, security]
+    needs: [unit-tests-backend, unit-tests-frontend, unit-tests-mobile, security]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Vérifier la santé de la prod
@@ -180,9 +224,17 @@ jobs:
         run: |
           echo "## ✅ CI réussie" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "⚠️ Le déploiement n'est **pas** automatique sur push — à déclencher manuellement :" >> $GITHUB_STEP_SUMMARY
-          echo "- Backend (Railway) : \`cd apps/backend && railway up --ci\`" >> $GITHUB_STEP_SUMMARY
-          echo "- Frontend (Vercel) : \`cd apps/frontend && vercel --prod\`" >> $GITHUB_STEP_SUMMARY
+          echo "Le déploiement est **automatique** sur push \`main\` — Railway (back) ET Vercel (front)." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚠️ Ne rien lancer. Vérifier, c'est tout." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**NE PAS** lancer \`railway up --ci\` ni \`vercel --prod\` : le geste manuel produit un" >> $GITHUB_STEP_SUMMARY
+          echo "**second** déploiement du même commit et brûle le quota Vercel (free-tier = 100/jour)." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**À vérifier** :" >> $GITHUB_STEP_SUMMARY
+          echo "- Back — \`npm run smoke:version --workspace=apps/backend\` (le \`/health\` déployé == version source)." >> $GITHUB_STEP_SUMMARY
+          echo "  ⚠️ Le smoke reste VERT si la version n'a pas bougé : la preuve réelle d'un redémarrage est l'\`uptime\` d'\`/api/health-extended\` remis à zéro." >> $GITHUB_STEP_SUMMARY
+          echo "- Front — un déploiement \`● Ready\` **plus récent que le merge** (\`vercel ls --prod\`)." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Item | Valeur |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
@@ -195,7 +247,7 @@ jobs:
   notify-failure:
     name: Notify on failure
     runs-on: ubuntu-latest
-    needs: [unit-tests-backend, unit-tests-frontend]
+    needs: [unit-tests-backend, unit-tests-frontend, unit-tests-mobile]
     if: failure()
     steps:
       - name: Alerte Discord
