@@ -4,6 +4,7 @@ import { ShoppingCart, MessageCircle, Minus, Plus, Search, Share2, AlertCircle }
 import { publicApi } from '@/lib/api'
 import { convertAmount, formatInCurrency } from '@/stores/appStore'
 import { isPromotionActive } from '@/lib/pricing'
+import { appUrl } from '@/lib/appUrl'
 
 type TenantPublic = {
   id: string
@@ -314,9 +315,9 @@ export default function PublicCatalog() {
         color:'var(--text3)', borderTop:'1px solid var(--border)', marginTop:32,
       }}>
         {i(lang, 'Boutique propulsée par', 'Powered by', 'Tienda impulsada por', 'Negozio gestito da')}{' '}
-        <a href="https://habashop.vercel.app" target="_blank" rel="noopener noreferrer" style={{ color:'var(--p)', fontWeight:700 }}>HabaShop</a>
+        <a href={appUrl()} target="_blank" rel="noopener noreferrer" style={{ color:'var(--p)', fontWeight:700 }}>HabaShop</a>
         {' · '}
-        <a href="https://habashop.vercel.app/signup" target="_blank" rel="noopener noreferrer" style={{ color:'var(--text3)' }}>
+        <a href={`${appUrl()}/signup`} target="_blank" rel="noopener noreferrer" style={{ color:'var(--text3)' }}>
           {i(lang, 'Créez la vôtre gratuitement', 'Create yours for free', 'Crea la tuya gratis', 'Crea la tua gratis')}
         </a>
       </footer>
