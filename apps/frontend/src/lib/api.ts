@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger'
+import type { ApiSupplier, SupplierCreate, SupplierWrite } from '@/components/suppliers/suppliersShared'
 
 const BASE_URL: string = (import.meta as any).env?.VITE_API_URL
   ?? 'https://habashop-production.up.railway.app'
@@ -262,10 +263,15 @@ export const customersApi = {
   delete: (id: string) => api.delete<void>(`/api/customers/${id}`),
 }
 
+// ⚠️ Types de FRONTIÈRE (`ApiSupplier` / `SupplierWrite`), pas le type d'interface
+// `Supplier` : sur le fil, `categories` est une CHAÎNE, et c'est `mapApiSupplier` qui la
+// recompose en `string[]`. Typer ces retours `Supplier[]` nierait cette traversée et
+// laisserait le compilateur accepter un tableau vers POST/PUT, que le serveur refuse en
+// 400 (zod `z.string().nullish()`). Cf. le bloc de commentaire de `suppliersShared`.
 export const suppliersApi = {
-  list:   () => api.get<any[]>('/api/suppliers'),
-  create: (data: any) => api.post<any>('/api/suppliers', data),
-  update: (id: string, data: any) => api.put<any>(`/api/suppliers/${id}`, data),
+  list:   () => api.get<ApiSupplier[]>('/api/suppliers'),
+  create: (data: SupplierCreate) => api.post<ApiSupplier>('/api/suppliers', data),
+  update: (id: string, data: SupplierWrite) => api.put<ApiSupplier>(`/api/suppliers/${id}`, data),
   delete: (id: string) => api.delete<void>(`/api/suppliers/${id}`),
   scanInvoice: async (file: File): Promise<any> => {
     const token = getToken()
