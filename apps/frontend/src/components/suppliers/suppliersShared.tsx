@@ -6,6 +6,68 @@ export type L4 = 'fr' | 'en' | 'es' | 'it'
 
 export interface SupplierOrder { ref: string; date: string; total: number; status: string }
 
+/**
+ * ⚠️ TYPES DE FRONTIÈRE — dérivés du BACKEND MESURÉ, jamais d'une supposition.
+ *
+ * `Supplier` (ci-dessous) est le type de l'INTERFACE : `categories` y est un `string[]`,
+ * parce que l'UI filtre, compte et affiche des catégories une par une. Le FIL, lui, porte
+ * une chaîne — ce sont deux formes différentes, et `mapApiSupplier` est la traversée.
+ *
+ * Typer la réponse de `GET /api/suppliers` comme `Supplier[]` NIERAIT cette traversée : le
+ * compilateur laisserait alors passer un tableau vers `POST`/`PUT`, que le serveur REFUSE.
+ * C'est arrivé, et `tsc` était vert — une assertion de type ne vérifie rien.
+ *
+ * Mesuré le 2026-07-29 sur `apps/backend` :
+ *   · `prisma/schema.prisma` → `model Supplier { categories String? }`  (String, pas String[])
+ *   · `routes/suppliers.ts`  → `GET` rend `prisma.supplier.findMany(...)` SANS `select` :
+ *      la ligne brute, tous les champs scalaires, dates sérialisées en ISO
+ *   · `routes/suppliers.ts`  → zod `categories: z.string().nullish()` sur POST et PUT.
+ *      Vérifié en exécutant le schéma : `"Riz, Huile"` ACCEPTÉ · `["Riz","Huile"]` REJETÉ
+ *      (« Expected string, received array ») ⇒ 400.
+ *   · témoin indépendant : `GlobalSearch.tsx` fait `s.categories?.toLowerCase()`.
+ *
+ * ⚠️ Le zod vit côté backend et n'est pas importable ici (workspaces séparés) : la
+ * correspondance est donc DOCUMENTÉE et VERROUILLÉE par `suppliersApiTypes.test.ts`, qui
+ * relit `routes/suppliers.ts` et rougit si le backend change de forme.
+ */
+
+/** Forme FIL de `GET /api/suppliers` : la ligne Prisma brute. PAS `Supplier`. */
+export interface ApiSupplier {
+  id: string
+  tenantId: string
+  name: string
+  categories: string | null
+  phone: string | null
+  email: string | null
+  address: string | null
+  leadTime: number
+  rating: number
+  status: string
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
+
+/**
+ * Miroir du zod `SUPPLIER_UPDATE` (`routes/suppliers.ts`). `nullish()` ⇒ `?: T | null`.
+ * ⚠️ `categories` est une CHAÎNE : un `string[]` est refusé À LA COMPILATION, du bon côté.
+ */
+export interface SupplierWrite {
+  name?: string
+  categories?: string | null
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  leadTime?: number
+  rating?: number
+  status?: string
+  notes?: string | null
+}
+
+/** Miroir du zod `SUPPLIER_CREATE` : identique, `name` requis (`z.string().min(1)`). */
+export type SupplierCreate = SupplierWrite & { name: string }
+
 export interface Supplier {
   id: string; name: string; categories: string[]; phone: string
   email: string; address: string; contact: string
@@ -62,11 +124,12 @@ export function StarRating({ rating }: { rating: number }) {
   )
 }
 
-export function mapApiSupplier(s: any): Supplier {
+/** Traversée FIL → UI : la chaîne `"Riz, Huile"` devient `['Riz','Huile']`. */
+export function mapApiSupplier(s: ApiSupplier): Supplier {
   return {
     id: s.id,
     name: s.name,
-    categories: s.categories ? s.categories.split(',').map((c: string) => c.trim()).filter(Boolean) : [],
+    categories: s.categories ? s.categories.split(',').map(c => c.trim()).filter(Boolean) : [],
     phone: s.phone || '',
     email: s.email || '',
     address: s.address || '',
