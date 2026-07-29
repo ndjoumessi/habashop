@@ -3,6 +3,10 @@ import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { type Employee, type ContractForm, COLORS, DEPT_COLORS, labelStyle, deptLabel, contractLabel } from '@/components/hr/hrShared'
+// ⚠️ Taux et calcul importés de la SOURCE UNIQUE (`payrollShared`). Ces fichiers codaient
+// `0.08`/`0.05`/`0.87` en dur — le `0.87` étant le pire : un net magique qui devient
+// silencieusement faux dès qu'un taux change.
+import { payrollBreakdown, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
 
 interface Props {
   lang: string
@@ -69,8 +73,8 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
               </div>
               {contractForm.salary>0&&(
                 <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:12 }}>
-                  <span>CNSS: <strong style={{color:'var(--danger)'}}>−{fmt(Math.round(salaryXOF*0.08))}</strong></span>
-                  <span>{lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'}: <strong style={{color:'var(--acc2)'}}>{fmt(Math.round(salaryXOF*0.87))}</strong></span>
+                  <span>CNSS: <strong style={{color:'var(--danger)'}}>−{fmt(payrollBreakdown({ baseSalary: salaryXOF, bonus: 0, overtime: 0, deductions: 0, absences: 0 }).cnss)}</strong></span>
+                  <span>{lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'}: <strong style={{color:'var(--acc2)'}}>{fmt(payrollBreakdown({ baseSalary: salaryXOF, bonus: 0, overtime: 0, deductions: 0, absences: 0 }).net)}</strong></span>
                 </div>
               )}
             </div>

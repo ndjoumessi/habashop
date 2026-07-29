@@ -6,6 +6,10 @@ import { employeesApi } from '@/lib/api'
 import { confirm } from '@/lib/confirm'
 import ViewField from '@/components/ui/ViewField'
 import ValidatedInput from '@/components/ui/ValidatedInput'
+// ⚠️ Taux et calcul importés de la SOURCE UNIQUE (`payrollShared`). Ces fichiers codaient
+// `0.08`/`0.05`/`0.87` en dur — le `0.87` étant le pire : un net magique qui devient
+// silencieusement faux dès qu'un taux change.
+import { payrollBreakdown, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
@@ -174,8 +178,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
             </ViewField>
             {+salaryInput > 0 && (() => {
               const salaryXOF = toXOF(+salaryInput)
-              const cnss = Math.round(salaryXOF * 0.08)
-              const ir   = Math.round(salaryXOF * 0.05)
+              const { cnss, ir } = payrollBreakdown({ baseSalary: salaryXOF, bonus: 0, overtime: 0, deductions: 0, absences: 0 })
               const net  = salaryXOF - cnss - ir
               return (
                 <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:16, flexWrap:'wrap' }}>

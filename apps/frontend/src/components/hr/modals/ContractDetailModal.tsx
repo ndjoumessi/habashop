@@ -1,5 +1,9 @@
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { type Employee, displayDate, calcAnciennete, roleLabel, deptLabel } from '@/components/hr/hrShared'
+// ⚠️ Taux et calcul importés de la SOURCE UNIQUE (`payrollShared`). Ces fichiers codaient
+// `0.08`/`0.05`/`0.87` en dur — le `0.87` étant le pire : un net magique qui devient
+// silencieusement faux dès qu'un taux change.
+import { payrollBreakdown, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
 
 interface Props {
   lang: string
@@ -10,6 +14,7 @@ interface Props {
 }
 
 export default function ContractDetailModal({ lang, fmt, selectedContract, setShowContractDetailModal, openEditModal }: Props) {
+  const contractBd = payrollBreakdown({ baseSalary: Number(selectedContract?.salary) || 0, bonus: 0, overtime: 0, deductions: 0, absences: 0 })
   const boxRef = useModalFocus<HTMLDivElement>()
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={lang === 'en' ? 'Contract details' : lang === 'es' ? 'Detalle del contrato' : lang === 'it' ? 'Dettaglio contratto' : 'Détail du contrat'} onClick={e => e.target===e.currentTarget&&setShowContractDetailModal(false)}>
@@ -56,9 +61,9 @@ export default function ContractDetailModal({ lang, fmt, selectedContract, setSh
             <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:12 }}>💰 {lang === 'en' ? 'COMPENSATION' : lang === 'es' ? 'REMUNERACIÓN' : lang === 'it' ? 'RETRIBUZIONE' : 'RÉMUNÉRATION'}</div>
             {[
               {label:lang === 'en' ? 'Gross salary' : lang === 'es' ? 'Salario bruto' : lang === 'it' ? 'Stipendio lordo' : 'Salaire brut', value:fmt(selectedContract.salary), color:'var(--text)'},
-              {label:'CNSS (8%)', value:`− ${fmt(Math.round(selectedContract.salary*0.08))}`, color:'var(--danger)'},
-              {label:'IR (5%)', value:`− ${fmt(Math.round(selectedContract.salary*0.05))}`, color:'var(--acc)'},
-              {label:lang === 'en' ? 'Net salary' : lang === 'es' ? 'Neto a pagar' : lang === 'it' ? 'Netto da pagare' : 'Net à payer', value:fmt(Math.round(selectedContract.salary*0.87)), color:'var(--acc2)'},
+              {label:`CNSS (${CNSS_RATE * 100}%)`, value:`− ${fmt(contractBd.cnss)}`, color:'var(--danger)'},
+              {label:`IR (${IR_RATE * 100}%)`, value:`− ${fmt(contractBd.ir)}`, color:'var(--acc)'},
+              {label:lang === 'en' ? 'Net salary' : lang === 'es' ? 'Neto a pagar' : lang === 'it' ? 'Netto da pagare' : 'Net à payer', value:fmt(contractBd.net), color:'var(--acc2)'},
             ].map(row=>(
               <div key={row.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 0', borderBottom:'1px solid var(--border)' }}>
                 <span style={{ fontSize:12, color:'var(--text3)' }}>{row.label}</span>

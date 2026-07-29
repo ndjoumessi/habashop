@@ -1,50 +1,176 @@
 {
-  "_comment": "Cas PARTAGÉS backend ↔ frontend pour `payrollBreakdown` (calcul de paie). Le front l'affiche AVANT génération ; le backend le FIGE en base au moment de la génération (cf. model Payroll — instantané gelé). Deux exécutions du même calcul ⇒ risque de dérive, d'où ce fichier : modifier une règle d'un seul côté fait rougir l'autre. Montants en XOF, arrondis à l'unité. CNSS = 5,6 % du salaire de BASE ; retenue d'absence = round(absences × base / 26).",
+  "_comment": "Cas PARTAGÉS backend ↔ frontend pour `payrollBreakdown` (retenues de paie). Le front l'AFFICHE avant génération ; le backend le FIGE en base au moment de la génération (cf. model Payroll — instantané gelé). Deux exécutions du même calcul ⇒ risque de dérive, d'où ce fichier : modifier une règle d'un seul côté fait rougir l'autre. ⚠️ RÈGLE : CNSS 8 % et IR 5 % assis sur le BRUT (base+primes+heures sup), tous deux DÉDUITS du net ; `deductions` = retenues EXCEPTIONNELLES qui s'AJOUTENT aux cotisations ; retenue d'absence = round(absences × base / 26). Montants XOF, arrondis à l'unité. Attendus GÉNÉRÉS par l'implémentation, pas calculés à la main.",
   "cas": [
     {
-      "label": "salaire nu — ni prime, ni retenue, ni absence",
-      "entree": { "baseSalary": 150000, "bonus": 0, "overtime": 0, "deductions": 0, "absences": 0 },
-      "attendu": { "brut": 150000, "absencePenalty": 0, "cnss": 8400, "irpp": -8400, "totalDeductions": 0, "net": 150000 }
+      "label": "salaire nu — CNSS 8 % et IR 5 % sont DÉDUITS même sans retenue exceptionnelle",
+      "entree": {
+        "baseSalary": 150000,
+        "bonus": 0,
+        "overtime": 0,
+        "deductions": 0,
+        "absences": 0
+      },
+      "attendu": {
+        "brut": 150000,
+        "cnss": 12000,
+        "ir": 7500,
+        "absencePenalty": 0,
+        "exceptional": 0,
+        "totalDeductions": 19500,
+        "net": 130500
+      }
     },
     {
-      "label": "primes + heures sup gonflent le brut ET le net",
-      "entree": { "baseSalary": 150000, "bonus": 20000, "overtime": 10000, "deductions": 0, "absences": 0 },
-      "attendu": { "brut": 180000, "absencePenalty": 0, "cnss": 8400, "irpp": -8400, "totalDeductions": 0, "net": 180000 }
+      "label": "primes : entrent dans le BRUT, donc augmentent aussi CNSS et IR (assiette élargie)",
+      "entree": {
+        "baseSalary": 150000,
+        "bonus": 20000,
+        "overtime": 10000,
+        "deductions": 0,
+        "absences": 0
+      },
+      "attendu": {
+        "brut": 180000,
+        "cnss": 14400,
+        "ir": 9000,
+        "absencePenalty": 0,
+        "exceptional": 0,
+        "totalDeductions": 23400,
+        "net": 156600
+      }
     },
     {
-      "label": "retenues saisies : déduites du net, pas du brut",
-      "entree": { "baseSalary": 200000, "bonus": 0, "overtime": 0, "deductions": 15000, "absences": 0 },
-      "attendu": { "brut": 200000, "absencePenalty": 0, "cnss": 11200, "irpp": 3800, "totalDeductions": 15000, "net": 185000 }
+      "label": "retenue EXCEPTIONNELLE : s'AJOUTE aux cotisations, ne les remplace pas",
+      "entree": {
+        "baseSalary": 200000,
+        "bonus": 0,
+        "overtime": 0,
+        "deductions": 15000,
+        "absences": 0
+      },
+      "attendu": {
+        "brut": 200000,
+        "cnss": 16000,
+        "ir": 10000,
+        "absencePenalty": 0,
+        "exceptional": 15000,
+        "totalDeductions": 41000,
+        "net": 159000
+      }
     },
     {
-      "label": "absences : retenue = round(absences × base / 26), s'ajoute aux retenues affichées",
-      "entree": { "baseSalary": 130000, "bonus": 0, "overtime": 0, "deductions": 0, "absences": 3 },
-      "attendu": { "brut": 130000, "absencePenalty": 15000, "cnss": 7280, "irpp": -22280, "totalDeductions": 15000, "net": 115000 }
+      "label": "absences : retenue = round(absences × base / 26), en plus des cotisations",
+      "entree": {
+        "baseSalary": 130000,
+        "bonus": 0,
+        "overtime": 0,
+        "deductions": 0,
+        "absences": 3
+      },
+      "attendu": {
+        "brut": 130000,
+        "cnss": 10400,
+        "ir": 6500,
+        "absencePenalty": 15000,
+        "exceptional": 0,
+        "totalDeductions": 31900,
+        "net": 98100
+      }
     },
     {
       "label": "arrondi de la retenue d'absence — division non entière",
-      "entree": { "baseSalary": 100000, "bonus": 0, "overtime": 0, "deductions": 0, "absences": 1 },
-      "attendu": { "brut": 100000, "absencePenalty": 3846, "cnss": 5600, "irpp": -9446, "totalDeductions": 3846, "net": 96154 }
+      "entree": {
+        "baseSalary": 100000,
+        "bonus": 0,
+        "overtime": 0,
+        "deductions": 0,
+        "absences": 1
+      },
+      "attendu": {
+        "brut": 100000,
+        "cnss": 8000,
+        "ir": 5000,
+        "absencePenalty": 3846,
+        "exceptional": 0,
+        "totalDeductions": 16846,
+        "net": 83154
+      }
     },
     {
-      "label": "arrondi CNSS — 5,6 % non entier",
-      "entree": { "baseSalary": 123456, "bonus": 0, "overtime": 0, "deductions": 0, "absences": 0 },
-      "attendu": { "brut": 123456, "absencePenalty": 0, "cnss": 6914, "irpp": -6914, "totalDeductions": 0, "net": 123456 }
+      "label": "arrondis CNSS et IR — 8 % et 5 % non entiers sur la même assiette",
+      "entree": {
+        "baseSalary": 123456,
+        "bonus": 0,
+        "overtime": 0,
+        "deductions": 0,
+        "absences": 0
+      },
+      "attendu": {
+        "brut": 123456,
+        "cnss": 9876,
+        "ir": 6173,
+        "absencePenalty": 0,
+        "exceptional": 0,
+        "totalDeductions": 16049,
+        "net": 107407
+      }
     },
     {
-      "label": "cas complet — tout à la fois",
-      "entree": { "baseSalary": 180000, "bonus": 25000, "overtime": 12000, "deductions": 20000, "absences": 2 },
-      "attendu": { "brut": 217000, "absencePenalty": 13846, "cnss": 10080, "irpp": -3926, "totalDeductions": 33846, "net": 183154 }
+      "label": "cas complet — brut composite, retenue exceptionnelle ET absences",
+      "entree": {
+        "baseSalary": 180000,
+        "bonus": 25000,
+        "overtime": 12000,
+        "deductions": 20000,
+        "absences": 2
+      },
+      "attendu": {
+        "brut": 217000,
+        "cnss": 17360,
+        "ir": 10850,
+        "absencePenalty": 13846,
+        "exceptional": 20000,
+        "totalDeductions": 62056,
+        "net": 154944
+      }
     },
     {
       "label": "salaire à zéro — aucun NaN, aucune division parasite",
-      "entree": { "baseSalary": 0, "bonus": 0, "overtime": 0, "deductions": 0, "absences": 0 },
-      "attendu": { "brut": 0, "absencePenalty": 0, "cnss": 0, "irpp": 0, "totalDeductions": 0, "net": 0 }
+      "entree": {
+        "baseSalary": 0,
+        "bonus": 0,
+        "overtime": 0,
+        "deductions": 0,
+        "absences": 0
+      },
+      "attendu": {
+        "brut": 0,
+        "cnss": 0,
+        "ir": 0,
+        "absencePenalty": 0,
+        "exceptional": 0,
+        "totalDeductions": 0,
+        "net": 0
+      }
     },
     {
-      "label": "retenues supérieures au brut — net NÉGATIF, non borné à zéro (un net négatif signale une saisie à corriger, l'écraser la masquerait)",
-      "entree": { "baseSalary": 50000, "bonus": 0, "overtime": 0, "deductions": 80000, "absences": 0 },
-      "attendu": { "brut": 50000, "absencePenalty": 0, "cnss": 2800, "irpp": 77200, "totalDeductions": 80000, "net": -30000 }
+      "label": "retenue exceptionnelle supérieure au brut — net NÉGATIF, non borné à zéro (un net négatif signale une saisie à corriger ; l'écraser la masquerait)",
+      "entree": {
+        "baseSalary": 50000,
+        "bonus": 0,
+        "overtime": 0,
+        "deductions": 80000,
+        "absences": 0
+      },
+      "attendu": {
+        "brut": 50000,
+        "cnss": 4000,
+        "ir": 2500,
+        "absencePenalty": 0,
+        "exceptional": 80000,
+        "totalDeductions": 86500,
+        "net": -36500
+      }
     }
   ]
 }

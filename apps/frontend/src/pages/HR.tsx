@@ -22,6 +22,9 @@ import HRTabs from '@/components/hr/HRTabs'
 import HRModals from '@/components/hr/HRModals'
 import EmptyState from '@/components/ui/EmptyState'
 import { type Employee, type LeaveRequest, type AttendUiStatus, type ContractForm, type LeaveForm, COLORS, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusToApi, attendStatusFromApi, mapApiLeave } from '@/components/hr/hrShared'
+// ⚠️ Taux et calcul de paie : SOURCE UNIQUE (`payrollShared`). Ce fichier codait 0.08/0.05
+// en dur — 6 fichiers le faisaient, donc 6 endroits à corriger au prochain changement de loi.
+import { payrollBreakdown } from '@/components/payroll/payrollShared'
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -446,10 +449,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
     actifs.forEach((emp, i) => {
       const brut  = Number(emp.salary)||0
       const bonus = bonuses[String(emp.id)] ?? 0
-      const total = brut + bonus
-      const cnss  = Math.round(total * 0.08)
-      const ir    = Math.round(total * 0.05)
-      const net   = total - cnss - ir
+      const { cnss, ir, net } = payrollBreakdown({ baseSalary: brut, bonus, overtime: 0, deductions: 0, absences: 0 })
       setTimeout(() => {
         generatePayslipPDF(emp, { brut, bonus, cnss, ir, net, month: payrollMonth })
       }, i * 300)

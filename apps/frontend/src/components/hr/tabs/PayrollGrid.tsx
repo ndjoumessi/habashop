@@ -3,10 +3,15 @@ import toast from 'react-hot-toast'
 import { useConfig, convertFromXOF } from '@/stores/appStore'
 import { type Employee, EmpAvatar, roleLabel } from '@/components/hr/hrShared'
 import { sanitizeCsv } from '@/lib/csv'
+// ⚠️ Ce fichier définissait SES PROPRES taux en se déclarant « source unique (cf. payroll-calc) »
+// — alors que payroll-calc appliquait 5,6 % sur une autre assiette avec un IRPP résiduel. Le
+// commentaire affirmait l'unicité, le code la contredisait. Les taux et le calcul viennent
+// désormais de `payrollShared`, pour de vrai.
+import { payrollBreakdown, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
 
-// Taux légaux appliqués partout dans la paie (cf. payroll-calc) — source unique pour calculs ET libellés
-const CNSS_RATE = 0.08
-const IR_RATE = 0.05
+/** Retenues d'un employé du mois — passe par la source unique, jamais un calcul local. */
+const empBreakdown = (salary: number, bonus: number) =>
+  payrollBreakdown({ baseSalary: Number(salary) || 0, bonus, overtime: 0, deductions: 0, absences: 0 })
 
 interface Props {
   employees: Employee[]
@@ -20,6 +25,15 @@ interface Props {
 
 export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPayrollMonth, bonuses, generateAllPayslips, setSalaryTarget, setShowSalaryModal }: Props) {
   const { currency } = useConfig()
+
+  // Totaux des KPIs — somme des retenues PAR EMPLOYÉ (arrondi à l'unité par bulletin, comme
+  // ce que reçoit chacun), jamais un pourcentage appliqué à la masse globale : les deux
+  // divergent dès qu'un arrondi tombe, et c'est le total par employé qui est versé.
+  const totaux = (employees ?? []).filter(e => e.active).reduce((acc, e) => {
+    const bd = empBreakdown(Number(e.salary) || 0, bonuses[String(e.id)] ?? 0)
+    return { brut: acc.brut + bd.brut, cnss: acc.cnss + bd.cnss, ir: acc.ir + bd.ir, net: acc.net + bd.net }
+  }, { brut: 0, cnss: 0, ir: 0, net: 0 })
+
   return (
     <>
       {/* Contrôles */}
@@ -45,10 +59,7 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
             ...activeEmps.map(emp => {
               const brut  = emp.salary
               const bonus = bonuses[String(emp.id)] ?? 0
-              const total = brut + bonus
-              const cnss  = Math.round(total * CNSS_RATE)
-              const ir    = Math.round(total * IR_RATE)
-              const net   = total - cnss - ir
+              const { cnss, ir, net } = empBreakdown(brut, bonus)
               return [emp.name, roleLabel(emp.role, lang), cv(brut), cv(bonus), cv(cnss), cv(ir), cv(net)]
             }),
           ]
@@ -72,9 +83,11 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
       {/* KPIs paie */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
         {[
-          { label: lang === 'en' ? 'Gross payroll' : lang === 'es' ? 'Masa salarial bruta' : lang === 'it' ? 'Costo del personale lordo' : 'Masse salariale brute', value: fmt(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)), color:'var(--p2)' },
-          { label: 'CNSS (8%)', value: fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.08)), color:'var(--danger)' },
-          { label: lang === 'en' ? 'Net to pay' : lang === 'es' ? 'Neto a pagar' : lang === 'it' ? 'Netto da pagare' : 'Net à payer', value: fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.92)), color:'var(--acc2)' },
+          // ⚠️ « Net à payer » valait `brut × 0.92` : il ne retirait QUE la CNSS, jamais l'IR de
+          // 5 % — le KPI contredisait la table juste en dessous. Agrégé via la source unique.
+          { label: lang === 'en' ? 'Gross payroll' : lang === 'es' ? 'Masa salarial bruta' : lang === 'it' ? 'Costo del personale lordo' : 'Masse salariale brute', value: fmt(totaux.brut), color:'var(--p2)' },
+          { label: `CNSS (${CNSS_RATE * 100}%)`, value: fmt(totaux.cnss), color:'var(--danger)' },
+          { label: lang === 'en' ? 'Net to pay' : lang === 'es' ? 'Neto a pagar' : lang === 'it' ? 'Netto da pagare' : 'Net à payer', value: fmt(totaux.net), color:'var(--acc2)' },
         ].map(k => (
           <div key={k.label} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px' }}>
             <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{k.label}</div>
@@ -113,10 +126,7 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
                 const empId = String(emp.id)
                 const brut  = Number(emp.salary)||0
                 const bonus = bonuses[empId] ?? 0
-                const total = brut + bonus
-                const cnss  = Math.round(total * 0.08)
-                const ir    = Math.round(total * 0.05)
-                const net   = total - cnss - ir
+                const { cnss, ir, net } = empBreakdown(brut, bonus)
                 return (
                   <tr key={emp.id}>
                     <td>
@@ -155,11 +165,16 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
             <tfoot>
               <tr style={{ background:'var(--bg4)' }}>
                 <td style={{ fontWeight:'var(--fw-bold)', color:'var(--text)', padding:'12px 14px' }}>{lang === 'en' ? 'TOTAL' : lang === 'es' ? 'TOTAL' : lang === 'it' ? 'TOTALE' : 'TOTAL'}</td>
+                {/* ⚠️ Ces cellules recalculaient les taux sur la MASSE GLOBALE (×0.08, ×0.05,
+                    ×0.87) : hors source unique, et surtout un arrondi global ≠ la somme des
+                    arrondis par bulletin — or c'est le bulletin qui est versé. On lit `totaux`,
+                    agrégé employé par employé. Le brut inclut désormais les primes, comme la
+                    colonne « Net » de chaque ligne. */}
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', color:'var(--p2)', padding:'12px 14px' }}>{fmt(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0))}</td>
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}</td>
-                <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', padding:'12px 14px' }}>− {fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.08))}</td>
-                <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', padding:'12px 14px' }}>− {fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.05))}</td>
-                <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', fontSize:15, color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.87))}</td>
+                <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', padding:'12px 14px' }}>− {fmt(totaux.cnss)}</td>
+                <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', padding:'12px 14px' }}>− {fmt(totaux.ir)}</td>
+                <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', fontSize:15, color:'var(--acc2)', padding:'12px 14px' }}>{fmt(totaux.net)}</td>
                 <td />
               </tr>
             </tfoot>

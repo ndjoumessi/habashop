@@ -67,7 +67,10 @@ export default function Payroll() {
           avatar: name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
           color: PAY_COLORS[i % PAY_COLORS.length],
           role: b?.role || e.role || e.position || 'Employé',
-          // Montants FIGÉS s'ils existent ; sinon aperçu depuis la fiche employé.
+          // ⚠️ Montants FIGÉS s'ils existent ; sinon APERÇU depuis la fiche employé. Un bulletin
+          // persisté fait autorité : ses cotisations ont été calculées au barème du jour de la
+          // génération (`Payroll.cnss`/`ir` en base). Le recalcul ne sert qu'aux lignes
+          // « EN ATTENTE », qui ne sont pas encore un bulletin.
           baseSalary: Number(b?.baseSalary ?? e.salary ?? e.baseSalary ?? 0),
           bonus:      Number(b?.bonus ?? 0),
           overtime:   Number(b?.overtime ?? 0),

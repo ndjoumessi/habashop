@@ -500,7 +500,8 @@ const fr: TranslationMap = {
   payslip_base_salary: 'Salaire de base',
   payslip_bonus: 'Prime de performance',
   payslip_overtime: 'Heures supplémentaires',
-  payslip_cnss: 'CNSS employé (5,6 %)',
+  payslip_cnss: 'CNSS employé',
+  payslip_exceptional: 'Retenues exceptionnelles',
   payslip_tax: 'Impôt sur salaire (IRPP)',
   payslip_absence_deduction: 'Retenue absences',
   payslip_gross: 'TOTAL BRUT',
@@ -897,7 +898,7 @@ const en: TranslationMap = {
   payslip_title: 'Pay Slip', payslip_gains: 'Salary elements — Earnings',
   payslip_deductions: 'Deductions', payslip_base_salary: 'Base salary',
   payslip_bonus: 'Performance bonus', payslip_overtime: 'Overtime',
-  payslip_cnss: 'Employee CNSS (5.6%)', payslip_tax: 'Income tax (IRPP)',
+  payslip_cnss: 'Employee CNSS', payslip_tax: 'Income tax (IRPP)', payslip_exceptional: 'Exceptional deductions',
   payslip_absence_deduction: 'Absence deduction', payslip_gross: 'TOTAL GROSS',
   payslip_total_deductions: 'TOTAL DEDUCTIONS',
 
@@ -1255,7 +1256,7 @@ const es: TranslationMap = {
   payslip_title: 'Nómina', payslip_gains: 'Elementos salariales — Ganancias',
   payslip_deductions: 'Deducciones', payslip_base_salary: 'Salario base',
   payslip_bonus: 'Prima de rendimiento', payslip_overtime: 'Horas extra',
-  payslip_cnss: 'Seguridad social empleado (5,6%)', payslip_tax: 'IRPF',
+  payslip_cnss: 'Seguridad social empleado', payslip_tax: 'IRPF', payslip_exceptional: 'Deducciones excepcionales',
   payslip_absence_deduction: 'Descuento ausencias', payslip_gross: 'TOTAL BRUTO',
   payslip_total_deductions: 'TOTAL DEDUCCIONES',
 
@@ -1613,7 +1614,7 @@ const it: TranslationMap = {
   payslip_title: 'Busta Paga', payslip_gains: 'Elementi salariali — Guadagni',
   payslip_deductions: 'Ritenute', payslip_base_salary: 'Stipendio base',
   payslip_bonus: 'Premio di rendimento', payslip_overtime: 'Straordinari',
-  payslip_cnss: 'Contributi dipendente (5,6%)', payslip_tax: 'IRPEF',
+  payslip_cnss: 'Contributi dipendente', payslip_tax: 'IRPEF', payslip_exceptional: 'Trattenute eccezionali',
   payslip_absence_deduction: 'Trattenuta assenze', payslip_gross: 'TOTALE LORDO',
   payslip_total_deductions: 'TOTALE RITENUTE',
 

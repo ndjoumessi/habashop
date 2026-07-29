@@ -2,7 +2,10 @@ import { useConfig } from '@/stores/appStore'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { X, CheckCircle, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { monthLabel, roleLabel, statusLabel, printBulletin, payrollBreakdown } from './payrollShared'
+import { monthLabel, roleLabel, statusLabel, printBulletin, payrollBreakdown, CNSS_RATE, IR_RATE } from './payrollShared'
+
+// Taux affiché, rendu depuis la constante — jamais recopié en dur dans un libellé.
+const pct = (r: number) => `${String(r * 100).replace('.', ',')} %`
 import type { PayRecord } from './payrollShared'
 
 export default function BulletinModal({ record, onClose, onPay, fmt }: {
@@ -162,10 +165,13 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               marginBottom:12, paddingBottom:8, borderBottom:'1px solid var(--border)',
             }}>{lang === 'en' ? 'DEDUCTIONS' : lang === 'es' ? 'DEDUCCIONES' : lang === 'it' ? 'DETRAZIONI' : 'RETENUES'}</div>
             {([
-              // CNSS affichée UNIQUEMENT si des retenues sont réellement comprises dans le total
-              // (deductions === 0 → la CNSS n'est pas retenue : l'afficher fausserait lignes ≠ total).
-              ...(record.deductions > 0 ? [{ label:`${lang === 'en' ? 'CNSS employee' : lang === 'es' ? 'CNSS empleado' : lang === 'it' ? 'CNSS dipendente' : 'CNSS employé'} (5,6 %)`,     taux:'5,6 %', montant: bd.cnss }] : []),
-              { label:lang === 'en' ? 'Income tax (IRPP)' : lang === 'es' ? 'Impuesto salarial (IRPP)' : lang === 'it' ? 'Imposta sul reddito (IRPP)' : 'Impôt sur salaire (IRPP)', taux:'',      montant: bd.irpp },
+              // ⚠️ CNSS et IR TOUJOURS présents : ils sont réellement déduits du net. Avant,
+              // la CNSS n'apparaissait que si `deductions > 0` — cohérent avec l'ancienne règle
+              // (ventilation de `deductions`), faux avec la nouvelle. Taux rendus depuis les
+              // constantes, jamais figés dans le libellé.
+              { label:lang === 'en' ? 'CNSS employee' : lang === 'es' ? 'CNSS empleado' : lang === 'it' ? 'CNSS dipendente' : 'CNSS employé', taux: pct(CNSS_RATE), montant: bd.cnss },
+              { label:lang === 'en' ? 'Income tax (IRPP)' : lang === 'es' ? 'Impuesto salarial (IRPP)' : lang === 'it' ? 'Imposta sul reddito (IRPP)' : 'Impôt sur salaire (IRPP)', taux: pct(IR_RATE), montant: bd.ir },
+              ...(bd.exceptional > 0 ? [{ label:lang === 'en' ? 'Exceptional deductions' : lang === 'es' ? 'Deducciones excepcionales' : lang === 'it' ? 'Trattenute eccezionali' : 'Retenues exceptionnelles', taux:'', montant: bd.exceptional }] : []),
               ...(record.absences > 0 ? [{ label:`${lang === 'en' ? 'Absence' : lang === 'es' ? 'Ausencia' : lang === 'it' ? 'Assenza' : 'Absence'} (${record.absences}j)`, taux:'', montant: bd.absencePenalty }] : []),
             ] as { label:string; taux:string; montant:number }[])
               .filter(r => r.montant > 0)
