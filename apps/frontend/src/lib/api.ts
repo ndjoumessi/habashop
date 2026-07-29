@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logger'
 import type { ApiSupplier, SupplierCreate, SupplierWrite } from '@/components/suppliers/suppliersShared'
-import type { ApiOrder } from '@/components/orders/ordersShared'
+import type { ApiOrder, OrderWrite } from '@/components/orders/ordersShared'
 
 const BASE_URL: string = (import.meta as any).env?.VITE_API_URL
   ?? 'https://habashop-production.up.railway.app'
@@ -298,11 +298,11 @@ export const suppliersApi = {
 // SANS `supplier`. D'où `Omit<ApiOrder, 'supplier'>`, et non `ApiOrder`.
 export const ordersApi = {
   list:         () => api.get<ApiOrder[]>('/api/orders'),
-  // ⚠️ Le CORPS reste `any` dans cette PR : le typer révèle que la création est cassée en
-  // prod (items sans `product` ni `unitPrice`, branche client sans `supplierId` — 0 commande
-  // en base). C'est un correctif de comportement, pas du typage → PR dédiée. Le RETOUR, lui,
-  // est mesuré : le POST fait `include: { items: true }` SANS `supplier`.
-  create:       (data: any) => api.post<Omit<ApiOrder, 'supplier'>>('/api/orders', data),
+  // ⚠️ Le CORPS est typé `OrderWrite` : c'est ce qui empêche de renvoyer les lignes du
+  // formulaire telles quelles (sans `product` ni `unitPrice`), ce qui faisait 400 sur CHAQUE
+  // création — 0 commande en base. Passer par `toOrderPayload`. Le RETOUR est mesuré : le
+  // POST fait `include: { items: true }` SANS `supplier`.
+  create:       (data: OrderWrite) => api.post<Omit<ApiOrder, 'supplier'>>('/api/orders', data),
   updateStatus: (id: string, status: string) =>
     api.patch<Omit<ApiOrder, 'supplier' | 'items'>>(`/api/orders/${id}/status`, { status }),
 }

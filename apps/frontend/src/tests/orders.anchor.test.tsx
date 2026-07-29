@@ -97,7 +97,7 @@ describe('Orders — NewOrderModal : flux de création (câblage props/état)', 
     expect(createBtn).toBeDisabled()
   })
 
-  it('crée une commande CLIENT : client + produit → handleCreateOrder appelle ordersApi.create', async () => {
+  it('commande CLIENT : AUCUN appel serveur — locale et éphémère (décision produit)', async () => {
     const { ordersApi } = await import('@/lib/api') as any
     const dialog = await openModal()
     // saisir un client
@@ -107,9 +107,14 @@ describe('Orders — NewOrderModal : flux de création (câblage props/état)', 
     const createBtn = within(dialog).getByRole('button', { name: /Créer la commande/ })
     expect(createBtn).toBeEnabled()
     fireEvent.click(createBtn)
-    await waitFor(() => expect(ordersApi.create).toHaveBeenCalledTimes(1))
-    expect(ordersApi.create).toHaveBeenCalledWith(expect.objectContaining({ type: 'client', clientName: 'Client Test' }))
+    // ⚠️ Ce test affirmait l'INVERSE — que `ordersApi.create` était appelé. Cet appel partait
+    // sans `supplierId` et se faisait refuser en 400 à CHAQUE fois (0 commande en base) :
+    // le test verrouillait le bug. `PurchaseOrder` ne sait pas représenter une commande
+    // client (pas de `clientName`, `supplierId` en FK obligatoire) → elle reste locale.
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument()) // modale fermée
+    expect(ordersApi.create).not.toHaveBeenCalled()
+    // …et la commande apparaît bien à l'écran, en mémoire.
+    expect(screen.getByText(/Client Test/)).toBeInTheDocument()
   })
 
   it('bascule type fournisseur → picker fournisseur, crée un BON DE COMMANDE', async () => {
@@ -123,7 +128,12 @@ describe('Orders — NewOrderModal : flux de création (câblage props/état)', 
     expect(createBtn).toBeEnabled()
     fireEvent.click(createBtn)
     await waitFor(() => expect(ordersApi.create).toHaveBeenCalledTimes(1))
-    expect(ordersApi.create).toHaveBeenCalledWith(expect.objectContaining({ type: 'supplier', supplierId: 's1' }))
+    // ⚠️ La charge utile doit satisfaire le zod : `product` / `unitPrice`, PAS les lignes du
+    // formulaire (`name`/`price`), qui faisaient 400. Cf. `orderCreatePayload.test.ts`.
+    const envoye = (ordersApi.create as any).mock.calls[0][0]
+    expect(envoye.supplierId).toBe('s1')
+    expect(Object.keys(envoye.items[0]).sort()).toEqual(['product', 'qty', 'unitPrice'])
+    expect(envoye.items[0].unitPrice).toBeTypeOf('number')
   })
 
   it('le picker produit ajoute/retire au panier (récap reflète la sélection)', async () => {

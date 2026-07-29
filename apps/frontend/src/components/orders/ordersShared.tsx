@@ -96,6 +96,56 @@ export const LOCAL_TO_API_STATUS: Record<string, string> = {
  * `supplier` : la réponse de création n'a donc PAS la forme d'une ligne de liste.
  */
 
+/**
+ * Miroir du zod `ORDER_CREATE` (`routes/orders.ts`), MESURÉ :
+ *   supplierId: z.string().min(1)                       ← REQUIS (FK Supplier)
+ *   items: z.array({ product, qty, unitPrice }).min(1)  ← `product`, PAS `name`
+ *   expectedAt: z.any().nullish() · notes: z.string().nullish()
+ *
+ * ⚠️ ASYMÉTRIE : on ENVOIE `product`, le serveur range en `productName` (le handler mappe).
+ * Le type qui manquait ici est la raison pour laquelle la création a été cassée en production
+ * SANS que rien ne l'attrape : le front passait `NewOrderItem` — `{ id, name, price, qty,
+ * emoji }` — tel quel, donc sans `product` ni `unitPrice`. Zod refusait, 400, 0 commande en
+ * base. `create: (data: any)` laissait tout passer.
+ */
+export interface OrderWrite {
+  supplierId: string
+  items: Array<{ product: string; qty: number; unitPrice: number }>
+  expectedAt?: string | null
+  notes?: string | null
+}
+
+/** Ligne du formulaire « nouvelle commande » (vocabulaire de l'écran). */
+export interface NewOrderLine { name: string; price: number; qty: number; emoji: string }
+
+/**
+ * Construit la charge utile de `POST /api/orders` depuis les lignes du formulaire.
+ * PURE et exportée pour être exercée par un test — seul moyen de vérifier qu'elle satisfait le
+ * zod sans lancer le serveur (cf. `docs/shared-fixtures/order-create-cases.json`, relu par un
+ * test JUMEAU côté backend).
+ *
+ * ⚠️ `product` reprend `emoji + name`, exactement la chaîne que l'objet local affiche. Envoyer
+ * le nom seul ferait diverger l'écran d'après création et l'écran d'après rechargement, le
+ * serveur rendant `productName` tel quel via `mapApiOrder`.
+ */
+export function toOrderPayload(opts: {
+  supplierId: string
+  items: NewOrderLine[]
+  expectedAt?: string | null
+  notes?: string | null
+}): OrderWrite {
+  return {
+    supplierId: opts.supplierId,
+    items: opts.items.map(i => ({
+      product: `${i.emoji} ${i.name}`.trim(),
+      qty: i.qty,
+      unitPrice: i.price,
+    })),
+    expectedAt: opts.expectedAt ?? null,
+    notes: opts.notes ?? null,
+  }
+}
+
 /** Ligne `PurchaseOrderItem` brute. ⚠️ `productName`, pas `product`. */
 export interface ApiOrderItem {
   id: string
