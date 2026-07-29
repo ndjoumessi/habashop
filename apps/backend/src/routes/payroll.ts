@@ -5,7 +5,7 @@ import { authenticate } from '../middleware/authenticate'
 import { writeAudit } from '../lib/writeAudit'
 import { getActiveTenantId } from '../lib/tenantId'
 import { buildPayrollReport, deliverPayrollReport } from '../services/payrollReport'
-import { payrollNet, MONTH_KEY } from '../utils/payroll'
+import { payrollBreakdown, MONTH_KEY } from '../utils/payroll'
 
 const ADMIN_ROLES = new Set(['ADMIN', 'SUPER_ADMIN'])
 
@@ -155,17 +155,24 @@ export async function payrollRoutes(app: any): Promise<void> {
     ])
 
     const dejaFait = new Set(existing.map(p => p.employeeId))
-    const aCreer = employees.filter(e => !dejaFait.has(e.id)).map(e => ({
-      tenantId,
-      employeeId:   e.id,
-      month,
-      status:       'GÉNÉRÉ',
-      employeeName: e.name,          // figé AUSSI : un employé renommé ne réécrit pas sa paie passée
-      role:         e.role ?? '',
-      baseSalary:   e.salary ?? 0,
-      bonus: 0, overtime: 0, deductions: 0, absences: 0,
-      net: payrollNet({ baseSalary: e.salary ?? 0, bonus: 0, overtime: 0, deductions: 0, absences: 0 }),
-    }))
+    const aCreer = employees.filter(e => !dejaFait.has(e.id)).map(e => {
+      const entree = { baseSalary: e.salary ?? 0, bonus: 0, overtime: 0, deductions: 0, absences: 0 }
+      // ⚠️ Les COTISATIONS sont figées comme le reste : elles dépendent de taux légaux, donc les
+      // recalculer à l'affichage rejouerait un bulletin passé au barème du jour.
+      const bd = payrollBreakdown(entree)
+      return {
+        tenantId,
+        employeeId:   e.id,
+        month,
+        status:       'GÉNÉRÉ',
+        employeeName: e.name,        // figé AUSSI : un employé renommé ne réécrit pas sa paie passée
+        role:         e.role ?? '',
+        ...entree,
+        cnss: bd.cnss,
+        ir:   bd.ir,
+        net:  bd.net,
+      }
+    })
 
     if (aCreer.length > 0) {
       await prisma.payroll.createMany({ data: aCreer, skipDuplicates: true })

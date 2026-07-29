@@ -1,6 +1,10 @@
 import { FileText } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type Employee, roleLabel, deptLabel } from '@/components/hr/hrShared'
+// ⚠️ Taux et calcul importés de la SOURCE UNIQUE (`payrollShared`). Ce fichier codait
+// `0.08`/`0.05` (ou `0.87`) en dur : 6 fichiers le faisaient, donc 6 endroits à corriger
+// au prochain changement de loi — et un oubli aurait produit deux nets pour un salaire.
+import { payrollBreakdown, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
 
 interface Props {
   employees: Employee[]
@@ -34,10 +38,7 @@ export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, se
         {employees.filter(e => e.active !== false).map(emp => {
           const brut  = Number(emp.salary)||0
           const bonus = bonuses[String(emp.id)] ?? 0
-          const total = brut + bonus
-          const cnss  = Math.round(total * 0.08)
-          const ir    = Math.round(total * 0.05)
-          const net   = total - cnss - ir
+          const { cnss, ir, net } = payrollBreakdown({ baseSalary: brut, bonus, overtime: 0, deductions: 0, absences: 0 })
           return (
             <div key={emp.id} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:14, padding:18, transition:'all .2s' }}>
               <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, paddingBottom:12, borderBottom:'1px solid var(--border)' }}>

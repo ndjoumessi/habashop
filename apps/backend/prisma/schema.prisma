@@ -580,8 +580,14 @@ model Payroll {
   baseSalary   Float
   bonus        Float  @default(0)
   overtime     Float  @default(0)
-  deductions   Float  @default(0)
+  deductions   Float  @default(0) // retenues EXCEPTIONNELLES saisies (avance, casse…)
   absences     Int    @default(0)
+  // ⚠️ Cotisations FIGÉES elles aussi. Elles dépendent de TAUX qui peuvent changer par la loi :
+  // les recalculer à l'affichage réécrirait un bulletin passé au barème du jour. `baseSalary`
+  // gelé sans `cnss` gelé ne suffit pas. (La pénalité d'absence, elle, se redérive des champs
+  // gelés + la constante structurelle de 26 jours ouvrés.)
+  cnss         Float  @default(0)
+  ir           Float  @default(0)
   net          Float
 
   createdAt DateTime @default(now())

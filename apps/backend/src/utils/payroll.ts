@@ -10,11 +10,23 @@
  * une règle d'un seul côté fait rougir l'autre. Même convention anti-dérive que
  * `loyalty-discount-cases`, `barcode-cases` et `csv-injection-cases`.
  *
+ * ⚠️ IL Y AVAIT DEUX RÈGLES INCOMPATIBLES DANS LE DÉPÔT (mesuré 2026-07-30) : ce fichier et
+ * `payrollShared.tsx` appliquaient CNSS **5,6 % du salaire de BASE** avec un IRPP **résiduel**,
+ * et ni l'un ni l'autre ne réduisait le net (simple ventilation d'affichage de `deductions`) ;
+ * `PayrollGrid.tsx` / `PayrollPayslips.tsx` appliquaient **8 % + 5 % du brut, réellement
+ * déduits**. Sur 150 000 XOF sans prime : 150 000 imprimé par le PDF, 130 500 affiché par
+ * l'onglet RH. Deux nets pour le même salaire, sur des documents remis à l'employé.
+ *
+ * RÈGLE RETENUE (arbitrage produit) : 8 % + 5 % du BRUT, calculés et DÉDUITS.
+ *
  * Base XOF, arrondis à l'unité — c'est la devise de stockage (cf. § Règles devise).
  */
 
-/** Taux de cotisation CNSS appliqué au salaire de base. */
-export const CNSS_RATE = 0.056
+/** Cotisation salariale CNSS, assise sur le BRUT. */
+export const CNSS_RATE = 0.08
+
+/** Impôt sur salaire, assis sur le BRUT. */
+export const IR_RATE = 0.05
 
 /** Un mois de paie compte 26 jours ouvrés — base de la retenue pour absence. */
 export const WORKING_DAYS = 26
@@ -29,29 +41,30 @@ export interface PayrollInput {
 
 export interface PayrollBreakdown {
   brut: number            // base + primes + heures sup
-  absencePenalty: number  // retenue absences = round(absences × base / 26)
-  cnss: number            // cotisation CNSS = round(base × 5,6 %)
-  irpp: number            // impôt résiduel = round(retenues − CNSS − pénalité absence)
-  totalDeductions: number // retenues affichées = retenues saisies + pénalité absence
-  net: number             // net à payer = brut − retenues saisies − pénalité absence
+  cnss: number            // round(brut × 8 %) — DÉDUITE
+  ir: number              // round(brut × 5 %) — DÉDUIT
+  absencePenalty: number  // round(absences × base / 26)
+  exceptional: number     // retenues EXCEPTIONNELLES saisies (avance, casse, saisie sur salaire)
+  totalDeductions: number // cnss + ir + exceptionnelles + pénalité absence
+  net: number             // brut − totalDeductions
 }
 
+/**
+ * ⚠️ `deductions` = retenues EXCEPTIONNELLES : elles s'AJOUTENT aux cotisations, elles n'en
+ * sont plus la ventilation. Une avance sur salaire et la CNSS sont deux choses distinctes ;
+ * les confondre faisait qu'une avance de 0 annulait aussi les cotisations.
+ */
 export function payrollBreakdown(r: PayrollInput): PayrollBreakdown {
   const brut = r.baseSalary + r.bonus + r.overtime
+  const cnss = Math.round(brut * CNSS_RATE)
+  const ir   = Math.round(brut * IR_RATE)
   const absencePenalty = Math.round(r.absences * r.baseSalary / WORKING_DAYS)
-  const cnss = Math.round(r.baseSalary * CNSS_RATE)
-  const irpp = Math.round(r.deductions - cnss - absencePenalty)
-  return {
-    brut,
-    absencePenalty,
-    cnss,
-    irpp,
-    totalDeductions: r.deductions + absencePenalty,
-    net: brut - r.deductions - absencePenalty,
-  }
+  const exceptional = r.deductions
+  const totalDeductions = cnss + ir + exceptional + absencePenalty
+  return { brut, cnss, ir, absencePenalty, exceptional, totalDeductions, net: brut - totalDeductions }
 }
 
-/** Net à payer — le seul chiffre FIGÉ en base parmi les dérivés. */
+/** Net à payer — le chiffre FIGÉ en base, avec `cnss` et `ir`. */
 export function payrollNet(r: PayrollInput): number {
   return payrollBreakdown(r).net
 }

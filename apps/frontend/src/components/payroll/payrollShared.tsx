@@ -91,33 +91,57 @@ const STATUS_LABELS: Record<PayStatus, Record<string, string>> = {
 }
 export const statusLabel = (s: PayStatus, lang: string) => STATUS_LABELS[s]?.[lang] ?? s
 
-// Taux CNSS salarié (part employé). Base de calcul = salaire de base (XOF).
-export const CNSS_RATE = 0.056
+/**
+ * ⚠️ SOURCE UNIQUE des retenues de paie — front. Miroir exact du backend
+ * (`apps/backend/src/utils/payroll.ts`), exercé sur `docs/shared-fixtures/payroll-net-cases.json`.
+ *
+ * ⚠️ IL Y AVAIT DEUX RÈGLES INCOMPATIBLES DANS LE DÉPÔT, et le bulletin PDF appliquait la
+ * mauvaise. Mesuré : ce fichier calculait CNSS **5,6 % du salaire de BASE** avec un IRPP
+ * **résiduel**, et surtout ni l'un ni l'autre ne réduisait le net (c'était une simple
+ * ventilation d'affichage de `deductions`) ; pendant que `PayrollGrid.tsx` et
+ * `PayrollPayslips.tsx` appliquaient **8 % + 5 % du brut, réellement déduits**. Sur
+ * 150 000 XOF sans prime, le PDF imprimait 150 000 et l'onglet RH 130 500 — deux nets
+ * différents pour le même salaire, sur des documents remis à l'employé.
+ *
+ * Le commentaire de `PayrollGrid.tsx` se déclarait d'ailleurs « source unique (cf. payroll-calc) »
+ * alors que payroll-calc divergeait. Un doublon qui s'affirme canonique est pire qu'un doublon
+ * assumé : il décourage la vérification.
+ *
+ * RÈGLE RETENUE (arbitrage produit du 2026-07-30) : 8 % + 5 % du BRUT, calculés et DÉDUITS.
+ * Les 6 autres fichiers qui codaient `0.08` en dur importent désormais ces constantes.
+ */
+export const CNSS_RATE = 0.08 // cotisation salariale CNSS, assise sur le BRUT
+export const IR_RATE   = 0.05 // impôt sur salaire, assis sur le BRUT
+
+/** Un mois de paie compte 26 jours ouvrés — base de la retenue pour absence. */
+export const WORKING_DAYS = 26
 
 export interface PayrollBreakdown {
   brut: number             // salaire de base + primes + heures sup
-  absencePenalty: number   // retenue pour absences = round(absences × base / 26)
-  cnss: number             // cotisation CNSS = round(base × 5,6 %)
-  irpp: number             // impôt sur salaire (résiduel) = round(retenues − CNSS − pénalité absence)
-  totalDeductions: number  // retenues totales affichées = retenues saisies + pénalité absence
-  net: number              // net à payer = brut − retenues saisies − pénalité absence
+  cnss: number             // CNSS salarié = round(brut × 8 %) — DÉDUITE du net
+  ir: number               // impôt sur salaire = round(brut × 5 %) — DÉDUIT du net
+  absencePenalty: number   // retenue absences = round(absences × base / 26)
+  exceptional: number      // retenues EXCEPTIONNELLES saisies (avance, casse, saisie sur salaire)
+  totalDeductions: number  // cnss + ir + exceptionnelles + pénalité absence
+  net: number              // net à payer = brut − totalDeductions
 }
 
-// Source UNIQUE du calcul de paie (bulletin PDF, modale bulletin, table paie) —
-// fonction pure (base XOF). Évite les divergences d'arrondi entre les vues.
+/**
+ * Source UNIQUE du calcul (bulletin PDF, modale bulletin, table paie, onglet RH, backend).
+ * Fonction pure, base XOF, arrondis à l'unité.
+ *
+ * ⚠️ `deductions` = retenues EXCEPTIONNELLES, elles s'AJOUTENT aux cotisations (elles n'en sont
+ * plus la ventilation). Une avance sur salaire et la CNSS sont deux choses distinctes ; les
+ * confondre faisait qu'une avance de 0 annulait aussi les cotisations.
+ */
 export function payrollBreakdown(r: Pick<PayRecord, 'baseSalary' | 'bonus' | 'overtime' | 'deductions' | 'absences'>): PayrollBreakdown {
   const brut = r.baseSalary + r.bonus + r.overtime
-  const absencePenalty = Math.round(r.absences * r.baseSalary / 26)
-  const cnss = Math.round(r.baseSalary * CNSS_RATE)
-  const irpp = Math.round(r.deductions - cnss - absencePenalty)
-  return {
-    brut,
-    absencePenalty,
-    cnss,
-    irpp,
-    totalDeductions: r.deductions + absencePenalty,
-    net: brut - r.deductions - absencePenalty,
-  }
+  const cnss = Math.round(brut * CNSS_RATE)
+  const ir   = Math.round(brut * IR_RATE)
+  const absencePenalty = Math.round(r.absences * r.baseSalary / WORKING_DAYS)
+  const exceptional = r.deductions
+  const totalDeductions = cnss + ir + exceptional + absencePenalty
+  return { brut, cnss, ir, absencePenalty, exceptional, totalDeductions, net: brut - totalDeductions }
 }
 
 export function calcNet(r: PayRecord) {
@@ -145,18 +169,23 @@ export function printBulletin(bulletin: PayRecord) {
   // sinon double conversion → PDF ≠ écran, ex. 686,02 € affiché en ~1,05 €.)
   const fmtP = (n: number) => formatAmount(n, currency)
 
-  const { brut, absencePenalty, cnss, irpp, net, totalDeductions } = payrollBreakdown(bulletin)
+  const { brut, absencePenalty, cnss, ir, exceptional, net, totalDeductions } = payrollBreakdown(bulletin)
 
   const gainsRows: string[][] = [
     [t('payslip_base_salary'), '26 j', '100 %', fmtP(bulletin.baseSalary)],
     ...(bulletin.bonus > 0 ? [[t('payslip_bonus'), '', '', fmtP(bulletin.bonus)]] : []),
     ...(bulletin.overtime > 0 ? [[t('payslip_overtime'), '', '25 %', fmtP(bulletin.overtime)]] : []),
   ]
+  // ⚠️ CNSS et IR sont TOUJOURS affichés : ils sont désormais réellement déduits du net.
+  // Avant, ils n'apparaissaient que si `deductions > 0` — cohérent avec l'ancienne règle où
+  // ils n'étaient qu'une VENTILATION de `deductions`, faux avec la nouvelle. Le taux est rendu
+  // depuis les constantes, jamais écrit dans le libellé i18n (un libellé « 5,6 % » redevient
+  // faux au premier changement de loi, dans 4 langues à la fois).
+  const pct = (r: number) => `${String(r * 100).replace('.', ',')} %`
   const retenuesRows: string[][] = [
-    // CNSS affichée UNIQUEMENT si des retenues sont réellement comprises dans le total
-    // (deductions === 0 → lignes ≠ total sinon). Même règle que la modale bulletin.
-    ...(bulletin.deductions > 0 ? [[t('payslip_cnss'), '5,6 %', fmtP(cnss)]] : []),
-    ...(irpp > 0 ? [[t('payslip_tax'), '', fmtP(irpp)]] : []),
+    [t('payslip_cnss'), pct(CNSS_RATE), fmtP(cnss)],
+    [t('payslip_tax'),  pct(IR_RATE),   fmtP(ir)],
+    ...(exceptional > 0 ? [[t('payslip_exceptional'), '', fmtP(exceptional)]] : []),
     ...(bulletin.absences > 0 ? [[`${t('payslip_absence_deduction')} (${bulletin.absences}j)`, '', fmtP(absencePenalty)]] : []),
   ]
 
