@@ -49,10 +49,11 @@ App mobile React Native (iOS + Android) — caisse POS, stock, dashboard, client
 
 ## Compte EAS / versions
 - `ndjoumessi` · Project ID : `e7399d7a-e5ba-4e30-a333-8cff7ad10eb4` · Keystore Android : `sH_oz3rpgx`.
+- ⚠️ **Un identifiant EAS n'est PAS un commit.** Builds (`1f6bf56f-…`), updates OTA (`019f6dfe-…`) et update groups (`95673916-…`) sont des **UUID**, consultables par `eas build:view <id>` / `eas update:view <id>` — jamais par `git show`. Écrits tronqués à 8 caractères entre backticks, ils ressemblent à un SHA court et se font prendre pour tel : `git cat-file -e` échoue, on en conclut à tort un historique réécrit. **Écrire l'UUID entier et le préfixer de « build EAS » / « update EAS ».** Les vrais commits mobiles, eux, ont survécu à la fusion `git subtree` : `f95133f` (27/05) et `d949c78` (01/06) résolvent toujours.
 - `appVersionSource: remote` → versionCode géré EAS. `runtimeVersion.policy = appVersion` → **bump version = change runtime** (OTA = même runtime seulement ; sinon build natif requis).
 - **`app.json` = 1.5.0** (runtime 1.5.0) MAIS **build natif 1.5.0 JAMAIS fait** (quota EAS Free). Le **device tourne encore en runtime 1.4.3**. → OTA vers le device = **swap temporaire `app.json` version→1.4.3**, `eas update --branch preview`, restaure 1.5.0 (non commité). Le build 1.5.0 (à faire quand quota débloqué : reset 1er août / upgrade) embarquera **logo Sac+H + police Geist**.
 - ⚠️ **Polices `@expo-google-fonts` non livrables par OTA** (.ttf bundlées au build natif seulement) → mobile reste en **Outfit** ; Geist attend le build 1.5.0 (issue #13). Label Réglages : `Constants.expoConfig?.version`.
-- Play Store : AAB v1.2.0 (`1f6bf56f`). `assets/feature_graphic.png` (1024×500). Politique : `https://habashop.vercel.app/privacy`. iOS : `IOS_BUILD.md`.
+- Play Store : AAB v1.2.0 — **build EAS** `1f6bf56f-1f95-45e0-b8f5-cd301e1470ef` (versionCode **3** ; c'est le plus haut publié, cf. § Versions). `assets/feature_graphic.png` (1024×500). Politique : `https://habashop.vercel.app/privacy`. iOS : `IOS_BUILD.md`.
 
 ---
 
@@ -243,6 +244,6 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 - **Item 11 (portage refonte UX web) — lot UI OTA'd sur canal preview** : fuites devise, POS 01 (tuiles bi-ton + stock bas), safe-area panier, encaissement 02 (Mixte tuile + pluriel), fix argent fidélité (NET), carte fidélité 04. **Hors lot (logique, à cadrer)** : Ticket Z, onboarding, sélecteur tarif, fraîcheur cache POS, provider MTN. Cf. `[[mobile-item11-scope]]`. *(Codes-barres = FAIT, Chantier A : scan/complétion fiche + recherche SKU + règle canonique partagée.)*
 - **Livré par OTA (canal preview, runtime 1.4.3)** : fix multi-boutiques (auto-sélection boutique), **mode sombre NKONI** (fond bleu-noir `#0A0C14`, cartes `#121724`, or `#FFB020`, `border3` glow violet ; `src/constants/theme.ts` `Colors`+`DarkColors`), **thèmes réduits à 3** (Sombre/Clair/Système, #19) + grille 3 colonnes (#20) — dernier update group `95673916-5efe-44f7-a521-719616634a1c` (Android `019f6dfe-d23e-7f55…`, iOS `019f6dfe-d23e-7592…`, commit `1c38fae4`). Police = **Outfit** (Geist attend le build natif, #13).
 - **En attente du build natif 1.5.0** (quota EAS) : **logo Sac+H** (icône/splash) + **police Geist**.
-- **Validé device (2026-05-27, APK `382fe2ec`) :** scanner EAN13 ✅, thème clair ✅, kiosque+PIN ✅, encaissement→API ✅, biométrie ✅, suppression compte (scénario ADMIN seul→cascade tenant) ✅.
+- **Validé device (2026-05-27, APK — build EAS `382fe2ec-bacf-4e76-906b-33cdc6162c05`) :** scanner EAN13 ✅, thème clair ✅, kiosque+PIN ✅, encaissement→API ✅, biométrie ✅, suppression compte (scénario ADMIN seul→cascade tenant) ✅.
 - **À valider device :** offline+resync (cache à froid + abandon 3 retries), push (3 types + tap nav), ticket WhatsApp, widget (dev build), TalkBack, carte QR, OCR MANAGER+.
-- **Différé :** Play Store (AAB `1f6bf56f` prêt, captures à faire) ; layouts tablette (iPad) ; build iOS réel ; Wave/Orange prod.
+- **Différé :** Play Store (AAB v1.2.0 prêt — build EAS ci-dessus, captures à faire) ; layouts tablette (iPad) ; build iOS réel ; Wave/Orange prod.

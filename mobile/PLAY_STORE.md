@@ -1,8 +1,8 @@
 # 📦 Google Play Store — Guide publication HabaShop
 
 ## ✅ Builds disponibles
-- APK preview : `HabaShop-Mobile-v1.2.0.apk` (~108 Mo) — build `382fe2ec`
-- AAB production : `HabaShop-Mobile-v1.2.0.aab` (74 Mo) — build `1f6bf56f`
+- APK preview : `HabaShop-Mobile-v1.2.0.apk` (~108 Mo) — **build EAS** `382fe2ec-bacf-4e76-906b-33cdc6162c05` (profil `preview`, versionCode 2)
+- AAB production : `HabaShop-Mobile-v1.2.0.aab` (74 Mo) — **build EAS** `1f6bf56f-1f95-45e0-b8f5-cd301e1470ef` (profil `production`, versionCode 3, distribution `STORE`)
 - versionCode : 3 (auto-incrémenté par EAS, `appVersionSource: remote`)
 - Keystore : `sH_oz3rpgx` (EAS — NE JAMAIS régénérer)
 
