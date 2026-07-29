@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
 import { openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
 import { usePagination } from '@/hooks/usePagination'
-import { type Order, type OrderStatus, orderStatusLabel, LOCAL_TO_API_STATUS, mapApiOrder } from '@/components/orders/ordersShared'
+import { type Order, type OrderStatus, type OrderSupplierOption, orderStatusLabel, LOCAL_TO_API_STATUS, mapApiOrder, toSupplierOption } from '@/components/orders/ordersShared'
 import OrdersKpis from '@/components/orders/OrdersKpis'
 import OrdersCalendar from '@/components/orders/OrdersCalendar'
 import OrdersListPanel from '@/components/orders/OrdersListPanel'
@@ -46,7 +46,7 @@ export default function Orders() {
     items: [],
     note: '',
   })
-  const [suppliersList, setSuppliersList] = useState<any[]>([])
+  const [suppliersList, setSuppliersList] = useState<OrderSupplierOption[]>([])
   const [selectedSupplierId, setSelectedSupplierId] = useState('')
   const [customers, setCustomers] = useState<any[]>([])
   const [clientSuggestions, setClientSuggestions] = useState<any[]>([])
@@ -69,14 +69,7 @@ export default function Orders() {
   useEffect(() => {
     suppliersApi.list()
       .then(data => setSuppliersList(
-        data.map((s: any) => ({
-          id: s.id, name: s.name,
-          specialty: s.specialty || s.category || '',
-          phone: s.phone || '',
-          leadTime: s.leadTime || s.lead_time || '—',
-          rating: s.rating ?? 4,
-          status: s.status || 'active',
-        }))
+        data.map(toSupplierOption)
       ))
       .catch(() => {})
   }, [])

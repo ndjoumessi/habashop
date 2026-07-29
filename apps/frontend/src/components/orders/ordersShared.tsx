@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { CheckCircle, Truck, Clock, FileText, XCircle } from 'lucide-react'
+import type { ApiSupplier, SupplierStatus } from '@/components/suppliers/suppliersShared'
 
 // Types + constantes + helpers partagés des commandes (extraits de Orders.tsx — comportement inchangé).
 
@@ -73,7 +74,95 @@ export const LOCAL_TO_API_STATUS: Record<string, string> = {
   'EN TRANSIT': 'IN_TRANSIT', REÇUE: 'RECEIVED', ANNULÉE: 'CANCELLED',
 }
 
-export function mapApiOrder(o: any): Order {
+/**
+ * ⚠️ TYPES DE FRONTIÈRE — dérivés du BACKEND MESURÉ (2026-07-29), pas de l'interface `Order`.
+ *
+ * `GET /api/orders` rend `prisma.purchaseOrder.findMany({ where, include: { items: true,
+ * supplier: true }, orderBy })` — **aucun `select`** : la ligne brute, plus deux relations.
+ * Le domaine front (`Order`) en diffère sur QUATRE points, et c'est `mapApiOrder` qui traverse :
+ *
+ *   fil                                   domaine
+ *   supplier: ApiSupplier (objet entier)  supplier: string  (le NOM)
+ *   items[].productName                   items[].product   (+ `unit`, inventé côté écran)
+ *   status: 'DRAFT' | 'SENT' | …          status: 'BROUILLON' | … (API_TO_LOCAL_STATUS)
+ *   createdAt: ISO complet                date: 'YYYY-MM-DD'
+ *
+ * ⚠️ FRONTIÈRE DANS LA FRONTIÈRE : le `supplier` embarqué est la ligne Prisma BRUTE, donc
+ * `ApiSupplier` — `categories` y est une CHAÎNE et `leadTime` du camelCase. Le typer avec
+ * l'interface `Supplier` du front rouvrirait exactement le trou de la tranche 1.
+ *
+ * ⚠️ ASYMÉTRIE ÉCRITURE/LECTURE, à ne pas gommer : on ENVOIE `items[].product`, on REÇOIT
+ * `items[].productName` (le handler mappe). Et `POST` fait `include: { items: true }` SANS
+ * `supplier` : la réponse de création n'a donc PAS la forme d'une ligne de liste.
+ */
+
+/** Ligne `PurchaseOrderItem` brute. ⚠️ `productName`, pas `product`. */
+export interface ApiOrderItem {
+  id: string
+  orderId: string
+  productName: string
+  qty: number
+  unitPrice: number
+  total: number
+}
+
+/** Forme FIL de `GET /api/orders`. PAS `Order`. */
+export interface ApiOrder {
+  id: string
+  tenantId: string
+  ref: string
+  supplierId: string
+  createdById: string
+  status: string
+  total: number
+  expectedAt: string | null
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+  items: ApiOrderItem[]
+  supplier: ApiSupplier
+}
+
+/**
+ * Option fournisseur du formulaire de commande — vocabulaire de l'ÉCRAN, alimenté depuis
+ * `ApiSupplier`. Le typer (au lieu du `any[]` d'avant) rend deux fautes impossibles :
+ *   · lire un champ que le serveur n'envoie pas → **TS2339** ;
+ *   · comparer `status` à une valeur hors de l'union → **TS2367**.
+ * Les deux existaient : `s.specialty` / `s.category` / `s.lead_time` n'ont JAMAIS existé
+ * (la puce affichait le vide en production), et le filtre testait `!== 'inactive'` quand le
+ * serveur n'émet que `'Actif' | 'Pause' | 'Inactif'` — un fournisseur désactivé restait donc
+ * proposé à la commande.
+ */
+export interface OrderSupplierOption {
+  id: string
+  name: string
+  /** Ce que le fournisseur fournit — vient de `ApiSupplier.categories` (chaîne du fil). */
+  specialty: string
+  phone: string
+  leadTime: number
+  rating: number
+  status: SupplierStatus
+}
+
+/** Traversée `ApiSupplier` → option d'écran. */
+export function toSupplierOption(s: ApiSupplier): OrderSupplierOption {
+  return {
+    id: s.id,
+    name: s.name,
+    // `categories` est DÉJÀ la chaîne saisie par le commerçant (« Riz, Huile ») : on la rend
+    // telle quelle. La puce la tronque en CSS si elle déborde, plutôt que de perdre une
+    // catégorie en n'affichant que la première.
+    specialty: s.categories ?? '',
+    phone: s.phone ?? '',
+    // `Int @default(3)`, NON nullable côté Prisma → toujours un nombre, jamais de repli.
+    leadTime: s.leadTime,
+    rating: s.rating,
+    status: (s.status as SupplierStatus) ?? 'Actif',
+  }
+}
+
+export function mapApiOrder(o: ApiOrder): Order {
   return {
     id: o.id,
     ref: o.ref,
@@ -82,7 +171,7 @@ export function mapApiOrder(o: any): Order {
     expectedAt: o.expectedAt?.split('T')[0] ?? '',
     status: (API_TO_LOCAL_STATUS[o.status] ?? 'BROUILLON') as OrderStatus,
     total: o.total ?? 0,
-    items: (o.items || []).map((i: any) => ({ product: i.productName, qty: i.qty, unit: 'unité', unitPrice: i.unitPrice })),
+    items: (o.items || []).map(i => ({ product: i.productName, qty: i.qty, unit: 'unité', unitPrice: i.unitPrice })),
     notes: o.notes || '',
   }
 }
