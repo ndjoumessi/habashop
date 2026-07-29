@@ -4,7 +4,8 @@ import { type Employee, roleLabel, deptLabel } from '@/components/hr/hrShared'
 // ⚠️ Taux et calcul importés de la SOURCE UNIQUE (`payrollShared`). Ce fichier codait
 // `0.08`/`0.05` (ou `0.87`) en dur : 6 fichiers le faisaient, donc 6 endroits à corriger
 // au prochain changement de loi — et un oubli aurait produit deux nets pour un salaire.
-import { payrollBreakdown, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
+import { payrollDisplay, fmtDisplay, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
+import { useConfig } from '@/stores/appStore'
 
 interface Props {
   employees: Employee[]
@@ -16,7 +17,12 @@ interface Props {
   generatePayslipPDF: (emp: any, data: any) => void
 }
 
-export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, setPayrollMonth, bonuses, generateAllPayslips, generatePayslipPDF }: Props) {
+export default function PayrollPayslips({ employees, fmt: _fmt, lang, payrollMonth, setPayrollMonth, bonuses, generateAllPayslips, generatePayslipPDF }: Props) {
+  const { currency } = useConfig()
+  // ⚠️ Montants DÉJÀ convertis par `payrollDisplay` (total = somme des lignes, net = brut −
+  // total) → formatage sans reconversion. Le `fmt` reçu en prop convertirait depuis XOF et
+  // ferait diverger cette carte du bulletin PDF d'un centime en devise à décimales.
+  const fmt = (v: number) => fmtDisplay(v, currency)
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
       <div style={{ display:'flex', gap:8, alignItems:'center' }}>
@@ -38,7 +44,8 @@ export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, se
         {employees.filter(e => e.active !== false).map(emp => {
           const brut  = Number(emp.salary)||0
           const bonus = bonuses[String(emp.id)] ?? 0
-          const { cnss, ir, net } = payrollBreakdown({ baseSalary: brut, bonus, overtime: 0, deductions: 0, absences: 0 })
+          const d = payrollDisplay({ baseSalary: brut, bonus, overtime: 0, deductions: 0, absences: 0 }, currency)
+          const { cnss, ir, net } = d
           return (
             <div key={emp.id} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:14, padding:18, transition:'all .2s' }}>
               <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, paddingBottom:12, borderBottom:'1px solid var(--border)' }}>
@@ -56,10 +63,10 @@ export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, se
 
               <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:12 }}>
                 {[
-                  { label: lang === 'en' ? 'Gross salary' : lang === 'es' ? 'Salario bruto' : lang === 'it' ? 'Stipendio lordo' : 'Salaire brut', value: fmt(brut), color:'var(--text2)', sign:'' },
-                  ...(bonus > 0 ? [{ label: lang === 'en' ? 'Bonus' : lang === 'es' ? 'Prima' : lang === 'it' ? 'Premio' : 'Prime', value: fmt(bonus), color:'var(--acc2)', sign:'+' }] : []),
-                  { label: 'CNSS (8%)', value: fmt(cnss), color:'var(--danger)', sign:'−' },
-                  { label: 'IR (5%)',   value: fmt(ir),   color:'var(--acc)',    sign:'−' },
+                  { label: lang === 'en' ? 'Gross salary' : lang === 'es' ? 'Salario bruto' : lang === 'it' ? 'Stipendio lordo' : 'Salaire brut', value: fmt(d.baseSalary), color:'var(--text2)', sign:'' },
+                  ...(bonus > 0 ? [{ label: lang === 'en' ? 'Bonus' : lang === 'es' ? 'Prima' : lang === 'it' ? 'Premio' : 'Prime', value: fmt(d.bonus), color:'var(--acc2)', sign:'+' }] : []),
+                  { label: `CNSS (${CNSS_RATE * 100}%)`, value: fmt(cnss), color:'var(--danger)', sign:'−' },
+                  { label: `IR (${IR_RATE * 100}%)`,     value: fmt(ir),   color:'var(--acc)',    sign:'−' },
                 ].map((row, i) => (
                   <div key={i} style={{ display:'flex', justifyContent:'space-between', fontSize:12, padding:'4px 0', borderBottom:'1px solid var(--border)' }}>
                     <span style={{ color:'var(--text3)' }}>{row.label}</span>

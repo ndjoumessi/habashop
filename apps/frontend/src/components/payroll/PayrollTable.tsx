@@ -1,7 +1,7 @@
 import type React from 'react'
-import { useConfig, useFormatAmount } from '@/stores/appStore'
+import { useConfig, CURRENCY_DECIMALS } from '@/stores/appStore'
 import { Download, Eye, Check, Zap } from 'lucide-react'
-import { MONTHS, monthLabel, roleLabel, statusLabel, STATUS_CFG, EmpAvatar, calcNet } from './payrollShared'
+import { MONTHS, monthLabel, roleLabel, statusLabel, STATUS_CFG, EmpAvatar, payrollDisplay, fmtDisplay } from './payrollShared'
 import type { PayRecord } from './payrollShared'
 
 interface Props {
@@ -17,13 +17,23 @@ interface Props {
 
 export default function PayrollTable(props: Props) {
   const { month, setMonth, filtered, onExportCSV, onGenerate, onView, onMarkPaid, onPrintPDF } = props
-  const { lang } = useConfig()
-  const fmt = useFormatAmount()
+  const { lang, currency } = useConfig()
+  // ⚠️ `payrollDisplay` rend des montants DÉJÀ convertis, cohérents entre eux. On formate donc
+  // avec `fmtDisplay`, jamais avec `useFormatAmount()` qui reconvertirait depuis XOF.
+  const fmt = (v: number) => fmtDisplay(v, currency)
+  const dec = CURRENCY_DECIMALS[currency as keyof typeof CURRENCY_DECIMALS] ?? 2
+  const arrondi = (x: number) => Math.round(x * 10 ** dec) / 10 ** dec
 
-  // Totaux (ligne tfoot) — même source de calcul que les lignes (calcNet).
-  const totals = filtered.reduce((a, r) => ({
-    base: a.base + r.baseSalary, bonus: a.bonus + r.bonus, overtime: a.overtime + r.overtime,
-    deductions: a.deductions + r.deductions, absences: a.absences + r.absences, net: a.net + calcNet(r),
+  // Une ligne = un détail d'affichage. Les lignes affichées sont la seule vérité de la table.
+  const lignes = filtered.map(r => ({ r, d: payrollDisplay(r, currency) }))
+
+  // ⚠️ Totaux = SOMME DES LIGNES AFFICHÉES, jamais la conversion d'une somme XOF. Sinon la
+  // ligne TOTAL ne correspond pas à ce qu'on obtient en additionnant la colonne — sur une
+  // table de paie, c'est l'objection immédiate du premier employé qui vérifie.
+  const totals = lignes.reduce((a, { r, d }) => ({
+    base: arrondi(a.base + d.baseSalary), bonus: arrondi(a.bonus + d.bonus),
+    overtime: arrondi(a.overtime + d.overtime), deductions: arrondi(a.deductions + d.exceptional),
+    absences: a.absences + r.absences, net: arrondi(a.net + d.net),
   }), { base: 0, bonus: 0, overtime: 0, deductions: 0, absences: 0, net: 0 })
 
   // Séparateurs visuels de groupes de colonnes : avant le groupe Retenues et avant NET.
@@ -74,7 +84,7 @@ export default function PayrollTable(props: Props) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(r => (
+                {lignes.map(({ r, d }) => (
                   <tr key={r.id}>
                     <td>
                       <div style={{ display:'flex', alignItems:'center', gap:9 }}>
@@ -84,15 +94,15 @@ export default function PayrollTable(props: Props) {
                     </td>
                     <td style={{ fontSize:12, color:'var(--text3)' }}>{roleLabel(r.role, lang)}</td>
                     {/* Colonnes intermédiaires rétrogradées (12px, text2/text3) — le NET reste la métrique reine */}
-                    <td className="td-num text-sm" style={{ color:'var(--text2)' }}>{fmt(r.baseSalary)}</td>
+                    <td className="td-num text-sm" style={{ color:'var(--text2)' }}>{fmt(d.baseSalary)}</td>
                     <td className="td-num text-sm" style={{ color:r.bonus > 0 ? 'var(--text2)' : 'var(--text3)' }}>
-                      {r.bonus > 0 ? fmt(r.bonus) : '—'}
+                      {r.bonus > 0 ? fmt(d.bonus) : '—'}
                     </td>
                     <td className="td-num text-sm" style={{ color:r.overtime > 0 ? 'var(--text2)' : 'var(--text3)' }}>
-                      {r.overtime > 0 ? fmt(r.overtime) : '—'}
+                      {r.overtime > 0 ? fmt(d.overtime) : '—'}
                     </td>
                     <td className="td-num text-sm" style={{ ...groupSep, color:r.deductions > 0 ? 'var(--danger)' : 'var(--text3)' }}>
-                      {r.deductions > 0 ? `− ${fmt(r.deductions)}` : fmt(r.deductions)}
+                      {r.deductions > 0 ? `− ${fmt(d.exceptional)}` : fmt(d.exceptional)}
                     </td>
                     <td>
                       {r.absences > 0
@@ -101,7 +111,7 @@ export default function PayrollTable(props: Props) {
                       }
                     </td>
                     <td className="td-num" style={groupSep}>
-                      <span style={netPill}>{fmt(calcNet(r))}</span>
+                      <span style={netPill}>{fmt(d.net)}</span>
                     </td>
                     <td>
                       <span className={`badge ${STATUS_CFG[r.status].cls}`}>{statusLabel(r.status, lang)}</span>

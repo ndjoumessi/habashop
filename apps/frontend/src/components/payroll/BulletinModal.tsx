@@ -2,7 +2,7 @@ import { useConfig } from '@/stores/appStore'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { X, CheckCircle, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { monthLabel, roleLabel, statusLabel, printBulletin, payrollBreakdown, CNSS_RATE, IR_RATE } from './payrollShared'
+import { monthLabel, roleLabel, statusLabel, printBulletin, payrollDisplay, fmtDisplay, CNSS_RATE, IR_RATE } from './payrollShared'
 
 // Taux affiché, rendu depuis la constante — jamais recopié en dur dans un libellé.
 const pct = (r: number) => `${String(r * 100).replace('.', ',')} %`
@@ -14,9 +14,12 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
   onPay: (id: string) => void
   fmt: (n: number) => string
 }) {
-  const { lang } = useConfig()
-  // Source unique du calcul (cohérent avec le bulletin PDF et la table paie).
-  const bd = payrollBreakdown(record)
+  const { lang, currency } = useConfig()
+  // ⚠️ `payrollDisplay` rend des montants DÉJÀ convertis dans la devise d'affichage, avec
+  // total = somme des lignes et net = brut − total. Les formater avec `fmtDisplay`, jamais
+  // avec le `fmt` reçu en prop (qui reconvertirait depuis XOF → double conversion).
+  const bd = payrollDisplay(record, currency)
+  const f = (v: number) => fmtDisplay(v, currency)
   const totalRetenues = bd.totalDeductions
   const boxRef = useModalFocus<HTMLDivElement>()
 
@@ -123,9 +126,9 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               <span style={{ textAlign:'right' }}>{lang === 'en' ? 'Amount' : lang === 'es' ? 'Importe' : lang === 'it' ? 'Importo' : 'Montant'}</span>
             </div>
             {([
-              { label:lang === 'en' ? 'Base salary' : lang === 'es' ? 'Salario base' : lang === 'it' ? 'Stipendio base' : 'Salaire de base',        base:'26j', taux:'100 %', montant:record.baseSalary, show:true },
-              { label:lang === 'en' ? 'Performance bonus' : lang === 'es' ? 'Prima de rendimiento' : lang === 'it' ? 'Premio di rendimento' : 'Prime de performance',   base:'',    taux:'',      montant:record.bonus,       show:record.bonus > 0 },
-              { label:lang === 'en' ? 'Overtime' : lang === 'es' ? 'Horas extra' : lang === 'it' ? 'Straordinari' : 'Heures supplémentaires', base:`${Math.round(record.overtime / record.baseSalary * 26 * 8)}h`, taux:'25 %', montant:record.overtime, show:record.overtime > 0 },
+              { label:lang === 'en' ? 'Base salary' : lang === 'es' ? 'Salario base' : lang === 'it' ? 'Stipendio base' : 'Salaire de base',        base:'26j', taux:'100 %', montant:bd.baseSalary, show:true },
+              { label:lang === 'en' ? 'Performance bonus' : lang === 'es' ? 'Prima de rendimiento' : lang === 'it' ? 'Premio di rendimento' : 'Prime de performance',   base:'',    taux:'',      montant:bd.bonus,       show:record.bonus > 0 },
+              { label:lang === 'en' ? 'Overtime' : lang === 'es' ? 'Horas extra' : lang === 'it' ? 'Straordinari' : 'Heures supplémentaires', base:`${Math.round(record.overtime / record.baseSalary * 26 * 8)}h`, taux:'25 %', montant:bd.overtime, show:record.overtime > 0 },
             ] as { label:string; base:string; taux:string; montant:number; show:boolean }[])
               .filter(r => r.show && r.montant > 0)
               .map((row, i) => (
@@ -139,7 +142,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
                   <span style={{ fontSize:12, color:'var(--text3)', textAlign:'center', fontFamily:'var(--mono)' }}>{row.base}</span>
                   <span style={{ fontSize:12, color:'var(--text3)', textAlign:'center', fontFamily:'var(--mono)' }}>{row.taux}</span>
                   <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)', textAlign:'right', fontFamily:'var(--mono)' }}>
-                    {fmt(row.montant)}
+                    {f(row.montant)}
                   </span>
                 </div>
               ))
@@ -152,7 +155,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
             }}>
               <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--acc2)', letterSpacing:'.3px' }}>{lang === 'en' ? 'GROSS TOTAL' : lang === 'es' ? 'TOTAL BRUTO' : lang === 'it' ? 'TOTALE LORDO' : 'TOTAL BRUT'}</span>
               <span style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>
-                {fmt(bd.brut)}
+                {f(bd.brut)}
               </span>
             </div>
           </div>
@@ -184,7 +187,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
                   <span style={{ fontSize:13, color:'var(--text2)' }}>{row.label}</span>
                   <span style={{ fontSize:12, color:'var(--text3)', textAlign:'center', fontFamily:'var(--mono)' }}>{row.taux}</span>
                   <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--danger)', textAlign:'right', fontFamily:'var(--mono)' }}>
-                    − {fmt(row.montant)}
+                    − {f(row.montant)}
                   </span>
                 </div>
               ))
@@ -197,7 +200,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
             }}>
               <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--danger)', letterSpacing:'.3px' }}>{lang === 'en' ? 'TOTAL DEDUCTIONS' : lang === 'es' ? 'TOTAL DEDUCCIONES' : lang === 'it' ? 'TOTALE DETRAZIONI' : 'TOTAL RETENUES'}</span>
               <span style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--danger)', fontFamily:'var(--mono)' }}>
-                − {fmt(totalRetenues)}
+                − {f(totalRetenues)}
               </span>
             </div>
           </div>
@@ -214,7 +217,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               <div style={{ fontSize:12, color:'var(--text2)' }}>{lang === 'en' ? 'Bank transfer' : lang === 'es' ? 'Transferencia bancaria' : lang === 'it' ? 'Bonifico bancario' : 'Virement bancaire'}</div>
             </div>
             <div style={{ fontSize:24, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>
-              {fmt(bd.net)}
+              {f(bd.net)}
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useConfig, useFormatAmount } from '@/stores/appStore'
+import { useConfig, useFormatAmount, CURRENCY_DECIMALS } from '@/stores/appStore'
 import { Wallet } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { employeesApi, payrollApi } from '@/lib/api'
@@ -9,7 +9,7 @@ import Skeleton from '@/components/ui/skeleton'
 import { exportCSV } from '@/utils/export'
 import {
   buildMonths, monthLabel, monthKey, currentMonthLabel, PAY_COLORS,
-  roleLabel, statusLabel, calcNet, calcBrut, printBulletin,
+  roleLabel, statusLabel, calcNet, calcBrut, printBulletin, payrollDisplay,
   PENDING_PREFIX, isPending,
   type PayRecord, type PayStatus,
 } from '@/components/payroll/payrollShared'
@@ -21,7 +21,7 @@ import BulletinModal from '@/components/payroll/BulletinModal'
 export { buildMonths, monthLabel }
 
 export default function Payroll() {
-  const { lang } = useConfig()
+  const { lang, currency } = useConfig()
   const fmt = useFormatAmount()
   const navigate = useNavigate()
 
@@ -93,8 +93,14 @@ export default function Payroll() {
 
   const filtered = records.filter(r => r.month === month)
 
-  const totalBrut = records.reduce((s, r) => s + calcBrut(r), 0)
-  const totalNet  = records.reduce((s, r) => s + calcNet(r), 0)
+  // ⚠️ Les KPI somment les montants AFFICHÉS (déjà convertis, cohérents entre eux), pas les
+  // valeurs XOF : sinon le KPI « Net à payer » ne correspond pas à l'addition de la colonne NET
+  // de la table juste en dessous. `PayrollKpis` reçoit donc des montants en devise
+  // d'affichage — il les formate avec `formatInCurrency`, sans reconvertir.
+  const decK = CURRENCY_DECIMALS[currency as keyof typeof CURRENCY_DECIMALS] ?? 2
+  const arrK = (x: number) => Math.round(x * 10 ** decK) / 10 ** decK
+  const totalBrut = arrK(records.reduce((s, r) => s + payrollDisplay(r, currency).brut, 0))
+  const totalNet  = arrK(records.reduce((s, r) => s + payrollDisplay(r, currency).net, 0))
   const generated = records.filter(r => r.status === 'GÉNÉRÉ' || r.status === 'PAYÉ').length
   const paid      = records.filter(r => r.status === 'PAYÉ').length
 

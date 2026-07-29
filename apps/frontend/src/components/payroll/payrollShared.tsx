@@ -1,4 +1,4 @@
-import { useAppStore, formatAmount, t } from '@/stores/appStore'
+import { useAppStore, formatAmount, formatInCurrency, convertFromXOF, CURRENCY_DECIMALS, t } from '@/stores/appStore'
 import { openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
 
 export type PayStatus = 'PAYÉ' | 'EN ATTENTE' | 'SUSPENDU' | 'GÉNÉRÉ'
@@ -144,6 +144,71 @@ export function payrollBreakdown(r: Pick<PayRecord, 'baseSalary' | 'bonus' | 'ov
   return { brut, cnss, ir, absencePenalty, exceptional, totalDeductions, net: brut - totalDeductions }
 }
 
+/**
+ * ⚠️ COHÉRENCE ARITHMÉTIQUE DU DOCUMENT — détail XOF → devise d'AFFICHAGE.
+ *
+ * Le calcul vit en XOF (devise pivot) ; l'affichage peut être en EUR/USD/… avec 2 décimales.
+ * Convertir chaque ligne PUIS le total séparément produit un bulletin qui ne s'additionne pas.
+ *
+ * MESURÉ sur 350 000 XOF affichés en EUR (parité fixe 655,957) :
+ *   lignes    : CNSS 42,69 · IR 26,68
+ *   total si on convertit le total XOF (45 500)  → 69,36   ✗ (42,69 + 26,68 = 69,37)
+ *   net   si on convertit le net XOF (304 500)   → 464,21  ✗ (533,57 − 69,37 = 464,20)
+ *
+ * Un écart d'un centime, mais sur un bulletin de paie : l'employé qui additionne les lignes
+ * n'obtient pas le total imprimé. Un document qui ne s'additionne pas est inutilisable, même
+ * s'il est « plus proche » de la valeur en base. On impose donc, dans la devise d'affichage :
+ *   total = SOMME des lignes arrondies   ·   net = brut − total
+ *
+ * ⚠️ En XOF (0 décimale, aucune conversion) tout est déjà entier : ce helper est neutre. Le
+ * problème n'apparaît QUE pour une devise d'affichage à décimales.
+ *
+ * ⚠️ Les valeurs rendues sont DÉJÀ CONVERTIES : les formater avec `formatInCurrency`, jamais
+ * avec `fmt()`/`formatAmount` qui reconvertiraient (double conversion, cf. § Règles devise —
+ * c'est l'exception documentée « valeurs déjà en devise tenant »).
+ */
+export interface PayrollDisplay {
+  baseSalary: number; bonus: number; overtime: number; brut: number
+  cnss: number; ir: number; absencePenalty: number; exceptional: number
+  totalDeductions: number; net: number
+}
+
+export function payrollDisplay(
+  r: Pick<PayRecord, 'baseSalary' | 'bonus' | 'overtime' | 'deductions' | 'absences'>,
+  currency: string,
+): PayrollDisplay {
+  const bd = payrollBreakdown(r)
+  const dec = CURRENCY_DECIMALS[currency as keyof typeof CURRENCY_DECIMALS] ?? 2
+  const f = 10 ** dec
+  const arrondi = (x: number) => Math.round(x * f) / f
+  const conv = (xof: number) => arrondi(convertFromXOF(xof, currency))
+
+  // ── GAINS : le brut est la somme des lignes affichées, pas la conversion du brut XOF.
+  // Même raison que pour les retenues : le bulletin liste base + primes + heures sup et
+  // annonce un TOTAL BRUT ; il doit s'additionner.
+  const baseSalary = conv(r.baseSalary)
+  const bonus = conv(r.bonus)
+  const overtime = conv(r.overtime)
+  const brut = arrondi(baseSalary + bonus + overtime)
+
+  // ── RETENUES : total = somme des lignes affichées, jamais la conversion du total XOF.
+  const cnss = conv(bd.cnss)
+  const ir = conv(bd.ir)
+  const absencePenalty = conv(bd.absencePenalty)
+  const exceptional = conv(bd.exceptional)
+  const totalDeductions = arrondi(cnss + ir + absencePenalty + exceptional)
+
+  // ── NET : déduit du brut et du total AFFICHÉS, jamais de la conversion du net XOF.
+  return {
+    baseSalary, bonus, overtime, brut,
+    cnss, ir, absencePenalty, exceptional, totalDeductions,
+    net: arrondi(brut - totalDeductions),
+  }
+}
+
+/** Formate une valeur DÉJÀ convertie (sortie de `payrollDisplay`) — pas de reconversion. */
+export const fmtDisplay = (v: number, currency: string) => formatInCurrency(v, currency)
+
 export function calcNet(r: PayRecord) {
   return payrollBreakdown(r).net
 }
@@ -164,17 +229,19 @@ export function EmpAvatar({ r, size = 32 }: { r: PayRecord; size?: number }) {
 
 export function printBulletin(bulletin: PayRecord) {
   const { currency, lang } = useAppStore.getState()
-  // Montants en base XOF. formatAmount convertit XOF→devise PUIS formate — exactement
-  // ce que fait useFormatAmount à l'écran. (Bug corrigé : ne PAS pré-convertir avant,
-  // sinon double conversion → PDF ≠ écran, ex. 686,02 € affiché en ~1,05 €.)
-  const fmtP = (n: number) => formatAmount(n, currency)
+  // ⚠️ On passe par `payrollDisplay` : les montants sont DÉJÀ convertis dans la devise
+  // d'affichage, avec total = somme des lignes et net = brut − total. Les formater donc avec
+  // `fmtDisplay` (= `formatInCurrency`), JAMAIS avec `formatAmount` qui reconvertirait depuis
+  // XOF — double conversion (le bug « 686,02 € affiché en ~1,05 € »).
+  const d = payrollDisplay(bulletin, currency)
+  const fmtP = (n: number) => fmtDisplay(n, currency)
 
-  const { brut, absencePenalty, cnss, ir, exceptional, net, totalDeductions } = payrollBreakdown(bulletin)
+  const { brut, absencePenalty, cnss, ir, exceptional, net, totalDeductions } = d
 
   const gainsRows: string[][] = [
-    [t('payslip_base_salary'), '26 j', '100 %', fmtP(bulletin.baseSalary)],
-    ...(bulletin.bonus > 0 ? [[t('payslip_bonus'), '', '', fmtP(bulletin.bonus)]] : []),
-    ...(bulletin.overtime > 0 ? [[t('payslip_overtime'), '', '25 %', fmtP(bulletin.overtime)]] : []),
+    [t('payslip_base_salary'), '26 j', '100 %', fmtP(d.baseSalary)],
+    ...(bulletin.bonus > 0 ? [[t('payslip_bonus'), '', '', fmtP(d.bonus)]] : []),
+    ...(bulletin.overtime > 0 ? [[t('payslip_overtime'), '', '25 %', fmtP(d.overtime)]] : []),
   ]
   // ⚠️ CNSS et IR sont TOUJOURS affichés : ils sont désormais réellement déduits du net.
   // Avant, ils n'apparaissaient que si `deductions > 0` — cohérent avec l'ancienne règle où
@@ -206,8 +273,9 @@ export function printBulletin(bulletin: PayRecord) {
     ${htmlTable(
       [t('expenses_label'), '%', t('col_amount')],
       retenuesRows,
-      // Total = retenues saisies + pénalité absence (payrollBreakdown.totalDeductions) —
-      // réconcilie lignes = total (la pénalité absence est listée dans les lignes).
+      // ⚠️ Total = SOMME des lignes affichées ci-dessus (CNSS + IR + exceptionnelles +
+      // pénalité absence), calculée dans la devise d'affichage par `payrollDisplay`. Le
+      // commentaire précédent décrivait l'ancienne règle (« retenues saisies + pénalité »).
       ['', `<strong>${t('payslip_total_deductions')}</strong>`, `<strong style="color:#dc2626;">- ${fmtP(totalDeductions)}</strong>`]
     )}
 
