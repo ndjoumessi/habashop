@@ -29,6 +29,12 @@ const { mockState } = vi.hoisted(() => ({
     enableScanner: true, autoWhatsApp: false,
     cart: [] as unknown[], addCartItem: vi.fn(), updateCartQty: vi.fn(), setCart: vi.fn(), clearCart: vi.fn(),
     updateConfig: vi.fn(),
+    // ⚠️ `freshness` N'EST PAS FACULTATIF : `handleScan` appelle `oldestFreshness(freshness)`
+    // sur le chemin « introuvable ». Absent, il lève `Cannot read properties of undefined`.
+    // En local l'erreur restait un rejet non capturé, VERTE ; en CI elle fait échouer le run.
+    // `{}` = aucune classe synchronisée → le message honnête dit « jamais synchronisé ».
+    freshness: {} as Record<string, number>, markFresh: vi.fn(), catalogNonce: 0,
+    enableLoyalty: false,
   },
 }))
 vi.mock('@/stores/appStore', () => ({
