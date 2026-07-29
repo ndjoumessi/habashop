@@ -36,15 +36,15 @@ export default function AccessibleInput({
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   wrap: { gap: Spacing.xs },
   label: {
-    fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3,
+    fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.text3,
     textTransform: 'uppercase', letterSpacing: 0.5,
   },
   input: {
     backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
     borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, height: 48,
-    fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text,
+    fontSize: FontSize.md, fontFamily: 'Geist_400Regular', color: C.text,
   },
   inputError: { borderColor: C.danger },
-  hint:  { fontSize: FontSize.xs, color: C.text3, fontFamily: 'Outfit_400Regular' },
-  error: { fontSize: FontSize.xs, color: C.danger, fontFamily: 'Outfit_700Bold' },
+  hint:  { fontSize: FontSize.xs, color: C.text3, fontFamily: 'Geist_400Regular' },
+  error: { fontSize: FontSize.xs, color: C.danger, fontFamily: 'Geist_700Bold' },
 })
