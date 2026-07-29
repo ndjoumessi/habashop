@@ -1,5 +1,6 @@
 import { logger } from '@/lib/logger'
 import type { ApiSupplier, SupplierCreate, SupplierWrite } from '@/components/suppliers/suppliersShared'
+import type { ApiOrder } from '@/components/orders/ordersShared'
 
 const BASE_URL: string = (import.meta as any).env?.VITE_API_URL
   ?? 'https://habashop-production.up.railway.app'
@@ -290,11 +291,20 @@ export const suppliersApi = {
   },
 }
 
+// ⚠️ Type de FRONTIÈRE (`ApiOrder`), pas le domaine `Order` : sur le fil,
+// `supplier` est l'objet fournisseur ENTIER (ligne Prisma brute), `items[]` porte
+// `productName` et `status` est en anglais. `mapApiOrder` traverse — cf. `ordersShared`.
+// ⚠️ `create` ne rend PAS la même forme que `list` : le POST fait `include: { items: true }`
+// SANS `supplier`. D'où `Omit<ApiOrder, 'supplier'>`, et non `ApiOrder`.
 export const ordersApi = {
-  list:         () => api.get<any[]>('/api/orders'),
-  create:       (data: any) => api.post<any>('/api/orders', data),
+  list:         () => api.get<ApiOrder[]>('/api/orders'),
+  // ⚠️ Le CORPS reste `any` dans cette PR : le typer révèle que la création est cassée en
+  // prod (items sans `product` ni `unitPrice`, branche client sans `supplierId` — 0 commande
+  // en base). C'est un correctif de comportement, pas du typage → PR dédiée. Le RETOUR, lui,
+  // est mesuré : le POST fait `include: { items: true }` SANS `supplier`.
+  create:       (data: any) => api.post<Omit<ApiOrder, 'supplier'>>('/api/orders', data),
   updateStatus: (id: string, status: string) =>
-    api.patch<any>(`/api/orders/${id}/status`, { status }),
+    api.patch<Omit<ApiOrder, 'supplier' | 'items'>>(`/api/orders/${id}/status`, { status }),
 }
 
 export const employeesApi = {

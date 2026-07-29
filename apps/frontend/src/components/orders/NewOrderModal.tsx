@@ -4,6 +4,7 @@ import IconButton from '@/components/ui/IconButton'
 import { ClipboardList, X, Users, Truck, User, CheckCircle, Phone, Plus, Package, Clock, Star, ScanLine, Loader2, AlertCircle } from 'lucide-react'
 import { useConfig, useFormatAmount, formatInCurrency } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
+import type { OrderSupplierOption } from '@/components/orders/ordersShared'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { suppliersApi } from '@/lib/api'
 
@@ -23,7 +24,7 @@ interface Props {
   showClientDropdown: boolean
   setShowClientDropdown: Dispatch<SetStateAction<boolean>>
   customers: any[]
-  suppliersList: any[]
+  suppliersList: OrderSupplierOption[]
   selectedSupplierId: string
   setSelectedSupplierId: Dispatch<SetStateAction<string>>
   availableProducts: any[]
@@ -290,7 +291,7 @@ export default function NewOrderModal({
                 {i('FOURNISSEUR *', 'SUPPLIER *', 'PROVEEDOR *', 'FORNITORE *')}
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
-                {suppliersList.filter(s => s.status !== 'inactive').map(supplier => {
+                {suppliersList.filter(s => s.status !== 'Inactif').map(supplier => {
                   const isSel = selectedSupplierId === supplier.id
                   return (
                     <button key={supplier.id} type="button" onClick={() => setSelectedSupplierId(supplier.id)}
@@ -310,9 +311,13 @@ export default function NewOrderModal({
                         <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: isSel ? 'var(--acc)' : 'var(--text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {supplier.name}
                         </div>
-                        <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 8 }}>
-                          <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Package size={10}/> {supplier.specialty}</span>
-                          <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Clock size={10}/> {supplier.leadTime}</span>
+                        <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 8, minWidth: 0 }}>
+                          {/* `specialty` porte la LISTE de catégories du fournisseur — elle était
+                              vide avant (champ fantôme). Tronquée en CSS plutôt que réduite à la
+                              première : on ne perd aucune catégorie, le titre donne le tout.
+                              `minWidth:0` sur le parent flex, sans quoi `ellipsis` ne s'applique pas. */}
+                          <span title={supplier.specialty} style={{ display:'inline-flex', alignItems:'center', gap:3, minWidth: 0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}><Package size={10}/> {supplier.specialty}</span>
+                          <span style={{ display:'inline-flex', alignItems:'center', gap:3, flexShrink: 0 }}><Clock size={10}/> {supplier.leadTime}</span>
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
@@ -340,7 +345,7 @@ export default function NewOrderModal({
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--acc)', marginBottom: 4, display:'flex', alignItems:'center', gap:4 }}><CheckCircle size={12}/> {s.name}</div>
                       <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                        <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Package size={10}/> {s.specialty}</span>
+                        <span title={s.specialty} style={{ display:'inline-flex', alignItems:'center', gap:3, minWidth: 0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}><Package size={10}/> {s.specialty}</span>
                         <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Clock size={10}/> {i('Délai', 'Lead time', 'Plazo', 'Tempo')} : {s.leadTime}</span>
                         {s.phone && <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Phone size={10}/> {s.phone}</span>}
                       </div>

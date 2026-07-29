@@ -11,7 +11,15 @@ const { ORDERS } = vi.hoisted(() => ({
 vi.mock('@/lib/api', () => ({
   ordersApi:    { list: vi.fn().mockResolvedValue(ORDERS), updateStatus: vi.fn().mockResolvedValue({}), create: vi.fn().mockResolvedValue({}) },
   productsApi:  { list: vi.fn().mockResolvedValue([{ id: 'p1', name: 'Riz', sellPrice: 25000, emoji: '🍚', category: 'X' }]) },
-  suppliersApi: { list: vi.fn().mockResolvedValue([{ id: 's1', name: 'Fournisseur Alpha', specialty: 'Alim', phone: '77', leadTime: '3j', rating: 4, status: 'active' }]) },
+  // ⚠️ Forme FIL RÉELLE (`ApiSupplier`, ligne Prisma brute). L'ancienne fixture inventait
+  // `specialty: 'Alim'`, `leadTime: '3j'` et `status: 'active'` — trois valeurs qu'aucune
+  // API n'a jamais renvoyées. Elle restait VERTE pendant que l'écran affichait du vide.
+  suppliersApi: { list: vi.fn().mockResolvedValue([{
+    id: 's1', tenantId: 't1', name: 'Fournisseur Alpha',
+    categories: 'Alimentaire, Boissons', phone: '77', email: null, address: null,
+    leadTime: 3, rating: 4, status: 'Actif', notes: null,
+    createdAt: '2026-07-01T10:00:00.000Z', updatedAt: '2026-07-01T10:00:00.000Z', deletedAt: null,
+  }]) },
   customersApi: { list: vi.fn().mockResolvedValue([{ id: 'c1', name: 'Aminata', phone: '70', type: 'Fidèle', totalCA: 1000 }]) },
 }))
 // export utils inertes (pas de window.open / download en test)
