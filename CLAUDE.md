@@ -119,6 +119,7 @@ le changement — signal que la CI unitaire ne donne pas. Les supprimer coûtera
 - **`DATABASE_URL` = DB PROD Railway.** JAMAIS `migrate dev/reset/seed` sans confirmation. `prisma db push` OK pour ajouts sans data loss. Migration additive : `ADD COLUMN IF NOT EXISTS` + `prisma migrate resolve --applied`.
 - **`apps/frontend/.env` tracké par git** → JAMAIS de secret. `.env.local` gitignored (`SENTRY_AUTH_TOKEN` build-side).
 - **Logs Railway** : `railway logs` = stream infini → `railway logs --deployment --lines N --json`.
+- **Sonder un job CI — attendre sur `status`, JAMAIS sur `conclusion`** ⚠️ : GitHub renvoie `conclusion: ""` (**chaîne VIDE**, pas `null`) tant qu'un run/job est `in_progress`. Or le `//` de jq ne se déclenche que sur `null`/`false` — MESURÉ : `'{"conclusion":"","other":null}' | jq '.conclusion // "DEFAUT"'` rend `""`, quand `.other // "DEFAUT"` rend bien `DEFAUT`. Une boucle qui teste `.conclusion // "-"` sort donc **au premier tour** et annonce « terminé » sur un job qui tourne encore (arrivé sur l'E2E du merge #174 : sonde verte, rien d'observé). Motif : poller `status == "completed"`, **puis** lire `conclusion` — c'est la variante CI du « mock qui ignore ses arguments », un vert qui décrit un monde qui n'existe pas.
 - **Co-édition** : "file modified since read" = prompt parallèle → `git status`/`git log`, réconcilier, re-`tsc`.
 - **`appStore` partialize** : `...rest` persiste tout → exclure états session (`cart`, `cashier*`) ou resetter dans authStore login/logout.
 - **Secrets API** = état React éphémère — JAMAIS localStorage.
