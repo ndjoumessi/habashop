@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminApi, authApi } from '@/lib/api'
-import { useAppStore, useFormatAmount, THEME_OPTIONS } from '@/stores/appStore'
+import { useAppStore, formatInCurrency, THEME_OPTIONS } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n } from '@/hooks/useI18n'
 import { useModalFocus } from '@/hooks/useModalFocus'
@@ -34,7 +34,8 @@ type Tenant = {
   _count?: { users: number; products: number; sales: number }
 }
 
-// Monthly value per plan, in XOF (display converts via fmt)
+// Valeur mensuelle par plan, en XOF. Affichée TELLE QUELLE (fmtXOF) : la console plateforme
+// raisonne en FCFA, jamais convertie vers la devise du super-admin. Cf. adminXof.test.ts.
 const PLAN_PRICE: Record<string, number> = {
   free: 0, trial: 0, starter: 9900, pro: 24900, business: 24900, enterprise: 49900,
 }
@@ -65,7 +66,11 @@ export default function AdminDashboard() {
   const theme = useAppStore(s => s.theme)
   const updateConfig = useAppStore(s => s.updateConfig)
   const logout = useAuthStore(s => s.logout)
-  const fmt = useFormatAmount()
+  // La console plateforme raisonne en XOF : plans et CA sont tarifés en XOF, et l'opérateur
+  // veut voir des FCFA — jamais la devise d'affichage du super-admin connecté, qui convertirait
+  // via des taux externes fluctuants et mentirait sur le CA réel. D'où formatInCurrency(_, 'XOF')
+  // et non le convertisseur per-viewer. Verrouillé par adminXof.test.ts.
+  const fmtXOF = (n: number) => formatInCurrency(n, 'XOF')
   const { i } = useI18n()
 
   const [tenants, setTenants] = useState<Tenant[]>([])
@@ -507,7 +512,7 @@ export default function AdminDashboard() {
                       {/* CA boutique (refunded exclu) — donnée réelle via /api/admin/tenants */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '7px 10px', borderRadius: 8, background: mix('var(--acc3)', 8), marginBottom: 10 }}>
                         <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', display: 'flex', alignItems: 'center', gap: 5 }}><Wallet size={11} /> {i('CA', 'Revenue', 'Ingresos', 'Fatturato')}</span>
-                        <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--acc3)', fontFamily: 'var(--mono)' }}>{fmt(t.revenue ?? 0)}</span>
+                        <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--acc3)', fontFamily: 'var(--mono)' }}>{fmtXOF(t.revenue ?? 0)}</span>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -554,7 +559,7 @@ export default function AdminDashboard() {
                       <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 4 }}>{req.tenant?.name ?? '—'}</div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                         <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(108,71,255,.1)', color: 'var(--p3)', border: '1px solid rgba(108,71,255,.2)', textTransform: 'capitalize' }}>{req.plan} · {req.period}</span>
-                        <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(255,149,0,.1)', color: 'var(--acc)', border: '1px solid rgba(255,149,0,.2)', fontFamily: 'var(--mono)' }}>{fmt(req.amount ?? 0)}</span>
+                        <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(255,149,0,.1)', color: 'var(--acc)', border: '1px solid rgba(255,149,0,.2)', fontFamily: 'var(--mono)' }}>{fmtXOF(req.amount ?? 0)}</span>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: mix(pm.c, 12), color: pm.c, border: `1px solid ${mix(pm.c, 25)}` }}>
                           <span style={{ width: 5, height: 5, borderRadius: '50%', background: pm.c }} /> {pm.label}
                         </span>
@@ -599,7 +604,7 @@ export default function AdminDashboard() {
                 { l: i('Utilisateurs', 'Users', 'Usuarios', 'Utenti'), v: selected._count?.users ?? 0 },
                 { l: i('Produits', 'Products', 'Productos', 'Prodotti'), v: selected._count?.products ?? 0 },
                 { l: i('Ventes', 'Sales', 'Ventas', 'Vendite'), v: selected._count?.sales ?? 0 },
-                { l: i('Valeur/mois', 'Value/mo', 'Valor/mes', 'Valore/mese'), v: fmt(planPrice(selected.plan)) },
+                { l: i('Valeur/mois', 'Value/mo', 'Valor/mes', 'Valore/mese'), v: fmtXOF(planPrice(selected.plan)) },
               ].map(s => (
                 <div key={s.l} className="kpi-card" style={{ padding: 12 }}>
                   <div className="kpi-label">{s.l}</div>
@@ -642,9 +647,9 @@ export default function AdminDashboard() {
                 <div>
                   <label style={lbl}>Plan</label>
                   <select aria-label="Plan" className="input" value={newTenantForm.plan} onChange={e => setNewTenantForm(f => ({ ...f, plan: e.target.value }))}>
-                    <option value="starter">Starter — {fmt(9900)}/{i('mois', 'mo', 'mes', 'mese')}</option>
-                    <option value="pro">Pro — {fmt(24900)}/{i('mois', 'mo', 'mes', 'mese')}</option>
-                    <option value="enterprise">Enterprise — {fmt(49900)}/{i('mois', 'mo', 'mes', 'mese')}</option>
+                    <option value="starter">Starter — {fmtXOF(9900)}/{i('mois', 'mo', 'mes', 'mese')}</option>
+                    <option value="pro">Pro — {fmtXOF(24900)}/{i('mois', 'mo', 'mes', 'mese')}</option>
+                    <option value="enterprise">Enterprise — {fmtXOF(49900)}/{i('mois', 'mo', 'mes', 'mese')}</option>
                   </select>
                 </div>
                 <div>
