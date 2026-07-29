@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
 import { openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
 import { usePagination } from '@/hooks/usePagination'
-import { type Order, type OrderStatus, type OrderSupplierOption, orderStatusLabel, LOCAL_TO_API_STATUS, mapApiOrder, toSupplierOption } from '@/components/orders/ordersShared'
+import { type Order, type OrderStatus, type OrderSupplierOption, orderStatusLabel, LOCAL_TO_API_STATUS, mapApiOrder, toSupplierOption, toOrderPayload } from '@/components/orders/ordersShared'
 import OrdersKpis from '@/components/orders/OrdersKpis'
 import OrdersCalendar from '@/components/orders/OrdersCalendar'
 import OrdersListPanel from '@/components/orders/OrdersListPanel'
@@ -147,15 +147,29 @@ export default function Orders() {
       items: newOrderForm.items.map(i => ({ product: `${i.emoji} ${i.name}`, qty: i.qty, unit: 'unité', unitPrice: i.price })),
       notes: newOrderForm.note,
     }
-    try {
-      if (orderType === 'client') {
-        await ordersApi.create({ clientName: newOrderForm.clientName, clientPhone: newOrderForm.clientPhone, items: newOrderForm.items, total, note: newOrderForm.note, type: 'client' })
-      } else {
-        await ordersApi.create({ supplierId: selectedSupplierId, supplierName: supplierObj?.name, items: newOrderForm.items, total, note: newOrderForm.note, type: 'supplier' })
+    // ⚠️ COMMANDES CLIENT = LOCALES ET ÉPHÉMÈRES, par décision produit (2026-07-29).
+    // `PurchaseOrder` n'a ni `clientName`, ni `clientPhone`, ni colonne `type`, et
+    // `supplierId` y est une FK OBLIGATOIRE : le modèle ne sait pas représenter une commande
+    // client. L'appel serveur qui existait ici partait donc SANS `supplierId` et se faisait
+    // refuser par le zod à chaque fois — un 400 systématique, dont l'utilisateur ne voyait
+    // qu'un « Échec de la création ». On ne l'émet plus : la commande vit en mémoire, ce qui
+    // est le comportement réel depuis toujours, désormais assumé au lieu d'être subi.
+    // Persistance = dette backend (colonnes + zod) — cf. CLAUDE.md § Commandes.
+    if (orderType === 'supplier') {
+      try {
+        // ⚠️ `toOrderPayload` — PAS `newOrderForm.items` tel quel. Les lignes du formulaire
+        // sont `{ id, name, price, qty, emoji }` ; le zod exige `{ product, qty, unitPrice }`.
+        // C'est cet écart qui a fait 400 sur CHAQUE création (0 commande en base).
+        await ordersApi.create(toOrderPayload({
+          supplierId: selectedSupplierId,
+          items: newOrderForm.items,
+          expectedAt: defaultExpected,
+          notes: newOrderForm.note,
+        }))
+      } catch {
+        toast.error(i('Échec de la création de la commande — réessayer', 'Order creation failed — please retry', 'Error al crear el pedido — reintenta', 'Creazione ordine non riuscita — riprova'))
+        return
       }
-    } catch {
-      toast.error(i('Échec de la création de la commande — réessayer', 'Order creation failed — please retry', 'Error al crear el pedido — reintenta', 'Creazione ordine non riuscita — riprova'))
-      return
     }
     setOrders(prev => [newOrder, ...prev])
     setShowNewOrderModal(false)
