@@ -1,13 +1,21 @@
 {
-  "_comment": "Cas PARTAGÉS frontend ↔ backend pour POST /api/orders (anti-dérive). Le frontend prouve que son constructeur de charge utile produit `valides[0].payload` ; le backend prouve que le zod ORDER_CREATE accepte chaque `valides` et refuse chaque `invalides`. Modifier la règle d'un seul côté fait échouer le test jumeau. Motivation : la création de commande a été CASSÉE en production sans que rien ne l'attrape — 0 commande en base — parce que le front envoyait `{ id, name, price, qty, emoji }` là où le zod exige `{ product, qty, unitPrice }`, et parce que la branche client n'envoyait aucun `supplierId`.",
+  "_comment": "Cas PARTAGÉS frontend ↔ backend pour POST /api/orders (anti-dérive). Le frontend prouve que son constructeur de charge utile produit `valides[0].payload` ; le backend prouve que le zod ORDER_CREATE accepte chaque `valides` et refuse chaque `invalides`. Modifier la règle d'un seul côté fait échouer le test jumeau. Motivation : la création de commande a été CASSÉE en production sans que rien ne l'attrape — 0 commande en base — parce que le front envoyait `{ id, name, price, qty, emoji }` là où le zod exige `{ product, qty, unitPrice }`, et parce que la branche client n'envoyait aucun `supplierId`. ⚠️ `product` porte le NOM SEUL, sans emoji : la décoration reste à l'écran, la base garde une donnée exploitable (exports, recherche).",
   "valides": [
     {
       "nom": "commande fournisseur nominale",
       "payload": {
         "supplierId": "sup_1",
         "items": [
-          { "product": "🌾 Riz parfumé 5kg", "qty": 10, "unitPrice": 4500 },
-          { "product": "🫒 Huile palme 1L", "qty": 4, "unitPrice": 1800 }
+          {
+            "product": "Riz parfumé 5kg",
+            "qty": 10,
+            "unitPrice": 4500
+          },
+          {
+            "product": "Huile palme 1L",
+            "qty": 4,
+            "unitPrice": 1800
+          }
         ],
         "expectedAt": "2026-08-05",
         "notes": "Livraison matin"
@@ -17,7 +25,13 @@
       "nom": "notes et échéance absentes (nullish côté zod)",
       "payload": {
         "supplierId": "sup_1",
-        "items": [{ "product": "Sucre 1kg", "qty": 1, "unitPrice": 900 }]
+        "items": [
+          {
+            "product": "Sucre 1kg",
+            "qty": 1,
+            "unitPrice": 900
+          }
+        ]
       }
     }
   ],
@@ -27,7 +41,15 @@
       "pourquoi": "le front envoyait NewOrderItem {id,name,price,qty,emoji} tel quel",
       "payload": {
         "supplierId": "sup_1",
-        "items": [{ "id": "p1", "name": "Riz parfumé 5kg", "price": 4500, "qty": 10, "emoji": "🌾" }]
+        "items": [
+          {
+            "id": "p1",
+            "name": "Riz parfumé 5kg",
+            "price": 4500,
+            "qty": 10,
+            "emoji": "🌾"
+          }
+        ]
       }
     },
     {
@@ -35,13 +57,22 @@
       "pourquoi": "ORDER_CREATE exige supplierId (FK Supplier) ; le modèle ne sait pas représenter une commande client",
       "payload": {
         "clientName": "Awa Diop",
-        "items": [{ "product": "Riz", "qty": 1, "unitPrice": 900 }]
+        "items": [
+          {
+            "product": "Riz",
+            "qty": 1,
+            "unitPrice": 900
+          }
+        ]
       }
     },
     {
       "nom": "aucune ligne",
       "pourquoi": "items.min(1) — le handler fait .reduce/.map et crasherait",
-      "payload": { "supplierId": "sup_1", "items": [] }
+      "payload": {
+        "supplierId": "sup_1",
+        "items": []
+      }
     }
   ]
 }

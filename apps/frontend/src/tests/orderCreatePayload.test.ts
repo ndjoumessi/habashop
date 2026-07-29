@@ -47,9 +47,9 @@ describe('toOrderPayload — ce qu’on envoie vraiment au serveur', () => {
 
   it('traduit le vocabulaire du formulaire vers celui du fil', () => {
     const p = toOrderPayload({ supplierId: 's1', items: [{ emoji: '🌾', name: 'Riz', price: 4500, qty: 10 }] })
-    // `name` + `emoji` → `product` (la chaîne AFFICHÉE, pour qu'un rechargement montre
-    // le même libellé) ; `price` → `unitPrice`. Aucun `id` ni `emoji` ne part au serveur.
-    expect(p.items[0]).toEqual({ product: '🌾 Riz', qty: 10, unitPrice: 4500 })
+    // `name` → `product` (le NOM SEUL : l'emoji est une décoration d'écran, la base garde
+    // une donnée exploitable) ; `price` → `unitPrice`. Ni `id` ni `emoji` ne partent.
+    expect(p.items[0]).toEqual({ product: 'Riz', qty: 10, unitPrice: 4500 })
     expect(Object.keys(p.items[0]).sort()).toEqual(['product', 'qty', 'unitPrice'])
   })
 
@@ -75,6 +75,6 @@ describe('toOrderPayload — ce qu’on envoie vraiment au serveur', () => {
     const p = toOrderPayload({ supplierId: 's1', items: [{ emoji: '', name: 'Sucre', price: 900, qty: 1 }] })
     expect(p.expectedAt).toBeNull()
     expect(p.notes).toBeNull()
-    expect(p.items[0].product).toBe('Sucre') // `.trim()` : pas d'espace de tête sans emoji
+    expect(p.items[0].product).toBe('Sucre') // le nom seul, quoi qu'il y ait dans `emoji`
   })
 })

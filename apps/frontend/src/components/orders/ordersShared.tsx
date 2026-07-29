@@ -124,9 +124,11 @@ export interface NewOrderLine { name: string; price: number; qty: number; emoji:
  * zod sans lancer le serveur (cf. `docs/shared-fixtures/order-create-cases.json`, relu par un
  * test JUMEAU côté backend).
  *
- * ⚠️ `product` reprend `emoji + name`, exactement la chaîne que l'objet local affiche. Envoyer
- * le nom seul ferait diverger l'écran d'après création et l'écran d'après rechargement, le
- * serveur rendant `productName` tel quel via `mapApiOrder`.
+ * ⚠️ `product` = le NOM SEUL, sans l'emoji : la base garde une donnée propre, exploitable par
+ * les exports et les recherches. L'emoji reste une décoration d'écran.
+ * Contrepartie ASSUMÉE : l'objet optimiste affiche « 🌾 Riz » juste après création, tandis
+ * qu'un rechargement rendra « Riz » (le serveur restitue `productName` tel quel via
+ * `mapApiOrder`). Divergence cosmétique et transitoire, préférée à des emoji en base.
  */
 export function toOrderPayload(opts: {
   supplierId: string
@@ -137,7 +139,7 @@ export function toOrderPayload(opts: {
   return {
     supplierId: opts.supplierId,
     items: opts.items.map(i => ({
-      product: `${i.emoji} ${i.name}`.trim(),
+      product: i.name,
       qty: i.qty,
       unitPrice: i.price,
     })),
