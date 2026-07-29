@@ -1,6 +1,7 @@
 import PDFDocument from 'pdfkit'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { sanitizeCsv } from '../lib/csv'
 import { getCached } from '../lib/cache'
 import { xofToCurrency } from '../lib/currency'
 import { pdfSafeSpaces, drawLogo } from '../lib/invoicePdf'
@@ -274,10 +275,6 @@ export async function reportsRoutes(app: any) {
     // Cache court (5 min) : stock/ventes bougent, mais évite le recalcul à chaque ouverture d'onglet.
     return getCached(`reports:inventory:${tenantId}`, 300, () => buildInventoryInsights(prisma, tenantId, now))
   })
-
-  // Préfixe les valeurs CSV commençant par un opérateur Excel (=,+,-,@,tab,CR) pour
-  // éviter l'injection de formule (CSV formula injection / spreadsheet injection).
-  const sanitizeCsv = (v: string): string => /^[=+\-@\t\r]/.test(v) ? "'" + v : v
 
   // GET /api/reports/accounting/csv?month=YYYY-MM — CSV détaillé par vente (UTF-8 BOM, séparateur ;).
   app.get('/api/reports/accounting/csv', { preHandler: authenticate }, async (request: any, reply: any) => {

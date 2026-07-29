@@ -1,0 +1,17 @@
+{
+  "_comment": "Cas PARTAGÉS backend ↔ frontend pour `sanitizeCsv` (anti-injection CSV, #173). Les deux `lib/csv.ts` sont exercés sur ce fichier : modifier la règle d'un seul côté fait rougir l'autre. ⚠️ Entourer une cellule de guillemets ne protège PAS — le tableur les retire puis évalue le contenu. Seul le préfixe apostrophe neutralise.",
+  "cas": [
+    { "entree": "=cmd|'/c calc'!A1",        "attendu": "'=cmd|'/c calc'!A1", "pourquoi": "formule Excel — le vecteur classique" },
+    { "entree": "=1+1",                      "attendu": "'=1+1",              "pourquoi": "égal en tête" },
+    { "entree": "+41766778899",              "attendu": "'+41766778899",      "pourquoi": "plus en tête — un numéro international déclenche aussi" },
+    { "entree": "-2+3",                      "attendu": "'-2+3",              "pourquoi": "moins en tête" },
+    { "entree": "@SUM(A1:A9)",               "attendu": "'@SUM(A1:A9)",       "pourquoi": "arobase en tête — syntaxe Lotus, encore honorée" },
+    { "entree": "\t=1+1",                    "attendu": "'\t=1+1",            "pourquoi": "tabulation en tête" },
+    { "entree": "\r=1+1",                    "attendu": "'\r=1+1",            "pourquoi": "retour chariot en tête" },
+    { "entree": "Riz parfumé 5kg",           "attendu": "Riz parfumé 5kg",    "pourquoi": "valeur ordinaire — INCHANGÉE, le garde ne doit pas abîmer les données" },
+    { "entree": "Awa Diop",                  "attendu": "Awa Diop",           "pourquoi": "nom ordinaire" },
+    { "entree": "Prix = 500",                "attendu": "Prix = 500",         "pourquoi": "égal NON initial — rien à neutraliser" },
+    { "entree": "2026-07-29",                "attendu": "2026-07-29",         "pourquoi": "date ISO — ne commence pas par un déclencheur" },
+    { "entree": "",                          "attendu": "",                   "pourquoi": "vide" }
+  ]
+}

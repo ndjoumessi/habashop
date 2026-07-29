@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { sanitizeCsv } from '../lib/csv'
 
 export async function exportRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/export/:resource', { preHandler: [authenticate] }, async (request, reply) => {
@@ -68,7 +69,9 @@ export async function exportRoutes(app: FastifyInstance): Promise<void> {
     const BOM = '\uFEFF'
     const csv = BOM + headers.join(';') + '\n' + rows.map((row) =>
       row.map((cell) => {
-        const s = String(cell??'').replace(/"/g,'""')
+        // ⚠️ `sanitizeCsv` AVANT l'échappement des guillemets, jamais après : entourer la
+        // cellule de `"` ne protège PAS (le tableur les retire puis évalue). Cf. lib/csv.ts.
+        const s = sanitizeCsv(cell).replace(/"/g,'""')
         return s.includes(';')||s.includes('"') ? `"${s}"` : s
       }).join(';')
     ).join('\n')
