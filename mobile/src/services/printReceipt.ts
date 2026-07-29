@@ -2,6 +2,7 @@ import * as Print from 'expo-print'
 import { vatBreakdown } from '@/stores/posStore'
 import { logger } from '@/lib/logger'
 import { mixedSplitParts, type TicketOptions } from '@/services/whatsappTicket'
+import { appUrlHost } from '@/lib/appUrl'
 
 // Reçu imprimable / PDF via la boîte de dialogue d'impression de l'OS (AirPrint iOS,
 // service d'impression Android → imprimante Bluetooth thermique ou « Enregistrer en PDF »).
@@ -86,7 +87,7 @@ function buildReceiptHtml(opts: TicketOptions): string {
     <div class="total"><span>${t('total', lang)}${vat.rate > 0 ? ' ' + t('ttc', lang) : ''}</span><span>${fmt(total)}</span></div>
     ${paymentHtml}
     <div class="ref">${t('ref', lang)}: #${saleId.slice(-6).toUpperCase()}</div>
-    <p class="foot">${t('thanks', lang)}<br/>habashop.vercel.app</p>
+    <p class="foot">${t('thanks', lang)}<br/>${appUrlHost()}</p>
   </body></html>`
 }
 

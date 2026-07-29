@@ -18,6 +18,7 @@ import OcrInvoiceSheet from '@/components/suppliers/OcrInvoiceSheet'
 import Avatar from '@/components/ui/Avatar'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import AccessibleButton from '@/components/ui/AccessibleButton'
+import { appUrlHost } from '@/lib/appUrl'
 import { isBiometricAvailable, isBiometricEnabled, disableBiometric, type BiometricType } from '@/services/biometric'
 import { isWidgetEnabled, setWidgetEnabled, refreshWidget, dismissWidget } from '@/services/widgetNotification'
 import { registerWidgetRefresh, unregisterWidgetRefresh } from '@/tasks/backgroundRefresh'
@@ -429,7 +430,7 @@ export default function SettingsScreen() {
             accessibilityLabel={i('Changer le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password')}
             onPress={() => Alert.alert(
               i('Changer le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password'),
-              i('Changez votre mot de passe sur habashop.vercel.app', 'Change your password on habashop.vercel.app', 'Cambie su contraseña en habashop.vercel.app', 'Cambia la password su habashop.vercel.app'),
+              i(`Changez votre mot de passe sur ${appUrlHost()}`, `Change your password on ${appUrlHost()}`, `Cambie su contraseña en ${appUrlHost()}`, `Cambia la password su ${appUrlHost()}`),
             )}
           >
             <Ionicons name="key-outline" size={18} color={C.text2} />
