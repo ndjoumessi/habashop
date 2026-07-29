@@ -20,6 +20,15 @@ import { isValidBarcode, normalizeBarcode } from '@/lib/barcode'
 export const WEDGE_MAX_MS_PER_CHAR = 30
 /** En deçà, trop court pour trancher sur la seule vitesse (« ok », « 12 »…). */
 export const WEDGE_MIN_LENGTH = 4
+/**
+ * Douchette SANS terminateur : certaines n'envoient PAS Entrée. Elles émettent une rafale
+ * puis s'arrêtent. Passé ce délai d'INACTIVITÉ après la dernière touche, l'appelant tranche —
+ * c'est le seul signal de fin dont il dispose. Doit rester AU-DESSUS de l'écart inter-caractère
+ * d'une douchette (~1-10 ms) pour ne pas tirer au milieu d'une rafale, et court pour rester
+ * imperceptible. ⚠️ `elapsed` se mesure de la 1re à la DERNIÈRE touche, jamais jusqu'au
+ * déclenchement d'inactivité — sinon le délai diluerait la cadence sous le seuil.
+ */
+export const WEDGE_IDLE_MS = 60
 
 /** Ce que l'appelant mesure : instant de la 1re touche, et longueur au moment d'Entrée. */
 export type ScanTiming = { firstKeyAt: number | null; at: number }
@@ -49,6 +58,28 @@ export function looksLikeScannedInput(value: string, elapsedMs: number | null): 
   // 1. Forme canonique (jamais une regex locale — cf. lib/barcode.ts).
   if (isValidBarcode(normalizeBarcode(v))) return true
   // 2. Cadence machine.
+  return looksLikeScannerBurst(v, elapsedMs)
+}
+
+/**
+ * La VOIE VITESSE seule — sans la voie forme. C'est le seul verdict admissible quand on
+ * tranche sur l'INACTIVITÉ (douchette sans terminateur), et la raison est mesurée :
+ *
+ * ⚠️ **10,0 % des EAN-13 ont un préfixe de 12 caractères qui est un UPC-A VALIDE**
+ * (mesuré sur 10 000 codes à somme de contrôle correcte ; la collision tombe exactement à 12,
+ * la somme de contrôle ayant une chance sur dix de retomber juste). Un caissier qui RECOPIE
+ * un code à la main marque des pauses : s'il s'arrête plus longtemps que le délai d'inactivité
+ * après le 12ᵉ chiffre, la voie forme validerait le code PARTIEL. On viderait alors le champ et
+ * on ajouterait **un autre produit** au panier — une erreur d'argent, silencieuse, une fois sur
+ * dix. Le tir sur inactivité ne peut donc PAS s'autoriser de la forme.
+ *
+ * La cadence, elle, ne se confond pas : aucune main ne tient 30 ms/caractère. Une rafale qui
+ * s'arrête EST une douchette. La recopie manuelle reste servie par **Entrée** (#148), où la
+ * saisie est terminée par construction — c'est l'appui qui dit « j'ai fini », pas une horloge.
+ */
+export function looksLikeScannerBurst(value: string, elapsedMs: number | null): boolean {
+  const v = String(value ?? '').trim()
+  if (!v) return false
   if (elapsedMs == null) return false
   if (v.length < WEDGE_MIN_LENGTH) return false
   return elapsedMs / v.length <= WEDGE_MAX_MS_PER_CHAR

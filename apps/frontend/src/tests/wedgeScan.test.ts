@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import {
-  looksLikeScannedInput, typingElapsed, WEDGE_MAX_MS_PER_CHAR, WEDGE_MIN_LENGTH,
+  looksLikeScannedInput, looksLikeScannerBurst, typingElapsed,
+  WEDGE_MAX_MS_PER_CHAR, WEDGE_MIN_LENGTH, WEDGE_IDLE_MS,
 } from '@/components/pos/wedgeScan'
 import { resolveScannedCode } from '@/components/pos/scanResolve'
 
@@ -126,5 +127,70 @@ describe('bout en bout — douchette sur cache périmé', () => {
     const out = await wedge('lait', vi.fn().mockResolvedValue(null))
     expect(out.route).toBe('scan')
     expect(out.res).toEqual({ kind: 'unresolved' })
+  })
+})
+
+/**
+ * Douchette SANS terminateur : certaines n'envoient pas Entrée. Le champ POS tranche alors
+ * sur l'INACTIVITÉ après la rafale. Le point verrouillé ici est PUR : la durée de frappe doit
+ * s'arrêter à la dernière touche, jamais courir jusqu'au déclenchement — sinon le délai
+ * d'inactivité diluerait la cadence sous le seuil et le scan serait manqué.
+ */
+describe('sans terminateur — la cadence se fige à la dernière touche', () => {
+  it('durée mesurée à la dernière touche → rafale reconnue', () => {
+    const first = 1000, last = 1065 // 13 car en 65 ms ≈ 5 ms/car : cadence douchette
+    expect(looksLikeScannedInput('ABCDEFGHIJKLM', typingElapsed({ firstKeyAt: first, at: last }))).toBe(true)
+  })
+
+  it('durée courant jusqu’au déclenchement d’inactivité → cadence diluée, scan MANQUÉ', () => {
+    // Le bug qu'on évite : l'appelant NE doit PAS mesurer jusqu'ici.
+    const first = 1000, last = 1065
+    const at = last + WEDGE_IDLE_MS + 300 // dernière touche + délai d'inactivité + temps réel
+    expect(looksLikeScannedInput('ABCDEFGHIJKLM', typingElapsed({ firstKeyAt: first, at }))).toBe(false)
+  })
+
+  it('le délai d’inactivité reste au-dessus de l’écart inter-caractère d’une douchette (~10 ms)', () => {
+    expect(WEDGE_IDLE_MS).toBeGreaterThan(10)
+  })
+})
+
+/**
+ * La VOIE VITESSE seule — le seul verdict admissible sur INACTIVITÉ.
+ *
+ * ⚠️ MESURÉ, pas raisonné : sur 10 000 EAN-13 à somme de contrôle correcte, **10,0 %** ont un
+ * préfixe de 12 caractères qui est un UPC-A VALIDE (la collision tombe exactement à 12 — une
+ * chance sur dix que la somme retombe juste). Si le tir sur inactivité s'autorisait de la
+ * FORME, la pause d'un caissier qui recopie un code après le 12ᵉ chiffre viderait le champ et
+ * ajouterait un AUTRE produit au panier. Une erreur d'ARGENT, silencieuse, une fois sur dix.
+ */
+describe('voie vitesse seule — ce qui a le droit de tirer sur inactivité', () => {
+  const EAN_PIEGE = '5410492021592'
+  const PREFIXE_PIEGE = EAN_PIEGE.slice(0, 12) // UPC-A valide
+
+  it('la fixture porte bien la collision mesurée (sinon ce bloc ne prouve rien)', () => {
+    // `looksLikeScannedInput` accepte le préfixe PAR LA FORME : c'est exactement le danger.
+    expect(looksLikeScannedInput(PREFIXE_PIEGE, null)).toBe(true)
+    expect(looksLikeScannedInput(EAN_PIEGE, null)).toBe(true)
+    expect(EAN_PIEGE.startsWith(PREFIXE_PIEGE)).toBe(true)
+  })
+
+  it('un code VALIDE tapé à la main ne suffit PAS à la voie vitesse', () => {
+    const lent = 200 * PREFIXE_PIEGE.length // cadence humaine
+    expect(looksLikeScannerBurst(PREFIXE_PIEGE, lent)).toBe(false)
+    // …là où le prédicat d'Entrée, lui, l'accepte : la différence est le cœur du correctif.
+    expect(looksLikeScannedInput(PREFIXE_PIEGE, lent)).toBe(true)
+  })
+
+  it('une rafale à cadence machine passe, même sur un contenu non numérique (SKU CODE128)', () => {
+    expect(looksLikeScannerBurst('ABCDEFGHIJKLM', 65)).toBe(true)
+  })
+
+  it('durée non mesurable (collé, autocomplété) → jamais un tir sur inactivité', () => {
+    expect(looksLikeScannerBurst(EAN_PIEGE, null)).toBe(false)
+  })
+
+  it('trop court pour trancher sur la seule vitesse', () => {
+    expect(looksLikeScannerBurst('ok', 2)).toBe(false)
+    expect(WEDGE_MIN_LENGTH).toBe(4)
   })
 })
