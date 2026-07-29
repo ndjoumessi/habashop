@@ -4,10 +4,21 @@ import { openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
 export type PayStatus = 'PAYÉ' | 'EN ATTENTE' | 'SUSPENDU' | 'GÉNÉRÉ'
 
 export interface PayRecord {
-  id: number; employee: string; avatar: string; color: string; role: string
+  // ⚠️ `id` était un NUMBER dérivé de l'index du tableau (`i + 1`) — or `Employee.id` est un
+  // cuid STRING (cf. CLAUDE.md « jamais Number(id) »). « Marquer payé » visait donc une
+  // POSITION, pas une personne : un changement d'ordre de la liste payait le mauvais bulletin.
+  // Désormais : identifiant du bulletin persisté, ou `pending:<employeeId>` tant qu'il n'existe
+  // pas encore en base.
+  id: string
+  employeeId: string        // cuid de l'employé — la seule identité stable
+  employee: string; avatar: string; color: string; role: string
   baseSalary: number; bonus: number; overtime: number; deductions: number
   absences: number; status: PayStatus; paidAt: string | null; month: string
 }
+
+/** Préfixe d'un bulletin PAS ENCORE persisté (aucune ligne en base pour ce mois). */
+export const PENDING_PREFIX = 'pending:'
+export const isPending = (id: string) => id.startsWith(PENDING_PREFIX)
 
 // Noms de mois FR = base des CLÉS de mois ("Mois AAAA"). L'année est RÉELLE (jamais codée en dur).
 const FR_MONTH_NAMES = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
@@ -15,6 +26,25 @@ export function buildMonths(year: number): string[] {
   return FR_MONTH_NAMES.map(n => `${n} ${year}`)
 }
 export const MONTHS = buildMonths(new Date().getFullYear())
+
+/**
+ * Libellé d'écran (« Juillet 2026 ») → clé de base « 2026-07 ».
+ *
+ * ⚠️ Le libellé FR ne doit JAMAIS atteindre le serveur : une clé qui dépend de la langue
+ * d'affichage rend les données illisibles au changement de locale, et deux tenants en langues
+ * différentes écriraient des mois incompatibles. Le serveur REFUSE d'ailleurs tout ce qui
+ * n'est pas `YYYY-MM` (400).
+ *
+ * Rend `null` si le libellé n'est pas reconnu — jamais un mois par défaut : un repli
+ * silencieux écrirait la paie sur le mauvais mois.
+ */
+export function monthKey(label: string): string | null {
+  const [name, yearStr] = label.split(' ')
+  const idx = FR_MONTH_NAMES.indexOf(name)
+  const year = Number(yearStr)
+  if (idx < 0 || !Number.isInteger(year) || year < 1970) return null
+  return `${year}-${String(idx + 1).padStart(2, '0')}`
+}
 
 export const PAY_COLORS = ['#6C3FD6','#F59E0B','#10B981','#EF4444','#3B82F6','#8B5CF6','#EC4899','#F472B6']
 export const currentMonthLabel = MONTHS[new Date().getMonth()] ?? MONTHS[0]

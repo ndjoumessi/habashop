@@ -314,6 +314,14 @@ export const employeesApi = {
   delete: (id: string) => api.delete<any>(`/api/employees/${id}`),
 }
 
+// Bulletins de paie PERSISTÉS. ⚠️ `month` = clé ISO « YYYY-MM » (cf. `monthKey`) — le
+// libellé d'écran est refusé par le serveur en 400, volontairement.
+export const payrollApi = {
+  list:      (month: string) => api.get<any[]>(`/api/payroll?month=${encodeURIComponent(month)}`),
+  generate:  (month: string) => api.post<{ created: number; rows: any[] }>('/api/payroll/generate', { month }),
+  setStatus: (id: string, status: string) => api.patch<any>(`/api/payroll/${id}`, { status }),
+}
+
 export const bonusesApi = {
   list:             () => api.get<any[]>('/api/bonuses'),
   listByEmployee:   (employeeId: string) => api.get<any[]>(`/api/bonuses/employee/${employeeId}`),

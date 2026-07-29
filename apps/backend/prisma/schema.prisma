@@ -17,59 +17,59 @@ model Tenant {
   // (403 DEMO_TENANT_FORBIDDEN, cf. middleware/demoTenant.ts) — la seule protection qui
   // résiste à un curl, le mot de passe démo étant public. Défaut false.
   isDemo     Boolean @default(false)
-  id        String   @id @default(cuid())
-  name      String
-  currency  String   @default("XOF")
-  country   String   @default("SN")
-  plan      String   @default("starter")
-  vatRate   Float    @default(18)
-  address   String?
-  phone     String?
-  email     String?
-  logo      String?
-  lang      String   @default("fr") // fr | en | es | it — langue par défaut du tenant
+  id         String  @id @default(cuid())
+  name       String
+  currency   String  @default("XOF")
+  country    String  @default("SN")
+  plan       String  @default("starter")
+  vatRate    Float   @default(18)
+  address    String?
+  phone      String?
+  email      String?
+  logo       String?
+  lang       String  @default("fr") // fr | en | es | it — langue par défaut du tenant
 
   // ── Identifiants légaux (pied de facture/devis — noms consommés par
   //    apps/frontend/src/utils/export.ts generateInvoice : ninea/rccm/vatNumber) ──
-  ninea     String?  // NINEA (SN) ou identifiant fiscal national équivalent
-  rccm      String?  // Registre du commerce (RC / RCCM)
-  vatNumber String?  // N° TVA intracommunautaire / assujetti
+  ninea     String? // NINEA (SN) ou identifiant fiscal national équivalent
+  rccm      String? // Registre du commerce (RC / RCCM)
+  vatNumber String? // N° TVA intracommunautaire / assujetti
 
   // ── Paramètres POS ── (vatRate ci-dessus = TVA POS, single source of truth)
-  posVatIncluded    Boolean  @default(true)
-  posAutoprint      Boolean  @default(false)
-  autoWhatsApp      Boolean  @default(false)
+  posVatIncluded     Boolean @default(true)
+  posAutoprint       Boolean @default(false)
+  autoWhatsApp       Boolean @default(false)
   enableAutoWhatsApp Boolean @default(false) // envoi AUTO serveur du reçu WhatsApp après vente (Twilio)
-  enableLoyalty     Boolean  @default(false)
-  requireCashier    Boolean  @default(false)
-  enableScanner     Boolean  @default(false)
-  priceMode         String   @default("TTC") // TTC | HT
-  posDefaultFund    Float    @default(0)
+  enableLoyalty      Boolean @default(false)
+  requireCashier     Boolean @default(false)
+  enableScanner      Boolean @default(false)
+  priceMode          String  @default("TTC") // TTC | HT
+  posDefaultFund     Float   @default(0)
   // ── Fidélité configurable par tenant (défauts = valeurs v1 ; non-rétroactif) ──
-  pointsPerAmount   Int      @default(1000) // unités de devise pour 1 point (floor(montant/X))
-  bronzeThreshold   Int      @default(2000) // pts : seuil Bronze → Silver
-  silverThreshold   Int      @default(5000) // pts : seuil Silver → Gold
+  pointsPerAmount    Int     @default(1000) // unités de devise pour 1 point (floor(montant/X))
+  bronzeThreshold    Int     @default(2000) // pts : seuil Bronze → Silver
+  silverThreshold    Int     @default(5000) // pts : seuil Silver → Gold
   // ── Loyalty v2 : remises % par palier (appliquées au total si client lié qualifié) ──
-  bronzeDiscount    Float    @default(5.0)
-  silverDiscount    Float    @default(10.0)
-  goldDiscount      Float    @default(15.0)
+  bronzeDiscount     Float   @default(5.0)
+  silverDiscount     Float   @default(10.0)
+  goldDiscount       Float   @default(15.0)
 
   // ── Paramètres Notifications ──
-  notifEmailSales   Boolean  @default(true)
-  notifEmailStock   Boolean  @default(true)
-  notifEmailPayroll Boolean  @default(false)
-  notifSmsSales     Boolean  @default(false)
-  notifSmsStock     Boolean  @default(true)
-  notifPushAll      Boolean  @default(true)
+  notifEmailSales        Boolean @default(true)
+  notifEmailStock        Boolean @default(true)
+  notifEmailPayroll      Boolean @default(false)
+  notifSmsSales          Boolean @default(false)
+  notifSmsStock          Boolean @default(true)
+  notifPushAll           Boolean @default(true)
   // Idempotence du cron récap paie : 'YYYY-MM' du dernier récap envoyé (null = jamais).
   lastPayrollReportMonth String?
 
   // ── Catalogue public partageable ──
-  slug             String?  @unique // habashop.vercel.app/c/{slug}
-  description      String?         // tagline boutique (max 200)
-  whatsappPhone    String?         // numéro WhatsApp commercial (E.164) ; fallback sur phone
-  ownerPhone       String?         // numéro WhatsApp du gérant (E.164) — destinataire des rapports auto soir/matin ; null = pas d'envoi
-  catalogVisible   Boolean  @default(true)
+  slug           String? @unique // habashop.vercel.app/c/{slug}
+  description    String? // tagline boutique (max 200)
+  whatsappPhone  String? // numéro WhatsApp commercial (E.164) ; fallback sur phone
+  ownerPhone     String? // numéro WhatsApp du gérant (E.164) — destinataire des rapports auto soir/matin ; null = pas d'envoi
+  catalogVisible Boolean @default(true)
 
   // Billing / plan lifecycle
   isActive        Boolean   @default(true)
@@ -77,14 +77,14 @@ model Tenant {
   trialEnds       DateTime?
   planActivatedAt DateTime?
   planRequestedAt DateTime?
-  paymentMethod   String?   // wave / orange_money / mtn_money / virement / card
+  paymentMethod   String? // wave / orange_money / mtn_money / virement / card
   paymentRef      String?
   suspendedAt     DateTime?
   suspendReason   String?
   notes           String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime? // null = actif (soft delete ; suppression de boutique par l'admin)
 
   users          User[]
@@ -107,8 +107,8 @@ model Tenant {
   subscriptions  Subscription[]
   campaigns      Campaign[]
   userTenants    UserTenant[]
-  transfersFrom  StockTransfer[] @relation("TransferFrom")
-  transfersTo    StockTransfer[] @relation("TransferTo")
+  transfersFrom  StockTransfer[]      @relation("TransferFrom")
+  transfersTo    StockTransfer[]      @relation("TransferTo")
 
   @@index([deletedAt])
 }
@@ -117,11 +117,11 @@ model PlanRequest {
   id            String    @id @default(cuid())
   tenantId      String
   tenant        Tenant    @relation(fields: [tenantId], references: [id])
-  plan          String    // pro / enterprise
-  period        String    // monthly / yearly
-  amount        Int       // montant en XOF
+  plan          String // pro / enterprise
+  period        String // monthly / yearly
+  amount        Int // montant en XOF
   currency      String    @default("XOF")
-  paymentMethod String    // wave / orange_money / mtn_money / virement / card
+  paymentMethod String // wave / orange_money / mtn_money / virement / card
   paymentRef    String?
   status        String    @default("pending") // pending / approved / rejected
   notes         String?
@@ -137,22 +137,22 @@ model PlanRequest {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  tenantId     String
-  name         String
-  email        String    @unique
-  passwordHash String
-  role         String    @default("CASHIER")
+  id              String    @id @default(cuid())
+  tenantId        String
+  name            String
+  email           String    @unique
+  passwordHash    String
+  role            String    @default("CASHIER")
   // Admin PLATEFORME (super-admin SaaS) — orthogonal au rôle tenant. Seul ce flag
   // (jamais role==='SUPER_ADMIN') ouvre /api/admin/*. Provisionné hors API (script serveur).
-  isPlatformAdmin Boolean @default(false)
-  twoFASecret  String?
-  twoFAEnabled Boolean   @default(false)
-  isActive     Boolean   @default(true)
-  lastLoginAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime? // null = actif (soft delete ; suppression de compte)
+  isPlatformAdmin Boolean   @default(false)
+  twoFASecret     String?
+  twoFAEnabled    Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  lastLoginAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime? // null = actif (soft delete ; suppression de compte)
 
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
   sales          Sale[]          @relation("SaleCashier")
@@ -176,8 +176,8 @@ model UserTenant {
   role      String   @default("CASHIER")
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([userId, tenantId])
   @@index([userId])
@@ -222,7 +222,7 @@ model Product {
   updatedAt          DateTime  @updatedAt
   deletedAt          DateTime? // null = actif (soft delete ; distinct de isActive)
 
-  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  tenant            Tenant             @relation(fields: [tenantId], references: [id])
   saleItems         SaleItem[]
   subscriptionItems SubscriptionItem[]
   transfers         StockTransfer[]
@@ -247,14 +247,14 @@ model StockTransfer {
   quantity     Int
   status       String   @default("pending") // pending → completed | cancelled
   note         String?
-  createdBy    String   // userId (boutique source)
-  confirmedBy  String?  // userId (boutique destination)
+  createdBy    String // userId (boutique source)
+  confirmedBy  String? // userId (boutique destination)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  fromTenant   Tenant   @relation("TransferFrom", fields: [fromTenantId], references: [id])
-  toTenant     Tenant   @relation("TransferTo",   fields: [toTenantId],   references: [id])
-  product      Product  @relation(fields: [productId], references: [id])
+  fromTenant Tenant  @relation("TransferFrom", fields: [fromTenantId], references: [id])
+  toTenant   Tenant  @relation("TransferTo", fields: [toTenantId], references: [id])
+  product    Product @relation(fields: [productId], references: [id])
 
   @@index([fromTenantId, status])
   @@index([toTenantId, status])
@@ -274,25 +274,25 @@ model Sale {
   createdAt      DateTime @default(now())
 
   // ── Remboursement (TOTAL uniquement ; champs additifs/nullables) ──
-  status         String    @default("completed") // completed | refunded
-  refundedAt     DateTime?
-  refundedBy     String?   // userId du manager/admin ayant remboursé (audit = source détaillée)
-  refundReason   String?
-  restocked      Boolean?  // null tant que non remboursé ; true = articles remis en stock, false = non
+  status       String    @default("completed") // completed | refunded
+  refundedAt   DateTime?
+  refundedBy   String? // userId du manager/admin ayant remboursé (audit = source détaillée)
+  refundReason String?
+  restocked    Boolean? // null tant que non remboursé ; true = articles remis en stock, false = non
 
   // ── Idempotence (résilience réseau) : clé envoyée par le client par tentative ──
   // Nullable = rétro-compat (ventes existantes / clients sans clé). Unicité scopée tenant.
   idempotencyKey String?
 
   // ── Facture PDF : numéro attribué à la 1ʳᵉ demande puis figé (FAC-{YYYY}-{NNNNN}). ──
-  invoiceNumber  String?
+  invoiceNumber String?
 
   // ── Loyalty v2 : remise fidélité appliquée au total (0 si pas de client/palier). ──
-  loyaltyDiscount   Float?   @default(0)
+  loyaltyDiscount Float? @default(0)
 
   // ── Intégrité prix : au moins une ligne a un prix soumis ≠ prix catalogue serveur.
   //    Flag d'AUDIT (filtre `?priceDivergence=true` dans l'historique). Le détail vit sur SaleItem. ──
-  priceDivergence   Boolean? @default(false)
+  priceDivergence Boolean? @default(false)
 
   // ── Paiement mixte (split, max 2 méthodes/vente) : ventilation du total par mode. ──
   // Toujours renseignés sur les NOUVELLES ventes (0 si mode non utilisé) ; NULL sur les
@@ -302,10 +302,10 @@ model Sale {
   cardAmount        Float?
 
   // Référence MTN MoMo (UUID retourné par requesttopay) — traçabilité / réconciliation.
-  mtnMomoReference  String?
+  mtnMomoReference String?
 
   // Référence Campay (Orange Money / cartes Cameroun) — traçabilité / réconciliation.
-  campayReference   String?
+  campayReference String?
 
   // Référence PayDunya (token facture — Wave/Orange Money Sénégal & UEMOA) — réconciliation.
   paydunyaReference String?
@@ -314,12 +314,12 @@ model Sale {
   cashier User       @relation("SaleCashier", fields: [cashierId], references: [id])
   items   SaleItem[]
 
+  @@unique([tenantId, idempotencyKey])
+  @@unique([tenantId, invoiceNumber])
   @@index([tenantId])
   @@index([tenantId, createdAt])
   @@index([tenantId, paymentMode])
   @@index([tenantId, status])
-  @@unique([tenantId, idempotencyKey])
-  @@unique([tenantId, invoiceNumber])
 }
 
 // Ticket Z — clôture journalière de caisse (1 par jour/tenant, regénérable = upsert).
@@ -327,16 +327,16 @@ model TicketZ {
   id                  String   @id @default(cuid())
   tenantId            String
   date                DateTime // date seule (minuit UTC)
-  caVentes            Float    // CA brut des ventes non remboursées
+  caVentes            Float // CA brut des ventes non remboursées
   nbVentes            Int
-  totalRemboursements Float    // somme des ventes remboursées (refunded)
-  caNets              Float    // caVentes - totalRemboursements
+  totalRemboursements Float // somme des ventes remboursées (refunded)
+  caNets              Float // caVentes - totalRemboursements
   cashAmount          Float
-  mobileMoneyAmount   Float    // wave + orange + mtn + mobile
+  mobileMoneyAmount   Float // wave + orange + mtn + mobile
   cardAmount          Float
   panierMoyen         Float
-  nbClients           Int      // clients distincts (customerId non null)
-  generatedBy         String   // userId
+  nbClients           Int // clients distincts (customerId non null)
+  generatedBy         String // userId
   generatedAt         DateTime @default(now())
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
@@ -357,8 +357,8 @@ model SaleItem {
   // ── Intégrité prix (ticket) : TRACE d'une divergence entre le prix SOUMIS par le client
   //    et le prix CATALOGUE serveur (détail). Renseignés SEULEMENT en cas de divergence
   //    (le prix soumis ne correspond à aucun point de tarif serveur) ; null sinon. ──
-  submittedPrice Float?  // prix unitaire envoyé par le client
-  catalogPrice   Float?  // prix unitaire autoritaire serveur (référence détail)
+  submittedPrice Float? // prix unitaire envoyé par le client
+  catalogPrice   Float? // prix unitaire autoritaire serveur (référence détail)
   // QUALIFICATION de la divergence, serveur-autoritaire (aucune donnée client) : non-null =
   // le prix soumis appartenait au jeu de tarifs PRÉCÉDENT du produit, changé à cette date,
   // et le changement est assez récent pour qu'un catalogue en cache POS l'explique.
@@ -369,7 +369,7 @@ model SaleItem {
   // ET `staleCatalogAt` non-null). false = ligne re-tarifée au prix serveur, ou aucune divergence.
   // ⚠️ Sans cette colonne, l'audit ne peut pas distinguer « honoré » de « re-tarifé » autrement
   //    qu'en recomparant des montants — et l'argent a bougé, donc la ligne doit être VÉRIFIÉE.
-  pricingHonored Boolean @default(false)
+  pricingHonored Boolean   @default(false)
 
   sale    Sale    @relation(fields: [saleId], references: [id])
   product Product @relation(fields: [productId], references: [id])
@@ -379,17 +379,17 @@ model SaleItem {
 }
 
 model Customer {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   tenantId      String
   name          String
-  type          String   @default("retail")
+  type          String    @default("retail")
   phone         String?
   email         String?
   address       String?
-  loyaltyPoints Int      @default(0)
-  totalRevenue  Float    @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  loyaltyPoints Int       @default(0)
+  totalRevenue  Float     @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   deletedAt     DateTime? // null = actif (soft delete)
 
   tenant        Tenant               @relation(fields: [tenantId], references: [id])
@@ -408,9 +408,9 @@ model LoyaltyTransaction {
   id         String   @id @default(cuid())
   tenantId   String
   customerId String
-  saleId     String?  // vente d'origine (null pour ajustement manuel)
-  points     Int      // signé : +gain / −retrait
-  type       String   // 'earn' | 'reverse'
+  saleId     String? // vente d'origine (null pour ajustement manuel)
+  points     Int // signé : +gain / −retrait
+  type       String // 'earn' | 'reverse'
   reason     String?
   createdAt  DateTime @default(now())
 
@@ -424,19 +424,19 @@ model LoyaltyTransaction {
 }
 
 model Supplier {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   tenantId   String
   name       String
   categories String?
   phone      String?
   email      String?
   address    String?
-  leadTime   Int      @default(3)
-  rating     Int      @default(3)
-  status     String   @default("Actif")
+  leadTime   Int       @default(3)
+  rating     Int       @default(3)
+  status     String    @default("Actif")
   notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
   deletedAt  DateTime? // null = actif (soft delete)
 
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
@@ -509,6 +509,7 @@ model Employee {
   tenant        Tenant          @relation(fields: [tenantId], references: [id])
   bonuses       EmployeeBonus[]
   salaryHistory SalaryHistory[]
+  payrolls      Payroll[]
   attendance    Attendance[]
   shifts        Shift[]
   leaveRequests LeaveRequest[]
@@ -550,6 +551,50 @@ model SalaryHistory {
   @@index([employeeId])
 }
 
+// Bulletin de paie d'un employé pour un mois donné.
+//
+// ⚠️ INSTANTANÉ GELÉ, et c'est l'INVERSE de la règle Abonnements. Un abonnement ne stocke
+// aucun total (« au tarif du jour ») ; un bulletin de paie, lui, FIGE ses montants au moment
+// de la génération. Une augmentation en août ne doit pas réécrire ce qui a été versé en juin —
+// sinon la paie passée devient irrécupérable et l'export comptable ment rétroactivement.
+// Les montants ci-dessous sont donc une COPIE, jamais une jointure vers `Employee.salary`.
+//
+// `month` = "YYYY-MM" (ISO). ⚠️ PAS le libellé français de l'écran (« Juillet 2026 ») : une
+// clé de base ne peut pas dépendre de la langue d'affichage. La conversion vit côté front
+// (`monthKey`/`monthLabel`) ; le serveur ne connaît que l'ISO.
+//
+// `status` = String (convention du projet : pas d'enum Prisma) — EN ATTENTE|GÉNÉRÉ|PAYÉ|SUSPENDU,
+// validé par zod au niveau route.
+model Payroll {
+  id         String    @id @default(cuid())
+  tenantId   String
+  employeeId String
+  month      String // "YYYY-MM"
+  status     String    @default("GÉNÉRÉ")
+  paidAt     DateTime?
+
+  // ── Instantané FIGÉ à la génération (jamais recalculé) ──
+  employeeName String // le nom AUSSI : un employé renommé ne réécrit pas sa paie passée
+  role         String @default("")
+  baseSalary   Float
+  bonus        Float  @default(0)
+  overtime     Float  @default(0)
+  deductions   Float  @default(0)
+  absences     Int    @default(0)
+  net          Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  // Idempotence de la génération : rejouer « Générer » sur le même mois ne duplique pas.
+  @@unique([tenantId, employeeId, month])
+  @@index([tenantId])
+  @@index([tenantId, month])
+  @@index([employeeId])
+}
+
 // Présence quotidienne d'un employé. `status` = String (convention du projet : pas d'enum
 // Prisma ; valeurs PRESENT|LATE|ABSENT|HALF|LEAVE|REST validées au niveau route → 400 sinon).
 // `date` = String "YYYY-MM-DD" (date-only) : clé d'unicité jour/employé sans dérive de
@@ -558,10 +603,10 @@ model Attendance {
   id         String   @id @default(cuid())
   tenantId   String
   employeeId String
-  date       String   // "YYYY-MM-DD"
-  status     String   // PRESENT | LATE | ABSENT | LEAVE | REST
-  arriveTime String?  // "HH:MM"
-  departTime String?  // "HH:MM"
+  date       String // "YYYY-MM-DD"
+  status     String // PRESENT | LATE | ABSENT | LEAVE | REST
+  arriveTime String? // "HH:MM"
+  departTime String? // "HH:MM"
   note       String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -583,10 +628,10 @@ model Shift {
   id           String   @id @default(cuid())
   tenantId     String
   employeeId   String
-  date         String   // "YYYY-MM-DD"
-  shiftTypeKey String   // morning | afternoon | full | night | rest | leave
-  startTime    String?  // "HH:MM"
-  endTime      String?  // "HH:MM"
+  date         String // "YYYY-MM-DD"
+  shiftTypeKey String // morning | afternoon | full | night | rest | leave
+  startTime    String? // "HH:MM"
+  endTime      String? // "HH:MM"
   label        String?
   color        String?
   createdAt    DateTime @default(now())
@@ -607,12 +652,12 @@ model LeaveRequest {
   id         String    @id @default(cuid())
   tenantId   String
   employeeId String
-  startDate  String    // "YYYY-MM-DD"
-  endDate    String    // "YYYY-MM-DD"
-  leaveType  String    // ex. "Congé annuel", "Congé maladie"… (valeur libre, comme le front)
+  startDate  String // "YYYY-MM-DD"
+  endDate    String // "YYYY-MM-DD"
+  leaveType  String // ex. "Congé annuel", "Congé maladie"… (valeur libre, comme le front)
   status     String    @default("PENDING") // PENDING | APPROVED | REFUSED
   reason     String?
-  approvedBy String?   // userId (JWT) de l'approbateur
+  approvedBy String? // userId (JWT) de l'approbateur
   approvedAt DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -715,39 +760,39 @@ model PushToken {
 }
 
 model Goal {
-  id            String   @id @default(cuid())
-  tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
-  label         String
-  target        Float
-  current       Float    @default(0)
-  unit          String   @default("")
-  period        String   @default("month") // month | week | year
-  color         String   @default("#6C47FF")
-  icon          String   @default("🎯")
-  category      String   @default("revenue") // revenue | stock | customers | team
-  linkedMetric  String?  // salesMonth | transactionsMonth | avgBasket | null
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  deletedAt     DateTime?
+  id           String    @id @default(cuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  label        String
+  target       Float
+  current      Float     @default(0)
+  unit         String    @default("")
+  period       String    @default("month") // month | week | year
+  color        String    @default("#6C47FF")
+  icon         String    @default("🎯")
+  category     String    @default("revenue") // revenue | stock | customers | team
+  linkedMetric String? // salesMonth | transactionsMonth | avgBasket | null
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 
   @@index([tenantId])
   @@index([tenantId, deletedAt])
 }
 
 model Subscription {
-  id          String   @id @default(cuid())
-  tenantId    String
-  customerId  String
-  name        String
-  dayOfWeek   Int      // 0=Dim 1=Lun 2=Mar 3=Mer 4=Jeu 5=Ven 6=Sam
+  id         String    @id @default(cuid())
+  tenantId   String
+  customerId String
+  name       String
+  dayOfWeek  Int // 0=Dim 1=Lun 2=Mar 3=Mer 4=Jeu 5=Ven 6=Sam
   // Première livraison. NULL = pas de date de début (comportement historique : dû dès le
   // prochain dayOfWeek). Filtré par GET /api/subscriptions/due — cf. la migration.
-  startDate   DateTime?
-  status      String   @default("active") // active | paused | cancelled
-  note        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  startDate  DateTime?
+  status     String    @default("active") // active | paused | cancelled
+  note       String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   tenant   Tenant             @relation(fields: [tenantId], references: [id])
   customer Customer           @relation(fields: [customerId], references: [id])
@@ -760,10 +805,10 @@ model Subscription {
 }
 
 model SubscriptionItem {
-  id             String       @id @default(cuid())
+  id             String @id @default(cuid())
   subscriptionId String
   productId      String
-  quantity       Int          @default(1)
+  quantity       Int    @default(1)
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   product      Product      @relation(fields: [productId], references: [id])

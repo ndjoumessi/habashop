@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { Wallet } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { employeesApi } from '@/lib/api'
+import { employeesApi, payrollApi } from '@/lib/api'
 import EmptyState from '@/components/ui/EmptyState'
 import Skeleton from '@/components/ui/skeleton'
 import { exportCSV } from '@/utils/export'
 import {
-  buildMonths, monthLabel, currentMonthLabel, PAY_COLORS,
+  buildMonths, monthLabel, monthKey, currentMonthLabel, PAY_COLORS,
   roleLabel, statusLabel, calcNet, calcBrut, printBulletin,
+  PENDING_PREFIX, isPending,
   type PayRecord, type PayStatus,
 } from '@/components/payroll/payrollShared'
 import PayrollKpis from '@/components/payroll/PayrollKpis'
@@ -24,34 +25,68 @@ export default function Payroll() {
   const fmt = useFormatAmount()
   const navigate = useNavigate()
 
+  const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+
   const [records, setRecords]       = useState<PayRecord[]>([])
   const [month, setMonth]           = useState(currentMonthLabel)
   const [bulletin, setBulletin]     = useState<PayRecord | null>(null)
   const [loading, setLoading]       = useState(true)
 
-  useEffect(() => {
-    employeesApi.list()
-      .then((data: any[]) => {
-        if (!Array.isArray(data) || data.length === 0) return
-        setRecords(data
-          .filter((e: any) => (e.active ?? e.isActive ?? e.status !== 'inactive'))
-          .map((e: any, i: number) => {
-            const name = e.name ?? (`${e.firstName ?? ''} ${e.lastName ?? ''}`.trim() || (lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'))
-            return {
-              id: typeof e.id === 'number' ? e.id : i + 1,
-              employee: name,
-              avatar: name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
-              color: PAY_COLORS[i % PAY_COLORS.length],
-              role: e.role ?? e.position ?? 'Employé',
-              baseSalary: Number(e.salary ?? e.baseSalary ?? 0),
-              bonus: 0, overtime: 0, deductions: 0, absences: 0,
-              status: 'EN ATTENTE' as PayStatus, paidAt: null, month: currentMonthLabel,
-            }
-          }))
-      })
-      .catch(() => toast.error(lang === 'en' ? 'Could not load payroll data — please retry' : lang === 'es' ? 'No se pudieron cargar los datos de nómina — reintenta' : lang === 'it' ? 'Impossibile caricare i dati paghe — riprova' : 'Impossible de charger les données de paie — réessayer'))
-      .finally(() => setLoading(false))
-  }, [])
+  const loadErr = () => toast.error(lang === 'en' ? 'Could not load payroll data — please retry' : lang === 'es' ? 'No se pudieron cargar los datos de nómina — reintenta' : lang === 'it' ? 'Impossibile caricare i dati paghe — riprova' : 'Impossible de charger les données de paie — réessayer')
+
+  /**
+   * Fusionne les employés ACTIFS et les bulletins PERSISTÉS du mois affiché.
+   *
+   * ⚠️ Un bulletin persisté fait AUTORITÉ sur ses montants : ils ont été figés à la génération
+   * (cf. `model Payroll`). On ne les recalcule PAS depuis `Employee.salary`, sinon une
+   * augmentation réécrirait rétroactivement une paie déjà versée.
+   * Un employé sans bulletin apparaît en « EN ATTENTE » avec un id `pending:<employeeId>` :
+   * il est affiché, pas encore en base.
+   */
+  async function load(monthDisplay: string) {
+    const key = monthKey(monthDisplay)
+    if (!key) { loadErr(); setLoading(false); return }
+    setLoading(true)
+    try {
+      const [employees, bulletins] = await Promise.all([
+        employeesApi.list(),
+        payrollApi.list(key),
+      ])
+      const parEmploye = new Map<string, any>((bulletins ?? []).map((b: any) => [b.employeeId, b]))
+      const actifs = (Array.isArray(employees) ? employees : [])
+        .filter((e: any) => (e.active ?? e.isActive ?? e.status !== 'inactive'))
+
+      setRecords(actifs.map((e: any, i: number) => {
+        const b = parEmploye.get(String(e.id))
+        const name = (b?.employeeName ?? e.name ?? `${e.firstName ?? ''} ${e.lastName ?? ''}`.trim())
+          || (lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé')
+        return {
+          id: b?.id ?? `${PENDING_PREFIX}${e.id}`,
+          employeeId: String(e.id),
+          employee: name,
+          avatar: name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
+          color: PAY_COLORS[i % PAY_COLORS.length],
+          role: b?.role || e.role || e.position || 'Employé',
+          // Montants FIGÉS s'ils existent ; sinon aperçu depuis la fiche employé.
+          baseSalary: Number(b?.baseSalary ?? e.salary ?? e.baseSalary ?? 0),
+          bonus:      Number(b?.bonus ?? 0),
+          overtime:   Number(b?.overtime ?? 0),
+          deductions: Number(b?.deductions ?? 0),
+          absences:   Number(b?.absences ?? 0),
+          status: (b?.status ?? 'EN ATTENTE') as PayStatus,
+          paidAt: b?.paidAt ? new Date(b.paidAt).toLocaleDateString(locale) : null,
+          month: monthDisplay,
+        }
+      }))
+    } catch {
+      loadErr()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Recharge au changement de mois : les bulletins sont propres à chaque mois.
+  useEffect(() => { void load(month) }, [month])
 
   const filtered = records.filter(r => r.month === month)
 
@@ -60,22 +95,46 @@ export default function Payroll() {
   const generated = records.filter(r => r.status === 'GÉNÉRÉ' || r.status === 'PAYÉ').length
   const paid      = records.filter(r => r.status === 'PAYÉ').length
 
-  function generatePayroll() {
-    const count = records.filter(r => r.month === month && r.status === 'EN ATTENTE').length
-    if (count === 0) { toast.error(lang === 'en' ? 'No pending payslips for this month' : lang === 'es' ? 'Sin nóminas pendientes este mes' : lang === 'it' ? 'Nessuna busta paga in attesa per questo mese' : 'Aucun bulletin en attente pour ce mois'); return }
-    setRecords(prev => prev.map(r =>
-      r.month === month && r.status === 'EN ATTENTE' ? { ...r, status: 'GÉNÉRÉ' } : r
-    ))
-    toast.success(lang === 'en' ? `${count} payslip(s) generated for ${monthLabel(month, lang)}` : lang === 'es' ? `${count} nómina(s) generada(s) para ${monthLabel(month, lang)}` : lang === 'it' ? `${count} busta/e paga generata/e per ${monthLabel(month, lang)}` : `${count} bulletin(s) généré(s) pour ${monthLabel(month, lang)}`)
+  const actionErr = () => toast.error(lang === 'en' ? 'Action failed — please retry' : lang === 'es' ? 'Acción fallida — reintenta' : lang === 'it' ? 'Azione fallita — riprova' : 'Action échouée — réessayer')
+
+  // Fige les bulletins du mois côté serveur. Idempotent : rejouer ne duplique pas et ne
+  // réécrit AUCUN bulletin existant (un bulletin déjà payé garde son montant).
+  async function generatePayroll() {
+    const key = monthKey(month)
+    if (!key) { actionErr(); return }
+    const attendus = records.filter(r => r.status === 'EN ATTENTE').length
+    if (attendus === 0) { toast.error(lang === 'en' ? 'No pending payslips for this month' : lang === 'es' ? 'Sin nóminas pendientes este mes' : lang === 'it' ? 'Nessuna busta paga in attesa per questo mese' : 'Aucun bulletin en attente pour ce mois'); return }
+    try {
+      const { created } = await payrollApi.generate(key)
+      await load(month)
+      toast.success(lang === 'en' ? `${created} payslip(s) generated for ${monthLabel(month, lang)}` : lang === 'es' ? `${created} nómina(s) generada(s) para ${monthLabel(month, lang)}` : lang === 'it' ? `${created} busta/e paga generata/e per ${monthLabel(month, lang)}` : `${created} bulletin(s) généré(s) pour ${monthLabel(month, lang)}`)
+    } catch { actionErr() }
   }
 
-  function markPaid(id: number) {
-    // Date de paiement = aujourd'hui (était figée à '14/05/2026'), localisée selon la langue.
-    const paidAt = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')
-    setRecords(prev => prev.map(r =>
-      r.id === id ? { ...r, status: 'PAYÉ', paidAt } : r
-    ))
-    toast.success(lang === 'en' ? 'Payslip marked as paid' : lang === 'es' ? 'Nómina marcada como pagada' : lang === 'it' ? 'Busta paga segnata come pagata' : 'Bulletin marqué comme payé')
+  /**
+   * Marque un bulletin « PAYÉ ». La date de versement est posée par le SERVEUR — elle doit
+   * être vérifiable, pas déclarée par le navigateur.
+   *
+   * ⚠️ Le bouton « Payer » s'affiche aussi sur « EN ATTENTE », donc sur un bulletin qui
+   * n'existe pas encore en base : on le GÉNÈRE d'abord, sinon le clic serait sans effet
+   * persistant — précisément le bug qu'on ferme.
+   */
+  async function markPaid(id: string) {
+    try {
+      let rowId = id
+      if (isPending(id)) {
+        const key = monthKey(month)
+        if (!key) { actionErr(); return }
+        const { rows } = await payrollApi.generate(key)
+        const empId = id.slice(PENDING_PREFIX.length)
+        const row = rows.find((r: any) => String(r.employeeId) === empId)
+        if (!row) { actionErr(); return }
+        rowId = row.id
+      }
+      await payrollApi.setStatus(rowId, 'PAYÉ')
+      await load(month)
+      toast.success(lang === 'en' ? 'Payslip marked as paid' : lang === 'es' ? 'Nómina marcada como pagada' : lang === 'it' ? 'Busta paga segnata come pagata' : 'Bulletin marqué comme payé')
+    } catch { actionErr() }
   }
 
   const exportPayrollCSV = () => {

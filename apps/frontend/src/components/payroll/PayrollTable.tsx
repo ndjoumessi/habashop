@@ -11,7 +11,7 @@ interface Props {
   onExportCSV: () => void
   onGenerate: () => void
   onView: (r: PayRecord) => void
-  onMarkPaid: (id: number) => void
+  onMarkPaid: (id: string) => void
   onPrintPDF: (r: PayRecord) => void
 }
 
