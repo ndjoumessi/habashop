@@ -2,6 +2,7 @@ import { Linking } from 'react-native'
 import { vatBreakdown } from '@/stores/posStore'
 import type { CartItem } from '@/stores/posStore'
 import type { MixedSplit } from '@/lib/paymentSplit'
+import { appUrlHost } from '@/lib/appUrl'
 
 export interface TicketOptions {
   items:       CartItem[]
@@ -90,7 +91,7 @@ export function buildWhatsAppTicket(opts: TicketOptions, phone?: string): string
   lines.push(`🔖 ${t('ref', lang)}: #${saleId.slice(-6).toUpperCase()}`)
   lines.push('')
   lines.push(`✨ ${t('thanks', lang)}`)
-  lines.push(`🌍 habashop.vercel.app`)
+  lines.push(`🌍 ${appUrlHost()}`)
 
   const encoded = encodeURIComponent(lines.join('\n'))
 
