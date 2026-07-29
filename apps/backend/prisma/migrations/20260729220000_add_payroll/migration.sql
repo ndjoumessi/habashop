@@ -39,12 +39,28 @@ CREATE INDEX IF NOT EXISTS "Payroll_tenantId_idx"       ON "Payroll"("tenantId")
 CREATE INDEX IF NOT EXISTS "Payroll_tenantId_month_idx" ON "Payroll"("tenantId", "month");
 CREATE INDEX IF NOT EXISTS "Payroll_employeeId_idx"     ON "Payroll"("employeeId");
 
+-- FK employé : un bulletin suit son employé (CASCADE à la suppression du compte).
 DO $$
 BEGIN
     ALTER TABLE "Payroll"
         ADD CONSTRAINT "Payroll_employeeId_fkey"
         FOREIGN KEY ("employeeId") REFERENCES "Employee"("id")
         ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+-- FK tenant. ⚠️ `EmployeeBonus` et `SalaryHistory` n'en ont PAS — ce sont les 2 exceptions
+-- sur 23 tables scopées (mesuré en prod : 20 portent bien la FK). Les copier aurait fait de
+-- `Payroll` la 3e anomalie : un tenantId pointant vers une boutique inexistante serait
+-- ACCEPTÉ par la base, rendant la ligne invisible à toute requête scopée et indétectable.
+-- RESTRICT (défaut) : on refuse de supprimer une boutique qui a encore des bulletins.
+DO $$
+BEGIN
+    ALTER TABLE "Payroll"
+        ADD CONSTRAINT "Payroll_tenantId_fkey"
+        FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id")
+        ON DELETE RESTRICT ON UPDATE CASCADE;
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;

@@ -107,6 +107,7 @@ model Tenant {
   subscriptions  Subscription[]
   campaigns      Campaign[]
   userTenants    UserTenant[]
+  payrolls       Payroll[]
   transfersFrom  StockTransfer[]      @relation("TransferFrom")
   transfersTo    StockTransfer[]      @relation("TransferTo")
 
@@ -587,6 +588,11 @@ model Payroll {
   updatedAt DateTime @updatedAt
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  // ⚠️ FK tenant OBLIGATOIRE. `EmployeeBonus` et `SalaryHistory` n'en ont pas — ce sont les
+  // 2 EXCEPTIONS sur 23 tables scopées (MESURÉ en prod : 20 tables portent bien la FK). Sans
+  // elle, un tenantId pointant vers une boutique inexistante est ACCEPTÉ par la base : la
+  // ligne devient invisible à toute requête scopée, et indétectable. Sur de la paie, non.
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
 
   // Idempotence de la génération : rejouer « Générer » sur le même mois ne duplique pas.
   @@unique([tenantId, employeeId, month])
