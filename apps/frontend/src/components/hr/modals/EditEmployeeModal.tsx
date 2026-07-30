@@ -168,7 +168,9 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
             </div>
             <ViewField
               label={lang === 'en' ? `MONTHLY GROSS SALARY (${currencySymbol})` : lang === 'es' ? `SALARIO BRUTO MENSUAL (${currencySymbol})` : lang === 'it' ? `STIPENDIO LORDO MENSILE (${currencySymbol})` : `SALAIRE MENSUEL BRUT (${currencySymbol})`}
-              value={fmt(+salaryInput > 0 ? toXOF(+salaryInput) : (selectedEmp?.salary ?? 0))}
+              // ⚠️ Passait par la prop `fmt` (convertisseur injecté) alors que les CNSS/IR/net
+              // juste en dessous viennent de `payrollDisplay` : deux chemins dans le même bloc.
+              value={fmtDisplay(payrollDisplay({ baseSalary: +salaryInput > 0 ? toXOF(+salaryInput) : (selectedEmp?.salary ?? 0), bonus: 0, overtime: 0, deductions: 0, absences: 0 }, curEmp).baseSalary, curEmp)}
               mono
               editing={empEditMode}>
               <div style={{ position:'relative' }}>
@@ -183,13 +185,15 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
             </ViewField>
             {+salaryInput > 0 && (() => {
               const salaryXOF = toXOF(+salaryInput)
-              const { cnss, ir } = payrollDisplay({ baseSalary: salaryXOF, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, curEmp)
-              const net  = salaryXOF - cnss - ir
+              // ⚠️ `net` valait `salaryXOF - cnss - ir` : une SOUSTRACTION D'EUROS À DES FRANCS
+              // CFA. 426,77 € affiché au lieu de 371,37 € (55,40 € d'écart). Le net vient
+              // désormais du même détail que les retenues.
+              const { cnss, ir, net } = payrollDisplay({ baseSalary: salaryXOF, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, curEmp)
               return (
                 <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:16, flexWrap:'wrap' }}>
                   <span>CNSS ({CNSS_RATE * 100}%): <strong style={{color:'var(--danger)'}}>− {fmtDisplay(cnss, curEmp)}</strong></span>
                   <span>IR ({IR_RATE * 100}%): <strong style={{color:'var(--acc)'}}>− {fmtDisplay(ir, curEmp)}</strong></span>
-                  <span>{lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'}: <strong style={{color:'var(--acc2)'}}>{fmt(net)}</strong></span>
+                  <span>{lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'}: <strong style={{color:'var(--acc2)'}}>{fmtDisplay(net, curEmp)}</strong></span>
                 </div>
               )
             })()}

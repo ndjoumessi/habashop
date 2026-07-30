@@ -52,6 +52,71 @@ const TAUX_EN_DUR = /\*\s*0\.0[58]\b|\*\s*0\.8[27]\b|\*\s*0\.9[02]\b|\*\s*0\.056
 /** Une surface de PAIE = un fichier qui consomme le détail de paie. */
 const CONSOMME_PAIE = /\bpayrollDisplay\s*\(|\bpayrollBreakdown\s*\(|\bfmtDisplay\s*\(/
 
+/**
+ * ⚠️ RÈGLE POSITIVE — celle qui MANQUAIT, et pourquoi le verrou a laissé passer un bug à 656×.
+ *
+ * Les 4 règles précédentes sont toutes NÉGATIVES : « ne convertis pas ici », « n'utilise pas
+ * ça », « pas de taux en dur ». Elles attrapent la conversion EN TROP. Aucune n'exigeait de
+ * convertir AU MOINS UNE FOIS. La cellule BRUT de la Grille rendait donc
+ * `fmt(brut)` avec `brut = Number(emp.salary) || 0` (XOF brut) et `fmt` = un formateur qui NE
+ * convertit pas : **ZÉRO conversion**, Marie affichée « 280 000,00 € » au lieu de « 426,86 € ».
+ * Les 4 règles étaient vertes — aucun jeton interdit n'apparaissait.
+ *
+ * Autre part du diagnostic : le scan raisonnait par FICHIER (« contient-il un jeton interdit ? »)
+ * pour une propriété qui est par CELLULE (« ce montant vient-il du bon endroit ? »). Exactement
+ * la même erreur de maille que la première version du verrou `sanitizeCsv`.
+ *
+ * D'où cette règle : dans une surface de paie, un montant d'origine XOF ne doit JAMAIS
+ * atteindre un formateur. On suit le flux syntaxiquement, ce qui suffit à fermer la classe.
+ */
+
+/** Expressions dont on SAIT qu'elles portent des XOF bruts (jamais converties). */
+const SOURCE_XOF = /\b(?:emp|e|record|r|selectedContract)\.(?:salary|baseSalary|bonus|overtime|deductions)\b|\bbonuses\s*\[|\bsalaryXOF\b/
+
+/** Producteurs de montants d'AFFICHAGE : `payrollDisplay` et tout wrapper local qui l'appelle. */
+function producteurs(code: string): string[] {
+  const noms = ['payrollDisplay']
+  // `const empBreakdown = (…) => payrollDisplay(…)` → wrapper local, donc producteur.
+  for (const m of code.matchAll(/\b(?:const|function)\s+(\w+)\s*=?[^\n]*\n?[^\n]*payrollDisplay\s*\(/g)) {
+    if (m[1] && !noms.includes(m[1])) noms.push(m[1])
+  }
+  return noms
+}
+
+/** Locaux TEINTÉS XOF : assignés depuis une source XOF SANS passer par un producteur. */
+function locauxTeintes(code: string): string[] {
+  const prod = producteurs(code)
+  const out: string[] = []
+  for (const m of code.matchAll(/\bconst\s+(\w+)\s*=\s*([^\n]+)/g)) {
+    const [, nom, init] = m
+    if (!SOURCE_XOF.test(init)) continue
+    if (prod.some(p => init.includes(p + '('))) continue  // passe par un producteur → sain
+    out.push(nom)
+  }
+  return out
+}
+
+/**
+ * Montants XOF qui atteignent un formateur. Rend la liste des appels fautifs.
+ * Formateurs reconnus : `fmt(`, `fmtDisplay(`, `f(` — les trois noms employés dans le dépôt.
+ */
+function xofVersFormateur(code: string): string[] {
+  const teintes = locauxTeintes(code)
+  const fautifs: string[] = []
+  const prod = producteurs(code)
+  for (const m of code.matchAll(/\b(?:fmt|fmtDisplay|f)\s*\(\s*([^),]+)/g)) {
+    const arg = m[1].trim()
+    // ⚠️ Un argument qui APPELLE lui-même un producteur est sain : `fmtDisplay(payrollDisplay(
+    // { baseSalary: salaryXOF … }).net)` mentionne `salaryXOF` mais le convertit bien. Sans
+    // cette exclusion le verrou criait au loup sur `NewContractModal` — et un verrou qui crie
+    // au loup se fait désarmer.
+    if (prod.some(pr => arg.includes(pr + '('))) continue
+    const racine = (/^[A-Za-z_$][\w$]*/.exec(arg) ?? [''])[0]
+    if (SOURCE_XOF.test(arg) || (racine && teintes.includes(racine))) fautifs.push(m[0])
+  }
+  return fautifs
+}
+
 const fichiers = walk(RACINE)
 const horsSource = fichiers.filter(f => !f.endsWith(SOURCE))
 
@@ -106,6 +171,31 @@ describe('méta-test — tout montant de paie passe par `payrollDisplay`', () =>
       .map(f => f.replace(RACINE, '.'))
     expect(`générateurs de bulletin hors payrollShared :\n${generateurs.join('\n')}`)
       .toBe('générateurs de bulletin hors payrollShared :\n')
+  })
+
+  it('aucun formateur INJECTÉ PAR PROP dans une surface de paie (R1 était aveugle)', () => {
+    // ⚠️ R1 cherche le jeton `useFormatAmount` DANS le fichier. Un composant qui reçoit `fmt`
+    // en PROP convertit tout autant, sans jamais nommer le hook — R1 ne le voyait pas. C'est
+    // par là que `ContractDetailModal` affichait son brut via un second chemin de conversion.
+    // Règle : une surface de paie n'appelle `fmt(` que si elle le définit localement comme
+    // alias de `fmtDisplay`.
+    const fautifs = surfaces.filter(f => {
+      const c = codeSeul(readFileSync(f, 'utf8'))
+      if (!/\bfmt\s*\(/.test(c)) return false
+      return !/\bconst\s+fmt\s*=[^\n]*fmtDisplay/.test(c)
+    }).map(f => f.replace(RACINE, '.'))
+    expect(`surfaces de paie appelant un \`fmt\` non-local :\n${fautifs.join('\n')}`)
+      .toBe('surfaces de paie appelant un `fmt` non-local :\n')
+  })
+
+  it('RÈGLE POSITIVE — aucun montant XOF n’atteint un formateur (ZÉRO conversion interdit)', () => {
+    const fautifs: string[] = []
+    for (const f of surfaces) {
+      const appels = xofVersFormateur(codeSeul(readFileSync(f, 'utf8')))
+      for (const a of appels) fautifs.push(`${f.replace(RACINE, '.')} → ${a}`)
+    }
+    expect(`montants XOF passés à un formateur :\n${fautifs.join('\n')}`)
+      .toBe('montants XOF passés à un formateur :\n')
   })
 
   // ── CONTRE-PREUVE : le détecteur rougit-il vraiment ? ──────────────────────
@@ -179,6 +269,30 @@ describe('cas doré Marie — 280 000 XOF, boutique EUR', () => {
     const reconverti = Math.round((d.net / 655.957) * 100) / 100
     expect(reconverti).toBe(0.57)
     expect(reconverti).not.toBe(d.net)
+  })
+
+  it('colonne BRUT de la Grille == brut CONVERTI (426,86), jamais le XOF nu', () => {
+    const d = payrollDisplay(ENTREE, 'EUR')
+    expect(d.baseSalary).toBe(426.86)
+    // ⚠️ Contre-exemple figé : la cellule rendait le XOF NU (280 000) formaté en EUR — 656× la
+    // valeur réelle. Un salaire de 426,86 € affiché « 280 000,00 € ».
+    expect(d.baseSalary).not.toBe(280000)
+    expect(Math.round(280000 / d.baseSalary)).toBe(656)
+  })
+
+  it('somme de la colonne BRUT == total affiché (une colonne doit sommer à son pied)', () => {
+    // Trois employés : la Grille agrège employé par employé, jamais un pourcentage sur la masse.
+    const equipe = [280000, 350000, 150000]
+    const lignes = equipe.map(sal => payrollDisplay({ baseSalary: sal, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, 'EUR'))
+    const r2 = (x: number) => Math.round(x * 100) / 100
+    const totalColonne = lignes.reduce((a, l) => r2(a + l.baseSalary), 0)
+    const totalNet     = lignes.reduce((a, l) => r2(a + l.net), 0)
+    // Valeurs MESURÉES, pas calculées à la main : 280 000 → 371,37 · 350 000 → 464,20 ·
+    // 150 000 → 198,95 (j'avais écrit 198,94 de tête, le test l'a démenti).
+    expect(lignes.map(l => l.baseSalary)).toEqual([426.86, 533.57, 228.67])
+    expect(lignes.map(l => l.net)).toEqual([371.37, 464.20, 198.95])
+    expect(totalColonne).toBe(1189.10)
+    expect(totalNet).toBe(1034.52)
   })
 
   it('en XOF le détail reste entier et égal au calcul (aucune conversion)', () => {
