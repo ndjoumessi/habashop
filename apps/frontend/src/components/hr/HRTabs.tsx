@@ -16,7 +16,6 @@ interface HRTabsProps {
   salaryHistory: any[]
   onDeleteSalaryHistory?: (id: string) => void
   generateAllPayslips: () => void
-  generatePayslipPDF: (emp: any, data: any) => void
   setSalaryTarget: (v: any) => void; setShowSalaryModal: (b: boolean) => void
   setSelectedContract: (e: any) => void; setShowContractDetailModal: (b: boolean) => void
   setContractForm: (v: any) => void; setShowNewContractModal: (b: boolean) => void
@@ -34,7 +33,7 @@ export default function HRTabs(props: HRTabsProps) {
   const {
     tab, employees, fmt, lang, payTab, setPayTab, payrollMonth, setPayrollMonth,
     bonuses, setBonuses, bonusList, setBonusList, salaryHistory, onDeleteSalaryHistory,
-    generateAllPayslips, generatePayslipPDF, setSalaryTarget, setShowSalaryModal,
+    generateAllPayslips, setSalaryTarget, setShowSalaryModal,
     setSelectedContract, setShowContractDetailModal, setContractForm, setShowNewContractModal,
     attendance, onSaveAttendance, attendanceDate, setAttendanceDate,
     pendingLeaves, leaves, leavesLoading, setLeaveForm, setShowLeaveModal, handleLeaveAction,
@@ -57,7 +56,7 @@ export default function HRTabs(props: HRTabsProps) {
           bonuses={bonuses} setBonuses={setBonuses}
           bonusList={bonusList} setBonusList={setBonusList}
           salaryHistory={salaryHistory} onDeleteSalaryHistory={onDeleteSalaryHistory}
-          generateAllPayslips={generateAllPayslips} generatePayslipPDF={generatePayslipPDF}
+          generateAllPayslips={generateAllPayslips}
           setSalaryTarget={setSalaryTarget} setShowSalaryModal={setShowSalaryModal}
         />
       )}

@@ -24,7 +24,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import { type Employee, type LeaveRequest, type AttendUiStatus, type ContractForm, type LeaveForm, COLORS, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusToApi, attendStatusFromApi, mapApiLeave } from '@/components/hr/hrShared'
 // ⚠️ Taux et calcul de paie : SOURCE UNIQUE (`payrollShared`). Ce fichier codait 0.08/0.05
 // en dur — 6 fichiers le faisaient, donc 6 endroits à corriger au prochain changement de loi.
-import { payrollBreakdown } from '@/components/payroll/payrollShared'
+import { payRecordFromEmployee, printBulletin } from '@/components/payroll/payrollShared'
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -376,82 +376,20 @@ export default function HR() {
   const activeCount  = useMemo(() => (employees ?? []).filter(e => e.active).length, [employees])
   const pendingLeaves = useMemo(() => (leaves ?? []).filter(l => l.status === 'pending').length, [leaves])
 
-  const generatePayslipPDF = (
-    emp: any,
-    data: { brut:number; bonus:number; cnss:number; ir:number; net:number; month:string }
-  ) => {
-    const monthLabel = new Date(data.month+'-01')
-      .toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', {month:'long', year:'numeric'})
-    const win = window.open('', '_blank', 'width=700,height=900')
-    if (!win) return
-    win.document.write(`<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>${lang === 'en' ? 'Payslip' : lang === 'es' ? 'Nómina' : lang === 'it' ? 'Busta paga' : 'Bulletin'} — ${emp.name}</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;padding:40px;max-width:600px;margin:0 auto}
-.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;margin-bottom:24px;border-bottom:3px solid #6C47FF}
-.logo{font-size:24px;font-weight:900;color:#6C47FF;letter-spacing:-1px}
-.badge{background:#6C47FF;color:#fff;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700}
-.section{background:#f8f7ff;border-radius:10px;padding:16px;margin-bottom:16px}
-.section-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#888;margin-bottom:10px}
-.row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee}
-.row:last-child{border-bottom:none}
-.label{color:#555}.value{font-weight:700;font-family:monospace}
-.total-box{background:linear-gradient(135deg,#6C47FF,#8B6FFF);color:#fff;border-radius:12px;padding:20px;display:flex;justify-content:space-between;align-items:center;margin-top:20px}
-.total-label{font-size:14px;font-weight:700;opacity:.9}
-.total-value{font-size:28px;font-weight:900;font-family:monospace;letter-spacing:-1px}
-.footer{margin-top:30px;padding-top:16px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:11px;color:#999}
-.sign-box{border:1px solid #ddd;border-radius:8px;padding:10px 16px;text-align:center;min-width:160px;font-size:11px;color:#888}
-@media print{body{padding:20px}button{display:none!important}}
-</style></head><body>
-<button onclick="window.print()" style="position:fixed;top:16px;right:16px;background:#6C47FF;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:700">🖨️ ${lang === 'en' ? 'Print' : lang === 'es' ? 'Imprimir' : lang === 'it' ? 'Stampa' : 'Imprimer'}</button>
-<div class="header">
-  <div><div class="logo">HabaShop</div>
-  <div style="font-size:12px;color:#888;margin-top:4px;">${lang === 'en' ? 'Payslip' : lang === 'es' ? 'Nómina' : lang === 'it' ? 'Busta paga' : 'Bulletin de paie'} — ${monthLabel}</div></div>
-  <div class="badge">${lang === 'en' ? 'CONFIDENTIAL' : lang === 'es' ? 'CONFIDENCIAL' : lang === 'it' ? 'RISERVATO' : 'CONFIDENTIEL'}</div>
-</div>
-<div class="section">
-  <div class="section-title">${lang === 'en' ? 'EMPLOYEE INFORMATION' : lang === 'es' ? 'INFORMACIÓN DEL EMPLEADO' : lang === 'it' ? 'INFORMAZIONI DIPENDENTE' : 'INFORMATIONS EMPLOYÉ'}</div>
-  <div class="row"><span class="label">${lang === 'en' ? 'Name' : lang === 'es' ? 'Nombre' : lang === 'it' ? 'Nome' : 'Nom'}</span><span class="value">${emp.name}</span></div>
-  <div class="row"><span class="label">${lang === 'en' ? 'Position' : lang === 'es' ? 'Puesto' : lang === 'it' ? 'Posizione' : 'Poste'}</span><span class="value">${roleLabel(emp.role, lang)}</span></div>
-  <div class="row"><span class="label">${lang === 'en' ? 'Department' : lang === 'es' ? 'Departamento' : lang === 'it' ? 'Reparto' : 'Département'}</span><span class="value">${deptLabel(emp.dept, lang)}</span></div>
-  <div class="row"><span class="label">${lang === 'en' ? 'Contract' : lang === 'es' ? 'Tipo contrato' : lang === 'it' ? 'Tipo contratto' : 'Type contrat'}</span><span class="value">${contractLabel(emp.type, lang)}</span></div>
-  <div class="row"><span class="label">${lang === 'en' ? 'Hire date' : lang === 'es' ? 'Fecha contratación' : lang === 'it' ? 'Data assunzione' : 'Date embauche'}</span><span class="value">${emp.hiredAt}</span></div>
-</div>
-<div class="section">
-  <div class="section-title">${lang === 'en' ? 'COMPENSATION DETAIL' : lang === 'es' ? 'DETALLE DE LA REMUNERACIÓN' : lang === 'it' ? 'DETTAGLIO DELLA RETRIBUZIONE' : 'DÉTAIL DE LA RÉMUNÉRATION'}</div>
-  <div class="row"><span class="label">${lang === 'en' ? 'Base gross salary' : lang === 'es' ? 'Salario bruto base' : lang === 'it' ? 'Stipendio lordo base' : 'Salaire brut de base'}</span><span class="value">${fmt(data.brut)}</span></div>
-  ${data.bonus>0?`<div class="row"><span class="label">${lang === 'en' ? 'Monthly bonus' : lang === 'es' ? 'Prima del mes' : lang === 'it' ? 'Premio del mese' : 'Prime du mois'}</span><span class="value" style="color:#00D084;">+ ${fmt(data.bonus)}</span></div>`:''}
-  <div class="row"><span class="label" style="font-weight:700">${lang === 'en' ? 'Total gross' : lang === 'es' ? 'Total bruto' : lang === 'it' ? 'Totale lordo' : 'Total brut'}</span><span class="value">${fmt(data.brut+data.bonus)}</span></div>
-</div>
-<div class="section">
-  <div class="section-title">${lang === 'en' ? 'CONTRIBUTIONS & DEDUCTIONS' : lang === 'es' ? 'COTIZACIONES Y DEDUCCIONES' : lang === 'it' ? 'CONTRIBUTI E TRATTENUTE' : 'COTISATIONS ET RETENUES'}</div>
-  <div class="row"><span class="label">CNSS (8%)</span><span class="value" style="color:#FF3B5C;">− ${fmt(data.cnss)}</span></div>
-  <div class="row"><span class="label">${lang === 'en' ? 'Income tax (5%)' : lang === 'es' ? 'Impuesto sobre la renta (5%)' : lang === 'it' ? 'Imposta sul reddito (5%)' : 'Impôt sur le revenu (5%)'}</span><span class="value" style="color:#FFB800;">− ${fmt(data.ir)}</span></div>
-  <div class="row"><span class="label" style="font-weight:700">${lang === 'en' ? 'Total deductions' : lang === 'es' ? 'Total deducciones' : lang === 'it' ? 'Totale trattenute' : 'Total retenues'}</span><span class="value" style="color:#FF3B5C;">− ${fmt(data.cnss+data.ir)}</span></div>
-</div>
-<div class="total-box">
-  <div><div class="total-label">${lang === 'en' ? 'NET TO PAY' : lang === 'es' ? 'NETO A PAGAR' : lang === 'it' ? 'NETTO DA PAGARE' : 'NET À PAYER'}</div>
-  <div style="font-size:11px;opacity:.7;margin-top:4px;">${monthLabel}</div></div>
-  <div class="total-value">${fmt(data.net)}</div>
-</div>
-<div class="footer">
-  <div><div style="font-weight:700;margin-bottom:4px">HabaShop</div>
-  <div>${lang === 'en' ? 'Document generated on' : lang === 'es' ? 'Documento generado el' : lang === 'it' ? 'Documento generato il' : 'Document généré le'} ${new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')}</div></div>
-  <div><div class="sign-box">${lang === 'en' ? 'Employer signature<br/><br/><br/>' : lang === 'es' ? 'Firma del empleador<br/><br/><br/>' : lang === 'it' ? 'Firma del datore di lavoro<br/><br/><br/>' : 'Signature employeur<br/><br/><br/>'}</div></div>
-</div>
-</body></html>`)
-    win.document.close()
-  }
+  // ⚠️ `generatePayslipPDF` (template RH maison, ~90 lignes) est SUPPRIMÉ. Il dupliquait le
+  // bulletin de la page Paie avec un logo en TEXTE, des taux en dur dans les libellés, et un
+  // contrat d'entrée ambigu : montants XOF depuis « Générer tous », montants DÉJÀ CONVERTIS
+  // depuis les cartes, puis reconversion par `fmt` → NET 0,57 € au lieu de 371,37 € (mesuré).
+  // Un seul générateur désormais : `printBulletin`, qui passe par `payrollDisplay`.
 
   const generateAllPayslips = () => {
     const actifs = employees.filter(e => e.active !== false)
     actifs.forEach((emp, i) => {
-      const brut  = Number(emp.salary)||0
-      const bonus = bonuses[String(emp.id)] ?? 0
-      const { cnss, ir, net } = payrollBreakdown({ baseSalary: brut, bonus, overtime: 0, deductions: 0, absences: 0 })
+      // Un seul chemin : l'adaptateur produit un PayRecord, `printBulletin` fait le reste
+      // (conversion UNE fois via `payrollDisplay`, lignes/total/net cohérents).
+      const record = payRecordFromEmployee(emp, bonuses[String(emp.id)] ?? 0, payrollMonth)
       setTimeout(() => {
-        generatePayslipPDF(emp, { brut, bonus, cnss, ir, net, month: payrollMonth })
+        printBulletin(record)
       }, i * 300)
     })
     toast.success(lang === 'en' ? `${actifs.length} payslips generated!` : lang === 'es' ? `${actifs.length} nóminas generadas !` : lang === 'it' ? `${actifs.length} buste paga generate !` : `${actifs.length} bulletins générés !`)
@@ -591,7 +529,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         salaryHistory={salaryHistory}
         onDeleteSalaryHistory={handleDeleteSalaryHistory}
         generateAllPayslips={generateAllPayslips}
-        generatePayslipPDF={generatePayslipPDF}
         setSalaryTarget={setSalaryTarget} setShowSalaryModal={setShowSalaryModal}
         setSelectedContract={setSelectedContract} setShowContractDetailModal={setShowContractDetailModal}
         setContractForm={setContractForm} setShowNewContractModal={setShowNewContractModal}

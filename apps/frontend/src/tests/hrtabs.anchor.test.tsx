@@ -8,6 +8,14 @@ import HRTabs from '@/components/hr/HRTabs'
 
 vi.mock('@/lib/api', () => ({ bonusesApi: { delete: vi.fn(() => Promise.resolve()) } }))
 vi.mock('react-hot-toast', () => ({ default: { success: vi.fn(), error: vi.fn() } }))
+// ⚠️ `printBulletin` est désormais le SEUL générateur de bulletin (l'ancien template RH
+// `generatePayslipPDF` est supprimé : il reconvertissait des montants déjà convertis →
+// NET 0,57 € au lieu de 371,37 €). On l'espionne, en gardant le reste du module réel.
+const { spyPrint } = vi.hoisted(() => ({ spyPrint: vi.fn() }))
+vi.mock('@/components/payroll/payrollShared', async (orig) => ({
+  ...(await orig() as object),
+  printBulletin: spyPrint,
+}))
 
 const EMPLOYEES = [
   { id: 1, name: 'Marie Bakayoko', role: 'Caissière', dept: 'Ventes', salary: 200000, type: 'CDI' as const, hiredAt: '2024-01-15', avatar: 'MB', color: '#6C3FD6', active: true, phone: '77', email: 'marie@x.com' },
@@ -27,7 +35,6 @@ function makeProps(overrides: any = {}) {
     salaryHistory: [] as any[],
     onDeleteSalaryHistory: vi.fn(),
     generateAllPayslips: vi.fn(),
-    generatePayslipPDF: vi.fn(),
     setSalaryTarget: vi.fn(), setShowSalaryModal: vi.fn(),
     setSelectedContract: vi.fn(), setShowContractDetailModal: vi.fn(),
     setContractForm: vi.fn(), setShowNewContractModal: vi.fn(),
@@ -102,8 +109,15 @@ describe('HRTabs — onglet Paie (bulletins)', () => {
     expect(screen.getAllByText(/NET À PAYER/).length).toBeGreaterThan(0)
     fireEvent.click(screen.getByText(/Générer tous les bulletins/))
     expect(p.generateAllPayslips).toHaveBeenCalled()
+    // Le bouton passe par le générateur UNIQUE, avec un PayRecord dérivé de l'employé —
+    // et non plus par une prop qui recevait des montants au format ambigu.
     fireEvent.click(screen.getAllByText(/Télécharger bulletin/)[0])
-    expect(p.generatePayslipPDF).toHaveBeenCalled()
+    expect(spyPrint).toHaveBeenCalledTimes(1)
+    const record = spyPrint.mock.calls[0][0]
+    expect(record.employee).toBe('Marie Bakayoko')
+    expect(record.baseSalary).toBe(200000)   // XOF brut, non converti à l'entrée
+    expect(record.bonus).toBe(5000)
+    expect(record.month).toBe('Mai 2026')    // clé ISO '2026-05' → libellé d'écran
   })
 })
 

@@ -46,6 +46,53 @@ export function monthKey(label: string): string | null {
   return `${year}-${String(idx + 1).padStart(2, '0')}`
 }
 
+/**
+ * Clé de base « 2026-07 » → libellé d'écran « Juillet 2026 ». Inverse de `monthKey`.
+ *
+ * ⚠️ Nécessaire parce que le PDF de bulletin (`printBulletin`) travaille sur un `PayRecord`
+ * dont le `month` est un LIBELLÉ, alors que l'onglet RH manipule des clés ISO. Sans cette
+ * conversion, l'onglet RH devait avoir son propre générateur — c'est ce qui a laissé deux
+ * templates de bulletin divergents coexister.
+ */
+export function labelFromMonthKey(key: string): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(key)
+  if (!m) return key
+  const idx = Number(m[2]) - 1
+  return FR_MONTH_NAMES[idx] ? `${FR_MONTH_NAMES[idx]} ${m[1]}` : key
+}
+
+/**
+ * Adapte une fiche employé RH en `PayRecord` — l'entrée du générateur de bulletin UNIQUE.
+ *
+ * ⚠️ Existe pour que l'onglet RH et la page Paie impriment le MÊME document. Avant, RH avait
+ * son propre template (`generatePayslipPDF` dans `HR.tsx`) : logo en TEXTE au lieu du mark
+ * Sac+H, taux écrits en dur dans les libellés, et surtout un contrat d'entrée ambigu — il
+ * recevait des montants XOF depuis « Générer tous » mais des montants DÉJÀ CONVERTIS depuis
+ * les cartes, puis reconvertissait. Résultat mesuré sur 280 000 XOF en EUR : NET affiché
+ * 0,57 € au lieu de 371,37 €.
+ */
+export function payRecordFromEmployee(
+  emp: { id?: string | number; name?: string; role?: string; salary?: number; avatar?: string; color?: string },
+  bonus: number,
+  monthKeyIso: string,
+): PayRecord {
+  const name = emp.name ?? 'Employé'
+  return {
+    id: `${PENDING_PREFIX}${emp.id ?? ''}`,
+    employeeId: String(emp.id ?? ''),
+    employee: name,
+    avatar: emp.avatar ?? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+    color: emp.color ?? PAY_COLORS[0],
+    role: emp.role ?? 'Employé',
+    baseSalary: Number(emp.salary) || 0,
+    bonus: Number(bonus) || 0,
+    overtime: 0, deductions: 0, absences: 0,
+    status: 'GÉNÉRÉ',
+    paidAt: null,
+    month: labelFromMonthKey(monthKeyIso),
+  }
+}
+
 export const PAY_COLORS = ['#6C3FD6','#F59E0B','#10B981','#EF4444','#3B82F6','#8B5CF6','#EC4899','#F472B6']
 export const currentMonthLabel = MONTHS[new Date().getMonth()] ?? MONTHS[0]
 

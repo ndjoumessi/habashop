@@ -4,7 +4,7 @@ import { type Employee, roleLabel, deptLabel } from '@/components/hr/hrShared'
 // ⚠️ Taux et calcul importés de la SOURCE UNIQUE (`payrollShared`). Ce fichier codait
 // `0.08`/`0.05` (ou `0.87`) en dur : 6 fichiers le faisaient, donc 6 endroits à corriger
 // au prochain changement de loi — et un oubli aurait produit deux nets pour un salaire.
-import { payrollDisplay, fmtDisplay, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
+import { payrollDisplay, fmtDisplay, printBulletin, payRecordFromEmployee, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
 import { useConfig } from '@/stores/appStore'
 
 interface Props {
@@ -14,10 +14,9 @@ interface Props {
   payrollMonth: string; setPayrollMonth: (v: string) => void
   bonuses: Record<string, number>
   generateAllPayslips: () => void
-  generatePayslipPDF: (emp: any, data: any) => void
 }
 
-export default function PayrollPayslips({ employees, fmt: _fmt, lang, payrollMonth, setPayrollMonth, bonuses, generateAllPayslips, generatePayslipPDF }: Props) {
+export default function PayrollPayslips({ employees, fmt: _fmt, lang, payrollMonth, setPayrollMonth, bonuses, generateAllPayslips }: Props) {
   const { currency } = useConfig()
   // ⚠️ Montants DÉJÀ convertis par `payrollDisplay` (total = somme des lignes, net = brut −
   // total) → formatage sans reconversion. Le `fmt` reçu en prop convertirait depuis XOF et
@@ -86,7 +85,7 @@ export default function PayrollPayslips({ employees, fmt: _fmt, lang, payrollMon
 
               <button className="mini-btn"
                 style={{ width:'100%', justifyContent:'center', display:'flex', alignItems:'center', gap:5 }}
-                onClick={() => generatePayslipPDF(emp, { brut, bonus, cnss, ir, net, month: payrollMonth })}>
+                onClick={() => printBulletin(payRecordFromEmployee(emp, bonus, payrollMonth))}>
                 <FileText size={13}/> {lang === 'en' ? 'Download payslip' : lang === 'es' ? 'Descargar nómina' : lang === 'it' ? 'Scarica busta paga' : 'Télécharger bulletin'}
               </button>
             </div>

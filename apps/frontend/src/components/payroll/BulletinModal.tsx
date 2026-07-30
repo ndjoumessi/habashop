@@ -1,5 +1,6 @@
 import { useConfig } from '@/stores/appStore'
 import { useModalFocus } from '@/hooks/useModalFocus'
+import LogoMark from '@/components/ui/LogoMark'
 import { X, CheckCircle, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { monthLabel, roleLabel, statusLabel, printBulletin, payrollDisplay, fmtDisplay, CNSS_RATE, IR_RATE } from './payrollShared'
@@ -8,11 +9,10 @@ import { monthLabel, roleLabel, statusLabel, printBulletin, payrollDisplay, fmtD
 const pct = (r: number) => `${String(r * 100).replace('.', ',')} %`
 import type { PayRecord } from './payrollShared'
 
-export default function BulletinModal({ record, onClose, onPay, fmt }: {
+export default function BulletinModal({ record, onClose, onPay }: {
   record: PayRecord
   onClose: () => void
   onPay: (id: string) => void
-  fmt: (n: number) => string
 }) {
   const { lang, currency } = useConfig()
   // ⚠️ `payrollDisplay` rend des montants DÉJÀ convertis dans la devise d'affichage, avec
@@ -46,12 +46,12 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
           alignItems:'center', justifyContent:'space-between',
         }}>
           <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-            <div style={{
-              width:44, height:44, borderRadius:12,
-              background:'rgba(255,255,255,.2)',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:22, fontWeight:'var(--fw-bold)', color:'#fff',
-            }}>H</div>
+            {/* ⚠️ C'était une lettre « H » NUE dans un carré translucide — pas le mark Sac+H.
+                Trois rendus de logo coexistaient : le vrai mark (écran + PDF de la page Paie),
+                le texte « HabaShop » (ancien PDF RH, supprimé), et ce « H ». `LogoMark` est la
+                seule source. Distinct de #178, qui porte sur les coordonnées du favicon : ici
+                il n'y avait aucun asset, juste une lettre dessinée à la main. */}
+            <LogoMark size={44} style={{ flexShrink: 0 }} />
             <div>
               <div style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'#fff' }}>
                 HabaShop
