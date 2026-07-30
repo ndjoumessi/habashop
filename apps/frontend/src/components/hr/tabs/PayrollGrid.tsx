@@ -68,9 +68,12 @@ export default function PayrollGrid({ employees, fmt: _fmt, lang, payrollMonth, 
               `${lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'} (${currency})`,
             ],
             ...activeEmps.map(emp => {
-              const brut  = emp.salary
-              const bonus = bonuses[String(emp.id)] ?? 0
-              const d = empBreakdown(brut, bonus, currency)
+              // ⚠️ Ces locaux portaient les MÊMES NOMS que les valeurs d'affichage de la ligne
+              // (`brut`, `bonus`) tout en étant des XOF. Un même identifiant pour deux unités
+              // dans un même fichier : suffixe `Xof` obligatoire pour lever l'ambiguïté.
+              const brutXof  = emp.salary
+              const bonusXof = bonuses[String(emp.id)] ?? 0
+              const d = empBreakdown(brutXof, bonusXof, currency)
               return [emp.name, roleLabel(emp.role, lang), d.baseSalary, d.bonus, d.cnss, d.ir, d.net]
             }),
           ]
@@ -126,8 +129,10 @@ export default function PayrollGrid({ employees, fmt: _fmt, lang, payrollMonth, 
                 <th scope="col">{lang === 'en' ? 'EMPLOYEE' : lang === 'es' ? 'EMPLEADO' : lang === 'it' ? 'DIPENDENTE' : 'EMPLOYÉ'}</th>
                 <th scope="col" style={{textAlign:'right'}}>{lang === 'en' ? 'GROSS' : lang === 'es' ? 'BRUTO' : lang === 'it' ? 'LORDO' : 'BRUT'}</th>
                 <th scope="col" style={{textAlign:'right'}}>{lang === 'en' ? 'BONUS' : lang === 'es' ? 'PRIMA' : lang === 'it' ? 'PREMIO' : 'PRIME'}</th>
-                <th scope="col" style={{textAlign:'right'}}>CNSS 8%</th>
-                <th scope="col" style={{textAlign:'right'}}>IR 5%</th>
+                {/* ⚠️ Ces en-têtes réécrivaient « 8% » et « 5% » en dur — dans le fichier même
+                    dont on venait de sortir les taux. Rendus depuis les constantes. */}
+                <th scope="col" style={{textAlign:'right'}}>CNSS {CNSS_RATE * 100}%</th>
+                <th scope="col" style={{textAlign:'right'}}>IR {IR_RATE * 100}%</th>
                 <th scope="col" style={{textAlign:'right'}}>{lang === 'en' ? 'NET' : lang === 'es' ? 'NETO' : lang === 'it' ? 'NETTO' : 'NET'}</th>
                 <th scope="col" style={{textAlign:'center'}}>{lang === 'en' ? 'ACTIONS' : lang === 'es' ? 'ACCIONES' : lang === 'it' ? 'AZIONI' : 'ACTIONS'}</th>
               </tr>
@@ -135,9 +140,13 @@ export default function PayrollGrid({ employees, fmt: _fmt, lang, payrollMonth, 
             <tbody>
               {(employees ?? []).filter(e => e.active).map(emp => {
                 const empId = String(emp.id)
-                const brut  = Number(emp.salary)||0
-                const bonus = bonuses[empId] ?? 0
-                const { cnss, ir, net } = empBreakdown(brut, bonus, currency)
+                // ⚠️ TOUT vient du détail d'AFFICHAGE, y compris brut et prime. Ces deux
+                // cellules rendaient `fmt(brut)` où `brut` était du XOF BRUT et `fmt` un
+                // formateur qui NE convertit pas : Marie s'affichait « 280 000,00 € » au lieu
+                // de « 426,86 € » (656× d'écart), pendant que le TOTAL de la colonne, lui,
+                // était converti — la colonne ne sommait donc pas à son propre total.
+                const d = empBreakdown(Number(emp.salary) || 0, bonuses[empId] ?? 0, currency)
+                const { baseSalary, bonus, cnss, ir, net } = d
                 return (
                   <tr key={emp.id}>
                     <td>
@@ -149,7 +158,7 @@ export default function PayrollGrid({ employees, fmt: _fmt, lang, payrollMonth, 
                         </div>
                       </div>
                     </td>
-                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)' }}>{fmt(brut)}</td>
+                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)' }}>{fmt(baseSalary)}</td>
                     <td style={{ textAlign:'right' }}>
                       <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'flex-end' }}>
                         <span style={{ fontFamily:'var(--mono)', fontSize:12, color: bonus>0 ? 'var(--acc2)' : 'var(--text3)' }}>

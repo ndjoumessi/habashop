@@ -65,7 +65,7 @@ export default function ContractDetailModal({ lang, fmt, selectedContract, setSh
           <div style={{ background:'var(--bg3)', borderRadius:12, padding:16 }}>
             <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:12 }}>💰 {lang === 'en' ? 'COMPENSATION' : lang === 'es' ? 'REMUNERACIÓN' : lang === 'it' ? 'RETRIBUZIONE' : 'RÉMUNÉRATION'}</div>
             {[
-              {label:lang === 'en' ? 'Gross salary' : lang === 'es' ? 'Salario bruto' : lang === 'it' ? 'Stipendio lordo' : 'Salaire brut', value:fmt(selectedContract.salary), color:'var(--text)'},
+              {label:lang === 'en' ? 'Gross salary' : lang === 'es' ? 'Salario bruto' : lang === 'it' ? 'Stipendio lordo' : 'Salaire brut', value:fmtDisplay(contractBd.brut, curC), color:'var(--text)'},
               {label:`CNSS (${CNSS_RATE * 100}%)`, value:`− ${fmtDisplay(contractBd.cnss, curC)}`, color:'var(--danger)'},
               {label:`IR (${IR_RATE * 100}%)`, value:`− ${fmtDisplay(contractBd.ir, curC)}`, color:'var(--acc)'},
               {label:lang === 'en' ? 'Net salary' : lang === 'es' ? 'Neto a pagar' : lang === 'it' ? 'Netto da pagare' : 'Net à payer', value:fmtDisplay(contractBd.net, curC), color:'var(--acc2)'},
