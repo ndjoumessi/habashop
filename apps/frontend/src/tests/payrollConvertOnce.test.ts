@@ -295,10 +295,95 @@ describe('cas doré Marie — 280 000 XOF, boutique EUR', () => {
     expect(totalNet).toBe(1034.52)
   })
 
+  /**
+   * ⚠️ ANCRAGE EXPLICITE de 150 000 XOF → 198,95 €.
+   *
+   * J'avais écrit **198,94** de tête en rédigeant le cas doré ; le test a rendu 198,95 et m'a
+   * démenti. Le chiffre est donc figé ICI, seul, avec son contre-exemple — pour qu'une future
+   * relecture qui « corrige » 198,95 en 198,94 (le nombre qui circule dans les commits et la
+   * doc de ce chantier) casse immédiatement.
+   *
+   * Détail : brut 228,67 − (CNSS 18,29 + IR 11,43 = 29,72) = 198,95.
+   */
+  it('ANCRE — 150 000 XOF/EUR donne 198,95 (et NON 198,94, mon calcul de tête était faux)', () => {
+    const d = payrollDisplay({ baseSalary: 150000, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, 'EUR')
+    expect(d.brut).toBe(228.67)
+    expect(d.cnss).toBe(18.29)
+    expect(d.ir).toBe(11.43)
+    expect(d.totalDeductions).toBe(29.72)
+    expect(d.net).toBe(198.95)
+    expect(d.net).not.toBe(198.94)
+  })
+
   it('en XOF le détail reste entier et égal au calcul (aucune conversion)', () => {
     const d = payrollDisplay(ENTREE, 'XOF')
     const bd = payrollBreakdown(ENTREE)
     expect(d.net).toBe(bd.net)
     expect(d.net).toBe(243600)
+  })
+})
+
+/**
+ * ⚠️ CAS DORÉ EN XOF — la devise de BASE, celle de la majorité des boutiques.
+ *
+ * Le pendant indispensable du cas doré EUR : c'est ici que la plupart des tenants vivent, et
+ * c'est justement parce que XOF n'a pas de décimale que tous les défauts de conversion y sont
+ * INVISIBLES (0 conversion, 1 conversion, 2 conversions donnent le même affichage à l'unité
+ * quand le taux vaut 1). Un jeu de cas EUR seul laisserait donc croire qu'on couvre la paie
+ * alors qu'on ne couvre que le cas rare.
+ *
+ * Valeurs MESURÉES, pas calculées à la main.
+ */
+describe('cas doré XOF — devise de base, 0 décimale, aucune conversion', () => {
+  const EQUIPE = [280000, 350000, 150000]
+
+  it.each([
+    [280000, 22400, 14000, 36400, 243600],
+    [350000, 28000, 17500, 45500, 304500],
+    [150000, 12000, 7500, 19500, 130500],
+  ])('base %i → CNSS %i · IR %i · total %i · NET %i', (base, cnss, ir, total, net) => {
+    const d = payrollDisplay({ baseSalary: base, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, 'XOF')
+    expect(d.brut).toBe(base)
+    expect(d.cnss).toBe(cnss)
+    expect(d.ir).toBe(ir)
+    expect(d.totalDeductions).toBe(total)
+    expect(d.net).toBe(net)
+  })
+
+  it('tout est ENTIER — aucune décimale ne doit apparaître en XOF', () => {
+    for (const base of EQUIPE) {
+      const d = payrollDisplay({ baseSalary: base, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, 'XOF')
+      for (const [k, v] of Object.entries(d)) expect(Number.isInteger(v), `${k}=${v}`).toBe(true)
+    }
+  })
+
+  it('la colonne somme à son pied : 780 000 brut · 678 600 net', () => {
+    const lignes = EQUIPE.map(b => payrollDisplay({ baseSalary: b, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, 'XOF'))
+    expect(lignes.reduce((a, l) => a + l.brut, 0)).toBe(780000)
+    expect(lignes.reduce((a, l) => a + l.net, 0)).toBe(678600)
+  })
+
+  it('salaire XOF FRACTIONNAIRE → arrondi à l’unité (rend `CURRENCY_DECIMALS` load-bearing)', () => {
+    // ⚠️ Ce cas existe parce qu'un sabotage l'a exigé : forcer `dec = 2` au lieu de lire
+    // `CURRENCY_DECIMALS` ne cassait AUCUN test — tous mes cas XOF utilisaient des salaires
+    // ENTIERS, où arrondir à 2 décimales est un no-op. Or `Employee.salary` est un `Float` en
+    // base : un salaire fractionnaire est stockable, et le XOF n'a pas de subdivision.
+    const d = payrollDisplay({ baseSalary: 280000.5, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, 'XOF')
+    expect(Number.isInteger(d.brut)).toBe(true)
+    expect(d.brut).toBe(280001)
+    expect(d.brut).not.toBe(280000.5)   // un centime de franc CFA n'existe pas
+    for (const [k, v] of Object.entries(d)) expect(Number.isInteger(v), `${k}=${v}`).toBe(true)
+  })
+
+  it('⚠️ XOF est le cas où une erreur de conversion NE SE VOIT PAS — d’où le jumeau EUR', () => {
+    // Le taux XOF→XOF vaut 1 : convertir 0, 1 ou 2 fois donne le même nombre. Le bug à 656×
+    // de la Grille était donc totalement invisible pour un tenant XOF. C'est la raison d'être
+    // du cas doré EUR : sans lui, la suite serait verte en laissant passer le défaut.
+    const brutXofNu = 280000
+    const d = payrollDisplay({ baseSalary: brutXofNu, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, 'XOF')
+    expect(d.brut).toBe(brutXofNu)          // indistinguable d'un XOF non converti
+    const eur = payrollDisplay({ baseSalary: brutXofNu, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, 'EUR')
+    expect(eur.brut).not.toBe(brutXofNu)    // …alors qu'en EUR l'écart saute aux yeux
+    expect(eur.brut).toBe(426.86)
   })
 })
