@@ -9,7 +9,11 @@ import ValidatedInput from '@/components/ui/ValidatedInput'
 // ⚠️ Taux et calcul importés de la SOURCE UNIQUE (`payrollShared`). Ces fichiers codaient
 // `0.08`/`0.05`/`0.87` en dur — le `0.87` étant le pire : un net magique qui devient
 // silencieusement faux dès qu'un taux change.
-import { payrollBreakdown, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
+// ⚠️ `payrollDisplay` : conversion UNE fois + arrondi cohérent (lignes/total/net). Les
+// montants rendus sont DÉJÀ en devise d'affichage → `fmtDisplay`, jamais le `fmt` reçu en
+// prop (qui reconvertirait). Verrou : `payrollConvertOnce.test.ts`.
+import { payrollDisplay, fmtDisplay, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
+import { useConfig } from '@/stores/appStore'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
@@ -31,6 +35,7 @@ interface Props {
 }
 
 export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm, setEditEmpForm, empEditMode, setEmpEditMode, salaryInput, setSalaryInput, toXOF, currencySymbol, setEmployees, setShowEditEmpModal, openEditModal }: Props) {
+  const { currency: curEmp } = useConfig()
   const boxRef = useModalFocus<HTMLDivElement>()
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true"
@@ -178,12 +183,12 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
             </ViewField>
             {+salaryInput > 0 && (() => {
               const salaryXOF = toXOF(+salaryInput)
-              const { cnss, ir } = payrollBreakdown({ baseSalary: salaryXOF, bonus: 0, overtime: 0, deductions: 0, absences: 0 })
+              const { cnss, ir } = payrollDisplay({ baseSalary: salaryXOF, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, curEmp)
               const net  = salaryXOF - cnss - ir
               return (
                 <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:16, flexWrap:'wrap' }}>
-                  <span>CNSS (8%): <strong style={{color:'var(--danger)'}}>− {fmt(cnss)}</strong></span>
-                  <span>IR (5%): <strong style={{color:'var(--acc)'}}>− {fmt(ir)}</strong></span>
+                  <span>CNSS ({CNSS_RATE * 100}%): <strong style={{color:'var(--danger)'}}>− {fmtDisplay(cnss, curEmp)}</strong></span>
+                  <span>IR ({IR_RATE * 100}%): <strong style={{color:'var(--acc)'}}>− {fmtDisplay(ir, curEmp)}</strong></span>
                   <span>{lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'}: <strong style={{color:'var(--acc2)'}}>{fmt(net)}</strong></span>
                 </div>
               )

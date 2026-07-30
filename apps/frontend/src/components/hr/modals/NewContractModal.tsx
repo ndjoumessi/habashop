@@ -6,7 +6,11 @@ import { type Employee, type ContractForm, COLORS, DEPT_COLORS, labelStyle, dept
 // ⚠️ Taux et calcul importés de la SOURCE UNIQUE (`payrollShared`). Ces fichiers codaient
 // `0.08`/`0.05`/`0.87` en dur — le `0.87` étant le pire : un net magique qui devient
 // silencieusement faux dès qu'un taux change.
-import { payrollBreakdown, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
+// ⚠️ `payrollDisplay` : conversion UNE fois + arrondi cohérent (lignes/total/net). Les
+// montants rendus sont DÉJÀ en devise d'affichage → `fmtDisplay`, jamais le `fmt` reçu en
+// prop (qui reconvertirait). Verrou : `payrollConvertOnce.test.ts`.
+import { payrollDisplay, fmtDisplay, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
+import { useConfig } from '@/stores/appStore'
 
 interface Props {
   lang: string
@@ -21,6 +25,7 @@ interface Props {
 }
 
 export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, employees, setEmployees, contractForm, setContractForm, setShowNewContractModal }: Props) {
+  const { currency: curN } = useConfig()
   // Suffixe = SYMBOLE de la devise d'affichage (cohérent avec la grille Paie : "€" si EUR, "FCFA" si XOF…).
   const currencySuffix = currencySymbol
   // Montant saisi (devise d'affichage) → XOF pour les aperçus et le storage.
@@ -73,8 +78,8 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
               </div>
               {contractForm.salary>0&&(
                 <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:12 }}>
-                  <span>CNSS: <strong style={{color:'var(--danger)'}}>−{fmt(payrollBreakdown({ baseSalary: salaryXOF, bonus: 0, overtime: 0, deductions: 0, absences: 0 }).cnss)}</strong></span>
-                  <span>{lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'}: <strong style={{color:'var(--acc2)'}}>{fmt(payrollBreakdown({ baseSalary: salaryXOF, bonus: 0, overtime: 0, deductions: 0, absences: 0 }).net)}</strong></span>
+                  <span>CNSS: <strong style={{color:'var(--danger)'}}>−{fmtDisplay(payrollDisplay({ baseSalary: salaryXOF, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, curN).cnss, curN)}</strong></span>
+                  <span>{lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'}: <strong style={{color:'var(--acc2)'}}>{fmtDisplay(payrollDisplay({ baseSalary: salaryXOF, bonus: 0, overtime: 0, deductions: 0, absences: 0 }, curN).net, curN)}</strong></span>
                 </div>
               )}
             </div>

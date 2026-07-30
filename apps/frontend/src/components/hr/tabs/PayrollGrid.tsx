@@ -1,6 +1,6 @@
 import { Download, FileText, DollarSign, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { useConfig, convertFromXOF, CURRENCY_DECIMALS } from '@/stores/appStore'
+import { useConfig, CURRENCY_DECIMALS } from '@/stores/appStore'
 import { type Employee, EmpAvatar, roleLabel } from '@/components/hr/hrShared'
 import { sanitizeCsv } from '@/lib/csv'
 // ⚠️ Ce fichier définissait SES PROPRES taux en se déclarant « source unique (cf. payroll-calc) »
@@ -55,8 +55,9 @@ export default function PayrollGrid({ employees, fmt: _fmt, lang, payrollMonth, 
         <button className="btn btn-sm" onClick={() => {
           const BOM = '﻿'
           const activeEmps = (employees ?? []).filter(e => e.active)
-          // Montants stockés en base XOF → convertis vers la devise d'affichage (pattern reportsExport)
-          const cv = (xof: number) => Math.round(convertFromXOF(xof ?? 0, currency) * 100) / 100
+          // ⚠️ Plus de conversion locale ici. `cv()` convertissait brut/bonus tandis que
+          // cnss/ir/net venaient de `payrollDisplay` : DEUX chemins d'arrondi dans la même
+          // ligne de CSV, donc un brut qui ne valait pas base + prime. Tout vient de `d`.
           const rows = [
             [
               lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé',
@@ -70,8 +71,7 @@ export default function PayrollGrid({ employees, fmt: _fmt, lang, payrollMonth, 
               const brut  = emp.salary
               const bonus = bonuses[String(emp.id)] ?? 0
               const d = empBreakdown(brut, bonus, currency)
-              // ⚠️ `cv` convertit depuis XOF ; `d` est DÉJÀ converti → on écrit `d` tel quel.
-              return [emp.name, roleLabel(emp.role, lang), cv(brut), cv(bonus), d.cnss, d.ir, d.net]
+              return [emp.name, roleLabel(emp.role, lang), d.baseSalary, d.bonus, d.cnss, d.ir, d.net]
             }),
           ]
           // ⚠️ `sanitizeCsv` sur chaque cellule : sans lui, un nom saisi par l'utilisateur

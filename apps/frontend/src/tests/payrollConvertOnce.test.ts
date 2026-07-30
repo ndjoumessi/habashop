@@ -1,0 +1,190 @@
+import { describe, it, expect } from 'vitest'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
+import { payrollDisplay, payrollBreakdown } from '@/components/payroll/payrollShared'
+
+/**
+ * ⚠️ « CONVERTIR UNE FOIS » devient une convention EXÉCUTÉE, pas un accident par surface.
+ *
+ * Historique mesuré, en trois temps :
+ *  1. chaque surface convertissait elle-même depuis XOF → lignes et total ne s'additionnaient
+ *     pas en devise à décimales (69,36 vs 69,37) ;
+ *  2. `payrollDisplay` a corrigé les surfaces de la page Paie… et a introduit une DOUBLE
+ *     conversion dans le PDF de l'onglet RH, qui recevait désormais des montants déjà
+ *     convertis et les repassait dans `fmt`. Sur 280 000 XOF en EUR : **NET 0,57 € au lieu de
+ *     371,37 €** ;
+ *  3. d'où ce méta-test. Une correction surface par surface produit exactement ce genre de
+ *     régression : le trou se déplace au lieu de se fermer.
+ *
+ * Même patron que `csvInjection.test.ts` : on scanne le CODE réellement exécuté (commentaires
+ * et imports retirés), on cible les SITES, et on exerce des sabotages en contre-preuve.
+ */
+
+// ── Le calcul : une seule source ─────────────────────────────────────────────
+const RACINE = join(__dirname, '..')
+const SOURCE = join('components', 'payroll', 'payrollShared.tsx')
+
+function walk(dir: string): string[] {
+  const out: string[] = []
+  for (const e of readdirSync(dir)) {
+    if (e === 'node_modules' || e === 'tests' || e === '__tests__' || e === 'dist') continue
+    const p = join(dir, e)
+    if (statSync(p).isDirectory()) out.push(...walk(p))
+    else if (/\.tsx?$/.test(p)) out.push(p)
+  }
+  return out
+}
+
+/** Retire commentaires ET imports : ce qui reste est du code exécuté. */
+function codeSeul(src: string): string {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:/])\/\/.*$/gm, '$1')
+    .replace(/^\s*import[\s\S]*?from\s+['"][^'"]+['"];?[ \t]*$/gm, '')
+}
+
+/** Convertisseurs et formateurs-qui-convertissent : interdits dans une surface de paie. */
+const CONVERTISSEURS = /\buseFormatAmount\b|\bformatAmount\s*\(|\bconvertFromXOF\s*\(|\bconvertAmount\s*\(|\buseConvertFromXOF\b/
+
+/** Arithmétique de taux locale : interdite partout hors de la source. */
+const TAUX_EN_DUR = /\*\s*0\.0[58]\b|\*\s*0\.8[27]\b|\*\s*0\.9[02]\b|\*\s*0\.056\b/
+
+/** Une surface de PAIE = un fichier qui consomme le détail de paie. */
+const CONSOMME_PAIE = /\bpayrollDisplay\s*\(|\bpayrollBreakdown\s*\(|\bfmtDisplay\s*\(/
+
+const fichiers = walk(RACINE)
+const horsSource = fichiers.filter(f => !f.endsWith(SOURCE))
+
+describe('méta-test — tout montant de paie passe par `payrollDisplay`', () => {
+  const surfaces = horsSource.filter(f => CONSOMME_PAIE.test(codeSeul(readFileSync(f, 'utf8'))))
+
+  it('le scan couvre des fichiers ET trouve des surfaces (un walk cassé rendrait VERT)', () => {
+    expect(fichiers.length).toBeGreaterThan(50)
+    expect(surfaces.length).toBeGreaterThanOrEqual(6)
+  })
+
+  it('aucune surface de paie ne CONVERTIT elle-même (conversion = une fois, dans payrollDisplay)', () => {
+    const fautifs = surfaces
+      .filter(f => CONVERTISSEURS.test(codeSeul(readFileSync(f, 'utf8'))))
+      .map(f => f.replace(RACINE, '.'))
+    expect(`surfaces de paie qui convertissent hors payrollDisplay :\n${fautifs.join('\n')}`)
+      .toBe('surfaces de paie qui convertissent hors payrollDisplay :\n')
+  })
+
+  it('`payrollBreakdown` (montants XOF) n’est plus utilisé pour AFFICHER — seul `payrollDisplay` l’est', () => {
+    // `payrollBreakdown` reste la brique interne de `payrollShared` et sert aux tests, mais
+    // une surface qui l'appelle affiche des XOF bruts dans une devise à décimales.
+    const fautifs = horsSource
+      .filter(f => /\bpayrollBreakdown\s*\(/.test(codeSeul(readFileSync(f, 'utf8'))))
+      .map(f => f.replace(RACINE, '.'))
+    expect(`surfaces utilisant payrollBreakdown au lieu de payrollDisplay :\n${fautifs.join('\n')}`)
+      .toBe('surfaces utilisant payrollBreakdown au lieu de payrollDisplay :\n')
+  })
+
+  it('aucun taux de paie en dur hors de la source unique', () => {
+    const fautifs = horsSource
+      .filter(f => TAUX_EN_DUR.test(codeSeul(readFileSync(f, 'utf8'))))
+      .map(f => f.replace(RACINE, '.'))
+    // Le seuil d'écart de caisse du POS (`expectedCash * 0.05`) n'est PAS un taux de paie :
+    // il n'apparaît que dans un fichier qui ne consomme pas le détail de paie, donc il n'est
+    // pas concerné — mais on le tolère explicitement pour que le verrou ne crie pas au loup.
+    const paie = fautifs.filter(f => !f.includes(join('components', 'pos')))
+    expect(`taux de paie en dur hors payrollShared :\n${paie.join('\n')}`)
+      .toBe('taux de paie en dur hors payrollShared :\n')
+  })
+
+  it('UN SEUL générateur de bulletin (le template RH dupliqué est supprimé)', () => {
+    // ⚠️ Détecteur RESSERRÉ. Une première version cherchait `NET À PAYER` — elle rougissait
+    // sur l'i18n, `POSModals` et `posTicket` (tickets de caisse : autres documents, légitimes).
+    // Un verrou qui crie au loup se fait désarmer. Critère précis : un fichier qui CONSOMME le
+    // détail de paie ET ouvre un document. Il n'en existe qu'un, et il vit dans la source.
+    const generateurs = horsSource
+      .filter(f => {
+        const c = codeSeul(readFileSync(f, 'utf8'))
+        return CONSOMME_PAIE.test(c) && /win\.document\.write|\bopenPDF\s*\(/.test(c)
+      })
+      .map(f => f.replace(RACINE, '.'))
+    expect(`générateurs de bulletin hors payrollShared :\n${generateurs.join('\n')}`)
+      .toBe('générateurs de bulletin hors payrollShared :\n')
+  })
+
+  // ── CONTRE-PREUVE : le détecteur rougit-il vraiment ? ──────────────────────
+  const SURFACE = "const d = payrollDisplay(r, currency)\n"
+
+  it('SAIN : surface qui n’utilise que payrollDisplay + fmtDisplay → vert', () => {
+    const src = `import { payrollDisplay, fmtDisplay } from './payrollShared'\n${SURFACE}const x = fmtDisplay(d.net, currency)`
+    const c = codeSeul(src)
+    expect(CONSOMME_PAIE.test(c)).toBe(true)
+    expect(CONVERTISSEURS.test(c)).toBe(false)
+  })
+
+  it('SABOTAGE 1 — la surface reconvertit via useFormatAmount → rouge', () => {
+    const src = `import { payrollDisplay } from './payrollShared'\nimport { useFormatAmount } from '@/stores/appStore'\n${SURFACE}const fmt = useFormatAmount()\nconst x = fmt(d.net)`
+    const c = codeSeul(src)
+    expect(CONVERTISSEURS.test(c)).toBe(true)
+  })
+
+  it('SABOTAGE 2 — la surface reconvertit via formatAmount / convertFromXOF → rouge', () => {
+    for (const appel of ['formatAmount(d.net, currency)', 'convertFromXOF(d.net, currency)', 'convertAmount(d.net, "XOF", currency)']) {
+      expect(CONVERTISSEURS.test(codeSeul(`${SURFACE}const x = ${appel}`)), appel).toBe(true)
+    }
+  })
+
+  it('SABOTAGE 3 — un import CONSERVÉ sans appel ne suffit pas à faire rougir (pas de faux positif)', () => {
+    // Le scan retire les imports : mentionner `formatAmount` dans un import sans l'appeler
+    // n'est pas une conversion. Un verrou qui crie au loup se fait désarmer.
+    const src = `import { formatAmount } from '@/stores/appStore'\n${SURFACE}const x = fmtDisplay(d.net, currency)`
+    expect(CONVERTISSEURS.test(codeSeul(src))).toBe(false)
+  })
+
+  it('SABOTAGE 4 — la garde en COMMENTAIRE seul ne compte pas', () => {
+    const src = `// on passe bien par payrollDisplay, promis\nconst fmt = useFormatAmount()\nconst x = fmt(cnssXof)`
+    const c = codeSeul(src)
+    expect(CONSOMME_PAIE.test(c)).toBe(false)   // le commentaire ne fait pas une surface
+    expect(CONVERTISSEURS.test(c)).toBe(true)   // …mais la conversion est bien vue
+  })
+
+  it('SABOTAGE 5 — taux recodé en dur → rouge', () => {
+    expect(TAUX_EN_DUR.test(codeSeul('const cnss = Math.round(brut * 0.08)'))).toBe(true)
+    expect(TAUX_EN_DUR.test(codeSeul('const net = Math.round(brut * 0.87)'))).toBe(true)
+    expect(TAUX_EN_DUR.test(codeSeul('const cnss = Math.round(brut * CNSS_RATE)'))).toBe(false)
+  })
+})
+
+// ── CAS DORÉS : la même valeur sur CHAQUE surface ───────────────────────────
+describe('cas doré Marie — 280 000 XOF, boutique EUR', () => {
+  const ENTREE = { baseSalary: 280000, bonus: 0, overtime: 0, deductions: 0, absences: 0 }
+
+  it('brut 426,86 · CNSS 34,15 · IR 21,34 · total 55,49 · NET 371,37', () => {
+    const d = payrollDisplay(ENTREE, 'EUR')
+    expect(d.brut).toBe(426.86)
+    expect(d.cnss).toBe(34.15)
+    expect(d.ir).toBe(21.34)
+    expect(d.totalDeductions).toBe(55.49)
+    expect(d.net).toBe(371.37)
+  })
+
+  it('les lignes s’additionnent : CNSS + IR == total, et brut − total == net', () => {
+    const d = payrollDisplay(ENTREE, 'EUR')
+    // ⚠️ On arrondit la somme AVANT de comparer : 34,15 + 21,34 vaut 55,489999999999995 en
+    // IEEE754. C'est précisément pour ça que `payrollDisplay` arrondit son total au lieu de
+    // laisser l'addition brute — sinon le bulletin afficherait des artefacts flottants.
+    const r2 = (x: number) => Math.round(x * 100) / 100
+    expect(r2(d.cnss + d.ir)).toBe(d.totalDeductions)
+    expect(r2(d.brut - d.totalDeductions)).toBe(d.net)
+  })
+
+  it('⚠️ une DOUBLE conversion donnerait 0,57 € — le bug réel du PDF RH', () => {
+    const d = payrollDisplay(ENTREE, 'EUR')
+    const reconverti = Math.round((d.net / 655.957) * 100) / 100
+    expect(reconverti).toBe(0.57)
+    expect(reconverti).not.toBe(d.net)
+  })
+
+  it('en XOF le détail reste entier et égal au calcul (aucune conversion)', () => {
+    const d = payrollDisplay(ENTREE, 'XOF')
+    const bd = payrollBreakdown(ENTREE)
+    expect(d.net).toBe(bd.net)
+    expect(d.net).toBe(243600)
+  })
+})

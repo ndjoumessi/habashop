@@ -17,6 +17,17 @@ vi.mock('@/stores/appStore', () => ({
   useCurrencyInfo: () => ({ code: 'XOF', symbol: 'F', decimals: 0, currency: 'XOF' }),
   useAppStore: (sel: any) => sel({ lang: 'fr' }),
   CURRENCY_SYMBOLS: { XOF: 'FCFA', XAF: 'FCFA', EUR: '€', USD: '$', CAD: 'CA$', GBP: '£' },
+  // ── Ajouts requis depuis que les modales RH passent par `payrollDisplay` (conversion UNE
+  // fois). On garde la convention IDENTITÉ de ce mock : ce fichier teste le COMPORTEMENT des
+  // modales, pas l'arithmétique de conversion — celle-ci est verrouillée par
+  // `payrollDisplayCoherence.test.ts` et `payrollConvertOnce.test.ts` avec de vrais taux.
+  useConfig: () => ({ lang: 'fr', currency: 'XOF' }),
+  convertFromXOF: (n: number) => n,
+  convertAmount: (n: number) => n,
+  formatInCurrency: (n: number) => `${n} FCFA`,
+  formatAmount: (n: number) => `${n} FCFA`,
+  CURRENCY_DECIMALS: { XOF: 0, XAF: 0, EUR: 2, USD: 2, CAD: 2, GBP: 2 },
+  t: (k: string) => k,
 }))
 // UI inputs lourds mockés en inputs simples (mêmes signatures onChange(val))
 vi.mock('@/components/ui/ValidatedInput', () => ({ default: ({ label, value, onChange, placeholder }: any) => <input aria-label={label || placeholder || 'vi'} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} /> }))

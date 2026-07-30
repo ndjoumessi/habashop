@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useConfig, useFormatAmount, CURRENCY_DECIMALS } from '@/stores/appStore'
+import { useConfig, CURRENCY_DECIMALS } from '@/stores/appStore'
 import { Wallet } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { employeesApi, payrollApi } from '@/lib/api'
@@ -22,7 +22,6 @@ export { buildMonths, monthLabel }
 
 export default function Payroll() {
   const { lang, currency } = useConfig()
-  const fmt = useFormatAmount()
   const navigate = useNavigate()
 
   const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
@@ -220,7 +219,6 @@ export default function Payroll() {
           record={bulletin}
           onClose={() => setBulletin(null)}
           onPay={markPaid}
-          fmt={fmt}
         />
       )}
     </div>

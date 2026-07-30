@@ -16,12 +16,11 @@ interface Props {
   salaryHistory: any[]
   onDeleteSalaryHistory?: (id: string) => void
   generateAllPayslips: () => void
-  generatePayslipPDF: (emp: any, data: any) => void
   setSalaryTarget: (v: any) => void; setShowSalaryModal: (b: boolean) => void
 }
 
 export default function HRPayrollTab(props: Props) {
-  const { fmt, lang, payTab, setPayTab, employees, payrollMonth, setPayrollMonth, bonuses, setBonuses, bonusList, setBonusList, salaryHistory, onDeleteSalaryHistory, generateAllPayslips, generatePayslipPDF, setSalaryTarget, setShowSalaryModal } = props
+  const { fmt, lang, payTab, setPayTab, employees, payrollMonth, setPayrollMonth, bonuses, setBonuses, bonusList, setBonusList, salaryHistory, onDeleteSalaryHistory, generateAllPayslips, setSalaryTarget, setShowSalaryModal } = props
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
@@ -66,7 +65,7 @@ export default function HRPayrollTab(props: Props) {
         <PayrollPayslips
           employees={employees} fmt={fmt} lang={lang}
           payrollMonth={payrollMonth} setPayrollMonth={setPayrollMonth}
-          bonuses={bonuses} generateAllPayslips={generateAllPayslips} generatePayslipPDF={generatePayslipPDF}
+          bonuses={bonuses} generateAllPayslips={generateAllPayslips}
         />
       )}
 
