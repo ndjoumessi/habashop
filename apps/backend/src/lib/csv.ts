@@ -28,11 +28,31 @@
 const DECLENCHEURS = /^[=+\-@\t\r]/
 
 /**
+ * Littéral PUREMENT numérique — seule exemption au préfixe.
+ *
+ * ⚠️ POURQUOI c'est sûr : un nombre nu ne s'exécute pas. `-25` vaut −25 dans toutes les
+ * suites bureautiques, il n'y a rien à évaluer. Le danger d'un `-` initial vient de ce qui
+ * SUIT (`-2+3`, `-1+cmd|'/c calc'!A1`) : dès qu'un opérateur, une lettre ou un symbole
+ * apparaît, l'ancre `$` fait échouer ce motif et le préfixe s'applique comme avant. Le `+`
+ * et le `@` en tête ne sont JAMAIS exemptés — `+41766778899` reste un déclencheur.
+ *
+ * ⚠️ POURQUOI ça vaut le coup : sans exemption, toute valeur négative légitime part en TEXTE
+ * dans le tableur (préfixée `'-25`), donc ni sommable ni triable. Mesuré sur l'export Stock
+ * (#198) : marge et profit d'un produit vendu à perte — exactement les lignes qu'on cherche
+ * dans un export — devenaient inexploitables. Un garde qui abîme la donnée qu'il protège
+ * finit par être contourné.
+ *
+ * Virgule décimale acceptée (`-0,3`) : c'est le séparateur des locales fr/es/it.
+ */
+const NOMBRE_NU = /^-?\d+([.,]\d+)?$/
+
+/**
  * Neutralise une valeur destinée à une cellule CSV.
  * Préfixe d'une apostrophe si la valeur peut être lue comme une formule ; sinon la rend
  * telle quelle. N'échappe PAS les guillemets — c'est le rôle du sérialiseur appelant.
  */
 export function sanitizeCsv(value: unknown): string {
   const s = String(value ?? '')
+  if (NOMBRE_NU.test(s)) return s
   return DECLENCHEURS.test(s) ? `'${s}` : s
 }
