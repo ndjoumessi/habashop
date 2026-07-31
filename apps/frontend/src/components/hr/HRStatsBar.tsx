@@ -23,10 +23,10 @@ export default function HRStatsBar({ employees, activeCount, totalPayroll, pendi
         <div key={k.label} className="panel" style={{ padding: '14px 16px', background: `linear-gradient(135deg,${k.color}18,${k.color}06)`, border: `1px solid ${k.color}28` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: `${k.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>{k.icon}</div>
-            <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }}>{k.label}</span>
+            <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }}>{k.label}</span>
           </div>
-          <div style={{ fontSize: 22, fontWeight: 'var(--fw-bold)', color: k.color, lineHeight: 1, fontFamily: 'var(--mono)', letterSpacing: '-0.5px' }}>{k.value}</div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>{k.sub}</div>
+          <div style={{ fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-bold)', color: k.color, lineHeight: 1, fontFamily: 'var(--mono)', letterSpacing: '-0.5px' }}>{k.value}</div>
+          <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginTop: 4 }}>{k.sub}</div>
         </div>
       ))}
     </ResponsiveGrid>

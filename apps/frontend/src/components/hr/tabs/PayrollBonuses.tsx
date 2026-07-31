@@ -54,7 +54,7 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
       <div className="panel">
         <div className="panel-h">
           <span className="panel-t" style={{display:'flex',alignItems:'center',gap:6}}><Gift size={14}/> {lang === 'en' ? 'Monthly bonuses' : lang === 'es' ? 'Primas del mes' : lang === 'it' ? 'Premi del mese' : 'Primes du mois'}</span>
-          <span style={{ fontSize:12, color:'var(--text3)' }}>
+          <span style={{ fontSize:'var(--fs-label)', color:'var(--text3)' }}>
             {lang === 'en' ? 'Total:' : lang === 'es' ? 'Total:' : lang === 'it' ? 'Totale:' : 'Total :'}{' '}
             <strong style={{ color:'var(--acc2)' }}>{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}</strong>
           </span>
@@ -63,10 +63,10 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
         {Object.keys(bonuses).length === 0 ? (
           <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--text3)' }}>
             <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><Gift size={36} style={{color:'var(--text4)'}}/></div>
-            <div style={{ fontSize:14, fontWeight:'var(--fw-semibold)' }}>
+            <div style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-semibold)' }}>
               {lang === 'en' ? 'No bonuses this month' : lang === 'es' ? 'Sin primas este mes' : lang === 'it' ? 'Nessun premio questo mese' : 'Aucune prime ce mois'}
             </div>
-            <div style={{ fontSize:12, marginTop:6 }}>
+            <div style={{ fontSize:'var(--fs-label)', marginTop:6 }}>
               {lang === 'en' ? 'Click "+ New bonus" to add one' : lang === 'es' ? 'Haz clic en "+ Nueva prima" para agregar' : lang === 'it' ? 'Clicca su "+ Nuovo premio" per aggiungerne' : 'Cliquez sur "+ Nouvelle prime" pour en ajouter'}
             </div>
           </div>
@@ -89,19 +89,19 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
                       <tr key={empId} style={{ opacity: 0.6 }}>
                         <td colSpan={3}>
                           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                            <div style={{ width:30, height:30, borderRadius:8, background:'rgba(255,59,92,.12)', border:'1px solid rgba(255,59,92,.25)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, color:'var(--danger)' }}>⚠️</div>
+                            <div style={{ width:30, height:30, borderRadius:8, background:'rgba(255,59,92,.12)', border:'1px solid rgba(255,59,92,.25)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-sm)', color:'var(--danger)' }}>⚠️</div>
                             <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
-                              <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--text2)' }}>
+                              <span style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:'var(--text2)' }}>
                                 {lang === 'en' ? 'Unknown employee' : lang === 'es' ? 'Empleado desconocido' : lang === 'it' ? 'Dipendente sconosciuto' : 'Employé inconnu'}
                                 {' '}— +{fmt(amount)}
                               </span>
-                              <span style={{ fontSize:11, color:'var(--text3)', fontFamily:'var(--mono)' }}>ID: {empId}</span>
+                              <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', fontFamily:'var(--mono)' }}>ID: {empId}</span>
                             </div>
                           </div>
                         </td>
                         <td>
                           <button className="mini-btn"
-                            style={{ fontSize:11, padding:'3px 8px', color:'var(--danger)', borderColor:'rgba(255,59,92,.2)', display:'flex', alignItems:'center', gap:4 }}
+                            style={{ fontSize:'var(--fs-caption)', padding:'3px 8px', color:'var(--danger)', borderColor:'rgba(255,59,92,.2)', display:'flex', alignItems:'center', gap:4 }}
                             title={lang === 'en' ? 'Delete orphan bonuses for this id' : lang === 'es' ? 'Eliminar primas huérfanas de este id' : lang === 'it' ? 'Elimina premi orfani per questo id' : 'Supprimer les primes orphelines de cet id'}
                             onClick={() => {
                               const nb = {...bonuses}
@@ -135,11 +135,11 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
                               style={{ background:'transparent', border:'none', cursor:'pointer', color:'var(--text3)', padding:2, display:'flex', alignItems:'center' }}>
                               {isExpanded ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
                             </button>
-                            <div style={{ width:30, height:30, borderRadius:8, background:`${emp.color??'var(--p)'}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:'var(--fw-bold)', color:emp.color??'var(--p)' }}>
+                            <div style={{ width:30, height:30, borderRadius:8, background:`${emp.color??'var(--p)'}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', color:emp.color??'var(--p)' }}>
                               {emp.avatar ?? '??'}
                             </div>
-                            <span style={{ fontWeight:'var(--fw-semibold)', fontSize:13 }}>{emp.name}</span>
-                            <span style={{ fontSize:11, color:'var(--text3)', background:'var(--bg3)', padding:'2px 6px', borderRadius:99 }}>{empBonuses.length}</span>
+                            <span style={{ fontWeight:'var(--fw-semibold)', fontSize:'var(--fs-sm)' }}>{emp.name}</span>
+                            <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', background:'var(--bg3)', padding:'2px 6px', borderRadius:99 }}>{empBonuses.length}</span>
                           </div>
                         </td>
                         <td style={{ fontFamily:'var(--mono)', color:'var(--acc2)', fontWeight:'var(--fw-bold)' }}>+{fmt(amount)}</td>
@@ -148,12 +148,12 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
                             <div style={{ flex:1, height:6, background:'var(--bg5)', borderRadius:99, overflow:'hidden', maxWidth:100 }}>
                               <div style={{ height:'100%', width:`${Math.min(100,pct)}%`, background:'linear-gradient(90deg,var(--acc2),var(--p2))', borderRadius:99 }} />
                             </div>
-                            <span style={{ fontSize:11, color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)' }}>{pct}%</span>
+                            <span style={{ fontSize:'var(--fs-caption)', color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)' }}>{pct}%</span>
                           </div>
                         </td>
                         <td>
                           <button className="mini-btn"
-                            style={{ fontSize:11, padding:'3px 8px', color:'var(--danger)', borderColor:'rgba(255,59,92,.2)', display:'flex', alignItems:'center', gap:4 }}
+                            style={{ fontSize:'var(--fs-caption)', padding:'3px 8px', color:'var(--danger)', borderColor:'rgba(255,59,92,.2)', display:'flex', alignItems:'center', gap:4 }}
                             onClick={() => {
                               const nb = {...bonuses}
                               delete nb[empId]
@@ -175,16 +175,16 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
                         return (
                           <tr key={b.id} style={{ background:'var(--bg3)' }}>
                             <td style={{ paddingLeft:32 }}>
-                              <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:12, color:'var(--text2)' }}>
+                              <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:'var(--fs-label)', color:'var(--text2)' }}>
                                 <Calendar size={11} style={{ color:'var(--text3)' }} />
                                 <span>{d}</span>
                               </div>
                             </td>
                             <td>
-                              <span style={{ fontFamily:'var(--mono)', fontSize:12, color:'var(--acc2)', fontWeight:'var(--fw-semibold)' }}>+{fmt(b.amount)}</span>
+                              <span style={{ fontFamily:'var(--mono)', fontSize:'var(--fs-label)', color:'var(--acc2)', fontWeight:'var(--fw-semibold)' }}>+{fmt(b.amount)}</span>
                             </td>
                             <td>
-                              <span style={{ fontSize:11, fontWeight:'var(--fw-semibold)', padding:'2px 8px', borderRadius:99, background:rc.bg, border:`1px solid ${rc.border}`, color:rc.text }}>
+                              <span style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', padding:'2px 8px', borderRadius:99, background:rc.bg, border:`1px solid ${rc.border}`, color:rc.text }}>
                                 {b.reason || '—'}
                               </span>
                             </td>
@@ -214,10 +214,10 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
       {Object.keys(bonuses).length > 0 && (
         <div style={{ padding:'14px 18px', background:'rgba(0,208,132,.05)', border:'1px solid var(--c-green-bg)', borderRadius:12, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
           <div>
-            <div style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:4, display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:4, display:'flex', alignItems:'center', gap:6 }}>
               <BarChart3 size={14} style={{color:'var(--acc2)',flexShrink:0}}/> {lang === 'en' ? 'Impact on payroll' : lang === 'es' ? 'Impacto en la masa salarial' : lang === 'it' ? 'Impatto sul costo del personale' : 'Impact sur la masse salariale'}
             </div>
-            <div style={{ fontSize:11, color:'var(--text3)' }}>
+            <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>
               {lang === 'en'
                 ? `${Object.keys(bonuses).length} employee(s) with bonus`
                 : lang === 'es'
@@ -228,10 +228,10 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
             </div>
           </div>
           <div style={{ textAlign:'right' }}>
-            <div style={{ fontSize:22, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>
+            <div style={{ fontSize:'var(--fs-2xl)', fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>
               +{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}
             </div>
-            <div style={{ fontSize:11, color:'var(--text3)' }}>{lang === 'en' ? 'Total bonuses' : lang === 'es' ? 'Total primas' : lang === 'it' ? 'Totale premi' : 'Total primes'}</div>
+            <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{lang === 'en' ? 'Total bonuses' : lang === 'es' ? 'Total primas' : lang === 'it' ? 'Totale premi' : 'Total primes'}</div>
           </div>
         </div>
       )}

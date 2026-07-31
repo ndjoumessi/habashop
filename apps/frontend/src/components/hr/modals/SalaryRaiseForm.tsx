@@ -23,8 +23,8 @@ export default function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: 
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
       {/* Salaire actuel — affiché en devise courante via fmt() */}
       <div style={{ padding:'12px 16px', background:'rgba(108,71,255,.06)', border:'1px solid var(--c-purple-bg)', borderRadius:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <span style={{ fontSize:12, color:'var(--text2)' }}>{lang === 'en' ? 'Current salary' : lang === 'es' ? 'Salario actual' : lang === 'it' ? 'Stipendio attuale' : 'Salaire actuel'}</span>
-        <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', fontSize:16, color:'var(--text)' }}>{fmt(oldSalaryXOF)}</span>
+        <span style={{ fontSize:'var(--fs-label)', color:'var(--text2)' }}>{lang === 'en' ? 'Current salary' : lang === 'es' ? 'Salario actual' : lang === 'it' ? 'Stipendio attuale' : 'Salaire actuel'}</span>
+        <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', fontSize:'var(--fs-md)', color:'var(--text)' }}>{fmt(oldSalaryXOF)}</span>
       </div>
       <div>
         <label style={lbl}>{lang === 'en' ? `NEW SALARY (${symbol})` : lang === 'es' ? `NUEVO SALARIO (${symbol})` : lang === 'it' ? `NUOVO STIPENDIO (${symbol})` : `NOUVEAU SALAIRE (${symbol})`}</label>
@@ -39,10 +39,10 @@ export default function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: 
             style={{ paddingRight: 40 }}
             autoFocus
           />
-          <span style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', fontSize:12, pointerEvents:'none', fontWeight:'var(--fw-regular)' }}>{symbol}</span>
+          <span style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', fontSize:'var(--fs-label)', pointerEvents:'none', fontWeight:'var(--fw-regular)' }}>{symbol}</span>
         </div>
         {newSalaryInput && +newSalaryInput > 0 && (
-          <div style={{ marginTop:6, fontSize:11, display:'flex', gap:10, flexWrap:'wrap' }}>
+          <div style={{ marginTop:6, fontSize:'var(--fs-caption)', display:'flex', gap:10, flexWrap:'wrap' }}>
             <span style={{ color:'var(--text3)' }}>
               {lang === 'en' ? 'Difference' : lang === 'es' ? 'Diferencia' : lang === 'it' ? 'Differenza' : 'Différence'}{': '}
               <strong style={{ color: diff >= 0 ? 'var(--acc2)' : 'var(--danger)' }}>

@@ -48,29 +48,29 @@ export default function HRContractsTab({ employees, fmt, lang, setSelectedContra
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <EmpAvatar emp={emp} size={32} />
                       <div>
-                        <div style={{ fontWeight: 'var(--fw-semibold)', fontSize: 13 }}>{emp.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
+                        <div style={{ fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)' }}>{emp.name}</div>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
                       </div>
                     </div>
                   </td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: deptColor, flexShrink: 0 }} />
-                      <span style={{ fontSize: 12, color: deptColor, fontWeight: 'var(--fw-semibold)' }}>{deptLabel(emp.dept, lang)}</span>
+                      <span style={{ fontSize: 'var(--fs-label)', color: deptColor, fontWeight: 'var(--fw-semibold)' }}>{deptLabel(emp.dept, lang)}</span>
                     </div>
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     <span style={{
                       display: 'inline-flex', alignItems: 'center',
-                      fontSize: 12, fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)',
+                      fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)',
                       background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
                       color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
                     }}>{contractLabel(emp.type, lang)}</span>
                   </td>
-                  <td style={{ fontSize: 12, color: 'var(--text2)' }}>
+                  <td style={{ fontSize: 'var(--fs-label)', color: 'var(--text2)' }}>
                     {displayDate(emp.hiredAt, lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')}
                   </td>
-                  <td style={{ fontSize: 12 }}>
+                  <td style={{ fontSize: 'var(--fs-label)' }}>
                     {emp.type === 'CDI' ? (
                       <span style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)' }}>{lang === 'en' ? 'Permanent' : lang === 'es' ? 'Indefinido' : lang === 'it' ? 'Indeterminato' : 'Indéterminé'}</span>
                     ) : emp.endAt ? (
@@ -85,7 +85,7 @@ export default function HRContractsTab({ employees, fmt, lang, setSelectedContra
                   <td style={{ textAlign: 'center' }}>
                     <span style={{
                       display: 'inline-flex', alignItems: 'center',
-                      fontSize: 12, fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)',
+                      fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)',
                       background: emp.active ? 'var(--c-green-bg)' : 'var(--bg3)',
                       border: `1px solid ${emp.active ? 'var(--c-green-border)' : 'var(--border)'}`,
                       color: emp.active ? 'var(--acc2)' : 'var(--text2)',

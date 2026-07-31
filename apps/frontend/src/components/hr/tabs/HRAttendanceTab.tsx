@@ -68,12 +68,12 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
       {/* Header toolbar */}
       <div className="panel" style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
-        <span style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
+        <span style={{ fontSize:'var(--fs-md)', fontWeight:'var(--fw-bold)', color:'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
           <Clock size={16}/> {lang === 'en' ? 'Attendance sheet' : lang === 'es' ? 'Hoja de asistencia' : lang === 'it' ? 'Foglio presenze' : 'Feuille de présence'}
         </span>
         <input type="date" className="input" value={attendanceDate}
           onChange={e => setAttendanceDate(e.target.value)}
-          style={{ width:150, height:34, fontSize:13 }} />
+          style={{ width:150, height:34, fontSize:'var(--fs-sm)' }} />
         <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
           <button className="btn btn-sm" onClick={markAllPresent} style={{display:'flex',alignItems:'center',gap:5}}>
             <CheckCheck size={13}/> {lang === 'en' ? 'All present' : lang === 'es' ? 'Todos presentes' : lang === 'it' ? 'Tutti presenti' : 'Tous présents'}
@@ -95,15 +95,15 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
           <div key={k.label} className="panel" style={{ padding:'12px 14px', position:'relative', overflow:'hidden', background:`linear-gradient(135deg,${k.hex}18,${k.hex}06)`, border:`1px solid ${k.hex}28` }}>
             <div style={{ position:'absolute', top:-16, right:-16, width:64, height:64, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}20 0%,transparent 70%)`, pointerEvents:'none' }} />
             <div style={{ color:k.color, marginBottom:6, display:'flex' }}>{k.icon}</div>
-            <div style={{ fontSize:22, fontWeight:'var(--fw-bold)', color:k.color, fontFamily:'var(--mono)' }}>{k.count}</div>
-            <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', color:'var(--text3)', marginTop:2 }}>{k.label}</div>
+            <div style={{ fontSize:'var(--fs-2xl)', fontWeight:'var(--fw-bold)', color:k.color, fontFamily:'var(--mono)' }}>{k.count}</div>
+            <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', color:'var(--text3)', marginTop:2 }}>{k.label}</div>
           </div>
         ))}
       </div>
 
       {/* Employee rows */}
       <div className="panel" style={{ overflow:'hidden', padding:0 }}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 88px 80px 96px 248px', gap:0, padding:'10px 16px', background:'var(--bg3)', borderBottom:'1px solid var(--border)', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 88px 80px 96px 248px', gap:0, padding:'10px 16px', background:'var(--bg3)', borderBottom:'1px solid var(--border)', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)' }}>
           <span>{lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}</span>
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</span>
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Arrival' : lang === 'es' ? 'Llegada' : lang === 'it' ? 'Arrivo' : 'Arrivée'}</span>
@@ -124,17 +124,17 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
             }}>
               {/* Employé */}
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <div style={{ width:32, height:32, borderRadius:8, background:`${emp.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:'var(--fw-bold)', color:emp.color, flexShrink:0 }}>
+                <div style={{ width:32, height:32, borderRadius:8, background:`${emp.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', color:emp.color, flexShrink:0 }}>
                   {emp.avatar}
                 </div>
                 <div>
-                  <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{emp.name.split(' ')[0]}</div>
-                  <div style={{ fontSize:11, color:'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
+                  <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{emp.name.split(' ')[0]}</div>
+                  <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
                 </div>
               </div>
               {/* Statut badge */}
               <div style={{ display:'flex', justifyContent:'center' }}>
-                <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', padding:'3px 9px', borderRadius:'var(--r-full)', background:sc.bg, color:sc.color, display:'inline-flex', alignItems:'center', gap:4 }}>
+                <span style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', padding:'3px 9px', borderRadius:'var(--r-full)', background:sc.bg, color:sc.color, display:'inline-flex', alignItems:'center', gap:4 }}>
                   {sc.icon} {attendStatusLabel(a.status, lang)}
                 </span>
               </div>
@@ -142,13 +142,13 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
               <div style={{ display:'flex', justifyContent:'center' }}>
                 <input type="time" className="input" value={a.in ?? ''}
                   onChange={e => setEmpField(String(emp.id), 'in', e.target.value)}
-                  style={{ width:80, height:30, fontSize:12, textAlign:'center', padding:'0 4px' }} />
+                  style={{ width:80, height:30, fontSize:'var(--fs-label)', textAlign:'center', padding:'0 4px' }} />
               </div>
               {/* Heure départ */}
               <div style={{ display:'flex', justifyContent:'center' }}>
                 <input type="time" className="input" value={a.out ?? ''}
                   onChange={e => setEmpField(String(emp.id), 'out', e.target.value)}
-                  style={{ width:80, height:30, fontSize:12, textAlign:'center', padding:'0 4px' }} />
+                  style={{ width:80, height:30, fontSize:'var(--fs-label)', textAlign:'center', padding:'0 4px' }} />
               </div>
               {/* Boutons statut */}
               <div style={{ display:'flex', justifyContent:'center', gap:4, flexWrap:'wrap' }}>
@@ -175,10 +175,10 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
 
       {/* Summary footer */}
       <div className="panel" style={{ padding:'12px 16px', display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
-        <span style={{ fontSize:12, color:'var(--text3)' }}>
+        <span style={{ fontSize:'var(--fs-label)', color:'var(--text3)' }}>
           {lang === 'en' ? 'Day of' : lang === 'es' ? 'Día del' : lang === 'it' ? 'Giornata del' : 'Journée du'} <strong style={{ color:'var(--text)' }}>{new Date(attendanceDate + 'T00:00:00').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { weekday:'long', day:'numeric', month:'long' })}</strong>
         </span>
-        <span style={{ fontSize:12, color:'var(--text3)', marginLeft:'auto' }}>
+        <span style={{ fontSize:'var(--fs-label)', color:'var(--text3)', marginLeft:'auto' }}>
           {presentCount}/{dayEmp.length} {lang === 'en' ? 'present' : lang === 'es' ? 'presentes' : lang === 'it' ? 'presenti' : 'présents'} · {dayEmp.length > 0 ? Math.round(presentCount/dayEmp.length*100) : 0}% {lang === 'en' ? 'attendance rate' : lang === 'es' ? 'de asistencia' : lang === 'it' ? 'di presenza' : 'de présence'}
         </span>
       </div>

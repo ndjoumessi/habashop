@@ -36,7 +36,7 @@ export default function HRPayrollTab(props: Props) {
             aria-pressed={payTab===t.id}
             onClick={() => setPayTab(t.id)}
             style={{
-              flex:1, padding:'7px', borderRadius:8, fontSize:12,
+              flex:1, padding:'7px', borderRadius:8, fontSize:'var(--fs-label)',
               fontWeight:'var(--fw-semibold)', cursor:'pointer', fontFamily:'var(--font)', border:'none',
               background: payTab===t.id ? 'var(--p)' : 'transparent',
               color: payTab===t.id ? '#fff' : 'var(--text3)',

@@ -16,7 +16,7 @@ export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, le
       {pendingLeaves > 0 && (
         <div style={{ padding: '14px 16px', background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
           <Clock size={18} style={{ color: 'var(--acc)', flexShrink: 0 }} />
-          <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--acc)' }}>
+          <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--acc)' }}>
             {lang === 'en'
               ? `${pendingLeaves} leave request${pendingLeaves > 1 ? 's' : ''} pending approval`
               : lang === 'es'
@@ -47,27 +47,27 @@ export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, le
               <div key={leave.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', background: 'var(--bg2)', border: '0.5px solid var(--border)', borderRadius: 12, flexWrap: 'wrap', transition: 'box-shadow .15s ease' }}>
                 {emp && <EmpAvatar emp={emp} size={38} />}
                 {!emp && (
-                  <div style={{ width:38, height:38, borderRadius:'50%', background:'#6C47FF22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--p)', flexShrink:0 }}>
+                  <div style={{ width:38, height:38, borderRadius:'50%', background:'#6C47FF22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-sm)', fontWeight:'var(--fw-bold)', color:'var(--p)', flexShrink:0 }}>
                     {displayName.slice(0,2).toUpperCase()}
                   </div>
                 )}
                 <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ fontWeight: 'var(--fw-semibold)', fontSize: 14, marginBottom: 2 }}>{displayName}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+                  <div style={{ fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-body)', marginBottom: 2 }}>{displayName}</div>
+                  <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>
                     {leave.type} · {leave.from} → {leave.to} · <strong>{leave.days}{lang === 'en' ? 'd' : lang === 'es' ? 'd' : lang === 'it' ? 'g' : 'j'}</strong>
                   </div>
-                  {leave.motif && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>"{leave.motif}"</div>}
+                  {leave.motif && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginTop: 2 }}>"{leave.motif}"</div>}
                 </div>
-                <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 12, fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)', background: statusCfg.bg, color: statusCfg.color, whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)', background: statusCfg.bg, color: statusCfg.color, whiteSpace: 'nowrap' }}>
                   {leaveStatusLabel(leave.status, lang)}
                 </span>
                 {leave.status === 'pending' && (
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <button style={{ fontSize: 12, minHeight: 36, padding: '8px 14px', borderRadius: 8, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)', color: 'var(--acc2)', transition: 'all .15s ease' }}
+                    <button style={{ fontSize: 'var(--fs-label)', minHeight: 36, padding: '8px 14px', borderRadius: 8, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)', color: 'var(--acc2)', transition: 'all .15s ease' }}
                       onClick={() => handleLeaveAction(leave.id, 'approved')}>
                       ✓ {lang === 'en' ? 'Approve' : lang === 'es' ? 'Aprobar' : lang === 'it' ? 'Approva' : 'Approuver'}
                     </button>
-                    <button style={{ fontSize: 12, minHeight: 36, padding: '8px 14px', borderRadius: 8, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', background: 'var(--c-red-bg)', border: '1px solid var(--c-red-border)', color: 'var(--danger)', transition: 'all .15s ease' }}
+                    <button style={{ fontSize: 'var(--fs-label)', minHeight: 36, padding: '8px 14px', borderRadius: 8, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', background: 'var(--c-red-bg)', border: '1px solid var(--c-red-border)', color: 'var(--danger)', transition: 'all .15s ease' }}
                       onClick={() => handleLeaveAction(leave.id, 'refused')}>
                       ✕ {lang === 'en' ? 'Reject' : lang === 'es' ? 'Rechazar' : lang === 'it' ? 'Rifiuta' : 'Refuser'}
                     </button>
@@ -77,12 +77,12 @@ export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, le
             )
           })}
           {leavesLoading && (leaves ?? []).length === 0 && (
-            <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text3)', fontSize: 14 }}>
+            <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text3)', fontSize: 'var(--fs-body)' }}>
               {lang === 'en' ? 'Loading…' : lang === 'es' ? 'Cargando…' : lang === 'it' ? 'Caricamento…' : 'Chargement…'}
             </div>
           )}
           {!leavesLoading && (leaves ?? []).length === 0 && (
-            <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text3)', fontSize: 14 }}>
+            <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text3)', fontSize: 'var(--fs-body)' }}>
               {lang === 'en' ? 'No leave requests' : lang === 'es' ? 'Sin solicitudes de permiso' : lang === 'it' ? 'Nessuna richiesta di permesso' : 'Aucune demande de congé'}
             </div>
           )}

@@ -242,7 +242,7 @@ export function EmpAvatar({ emp, size = 36 }: { emp: Employee; size?: number }) 
 
 export function Stars({ v = 0 }: { v: number }) {
   return (
-    <span style={{ fontSize: 11 }}>
+    <span style={{ fontSize: 'var(--fs-caption)' }}>
       {Array.from({ length: 5 }, (_, i) => (
         <span key={i} style={{ color: i < v ? '#F59E0B' : 'var(--border2)' }}>★</span>
       ))}
