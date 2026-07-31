@@ -341,6 +341,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                   setShowEditEmpModal(false)
                   toast.success(lang === 'en' ? 'Deleted' : lang === 'es' ? 'Eliminado' : lang === 'it' ? 'Eliminato' : 'Supprimé')
                 }}
+                aria-label={lang === 'en' ? 'Delete employee' : lang === 'es' ? 'Eliminar empleado' : lang === 'it' ? 'Elimina dipendente' : "Supprimer l'employé"}
                 style={{ width:44, padding:'12px', background:'rgba(255,59,92,.1)', border:'1px solid rgba(255,59,92,.2)', borderRadius:12, cursor:'pointer', color:'var(--danger)', display:'flex', alignItems:'center', justifyContent:'center' }}><Trash2 size={16}/></button>
             </>
           )}
