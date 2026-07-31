@@ -22,12 +22,12 @@ Preuve chiffrée (mesurée à l'**AST**, après que 3 détecteurs regex aient me
 | Accessibilité       | 7/10  | 🟢 |
 | Formulaires         | 6/10  | 🟡 |
 | Cohérence visuelle  | 8/10  | 🟢 |
-| Responsive          | 3/10  | 🔴 |
+| Responsive          | 7/10  | 🟢 |
 | Performance perçue  | 6/10  | 🟡 |
 | Architecture code   | 7/10  | 🟢 |
-| **TOTAL**           | **37/60** | 🟡 |
+| **TOTAL**           | **41/60** | 🟢 |
 
-**Score global : 62 %** — base saine. Accessibilité des boutons : **5 muets trouvés (à l'AST) et corrigés**, 0 restant, verrouillé. Le seul axe vraiment faible reste le **responsive**.
+**Score global : 68 %** — base saine, plus mature que l'audit initial ne le croyait. Après mesure complète, les deux « axes faibles » annoncés se sont **dissous** : le responsive est assuré par `ResponsiveGrid` (38 fichiers), les KPI colorés sont un choix et non un bug. Le concret livré : **5 `aria-label` + 1 couleur de bouton**.
 
 ---
 
@@ -38,10 +38,10 @@ Preuve chiffrée (mesurée à l'**AST**, après que 3 détecteurs regex aient me
 **Leçon chère :** la question a demandé **six** mesures. Trois détecteurs texte ont donné trois réponses (≈500 → 67 → 39 → 0, puis 1, puis 2) — tous faux. Le `>` de `=>` dans `onClick={() => …}` casse tout `/<button.*?>/` et mal-découpe ~75 % des boutons. **Seul l'AST TypeScript a trouvé les 5 vrais**, confirmés à la lecture. C'est gravé ici parce que le doc prêchait déjà « l'accessibilité ne se mesure pas au regex » — et l'a réappris à ses dépens.
 **Verrou :** `tests/iconButtonName.test.ts` scanne désormais à l'**AST** (+ assertion de couverture anti-scan-vide) ; 0 violation, rougit sur toute régression.
 
-### 2. Responsive quasi absent
-**Impact :** l'app web casse sur tablette / petit écran ; utilisable au bureau seulement.
-**Preuve :** sur 34 pages, **4** portent une logique responsive (`isMobile`/`@media`/`innerWidth`) — POS, Login, PublicCatalog, Signup. `ResponsiveGrid` existe mais n'est adopté que dans **7 pages**. Clients et Stock : **0** fallback responsive.
-**Fix :** généraliser `ResponsiveGrid` aux grilles KPI + tables ; définir 2 breakpoints (≤768, ≤1024) sur les layouts principaux.
+### 2. ~~Responsive quasi absent~~ — assuré (artefact de mesure)
+**Réel :** le responsive n'est **pas** absent — il passe par `ResponsiveGrid` (`auto-fit/minmax`, responsive **sans media query**), adopté dans **38 fichiers**, plus des breakpoints Tailwind (`lg:grid-cols-4`) sur les grilles KPI. Le composant documente avoir réglé des causes racines « P0-1/P2-5 » : une passe responsive a déjà eu lieu.
+**Erreur d'origine :** le grep `@media/isMobile/innerWidth` (4 pages) ne voyait NI `ResponsiveGrid` (auto-fit CSS) NI Tailwind — les deux vrais mécanismes. Même classe d'artefact que les boutons.
+**Reste :** au cas par cas, les rares grilles `gridTemplateColumns` fixes inline pas encore passées à `ResponsiveGrid`. Finition ponctuelle, pas un chantier.
 
 ---
 
@@ -62,10 +62,10 @@ Preuve chiffrée (mesurée à l'**AST**, après que 3 détecteurs regex aient me
 **Preuve :** 203 inputs, 107 `<label>`, mais seulement **7 `htmlFor`**. Bon point compensatoire : **295 `aria-label`** (couverture correcte). `Field.tsx` existe (association `htmlFor`/`id` via `useId`) mais est peu utilisé.
 **Fix :** router les champs de formulaire par `<Field>`, qui règle l'association automatiquement.
 
-### 6. Sémantique couleur diluée (Stock/Clients)
-**Impact :** le vert « succès » perd son sens quand tout est vert.
-**Preuve :** qualitatif (captures) — prix de vente, CA total, valeur stock et même « 0,00 € » rendus en vert ; bouton « Commander » en **rouge** (danger) pour une action positive.
-**Fix :** réserver le vert aux deltas positifs ; « Commander » en primaire/ambre ; montants neutres en couleur de texte standard.
+### 6. Couleur — 1 seul vrai smell (le reste est un choix), corrigé
+**Réel :** les KPI colorés par métrique (violet/vert/orange/bleu) sont un **style dashboard délibéré**, pas un « vert succès » galvaudé — la rétention 0 % est en bleu, le panier en orange. Pas de bug là.
+**Le vrai point, corrigé :** le bouton **« Commander »** de la bannière stock (`Stock.tsx:352`) était en **rouge** (`var(--danger)`) — couleur danger sur une action positive. Passé en primaire (`var(--c-purple-bg)` / `var(--p3)`), la paire déjà utilisée par la nav active (`index.css:344`) ; 3 rgba en dur disparaissent au passage. Seul changement couleur réel.
+**⚠️ Contraste MESURÉ, pas supposé** (libellé sur le fond composé sur `--card`) : `--p3` rend **6,31:1 en sombre** et **4,44:1 en clair**, contre 5,17 / **2,46** pour le rouge d'avant — mieux sur les DEUX thèmes. `--p2`, d'abord retenu, faisait 4,48 / 3,04, soit une **régression du sombre sous AA**. Le clair reste **sous 4,5:1** : ce n'est pas propre à ce bouton, c'est la paire `--c-purple-bg`/`--p3` de toute la nav — **dette de palette à traiter en clair**, pas ici.
 
 ---
 

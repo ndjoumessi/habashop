@@ -349,7 +349,7 @@ export default function Stock() {
             </p>
           </div>
           <button className="btn btn-sm"
-            style={{ background: 'rgba(239,68,68,0.15)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.3)' }}
+            style={{ background: 'var(--c-purple-bg)', color: 'var(--p3)', border: '1px solid var(--c-purple-border)' }}
             onClick={() => toast(lang === 'en' ? 'Bulk purchase order created' : lang === 'es' ? 'Pedido agrupado creado' : lang === 'it' ? 'Ordine raggruppato creato' : 'Bon de commande groupé créé')}>
             {lang === 'en' ? 'Order' : lang === 'es' ? 'Pedir' : lang === 'it' ? 'Ordina' : 'Commander'}
           </button>
