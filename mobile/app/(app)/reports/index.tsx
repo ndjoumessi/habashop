@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Pressable, ActivityIndicator, RefreshControl, Alert,
@@ -11,6 +11,7 @@ import { File, Paths } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import * as Haptics from 'expo-haptics'
 import { salesApi, analyticsApi, apiErrorMessage } from '@/services/api'
+import { salesByWeekday, bestCalendarDay, formatDayLabel, bubbleLeftPx } from '@/lib/reportsAggregate'
 import type { SaleRecord, DashboardTopProduct } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { Spacing, BorderRadius, FontSize, Shadow, ThemeColors } from '@/constants/theme'
@@ -27,13 +28,12 @@ const PERIODS: { key: Period; days: number; fr: string; en: string; es: string; 
   { key: '90d',   days: 90, fr: '90 jours',    en: '90 days', es: '90 días', it: '90 giorni'},
 ]
 
-// Abréviations jours manuelles (Hermes/Android ignore les options de toLocaleDateString)
-const WEEKDAYS: Record<string, string[]> = {
-  fr: ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
-  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-  es: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
-  it: ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'],
-}
+// Abréviations jours/mois : dans `@/lib/reportsAggregate` (Hermes/Android ignore les
+// options de toLocaleDateString), au plus près des agrégats qui les consomment.
+
+// Écart entre colonnes du graphe. ⚠️ Une seule source : le style `chart` ET le calcul de
+// position de la bulle en dépendent — deux valeurs et la bulle se décale des barres.
+const CHART_GAP = Spacing.sm
 
 export default function ReportsScreen() {
   const insets = useSafeAreaInsets()
@@ -68,23 +68,33 @@ export default function ReportsScreen() {
   const tx  = filtered.length
   const avg = tx > 0 ? ca / tx : 0
 
-  // CA par jour (max 7 barres)
-  const byDay = useMemo(() => {
-    const days = Math.min(periodDays, 7)
-    const arr: { label: string; value: number }[] = []
-    const wd = WEEKDAYS[lang] ?? WEEKDAYS.fr
-    for (let k = days - 1; k >= 0; k--) {
-      const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - k)
-      const next = new Date(d); next.setDate(d.getDate() + 1)
-      const v = filtered
-        .filter(s => { const t = new Date(s.createdAt); return t >= d && t < next })
-        .reduce((sum, s) => sum + (s.total ?? 0), 0)
-      arr.push({ label: wd[d.getDay()], value: v })
-    }
-    return arr
-  }, [filtered, periodDays, lang])
+  // CA par jour de semaine + meilleure journée — ⚠️ dérivés UNIQUEMENT de `filtered`,
+  // donc de la MÊME fenêtre que CA / Transactions / Panier moyen ci-dessus. Toute
+  // re-fenêtre locale (l'ancien `Math.min(periodDays, 7)`) remettrait deux vérités sur
+  // le même écran : sous « 90 jours », le KPI répondait sur 7 jours.
+  const byDay   = useMemo(() => salesByWeekday(filtered, lang), [filtered, lang])
   const maxDay  = Math.max(1, ...byDay.map(d => d.value))
-  const bestDay = byDay.reduce((b, d) => (d.value > b.value ? d : b), { label: '—', value: 0 })
+  const bestDay = useMemo(() => bestCalendarDay(filtered), [filtered])
+  const bestDayLabel = bestDay ? formatDayLabel(bestDay.dateISO, lang) : '—'
+
+  // Bulle de montant au tap (pas de survol sur mobile).
+  const [selected, setSelected] = useState<number | null>(null)
+  const [chartW, setChartW] = useState(0)
+  const [bubbleW, setBubbleW] = useState(0)
+  // Changer de période change les barres sous la bulle : la garder ouverte la ferait
+  // décrire une autre donnée que celle affichée.
+  useEffect(() => { setSelected(null) }, [period])
+
+  const pickBar = (idx: number) => {
+    setSelected(prev => (prev === idx ? null : idx))
+    Haptics.selectionAsync().catch(() => {})
+  }
+
+  // Centre de la colonne sélectionnée, clampé aux bords de la carte (barres extrêmes
+  // lundi / dimanche). Logique dans `reportsAggregate` : elle n'est vérifiable à l'œil
+  // qu'un extrême à la fois, le test les couvre tous les sept.
+  const bubbleLeft = selected === null ? 0
+    : bubbleLeftPx(selected, chartW, bubbleW, byDay.length, CHART_GAP)
 
   // Répartition paiements
   const payAgg = useMemo(() => {
@@ -202,26 +212,55 @@ export default function ReportsScreen() {
             </View>
             <View style={[s.kpiCard, { borderColor: `${C.accent2}30` }]}>
               <Text style={s.kpiLabel}>{i('Meilleure journée', 'Best day', 'Mejor día', 'Giorno migliore')}</Text>
-              <Text style={[s.kpiValue, { color: C.accent2 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{fmt(bestDay.value)}</Text>
-              <Text style={s.kpiSub}>{bestDay.label}</Text>
+              <Text style={[s.kpiValue, { color: C.accent2 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{fmt(bestDay?.value ?? 0)}</Text>
+              <Text style={s.kpiSub} numberOfLines={1}>{bestDayLabel}</Text>
             </View>
           </View>
 
           {/* Graphique ventes */}
           <View style={s.section}>
             <Text style={s.sectionTitle}>{i('Ventes par jour', 'Sales per day', 'Ventas por día', 'Vendite al giorno')}</Text>
-            <View style={s.chartCard}>
-              <View style={s.chart}>
-                {byDay.map((d, idx) => (
-                  <View key={idx} style={s.barCol}>
-                    <View style={s.barTrack}>
-                      <View style={[s.barFill, { height: `${Math.max(2, (d.value / maxDay) * 100)}%` }]} />
-                    </View>
-                    <Text style={s.barLabel} numberOfLines={1}>{d.label}</Text>
+            {/* Tap hors barre (fond de carte) = masquer la bulle. Les Pressable des
+                barres sont au-dessus : RN leur donne le toucher, ce parent ne tire pas. */}
+            <Pressable style={s.chartCard} onPress={() => setSelected(null)}>
+              <View style={s.chart} onLayout={e => setChartW(e.nativeEvent.layout.width)}>
+                {byDay.map((d, idx) => {
+                  const on = selected === idx
+                  return (
+                    <Pressable
+                      key={d.weekday}
+                      style={s.barCol}
+                      onPress={() => pickBar(idx)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: on }}
+                      accessibilityLabel={`${d.label} — ${fmt(d.value)}`}
+                    >
+                      <View style={s.barTrack}>
+                        <View style={[
+                          s.barFill,
+                          { height: `${Math.max(2, (d.value / maxDay) * 100)}%` },
+                          on && { backgroundColor: C.accent },
+                        ]} />
+                      </View>
+                      <Text style={[s.barLabel, on && s.barLabelOn]} numberOfLines={1}>{d.label}</Text>
+                    </Pressable>
+                  )
+                })}
+
+                {selected !== null && byDay[selected] && (
+                  // `pointerEvents none` : la bulle recouvre le haut de la barre la plus
+                  // grande — sans ça, le re-tap pour la fermer taperait dans la bulle.
+                  <View
+                    pointerEvents="none"
+                    onLayout={e => setBubbleW(e.nativeEvent.layout.width)}
+                    style={[s.bubble, { left: bubbleLeft, opacity: bubbleW > 0 ? 1 : 0 }]}
+                  >
+                    <Text style={s.bubbleValue} numberOfLines={1}>{fmt(byDay[selected].value)}</Text>
+                    <Text style={s.bubbleDay} numberOfLines={1}>{byDay[selected].label}</Text>
                   </View>
-                ))}
+                )}
               </View>
-            </View>
+            </Pressable>
           </View>
 
           {/* Top produits */}
@@ -314,11 +353,23 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   card: { backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, gap: Spacing.md },
 
   chartCard: { backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md },
-  chart: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm, height: 130 },
+  // `position:'relative'` = repère de la bulle (left calculé sur la largeur du graphe).
+  chart: { flexDirection: 'row', alignItems: 'flex-end', gap: CHART_GAP, height: 130, position: 'relative' },
+  // flex:1 → les 7 barres remplissent la largeur, quelle que soit la taille d'écran.
   barCol: { flex: 1, alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' },
   barTrack: { width: '70%', flex: 1, backgroundColor: C.bg4, borderRadius: BorderRadius.sm, justifyContent: 'flex-end', overflow: 'hidden' },
   barFill: { width: '100%', backgroundColor: C.primary, borderRadius: BorderRadius.sm },
   barLabel: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text3 },
+  barLabelOn: { color: C.accent },
+
+  bubble: {
+    position: 'absolute', top: 0, alignItems: 'center',
+    paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs,
+    backgroundColor: C.bg3, borderRadius: BorderRadius.md,
+    borderWidth: 1, borderColor: C.accent, ...Shadow.md,
+  },
+  bubbleValue: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
+  bubbleDay: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text3, marginTop: 1 },
 
   topRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   topRank: { fontSize: 18, width: 26 },
