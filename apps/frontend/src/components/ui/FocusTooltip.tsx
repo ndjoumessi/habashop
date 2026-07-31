@@ -44,7 +44,7 @@ export default function FocusTooltip({ label, children, placement = 'top' }: Foc
             background: 'var(--card)',
             border: '1px solid var(--border)',
             color: 'var(--text2)',
-            fontSize: 11,
+            fontSize: 'var(--fs-caption)',
             padding: '4px 8px',
             borderRadius: 6,
             whiteSpace: 'nowrap',

@@ -76,9 +76,12 @@
   /* ── Design system (Vague 3) ──────────────────────────────────────────────
      Échelle de SPACING (rythme vertical cohérent) — remplacer les paddings inline. */
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
-  /* Échelle TYPO sémantique, plancher 11px (fini 8/10px) :
-     display ≥24 · title ≥15 · body ≥14 · label ≥12 · caption ≥11 */
-  --fs-display:24px; --fs-title:15px; --fs-body:14px; --fs-label:12px; --fs-caption:11px;
+  /* Échelle TYPO sémantique COMPLÈTE, plancher 11px (fini 8/9/10px — a11y lisibilité).
+     Marches posées sur l'usage RÉEL mesuré (2026-07-31), surtout --fs-sm:13 (360 usages, la 2e
+     taille la plus fréquente, absente jusqu'ici). Migration : 9/10 → caption:11 (remontée voulue).
+     11 caption · 12 label · 13 sm · 14 body · 15 title · 16 md · 18 lg · 20 xl · 22 2xl · 24 display · 32 hero */
+  --fs-caption:11px; --fs-label:12px; --fs-sm:13px; --fs-body:14px; --fs-title:15px; --fs-md:16px;
+  --fs-lg:18px; --fs-xl:20px; --fs-2xl:22px; --fs-display:24px; --fs-hero:32px;
   /* GRAISSES capées à 3 : regular / semibold / bold (fini la prolifération 600/900) */
   --fw-regular:500; --fw-semibold:700; --fw-bold:800;
   /* SÉMANTIQUE des accents (un seul accent dominant par écran) :

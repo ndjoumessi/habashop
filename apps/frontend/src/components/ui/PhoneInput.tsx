@@ -80,7 +80,7 @@ export default function PhoneInput({
   // Mode lecture seule : rendu simple (placé après les hooks pour respecter les Rules of Hooks)
   if (readOnly) {
     return (
-      <span style={{ fontSize: 13, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
+      <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
         {value || '—'}
       </span>
     )
@@ -106,14 +106,14 @@ export default function PhoneInput({
           borderRight:'none',
           borderRadius:'10px 0 0 10px',
           cursor:'pointer', fontFamily:'var(--font)',
-          fontSize:13, color:'var(--text)',
+          fontSize:'var(--fs-sm)', color:'var(--text)',
           whiteSpace:'nowrap', flexShrink:0,
           transition:'border-color .15s',
         }}
       >
-        <span style={{ fontSize:16 }}>{selectedCode.flag}</span>
+        <span style={{ fontSize:'var(--fs-md)' }}>{selectedCode.flag}</span>
         <span style={{ fontWeight:'var(--fw-regular)' }}>{selectedCode.code}</span>
-        <span style={{ fontSize:11, color:'var(--text3)' }}>▼</span>
+        <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>▼</span>
       </button>
 
       {/* Input numéro */}
@@ -132,7 +132,7 @@ export default function PhoneInput({
           border:'1.5px solid var(--border)',
           borderLeft:'1px solid var(--border)',
           borderRadius:'0 10px 10px 0',
-          fontSize:14, color:'var(--text)',
+          fontSize:'var(--fs-body)', color:'var(--text)',
           fontFamily:'var(--font)',
           outline:'none',
           transition:'border-color .15s',
@@ -163,7 +163,7 @@ export default function PhoneInput({
                 width:'100%', padding:'7px 10px',
                 background:'var(--bg3)',
                 border:'1px solid var(--border)',
-                borderRadius:8, fontSize:12,
+                borderRadius:8, fontSize:'var(--fs-label)',
                 color:'var(--text)', fontFamily:'var(--font)',
                 outline:'none',
               }}
@@ -187,7 +187,7 @@ export default function PhoneInput({
                   border:'none',
                   borderBottom:'1px solid var(--border)',
                   cursor:'pointer', fontFamily:'var(--font)',
-                  fontSize:13, color:'var(--text)',
+                  fontSize:'var(--fs-sm)', color:'var(--text)',
                   textAlign:'left',
                 }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg3)'}
@@ -196,10 +196,10 @@ export default function PhoneInput({
                     ? 'rgba(91,78,232,.1)' : 'none'
                 }
               >
-                <span style={{ fontSize:18, flexShrink:0 }}>{c.flag}</span>
+                <span style={{ fontSize:'var(--fs-lg)', flexShrink:0 }}>{c.flag}</span>
                 <span style={{ flex:1 }}>{c.country}</span>
                 <span style={{
-                  fontSize:12, fontWeight:'var(--fw-semibold)',
+                  fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
                   color:'var(--p2)', fontFamily:'var(--mono)',
                 }}>{c.code}</span>
               </button>

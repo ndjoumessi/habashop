@@ -38,23 +38,23 @@ export default function BillingBanner() {
 
   // Demande en cours
   if (status.hasPendingRequest) return (
-    <div style={{ padding: '10px 20px', background: 'rgba(0,184,255,.08)', borderBottom: '1px solid rgba(0,184,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, fontSize: 13 }}>
+    <div style={{ padding: '10px 20px', background: 'rgba(0,184,255,.08)', borderBottom: '1px solid rgba(0,184,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, fontSize: 'var(--fs-sm)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--acc3)' }}>
         <span>⏳</span>
         <span style={{ fontWeight: 'var(--fw-regular)' }}>{i('Votre demande de plan est en cours de traitement (24-48h)', 'Your plan request is being processed (24-48h)', 'Tu solicitud de plan está siendo procesada (24-48h)', 'La tua richiesta di piano è in elaborazione (24-48h)')}</span>
       </div>
-      <button type="button" onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 16, padding: '0 4px' }}>✕</button>
+      <button type="button" onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 'var(--fs-md)', padding: '0 4px' }}>✕</button>
     </div>
   )
 
   // Essai expiré
   if (status.isTrialExpired) return (
     <div style={{ padding: '12px 20px', background: 'rgba(255,59,92,.1)', borderBottom: '1px solid rgba(255,59,92,.25)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--danger)', fontWeight: 'var(--fw-regular)', fontSize: 13 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--danger)', fontWeight: 'var(--fw-regular)', fontSize: 'var(--fs-sm)' }}>
         <span>🔒</span>
         <span>{i('Votre essai gratuit est expiré. Choisissez un plan pour continuer.', 'Your free trial has expired. Choose a plan to continue.', 'Tu prueba gratuita ha expirado. Elige un plan para continuar.', 'La tua prova gratuita è scaduta. Scegli un piano per continuare.')}</span>
       </div>
-      <button onClick={() => navigate('/app/upgrade')} style={{ padding: '8px 18px', borderRadius: 10, background: 'var(--grad-danger)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 12, fontWeight: 'var(--fw-bold)', fontFamily: 'var(--font)', boxShadow: '0 4px 12px rgba(255,59,92,.35)', flexShrink: 0 }}>{i('Choisir un plan →', 'Choose a plan →', 'Elegir plan →', 'Scegli piano →')}</button>
+      <button onClick={() => navigate('/app/upgrade')} style={{ padding: '8px 18px', borderRadius: 10, background: 'var(--grad-danger)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-bold)', fontFamily: 'var(--font)', boxShadow: '0 4px 12px rgba(255,59,92,.35)', flexShrink: 0 }}>{i('Choisir un plan →', 'Choose a plan →', 'Elegir plan →', 'Scegli piano →')}</button>
     </div>
   )
 
@@ -63,15 +63,15 @@ export default function BillingBanner() {
   const isUrgent = status.trialDaysLeft <= 3
   return (
     <div style={{ padding: '10px 20px', background: isUrgent ? 'rgba(255,59,92,.08)' : 'rgba(255,184,0,.07)', borderBottom: `1px solid ${isUrgent ? 'rgba(255,59,92,.2)' : 'rgba(255,184,0,.2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: isUrgent ? 'var(--danger)' : 'var(--warn)', fontSize: 13, fontWeight: 'var(--fw-regular)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: isUrgent ? 'var(--danger)' : 'var(--warn)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-regular)' }}>
         <span>{isUrgent ? '⚠️' : '⏳'}</span>
         <span>{status.trialDaysLeft === 0
           ? i("Dernier jour d'essai !", 'Last day of trial!', '¡Último día de prueba!', 'Ultimo giorno di prova!')
           : i(`${status.trialDaysLeft} jour(s) d'essai restant(s)`, `${status.trialDaysLeft} trial day(s) left`, `${status.trialDaysLeft} día(s) de prueba restante(s)`, `${status.trialDaysLeft} giorno/i di prova rimasti`)}</span>
       </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <button onClick={() => navigate('/app/upgrade')} style={{ padding: '7px 16px', borderRadius: 10, background: isUrgent ? 'var(--grad-danger)' : 'var(--grad-acc)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 12, fontWeight: 'var(--fw-bold)', fontFamily: 'var(--font)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Zap size={13} /> {i('Passer au Pro', 'Upgrade to Pro', 'Pasarse a Pro', 'Passa a Pro')}</button>
-        <button type="button" onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 16 }}>✕</button>
+        <button onClick={() => navigate('/app/upgrade')} style={{ padding: '7px 16px', borderRadius: 10, background: isUrgent ? 'var(--grad-danger)' : 'var(--grad-acc)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-bold)', fontFamily: 'var(--font)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Zap size={13} /> {i('Passer au Pro', 'Upgrade to Pro', 'Pasarse a Pro', 'Passa a Pro')}</button>
+        <button type="button" onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 'var(--fs-md)' }}>✕</button>
       </div>
     </div>
   )

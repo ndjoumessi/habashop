@@ -40,7 +40,7 @@ export default function Pagination({
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', flexWrap: 'wrap', gap: 12 }}>
-      <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+      <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>
         {i(`${start}–${end} sur ${total} résultats`, `${start}–${end} of ${total} results`, `${start}–${end} de ${total} resultados`, `${start}–${end} di ${total} risultati`)}
       </div>
 
@@ -48,7 +48,7 @@ export default function Pagination({
         <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)} style={navBtn(page <= 1)} aria-label="Previous">←</button>
         {getPages().map((p, idx) =>
           p === '...' ? (
-            <div key={`dots-${idx}`} style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text4)', fontSize: 13 }}>…</div>
+            <div key={`dots-${idx}`} style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text4)', fontSize: 'var(--fs-sm)' }}>…</div>
           ) : (
             <button key={p} type="button" onClick={() => onPage(p as number)}
               style={{
@@ -56,7 +56,7 @@ export default function Pagination({
                 background: page === p ? 'var(--grad-p)' : 'var(--bg3)',
                 border: `1px solid ${page === p ? 'transparent' : 'var(--border)'}`,
                 cursor: 'pointer', color: page === p ? '#fff' : 'var(--text2)',
-                fontSize: 13, fontWeight: page === p ? 800 : 500,
+                fontSize: 'var(--fs-sm)', fontWeight: page === p ? 800 : 500,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'all .15s', boxShadow: page === p ? 'var(--sh-p)' : 'none',
               }}>{p}</button>
@@ -66,10 +66,10 @@ export default function Pagination({
       </div>
 
       {onPageSize && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text3)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>
           <span>{i('Par page', 'Per page', 'Por página', 'Per pagina')} :</span>
           <select value={pageSize} onChange={e => onPageSize(Number(e.target.value))}
-            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 8px', color: 'var(--text2)', fontSize: 12, fontFamily: 'var(--font)', cursor: 'pointer' }}>
+            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 8px', color: 'var(--text2)', fontSize: 'var(--fs-label)', fontFamily: 'var(--font)', cursor: 'pointer' }}>
             {[10, 20, 50, 100].map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>

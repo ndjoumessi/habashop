@@ -77,19 +77,19 @@ export default function PWAInstallButton() {
       }}><LogoMark /></div>
 
       <div style={{ flex:1 }}>
-        <div style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:2 }}>{tx.title}</div>
-        <div style={{ fontSize:12, color:'var(--text3)' }}>{tx.desc}</div>
+        <div style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:2 }}>{tx.title}</div>
+        <div style={{ fontSize:'var(--fs-label)', color:'var(--text3)' }}>{tx.desc}</div>
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
         <button onClick={handleInstall} style={{
           background:'linear-gradient(135deg,var(--p),var(--p2))',
           border:'none', borderRadius:9, padding:'7px 16px',
-          fontSize:12, fontWeight:'var(--fw-semibold)', color:'#fff',
+          fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:'#fff',
           cursor:'pointer', fontFamily:'var(--font)', whiteSpace:'nowrap',
         }}>{tx.btn}</button>
         <button onClick={() => { localStorage.setItem(DISMISS_KEY, Date.now().toString()); setShowBanner(false) }} style={{
-          background:'none', border:'none', fontSize:11,
+          background:'none', border:'none', fontSize:'var(--fs-caption)',
           color:'var(--text3)', cursor:'pointer', fontFamily:'var(--font)',
         }}>{tx.dismiss}</button>
       </div>

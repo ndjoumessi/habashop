@@ -43,7 +43,7 @@ export default function ViewField({
           background:'transparent',
           border:'1px solid var(--border)',
           borderRadius:10,
-          fontSize:13, fontWeight:'var(--fw-regular)',
+          fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)',
           color: color ?? 'var(--text2)',
           fontFamily: mono ? 'var(--mono)' : 'var(--font)',
           minHeight:40,
@@ -55,7 +55,7 @@ export default function ViewField({
           letterSpacing: mono ? '-.2px' : 'normal',
         }}>
           {icon && (
-            <span style={{fontSize:13,flexShrink:0,opacity:.7}}>
+            <span style={{fontSize:'var(--fs-sm)',flexShrink:0,opacity:.7}}>
               {icon}
             </span>
           )}
@@ -63,7 +63,7 @@ export default function ViewField({
             {value !== null && value !== undefined && String(value).trim() !== ''
               ? value
               : (
-                <span style={{color:'var(--text4)',fontStyle:'italic',fontSize:12}}>
+                <span style={{color:'var(--text4)',fontStyle:'italic',fontSize:'var(--fs-label)'}}>
                   {emptyLabel ?? 'Non renseigné'}
                 </span>
               )

@@ -106,7 +106,7 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={i('Carte fidélité numérique', 'Digital loyalty card', 'Tarjeta de fidelidad digital', 'Carta fedeltà digitale')} onClick={e => e.target === e.currentTarget && onClose()}>
       <div ref={boxRef} className="modal-box" style={{ maxWidth: 420, padding: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 'var(--fw-bold)', fontSize: 16, minWidth: 0 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-md)', minWidth: 0 }}>
             <CreditCard size={16} style={{ color: 'var(--p2)', flexShrink: 0 }} />
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {i('Carte fidélité', 'Loyalty card', 'Tarjeta de fidelidad', 'Carta fedeltà')}{data?.shopName ? ` · ${data.shopName}` : ''}
@@ -127,18 +127,18 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
               borderRadius: 18, padding: 18, marginBottom: 14, userSelect: 'none',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <span style={{ color: '#AAB2C4', fontSize: 12 }}>{i('Carte fidélité', 'Loyalty card', 'Tarjeta de fidelidad', 'Carta fedeltà')}</span>
+                <span style={{ color: '#AAB2C4', fontSize: 'var(--fs-label)' }}>{i('Carte fidélité', 'Loyalty card', 'Tarjeta de fidelidad', 'Carta fedeltà')}</span>
                 <span style={{
-                  background: cfg.badgeBg, color: cfg.badgeTxt, fontSize: 11, fontWeight: 'var(--fw-semibold)',
+                  background: cfg.badgeBg, color: cfg.badgeTxt, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)',
                   padding: '4px 11px', borderRadius: 20, letterSpacing: '.5px', textTransform: 'uppercase',
                 }}>{tierName(tier)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 10 }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ color: '#EAEEF6', fontSize: 18, fontWeight: 'var(--fw-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.customerName}</div>
+                  <div style={{ color: '#EAEEF6', fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.customerName}</div>
                   <div style={{ marginTop: 8 }}>
                     <span style={{ color: '#FFB020', fontSize: 30, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>{data.points.toLocaleString()}</span>{' '}
-                    <span style={{ color: '#AAB2C4', fontSize: 13 }}>{i('points', 'points', 'puntos', 'punti')}</span>
+                    <span style={{ color: '#AAB2C4', fontSize: 'var(--fs-sm)' }}>{i('points', 'points', 'puntos', 'punti')}</span>
                   </div>
                 </div>
                 {qrUrl && (
@@ -149,7 +149,7 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
               </div>
               {/* Progression vers le palier suivant */}
               <div style={{ marginTop: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#AAB2C4', fontSize: 11, marginBottom: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#AAB2C4', fontSize: 'var(--fs-caption)', marginBottom: 6 }}>
                   <span>
                     {data.nextTier
                       ? `${ptsToNext.toLocaleString()} pts ${i('jusqu’à', 'to', 'hasta', 'fino a')} ${tierName(data.nextTier)}`
@@ -166,19 +166,19 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
             {/* ── Palier actuel / Prochain palier (remises configurables tenant) ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
               <div style={{ background: 'var(--card)', border: '1px solid var(--border2)', borderRadius: 12, padding: 12 }}>
-                <div style={{ color: 'var(--text3)', fontSize: 11 }}>{i('Palier actuel', 'Current tier', 'Nivel actual', 'Livello attuale')}</div>
-                <div style={{ color: 'var(--text)', fontSize: 14, fontWeight: 'var(--fw-semibold)', marginTop: 3 }}>{tierName(tier)} · {discountOf(tier)}%</div>
-                <div style={{ color: 'var(--text3)', fontSize: 11, marginTop: 2 }}>{i('de remise', 'discount', 'de descuento', 'di sconto')}</div>
+                <div style={{ color: 'var(--text3)', fontSize: 'var(--fs-caption)' }}>{i('Palier actuel', 'Current tier', 'Nivel actual', 'Livello attuale')}</div>
+                <div style={{ color: 'var(--text)', fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', marginTop: 3 }}>{tierName(tier)} · {discountOf(tier)}%</div>
+                <div style={{ color: 'var(--text3)', fontSize: 'var(--fs-caption)', marginTop: 2 }}>{i('de remise', 'discount', 'de descuento', 'di sconto')}</div>
               </div>
               <div style={{ background: 'var(--card)', border: '1px solid var(--border2)', borderRadius: 12, padding: 12 }}>
-                <div style={{ color: 'var(--text3)', fontSize: 11 }}>{i('Prochain palier', 'Next tier', 'Próximo nivel', 'Prossimo livello')}</div>
+                <div style={{ color: 'var(--text3)', fontSize: 'var(--fs-caption)' }}>{i('Prochain palier', 'Next tier', 'Próximo nivel', 'Prossimo livello')}</div>
                 {data.nextTier ? (
                   <>
-                    <div style={{ color: 'var(--acc)', fontSize: 14, fontWeight: 'var(--fw-semibold)', marginTop: 3 }}>{tierName(data.nextTier)} · {discountOf(data.nextTier)}%</div>
-                    <div style={{ color: 'var(--text3)', fontSize: 11, marginTop: 2 }}>{i('à', 'at', 'a', 'a')} {nextThreshold?.toLocaleString()} pts</div>
+                    <div style={{ color: 'var(--acc)', fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', marginTop: 3 }}>{tierName(data.nextTier)} · {discountOf(data.nextTier)}%</div>
+                    <div style={{ color: 'var(--text3)', fontSize: 'var(--fs-caption)', marginTop: 2 }}>{i('à', 'at', 'a', 'a')} {nextThreshold?.toLocaleString()} pts</div>
                   </>
                 ) : (
-                  <div style={{ color: 'var(--acc)', fontSize: 14, fontWeight: 'var(--fw-semibold)', marginTop: 3 }}>{i('Maximum atteint', 'Top reached', 'Máximo alcanzado', 'Massimo raggiunto')}</div>
+                  <div style={{ color: 'var(--acc)', fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', marginTop: 3 }}>{i('Maximum atteint', 'Top reached', 'Máximo alcanzado', 'Massimo raggiunto')}</div>
                 )}
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
             {/* ── Activité récente (points gagnés / dépensés — serveur) ── */}
             {history.length > 0 && (
               <>
-                <div style={{ color: 'var(--text3)', fontSize: 11, letterSpacing: '.5px', textTransform: 'uppercase', fontWeight: 'var(--fw-semibold)', marginBottom: 9 }}>
+                <div style={{ color: 'var(--text3)', fontSize: 'var(--fs-caption)', letterSpacing: '.5px', textTransform: 'uppercase', fontWeight: 'var(--fw-semibold)', marginBottom: 9 }}>
                   {i('Activité récente', 'Recent activity', 'Actividad reciente', 'Attività recente')}
                 </div>
                 <div style={{ background: 'var(--card)', border: '1px solid var(--border2)', borderRadius: 12, padding: '4px 14px', marginBottom: 2 }}>
@@ -201,12 +201,12 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '9px 0',
                         borderBottom: idx < arr.length - 1 ? '1px solid color-mix(in srgb, var(--border) 55%, transparent)' : 'none',
                       }}>
-                        <span style={{ color: 'var(--text)', fontSize: 13, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ color: 'var(--text)', fontSize: 'var(--fs-sm)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {label}
                           {h.amount != null && <span style={{ color: 'var(--text3)' }}> · {fmt(Number(h.amount) || 0)}</span>}
-                          {h.createdAt && <span style={{ color: 'var(--text3)', fontSize: 11 }}> · {new Date(h.createdAt).toLocaleDateString(dloc, { day: '2-digit', month: 'short' })}</span>}
+                          {h.createdAt && <span style={{ color: 'var(--text3)', fontSize: 'var(--fs-caption)' }}> · {new Date(h.createdAt).toLocaleDateString(dloc, { day: '2-digit', month: 'short' })}</span>}
                         </span>
-                        <span style={{ color: pts >= 0 ? 'var(--acc2)' : 'var(--danger)', fontSize: 13, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
+                        <span style={{ color: pts >= 0 ? 'var(--acc2)' : 'var(--danger)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
                           {pts >= 0 ? '+' : '−'}{Math.abs(pts).toLocaleString()} pts
                         </span>
                       </div>
@@ -219,11 +219,11 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
             {/* Actions */}
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <button type="button" onClick={handleDownload} disabled={downloading}
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 0', minHeight: 44, borderRadius: 10, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 'var(--fw-semibold)', fontSize: 13, background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)' }}>
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 0', minHeight: 44, borderRadius: 10, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)', background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)' }}>
                 <Download size={14} /> {downloading ? '…' : i('Télécharger PNG', 'Download PNG', 'Descargar PNG', 'Scarica PNG')}
               </button>
               <button type="button" onClick={handleShare}
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 0', minHeight: 44, borderRadius: 10, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 'var(--fw-semibold)', fontSize: 13, background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)' }}>
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 0', minHeight: 44, borderRadius: 10, cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)', background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)' }}>
                 <Share2 size={14} /> {i('Partager', 'Share', 'Compartir', 'Condividi')}
               </button>
             </div>
