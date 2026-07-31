@@ -104,8 +104,8 @@ export default function PayrollGrid({ employees, fmt: _fmt, lang, payrollMonth, 
           { label: lang === 'en' ? 'Net to pay' : lang === 'es' ? 'Neto a pagar' : lang === 'it' ? 'Netto da pagare' : 'Net à payer', value: fmt(totaux.net), color:'var(--acc2)' },
         ].map(k => (
           <div key={k.label} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px' }}>
-            <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{k.label}</div>
-            <div style={{ fontSize:20, fontWeight:'var(--fw-bold)', color:k.color, fontFamily:'var(--mono)' }}>{k.value}</div>
+            <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{k.label}</div>
+            <div style={{ fontSize:'var(--fs-xl)', fontWeight:'var(--fw-bold)', color:k.color, fontFamily:'var(--mono)' }}>{k.value}</div>
           </div>
         ))}
       </div>
@@ -153,27 +153,27 @@ export default function PayrollGrid({ employees, fmt: _fmt, lang, payrollMonth, 
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <EmpAvatar emp={emp} size={32} />
                         <div>
-                          <div style={{ fontWeight:'var(--fw-semibold)', fontSize:13 }}>{emp.name}</div>
-                          <div style={{ fontSize:11, color:'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
+                          <div style={{ fontWeight:'var(--fw-semibold)', fontSize:'var(--fs-sm)' }}>{emp.name}</div>
+                          <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
                         </div>
                       </div>
                     </td>
                     <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)' }}>{fmt(baseSalary)}</td>
                     <td style={{ textAlign:'right' }}>
                       <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'flex-end' }}>
-                        <span style={{ fontFamily:'var(--mono)', fontSize:12, color: bonus>0 ? 'var(--acc2)' : 'var(--text3)' }}>
+                        <span style={{ fontFamily:'var(--mono)', fontSize:'var(--fs-label)', color: bonus>0 ? 'var(--acc2)' : 'var(--text3)' }}>
                           {bonus>0 ? `+${fmt(bonus)}` : '—'}
                         </span>
                         <button type="button"
                           onClick={() => { setSalaryTarget(emp); setShowSalaryModal(true) }}
-                          style={{ width:20, height:20, borderRadius:5, background:'rgba(0,208,132,.1)', border:'1px solid rgba(0,208,132,.2)', cursor:'pointer', fontSize:11, color:'var(--acc2)', display:'flex', alignItems:'center', justifyContent:'center' }}>+</button>
+                          style={{ width:20, height:20, borderRadius:5, background:'rgba(0,208,132,.1)', border:'1px solid rgba(0,208,132,.2)', cursor:'pointer', fontSize:'var(--fs-caption)', color:'var(--acc2)', display:'flex', alignItems:'center', justifyContent:'center' }}>+</button>
                       </div>
                     </td>
-                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', fontSize:12 }}>− {fmt(cnss)}</td>
-                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', fontSize:12 }}>− {fmt(ir)}</td>
+                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', fontSize:'var(--fs-label)' }}>− {fmt(cnss)}</td>
+                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', fontSize:'var(--fs-label)' }}>− {fmt(ir)}</td>
                     <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', color:'var(--acc2)' }}>{fmt(net)}</td>
                     <td style={{ textAlign:'center' }}>
-                      <button className="btn btn-sm" style={{ fontSize:11, padding:'3px 8px', display:'flex', alignItems:'center', gap:4 }}
+                      <button className="btn btn-sm" style={{ fontSize:'var(--fs-caption)', padding:'3px 8px', display:'flex', alignItems:'center', gap:4 }}
                         onClick={() => { setSalaryTarget({...emp, mode:'raise'}); setShowSalaryModal(true) }}>
                         <TrendingUp size={11}/> {lang === 'en' ? 'Raise' : lang === 'es' ? 'Aumentar' : lang === 'it' ? 'Aumenta' : 'Augmenter'}
                       </button>
@@ -194,7 +194,7 @@ export default function PayrollGrid({ employees, fmt: _fmt, lang, payrollMonth, 
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc2)', padding:'12px 14px' }}>{fmt(totaux.bonus)}</td>
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', padding:'12px 14px' }}>− {fmt(totaux.cnss)}</td>
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', padding:'12px 14px' }}>− {fmt(totaux.ir)}</td>
-                <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', fontSize:15, color:'var(--acc2)', padding:'12px 14px' }}>{fmt(totaux.net)}</td>
+                <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', fontSize:'var(--fs-title)', color:'var(--acc2)', padding:'12px 14px' }}>{fmt(totaux.net)}</td>
                 <td />
               </tr>
             </tfoot>

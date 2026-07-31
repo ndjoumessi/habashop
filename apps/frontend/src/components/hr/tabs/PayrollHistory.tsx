@@ -37,10 +37,10 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
       {salaryHistory.length === 0 ? (
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'60px 20px', textAlign:'center', background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:20 }}>
           <div style={{ width:72, height:72, borderRadius:20, background:'rgba(108,71,255,.1)', border:'1px solid rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:16 }}><TrendingUp size={32} style={{color:'var(--p2)'}}/></div>
-          <div style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:8 }}>
+          <div style={{ fontSize:'var(--fs-md)', fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:8 }}>
             {lang === 'en' ? 'No salary revisions yet' : lang === 'es' ? 'Sin revisiones salariales' : lang === 'it' ? 'Nessuna revisione salariale' : 'Aucune révision salariale'}
           </div>
-          <div style={{ fontSize:13, color:'var(--text3)', maxWidth:300, lineHeight:1.6 }}>
+          <div style={{ fontSize:'var(--fs-sm)', color:'var(--text3)', maxWidth:300, lineHeight:1.6 }}>
             {lang === 'en' ? 'Salary increases and revisions will appear here with their complete history.' : lang === 'es' ? 'Los aumentos y revisiones salariales aparecerán aquí con su historial completo.' : lang === 'it' ? 'Gli aumenti e le revisioni salariali appariranno qui con la cronologia completa.' : 'Les augmentations et révisions salariales apparaîtront ici avec leur historique complet.'}
           </div>
           <button className="topbar-btn"
@@ -142,21 +142,21 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                         width:36, height:36, borderRadius:'50%',
                         background: emp?.color ?? 'var(--p)',
                         display:'flex', alignItems:'center', justifyContent:'center',
-                        fontSize:13, fontWeight:'var(--fw-semibold)', color:'#fff',
+                        fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'#fff',
                         flexShrink:0,
                       }}>
                         {initials}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{
-                          fontWeight:'var(--fw-semibold)', fontSize:14,
+                          fontWeight:'var(--fw-semibold)', fontSize:'var(--fs-body)',
                           color:'var(--text)',
                           whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
                         }}>
                           {emp?.name ?? i('Employé inconnu', 'Unknown', 'Desconocido', 'Sconosciuto')}
                         </div>
                         {emp && (emp.role || emp.dept) && (
-                          <div style={{ fontSize:11, color:'var(--text2)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                          <div style={{ fontSize:'var(--fs-caption)', color:'var(--text2)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                             {emp.role ? roleLabel(emp.role, lang) : ''}
                             {emp.role && emp.dept ? ' · ' : ''}
                             {emp.dept ? deptLabel(emp.dept, lang) : ''}
@@ -164,7 +164,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                         )}
                       </div>
                       <span style={{
-                        fontSize:11, fontWeight:'var(--fw-semibold)',
+                        fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)',
                         padding:'3px 8px', borderRadius:99,
                         background: reasonClr.bg,
                         color: reasonClr.text,
@@ -178,7 +178,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
 
                     {/* Date */}
                     <div style={{
-                      fontSize:11, color:'var(--text3)',
+                      fontSize:'var(--fs-caption)', color:'var(--text3)',
                       marginBottom:10,
                       display:'flex', alignItems:'center', gap:4,
                     }}>
@@ -190,7 +190,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                     <div style={{
                       display:'flex', alignItems:'center',
                       gap:8, marginBottom:10,
-                      fontSize:14,
+                      fontSize:'var(--fs-body)',
                     }}>
                       <span style={{
                         color:'var(--text3)',
@@ -203,7 +203,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                       <span style={{
                         fontWeight:'var(--fw-bold)', color:'var(--text)',
                         fontFamily:'var(--mono)',
-                        fontSize:16,
+                        fontSize:'var(--fs-md)',
                       }}>
                         {fmt(h.newSalary)}
                       </span>
@@ -218,7 +218,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                         ? <TrendingUp size={14} color="#00C853" />
                         : <TrendingDown size={14} color="var(--danger)" />}
                       <span style={{
-                        fontSize:13, fontWeight:'var(--fw-semibold)',
+                        fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)',
                         color: isUp ? '#00C853' : 'var(--danger)',
                         fontFamily:'var(--mono)',
                       }}>
@@ -229,7 +229,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                     {/* Raison en italique */}
                     {h.reason && (
                       <div style={{
-                        fontSize:12, color:'var(--text2)',
+                        fontSize:'var(--fs-label)', color:'var(--text2)',
                         fontStyle:'italic', marginBottom:8,
                       }}>
                         "{h.reason}"
@@ -248,7 +248,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                             color:'var(--danger)', cursor:'pointer',
                             background:'none', border:'none',
                             display:'flex', alignItems:'center', gap:4,
-                            fontSize:11, opacity:0.7,
+                            fontSize:'var(--fs-caption)', opacity:0.7,
                             padding:'8px 12px', minHeight:44,
                             borderRadius:8,
                             fontFamily:'var(--font)',
@@ -325,12 +325,12 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                 }}>{k.icon}</div>
                 <div>
                   <div style={{
-                    fontSize:11, fontWeight:'var(--fw-semibold)',
+                    fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)',
                     textTransform:'uppercase', letterSpacing:'.5px',
                     color:'var(--text3)', marginBottom:2,
                   }}>{k.label}</div>
                   <div style={{
-                    fontSize:16, fontWeight:'var(--fw-bold)',
+                    fontSize:'var(--fs-md)', fontWeight:'var(--fw-bold)',
                     color:k.color, fontFamily:'var(--mono)',
                     letterSpacing:'-.5px',
                   }}>{k.value}</div>

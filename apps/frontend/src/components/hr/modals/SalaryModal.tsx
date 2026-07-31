@@ -20,7 +20,7 @@ export default function SalaryModal({ salaryTarget, lang, fmt, employees, handle
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={salaryTarget?.mode === 'raise' ? (lang === 'en' ? 'Salary raise' : lang === 'es' ? 'Aumento salarial' : lang === 'it' ? 'Aumento salariale' : 'Augmentation salariale') : (lang === 'en' ? 'Add bonus' : lang === 'es' ? 'Agregar una prima' : lang === 'it' ? 'Aggiungi un premio' : 'Ajouter une prime')} onClick={e => e.target===e.currentTarget && onClose()}>
       <div ref={boxRef} className="modal-box" style={{ maxWidth:400 }}>
         <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
-          <h3 style={{ fontSize:15, fontWeight:'var(--fw-semibold)', color:'var(--text)', margin:0, display:'flex', alignItems:'center', gap:8 }}>
+          <h3 style={{ fontSize:'var(--fs-title)', fontWeight:'var(--fw-semibold)', color:'var(--text)', margin:0, display:'flex', alignItems:'center', gap:8 }}>
             {salaryTarget?.mode === 'raise'
               ? <><TrendingUp size={15} style={{color:'var(--acc2)',flexShrink:0}}/>{lang === 'en' ? 'Salary raise' : lang === 'es' ? 'Aumento salarial' : lang === 'it' ? 'Aumento salariale' : 'Augmentation salariale'}</>
               : <><Gift size={15} style={{color:'var(--acc)',flexShrink:0}}/>{lang === 'en' ? 'Add bonus' : lang === 'es' ? 'Agregar una prima' : lang === 'it' ? 'Aggiungi un premio' : 'Ajouter une prime'}{salaryTarget ? ` — ${salaryTarget.name}` : ''}</>}

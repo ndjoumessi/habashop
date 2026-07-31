@@ -70,7 +70,7 @@ export default function PayrollTable(props: Props) {
           <span className="badge badge-gray">{filtered.length} {filtered.length > 1 ? (lang === 'en' ? 'employees' : lang === 'es' ? 'empleados' : lang === 'it' ? 'dipendenti' : 'employés') : (lang === 'en' ? 'employee' : lang === 'es' ? 'empleado' : lang === 'it' ? 'dipendente' : 'employé')}</span>
         </div>
         {filtered.length === 0 ? (
-          <div style={{ textAlign:'center', padding:'28px 0', color:'var(--text3)', fontSize:13 }}>
+          <div style={{ textAlign:'center', padding:'28px 0', color:'var(--text3)', fontSize:'var(--fs-sm)' }}>
             {lang === 'en' ? `No payslips for ${monthLabel(month, lang)}` : lang === 'es' ? `Sin nóminas para ${monthLabel(month, lang)}` : lang === 'it' ? `Nessuna busta paga per ${monthLabel(month, lang)}` : `Aucun bulletin pour ${monthLabel(month, lang)}`}
           </div>
         ) : (
@@ -89,10 +89,10 @@ export default function PayrollTable(props: Props) {
                     <td>
                       <div style={{ display:'flex', alignItems:'center', gap:9 }}>
                         <EmpAvatar r={r} size={30} />
-                        <span className="td-bold" style={{ fontSize:12 }}>{r.employee}</span>
+                        <span className="td-bold" style={{ fontSize:'var(--fs-label)' }}>{r.employee}</span>
                       </div>
                     </td>
-                    <td style={{ fontSize:12, color:'var(--text3)' }}>{roleLabel(r.role, lang)}</td>
+                    <td style={{ fontSize:'var(--fs-label)', color:'var(--text3)' }}>{roleLabel(r.role, lang)}</td>
                     {/* Colonnes intermédiaires rétrogradées (12px, text2/text3) — le NET reste la métrique reine */}
                     <td className="td-num text-sm" style={{ color:'var(--text2)' }}>{fmt(d.baseSalary)}</td>
                     <td className="td-num text-sm" style={{ color:r.bonus > 0 ? 'var(--text2)' : 'var(--text3)' }}>
@@ -106,8 +106,8 @@ export default function PayrollTable(props: Props) {
                     </td>
                     <td>
                       {r.absences > 0
-                        ? <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--danger)' }}>{r.absences}j</span>
-                        : <span style={{ fontSize:12, color:'var(--text3)' }}>0</span>
+                        ? <span style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:'var(--danger)' }}>{r.absences}j</span>
+                        : <span style={{ fontSize:'var(--fs-label)', color:'var(--text3)' }}>0</span>
                       }
                     </td>
                     <td className="td-num" style={groupSep}>
@@ -137,14 +137,14 @@ export default function PayrollTable(props: Props) {
               {/* Ligne de total (fond bg2, valeurs mono) */}
               <tfoot>
                 <tr style={{ background:'var(--bg2)', borderTop:'2px solid var(--border)' }}>
-                  <td colSpan={2} style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>
+                  <td colSpan={2} style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-bold)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>
                     Total — {filtered.length} {filtered.length > 1 ? (lang === 'en' ? 'employees' : lang === 'es' ? 'empleados' : lang === 'it' ? 'dipendenti' : 'employés') : (lang === 'en' ? 'employee' : lang === 'es' ? 'empleado' : lang === 'it' ? 'dipendente' : 'employé')}
                   </td>
                   <td className="td-num text-sm" style={{ fontWeight:'var(--fw-semibold)', color:'var(--text2)' }}>{fmt(totals.base)}</td>
                   <td className="td-num text-sm" style={{ fontWeight:'var(--fw-semibold)', color:totals.bonus > 0 ? 'var(--text2)' : 'var(--text3)' }}>{totals.bonus > 0 ? fmt(totals.bonus) : '—'}</td>
                   <td className="td-num text-sm" style={{ fontWeight:'var(--fw-semibold)', color:totals.overtime > 0 ? 'var(--text2)' : 'var(--text3)' }}>{totals.overtime > 0 ? fmt(totals.overtime) : '—'}</td>
                   <td className="td-num text-sm" style={{ ...groupSep, fontWeight:'var(--fw-semibold)', color:totals.deductions > 0 ? 'var(--danger)' : 'var(--text3)' }}>{totals.deductions > 0 ? `− ${fmt(totals.deductions)}` : fmt(totals.deductions)}</td>
-                  <td style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:totals.absences > 0 ? 'var(--danger)' : 'var(--text3)' }}>{totals.absences > 0 ? `${totals.absences}j` : '0'}</td>
+                  <td style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:totals.absences > 0 ? 'var(--danger)' : 'var(--text3)' }}>{totals.absences > 0 ? `${totals.absences}j` : '0'}</td>
                   <td className="td-num" style={groupSep}><span style={netPill}>{fmt(totals.net)}</span></td>
                   <td colSpan={2} />
                 </tr>

@@ -25,7 +25,7 @@ export default function PayrollPayslips({ employees, fmt: _fmt, lang, payrollMon
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
       <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-        <label style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--text3)' }}>
+        <label style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:'var(--text3)' }}>
           {lang === 'en' ? 'Period:' : lang === 'es' ? 'Período:' : lang === 'it' ? 'Periodo:' : 'Période :'}
         </label>
         <input className="input" type="month"
@@ -33,7 +33,7 @@ export default function PayrollPayslips({ employees, fmt: _fmt, lang, payrollMon
           value={payrollMonth}
           onChange={e => setPayrollMonth(e.target.value)} />
         <button className="topbar-btn"
-          style={{ fontSize:12, padding:'7px 14px', display:'flex', alignItems:'center', gap:6 }}
+          style={{ fontSize:'var(--fs-label)', padding:'7px 14px', display:'flex', alignItems:'center', gap:6 }}
           onClick={() => generateAllPayslips()}>
           <FileText size={13}/> {lang === 'en' ? 'Generate all payslips' : lang === 'es' ? 'Generar todas las nóminas' : lang === 'it' ? 'Genera tutte le buste paga' : 'Générer tous les bulletins'}
         </button>
@@ -48,14 +48,14 @@ export default function PayrollPayslips({ employees, fmt: _fmt, lang, payrollMon
           return (
             <div key={emp.id} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:14, padding:18, transition:'all .2s' }}>
               <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, paddingBottom:12, borderBottom:'1px solid var(--border)' }}>
-                <div style={{ width:40, height:40, borderRadius:11, background:`linear-gradient(135deg,${emp.color??'var(--p)'},${emp.color??'var(--p)'}66)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:'var(--fw-bold)', color:'#fff', flexShrink:0 }}>
+                <div style={{ width:40, height:40, borderRadius:11, background:`linear-gradient(135deg,${emp.color??'var(--p)'},${emp.color??'var(--p)'}66)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-body)', fontWeight:'var(--fw-bold)', color:'#fff', flexShrink:0 }}>
                   {emp.avatar ?? '??'}
                 </div>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>{emp.name}</div>
-                  <div style={{ fontSize:11, color:'var(--text3)' }}>{roleLabel(emp.role, lang)} · {deptLabel(emp.dept, lang)}</div>
+                  <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-bold)', color:'var(--text)' }}>{emp.name}</div>
+                  <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{roleLabel(emp.role, lang)} · {deptLabel(emp.dept, lang)}</div>
                 </div>
-                <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', background:'rgba(0,208,132,.1)', color:'var(--acc2)', border:'1px solid rgba(0,208,132,.2)', borderRadius:20, padding:'2px 8px' }}>
+                <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', background:'rgba(0,208,132,.1)', color:'var(--acc2)', border:'1px solid rgba(0,208,132,.2)', borderRadius:20, padding:'2px 8px' }}>
                   {new Date(payrollMonth+'-01').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', {month:'short', year:'numeric'})}
                 </div>
               </div>
@@ -67,7 +67,7 @@ export default function PayrollPayslips({ employees, fmt: _fmt, lang, payrollMon
                   { label: `CNSS (${CNSS_RATE * 100}%)`, value: fmt(cnss), color:'var(--danger)', sign:'−' },
                   { label: `IR (${IR_RATE * 100}%)`,     value: fmt(ir),   color:'var(--acc)',    sign:'−' },
                 ].map((row, i) => (
-                  <div key={i} style={{ display:'flex', justifyContent:'space-between', fontSize:12, padding:'4px 0', borderBottom:'1px solid var(--border)' }}>
+                  <div key={i} style={{ display:'flex', justifyContent:'space-between', fontSize:'var(--fs-label)', padding:'4px 0', borderBottom:'1px solid var(--border)' }}>
                     <span style={{ color:'var(--text3)' }}>{row.label}</span>
                     <span style={{ color:row.color, fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)' }}>{row.sign} {row.value}</span>
                   </div>
@@ -75,10 +75,10 @@ export default function PayrollPayslips({ employees, fmt: _fmt, lang, payrollMon
               </div>
 
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:'rgba(0,208,132,.06)', border:'1px solid var(--c-green-bg)', borderRadius:10, marginBottom:12 }}>
-                <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
+                <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
                   {lang === 'en' ? 'NET TO PAY' : lang === 'es' ? 'NETO A PAGAR' : lang === 'it' ? 'NETTO DA PAGARE' : 'NET À PAYER'}
                 </span>
-                <span style={{ fontSize:20, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>
+                <span style={{ fontSize:'var(--fs-xl)', fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>
                   {fmt(net)}
                 </span>
               </div>

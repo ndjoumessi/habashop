@@ -57,21 +57,21 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
                 width: 40, height: 40, borderRadius: '50%',
                 background: `linear-gradient(135deg, ${color}, ${color}99)`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 14, fontWeight: 'var(--fw-bold)', color: '#fff', flexShrink: 0,
+                fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-bold)', color: '#fff', flexShrink: 0,
               }}>
                 {emp.avatar}
               </div>
             )}
             <div>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
+              <h3 style={{ margin: 0, fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
                 {emp ? emp.name : `➕ ${T('Nouvel employé', 'New employee', 'Nuevo empleado', 'Nuovo dipendente')}`}
               </h3>
-              {emp && <div style={{ fontSize: 11, color: deptColor, fontWeight: 'var(--fw-regular)', marginTop: 1 }}>{deptLabel(dept || emp.dept, lang)}</div>}
+              {emp && <div style={{ fontSize: 'var(--fs-caption)', color: deptColor, fontWeight: 'var(--fw-regular)', marginTop: 1 }}>{deptLabel(dept || emp.dept, lang)}</div>}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {emp && onDelete && (
-              <button onClick={() => onDelete(emp.id)} style={{ background: 'rgba(232,64,74,.1)', border: '1px solid rgba(232,64,74,.25)', borderRadius: 8, cursor: 'pointer', color: 'var(--danger)', padding: '6px 10px', fontSize: 14 }}>
+              <button onClick={() => onDelete(emp.id)} style={{ background: 'rgba(232,64,74,.1)', border: '1px solid rgba(232,64,74,.25)', borderRadius: 8, cursor: 'pointer', color: 'var(--danger)', padding: '6px 10px', fontSize: 'var(--fs-body)' }}>
                 🗑
               </button>
             )}
@@ -107,10 +107,10 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
             <label className="form-label">{T('Salaire brut', 'Gross salary', 'Salario bruto', 'Stipendio lordo')} ({symbol})</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type="number" value={salary} onChange={e => setSalary(e.target.value)} placeholder={code === 'XOF' || code === 'XAF' ? '350000' : '500'} style={{ width: '100%', boxSizing: 'border-box', paddingRight: 50 }} />
-              <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--acc2)', fontSize: 12, fontWeight: 'var(--fw-bold)', pointerEvents: 'none' }}>{symbol}</span>
+              <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--acc2)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-bold)', pointerEvents: 'none' }}>{symbol}</span>
             </div>
             {salary && code !== 'XOF' && code !== 'XAF' && (
-              <div style={{ marginTop: 5, fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 4 }}>
+              <div style={{ marginTop: 5, fontSize: 'var(--fs-caption)', color: 'var(--text3)', display: 'flex', gap: 4 }}>
                 <span>≈</span>
                 <span style={{ color: 'var(--acc2)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)' }}>{Math.round(toXOF(Number(salary) || 0)).toLocaleString('fr-FR')} XOF</span>
                 <span>{T('en base', 'stored', 'en base', 'in base')}</span>
@@ -145,20 +145,20 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
             <label className="form-label">{T('Performance', 'Performance', 'Rendimiento', 'Prestazione')}</label>
             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
               {[1,2,3,4,5].map(star => (
-                <button key={star} onClick={() => setPerf(star)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 24, color: star <= perf ? '#F59E0B' : 'var(--border2)', padding: '2px 3px', lineHeight: 1 }}>★</button>
+                <button key={star} onClick={() => setPerf(star)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--fs-display)', color: star <= perf ? '#F59E0B' : 'var(--border2)', padding: '2px 3px', lineHeight: 1 }}>★</button>
               ))}
-              <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 6 }}>{perf}/5</span>
+              <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginLeft: 6 }}>{perf}/5</span>
             </div>
           </div>
 
           {emp && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'var(--bg3)', borderRadius: 10, border: '1px solid var(--border)' }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{T('Statut employé', 'Employee status', 'Estado del empleado', 'Stato dipendente')}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{active ? T('Employé actif', 'Active employee', 'Empleado activo', 'Dipendente attivo') : T('Employé inactif', 'Inactive employee', 'Empleado inactivo', 'Dipendente inattivo')}</div>
+                <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{T('Statut employé', 'Employee status', 'Estado del empleado', 'Stato dipendente')}</div>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{active ? T('Employé actif', 'Active employee', 'Empleado activo', 'Dipendente attivo') : T('Employé inactif', 'Inactive employee', 'Empleado inactivo', 'Dipendente inattivo')}</div>
               </div>
               <button onClick={() => setActive(a => !a)} style={{
-                padding: '6px 14px', borderRadius: 20, fontWeight: 'var(--fw-semibold)', fontSize: 12, cursor: 'pointer', border: '1px solid',
+                padding: '6px 14px', borderRadius: 20, fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-label)', cursor: 'pointer', border: '1px solid',
                 background: active ? 'rgba(14,196,126,.12)' : 'rgba(232,64,74,.1)',
                 color: active ? 'var(--acc2)' : 'var(--danger)',
                 borderColor: active ? 'rgba(14,196,126,.3)' : 'rgba(232,64,74,.25)',
