@@ -58,10 +58,10 @@ function SubCard({ sub, lang, canManage, fmt, onEdit, onToggle, onDelete, onLoad
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontWeight: 'var(--fw-semibold)', fontSize: 15, marginBottom: 2,
+            fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-title)', marginBottom: 2,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{sub.name}</div>
-          <div style={{ fontSize: 13, color: 'var(--text3)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <User size={11} />{sub.customer.name}
             </span>
@@ -73,7 +73,7 @@ function SubCard({ sub, lang, canManage, fmt, onEdit, onToggle, onDelete, onLoad
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <span style={{
             padding: '3px 9px', borderRadius: 99,
-            fontSize: 11, fontWeight: 'var(--fw-semibold)',
+            fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)',
             background: statusBg, color: statusColor,
             border: `1px solid ${statusBg}`,
           }}>
@@ -94,17 +94,17 @@ function SubCard({ sub, lang, canManage, fmt, onEdit, onToggle, onDelete, onLoad
       <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
         {sub.items.map(it => (
           <span key={it.id} style={{
-            fontSize: 12, padding: '2px 8px',
+            fontSize: 'var(--fs-label)', padding: '2px 8px',
             background: 'var(--bg3)', borderRadius: 99,
             border: '1px solid var(--border)', color: 'var(--text2)',
             display: 'flex', alignItems: 'center', gap: 4,
           }}>
-            {it.product.emoji && <span style={{ fontSize: 13 }}>{it.product.emoji}</span>}
+            {it.product.emoji && <span style={{ fontSize: 'var(--fs-sm)' }}>{it.product.emoji}</span>}
             {it.product.name} ×{it.quantity}
           </span>
         ))}
         {sub.items.length === 0 && (
-          <span style={{ fontSize: 12, color: 'var(--text4)' }}>{tx('no_items', lang)}</span>
+          <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text4)' }}>{tx('no_items', lang)}</span>
         )}
       </div>
 
@@ -112,13 +112,13 @@ function SubCard({ sub, lang, canManage, fmt, onEdit, onToggle, onDelete, onLoad
       {expanded && (
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 13, color: 'var(--text3)' }}>{tx('total', lang)}</span>
+            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)' }}>{tx('total', lang)}</span>
             <span style={{
-              fontWeight: 'var(--fw-semibold)', fontSize: 14,
+              fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-body)',
               fontFamily: 'var(--font-mono, monospace)',
             }}>{fmt(total)}</span>
           </div>
-          {sub.note && <p style={{ fontSize: 12, color: 'var(--text3)', margin: 0 }}>{sub.note}</p>}
+          {sub.note && <p style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', margin: 0 }}>{sub.note}</p>}
         </div>
       )}
 
@@ -126,7 +126,7 @@ function SubCard({ sub, lang, canManage, fmt, onEdit, onToggle, onDelete, onLoad
       <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button
           className="btn-primary"
-          style={{ fontSize: 12, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 5 }}
+          style={{ fontSize: 'var(--fs-label)', padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 5 }}
           onClick={onLoadCart}
           disabled={sub.items.length === 0}
         >
@@ -135,14 +135,14 @@ function SubCard({ sub, lang, canManage, fmt, onEdit, onToggle, onDelete, onLoad
         {canManage && <>
           <button
             className="btn-secondary"
-            style={{ fontSize: 12, padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 4 }}
+            style={{ fontSize: 'var(--fs-label)', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 4 }}
             onClick={onEdit}
           >
             <Pencil size={12} /> {tx('edit', lang)}
           </button>
           <button
             className="btn-secondary"
-            style={{ fontSize: 12, padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 4 }}
+            style={{ fontSize: 'var(--fs-label)', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 4 }}
             onClick={onToggle}
           >
             {isPaused
@@ -152,7 +152,7 @@ function SubCard({ sub, lang, canManage, fmt, onEdit, onToggle, onDelete, onLoad
           </button>
           <button
             className="btn-ghost"
-            style={{ fontSize: 12, padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 4, color: 'var(--danger)' }}
+            style={{ fontSize: 'var(--fs-label)', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 4, color: 'var(--danger)' }}
             onClick={onDelete}
           >
             <Trash2 size={12} /> {tx('delete', lang)}
@@ -234,12 +234,12 @@ export default function Subscriptions() {
       }}>
         <div>
           <h1 style={{
-            fontWeight: 'var(--fw-semibold)', fontSize: 22, margin: 0,
+            fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-2xl)', margin: 0,
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
             <RefreshCw size={20} color="var(--p2)" /> {tx('title', lang)}
           </h1>
-          <p style={{ margin: '4px 0 0', color: 'var(--text3)', fontSize: 13 }}>
+          <p style={{ margin: '4px 0 0', color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>
             {tx('subtitle', lang)}
           </p>
         </div>
@@ -266,10 +266,10 @@ export default function Subscriptions() {
             borderRadius: 'var(--r-lg)', padding: '14px 16px',
           }}>
             <div style={{
-              fontSize: 22, fontWeight: 'var(--fw-bold)',
+              fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-bold)',
               color: s.color, fontFamily: 'var(--font-mono, monospace)',
             }}>{s.value}</div>
-            <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{s.label}</div>
+            <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginTop: 2 }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -278,12 +278,12 @@ export default function Subscriptions() {
       {due.length > 0 && (
         <section style={{ marginBottom: 32 }}>
           <h2 style={{
-            fontWeight: 'var(--fw-semibold)', fontSize: 15, marginBottom: 12,
+            fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-title)', marginBottom: 12,
             display: 'flex', alignItems: 'center', gap: 6,
           }}>
             <ShoppingCart size={15} color="var(--p2)" /> {tx('due_today', lang)}
             <span style={{
-              fontSize: 12, background: 'var(--p2)', color: '#fff',
+              fontSize: 'var(--fs-label)', background: 'var(--p2)', color: '#fff',
               borderRadius: 99, padding: '1px 8px',
               fontWeight: 'var(--fw-semibold)', marginLeft: 4,
             }}>{due.length}</span>
@@ -302,7 +302,7 @@ export default function Subscriptions() {
 
       {/* Tous */}
       <section>
-        <h2 style={{ fontWeight: 'var(--fw-semibold)', fontSize: 15, marginBottom: 12 }}>
+        <h2 style={{ fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-title)', marginBottom: 12 }}>
           {tx('all', lang)}
         </h2>
         {loading ? (

@@ -68,7 +68,7 @@ export default function PaymentCallback() {
               animation: 'spin .8s linear infinite',
               margin: '0 auto 20px',
             }} />
-            <div style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
+            <div style={{ fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
               {i('Vérification du paiement…', 'Verifying payment…', 'Verificando pago…', 'Verifica pagamento…')}
             </div>
           </>
@@ -83,13 +83,13 @@ export default function PaymentCallback() {
               fontSize: 36, margin: '0 auto 20px',
             }}>✅</div>
             <div style={{
-              fontSize: 22, fontWeight: 'var(--fw-semibold)',
+              fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-semibold)',
               color: 'var(--text)', marginBottom: 8,
             }}>
               {i('Paiement confirmé !', 'Payment confirmed!', '¡Pago confirmado!', 'Pagamento confermato!')}
             </div>
             <div style={{
-              fontSize: 13, color: 'var(--text2)',
+              fontSize: 'var(--fs-sm)', color: 'var(--text2)',
               lineHeight: 1.6, marginBottom: 24,
             }}>
               {i(
@@ -115,13 +115,13 @@ export default function PaymentCallback() {
           <>
             <div style={{ fontSize: 48, margin: '0 auto 20px' }}>❌</div>
             <div style={{
-              fontSize: 20, fontWeight: 'var(--fw-bold)',
+              fontSize: 'var(--fs-xl)', fontWeight: 'var(--fw-bold)',
               color: 'var(--danger)', marginBottom: 8,
             }}>
               {i('Paiement échoué', 'Payment failed', 'Pago fallido', 'Pagamento fallito')}
             </div>
             <div style={{
-              fontSize: 13, color: 'var(--text2)', marginBottom: 24,
+              fontSize: 'var(--fs-sm)', color: 'var(--text2)', marginBottom: 24,
             }}>
               {i(
                 'Le paiement n\'a pas pu être traité. Aucun montant n\'a été débité.',
@@ -142,13 +142,13 @@ export default function PaymentCallback() {
           <>
             <div style={{ fontSize: 48, margin: '0 auto 20px' }}>⏳</div>
             <div style={{
-              fontSize: 18, fontWeight: 'var(--fw-bold)',
+              fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-bold)',
               color: 'var(--text)', marginBottom: 8,
             }}>
               {i('Paiement en attente', 'Payment pending', 'Pago pendiente', 'Pagamento in attesa')}
             </div>
             <div style={{
-              fontSize: 13, color: 'var(--text2)', marginBottom: 24,
+              fontSize: 'var(--fs-sm)', color: 'var(--text2)', marginBottom: 24,
             }}>
               {i(
                 'Votre paiement est en cours de validation. Vous recevrez un email de confirmation.',

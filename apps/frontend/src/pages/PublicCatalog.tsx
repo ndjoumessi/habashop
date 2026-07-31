@@ -45,7 +45,7 @@ function formatPrice(amountXOF: number, currency: string): string {
 
 function CatalogSkeleton() {
   return (
-    <div style={{ minHeight:'60vh', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text3)', fontFamily:'var(--font)', fontSize:14 }}>
+    <div style={{ minHeight:'60vh', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text3)', fontFamily:'var(--font)', fontSize:'var(--fs-body)' }}>
       <span className="loader-dots">●●●</span>
     </div>
   )
@@ -164,11 +164,11 @@ export default function PublicCatalog() {
     return (
       <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:12, padding:20, fontFamily:'var(--font)', background:'var(--bg)' }}>
         <AlertCircle size={48} style={{ color:'var(--text3)' }} />
-        <h1 style={{ fontSize:20, color:'var(--text)', margin:0 }}>Catalogue introuvable</h1>
-        <p style={{ fontSize:13, color:'var(--text3)', textAlign:'center', maxWidth:340 }}>
+        <h1 style={{ fontSize:'var(--fs-xl)', color:'var(--text)', margin:0 }}>Catalogue introuvable</h1>
+        <p style={{ fontSize:'var(--fs-sm)', color:'var(--text3)', textAlign:'center', maxWidth:340 }}>
           Le lien que vous avez suivi est invalide ou ce commerçant a désactivé son catalogue.
         </p>
-        <a href="/" style={{ marginTop:8, fontSize:13, color:'var(--p)', textDecoration:'underline' }}>← Retour à l'accueil</a>
+        <a href="/" style={{ marginTop:8, fontSize:'var(--fs-sm)', color:'var(--p)', textDecoration:'underline' }}>← Retour à l'accueil</a>
       </div>
     )
   }
@@ -176,7 +176,7 @@ export default function PublicCatalog() {
     return (
       <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:8, padding:20, fontFamily:'var(--font)', background:'var(--bg)' }}>
         <AlertCircle size={32} style={{ color:'var(--danger)' }} />
-        <p style={{ fontSize:13, color:'var(--text)' }}>{error}</p>
+        <p style={{ fontSize:'var(--fs-sm)', color:'var(--text)' }}>{error}</p>
       </div>
     )
   }
@@ -195,14 +195,14 @@ export default function PublicCatalog() {
         {t.logo ? (
           <img src={t.logo} alt="" style={{ width:44, height:44, borderRadius:10, objectFit:'cover', flexShrink:0 }} />
         ) : (
-          <div style={{ width:44, height:44, borderRadius:10, background:'linear-gradient(135deg, var(--p), var(--p2))', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:18, fontWeight:900, flexShrink:0 }}>
+          <div style={{ width:44, height:44, borderRadius:10, background:'linear-gradient(135deg, var(--p), var(--p2))', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'var(--fs-lg)', fontWeight:900, flexShrink:0 }}>
             {t.name.charAt(0).toUpperCase()}
           </div>
         )}
         <div style={{ flex:1, minWidth:0 }}>
-          <h1 style={{ fontSize:16, fontWeight:800, margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.name}</h1>
+          <h1 style={{ fontSize:'var(--fs-md)', fontWeight:800, margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.name}</h1>
           {t.description && (
-            <p style={{ fontSize:11, color:'var(--text3)', margin:'2px 0 0', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.description}</p>
+            <p style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', margin:'2px 0 0', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.description}</p>
           )}
         </div>
         <button
@@ -227,7 +227,7 @@ export default function PublicCatalog() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{
-              width:'100%', padding:'10px 12px 10px 36px', fontSize:14,
+              width:'100%', padding:'10px 12px 10px 36px', fontSize:'var(--fs-body)',
               background:'var(--card)', border:'1px solid var(--border)', borderRadius:10,
               color:'var(--text)', fontFamily:'inherit',
             }}
@@ -242,7 +242,7 @@ export default function PublicCatalog() {
         gap:10, padding:'12px 16px',
       }}>
         {filtered.length === 0 ? (
-          <div style={{ gridColumn:'1 / -1', textAlign:'center', padding:40, color:'var(--text3)', fontSize:13 }}>
+          <div style={{ gridColumn:'1 / -1', textAlign:'center', padding:40, color:'var(--text3)', fontSize:'var(--fs-sm)' }}>
             {i(lang, 'Aucun produit trouvé', 'No product found', 'Sin productos', 'Nessun prodotto trovato')}
           </div>
         ) : filtered.map(p => {
@@ -269,16 +269,16 @@ export default function PublicCatalog() {
               )}
               <div style={{ fontSize:42, lineHeight:1, textAlign:'center', padding:'8px 0' }}>{p.emoji ?? '📦'}</div>
               <div style={{ minHeight:32 }}>
-                <div style={{ fontSize:13, fontWeight:700, color:'var(--text)', lineHeight:1.25, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' as const, overflow:'hidden' }}>
+                <div style={{ fontSize:'var(--fs-sm)', fontWeight:700, color:'var(--text)', lineHeight:1.25, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' as const, overflow:'hidden' }}>
                   {p.name}
                 </div>
               </div>
               <div style={{ display:'flex', alignItems:'baseline', gap:6, flexWrap:'wrap' }}>
-                <span style={{ fontSize:16, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)' }}>
+                <span style={{ fontSize:'var(--fs-md)', fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)' }}>
                   {formatPrice(finalPrice, t.currency)}
                 </span>
                 {onPromo && (
-                  <span style={{ fontSize:11, color:'var(--text3)', textDecoration:'line-through' }}>
+                  <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', textDecoration:'line-through' }}>
                     {formatPrice(p.sellPrice, t.currency)}
                   </span>
                 )}
@@ -287,7 +287,7 @@ export default function PublicCatalog() {
                 qty === 0 ? (
                   <button
                     onClick={() => addQty(p.id, 1)}
-                    style={{ marginTop:'auto', padding:'8px', borderRadius:8, background:'var(--p)', color:'#fff', border:'none', cursor:'pointer', fontSize:13, fontWeight:700, fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                    style={{ marginTop:'auto', padding:'8px', borderRadius:8, background:'var(--p)', color:'#fff', border:'none', cursor:'pointer', fontSize:'var(--fs-sm)', fontWeight:700, fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
                     <Plus size={14} /> {i(lang, 'Ajouter', 'Add', 'Añadir', 'Aggiungi')}
                   </button>
                 ) : (
@@ -296,7 +296,7 @@ export default function PublicCatalog() {
                       style={{ width:32, height:32, borderRadius:6, background:'transparent', border:'none', color:'var(--text)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
                       <Minus size={14} />
                     </button>
-                    <span style={{ flex:1, textAlign:'center', fontSize:14, fontWeight:800, fontFamily:'var(--mono)' }}>{qty}</span>
+                    <span style={{ flex:1, textAlign:'center', fontSize:'var(--fs-body)', fontWeight:800, fontFamily:'var(--mono)' }}>{qty}</span>
                     <button onClick={() => addQty(p.id, 1)} aria-label={i(lang, 'Augmenter', 'Increase', 'Aumentar', 'Aumenta')}
                       style={{ width:32, height:32, borderRadius:6, background:'transparent', border:'none', color:'var(--text)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
                       <Plus size={14} />
@@ -311,7 +311,7 @@ export default function PublicCatalog() {
 
       {/* ── Footer "Propulsé par HabaShop" ── */}
       <footer style={{
-        padding:'24px 16px', textAlign:'center', fontSize:11,
+        padding:'24px 16px', textAlign:'center', fontSize:'var(--fs-caption)',
         color:'var(--text3)', borderTop:'1px solid var(--border)', marginTop:32,
       }}>
         {i(lang, 'Boutique propulsée par', 'Powered by', 'Tienda impulsada por', 'Negozio gestito da')}{' '}
@@ -331,11 +331,11 @@ export default function PublicCatalog() {
           display:'flex', alignItems:'center', gap:10,
         }}>
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:11, color:'var(--text3)', fontWeight:700 }}>
+            <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', fontWeight:700 }}>
               <ShoppingCart size={11} style={{ verticalAlign:'middle', marginRight:4 }} />
               {cartCount} {i(lang, cartCount > 1 ? 'articles' : 'article', cartCount > 1 ? 'items' : 'item', cartCount > 1 ? 'artículos' : 'artículo', cartCount > 1 ? 'articoli' : 'articolo')}
             </div>
-            <div style={{ fontSize:18, fontWeight:900, color:'var(--text)', fontFamily:'var(--mono)' }}>
+            <div style={{ fontSize:'var(--fs-lg)', fontWeight:900, color:'var(--text)', fontFamily:'var(--mono)' }}>
               {formatPrice(cartTotal, t.currency)}
             </div>
           </div>
@@ -346,7 +346,7 @@ export default function PublicCatalog() {
               padding:'12px 20px', borderRadius:10,
               background: t.whatsappPhone ? 'linear-gradient(135deg, #25D366, #128C7E)' : 'var(--bg4)',
               border:'none', color: t.whatsappPhone ? '#fff' : 'var(--text3)',
-              fontSize:14, fontWeight:800, cursor: t.whatsappPhone ? 'pointer' : 'not-allowed',
+              fontSize:'var(--fs-body)', fontWeight:800, cursor: t.whatsappPhone ? 'pointer' : 'not-allowed',
               fontFamily:'inherit', display:'flex', alignItems:'center', gap:8,
               boxShadow: t.whatsappPhone ? '0 4px 14px rgba(37,211,102,.4)' : 'none',
             }}>

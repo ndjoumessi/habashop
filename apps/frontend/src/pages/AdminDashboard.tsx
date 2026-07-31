@@ -224,7 +224,7 @@ export default function AdminDashboard() {
   }, [tenants, query, sortKey, sortDir])
 
   const PlanBadge = ({ plan }: { plan: string }) => (
-    <span style={{ background: mix(planColor(plan), 14), color: planColor(plan), borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'capitalize' }}>{plan}</span>
+    <span style={{ background: mix(planColor(plan), 14), color: planColor(plan), borderRadius: 20, padding: '2px 10px', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'capitalize' }}>{plan}</span>
   )
 
   const statusCfg = (t: Tenant): { h: string; label: string } => {
@@ -246,7 +246,7 @@ export default function AdminDashboard() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: 24 }}>
       {/* ── Bandeau CONTEXTE PLATEFORME : distinction forte (couleur + libellé) pour
           ne JAMAIS confondre « toutes les boutiques » avec « ma boutique ». ── */}
-      <div role="note" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '8px 14px', borderRadius: 10, background: 'color-mix(in srgb, var(--acc) 14%, transparent)', border: '1px solid color-mix(in srgb, var(--acc) 40%, transparent)', color: 'var(--acc)', fontSize: 12, fontWeight: 'var(--fw-semibold)' }}>
+      <div role="note" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '8px 14px', borderRadius: 10, background: 'color-mix(in srgb, var(--acc) 14%, transparent)', border: '1px solid color-mix(in srgb, var(--acc) 40%, transparent)', color: 'var(--acc)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)' }}>
         <Globe size={14} />
         <span>{i('Contexte plateforme — vous consultez TOUTES les boutiques', 'Platform context — you are viewing ALL shops', 'Contexto de plataforma — está viendo TODAS las tiendas', 'Contesto piattaforma — stai visualizzando TUTTI i negozi')}</span>
       </div>
@@ -256,19 +256,19 @@ export default function AdminDashboard() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <LogoMark size={44} />
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0, letterSpacing: '-.5px' }}>{i('Console plateforme', 'Platform console', 'Consola de plataforma', 'Console piattaforma')}</h1>
+            <h1 style={{ fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0, letterSpacing: '-.5px' }}>{i('Console plateforme', 'Platform console', 'Consola de plataforma', 'Console piattaforma')}</h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(0,208,132,.1)', border: '1px solid rgba(0,208,132,.25)', color: 'var(--acc2)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', background: 'rgba(0,208,132,.1)', border: '1px solid rgba(0,208,132,.25)', color: 'var(--acc2)' }}>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)' }} />
                 {i('Système opérationnel', 'System operational', 'Sistema operativo', 'Sistema operativo')}
               </span>
-              <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>v{APP_VERSION}</span>
+              <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>v{APP_VERSION}</span>
             </div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <IconButton label={i('Actualiser les statistiques', 'Refresh stats', 'Actualizar estadísticas', 'Aggiorna statistiche')} icon={<RefreshCw size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : undefined }} />} onClick={loadStats} disabled={refreshing} variant="surface" />
-          <div style={{ padding: '8px 14px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ padding: '8px 14px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', fontSize: 'var(--fs-label)', color: 'var(--text3)', fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Calendar size={13} /> {new Date().toLocaleDateString(lang, { day: '2-digit', month: 'short', year: 'numeric' })}
           </div>
           <button className="topbar-btn" onClick={() => setShowNewTenant(true)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Plus size={14} /> {i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</button>
@@ -287,11 +287,11 @@ export default function AdminDashboard() {
           const isActive = activeTab === tab.id
           return (
             <button key={tab.id} role="tab" aria-selected={isActive} onClick={() => setActiveTab(tab.id)}
-              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 9, border: 'none', background: isActive ? 'var(--card)' : 'transparent', color: isActive ? 'var(--text)' : 'var(--text3)', fontSize: 12, fontWeight: isActive ? 700 : 500, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s ease', whiteSpace: 'nowrap', boxShadow: isActive ? '0 2px 8px rgba(0,0,0,.15)' : 'none', minHeight: 40, flexShrink: 0 }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 9, border: 'none', background: isActive ? 'var(--card)' : 'transparent', color: isActive ? 'var(--text)' : 'var(--text3)', fontSize: 'var(--fs-label)', fontWeight: isActive ? 700 : 500, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s ease', whiteSpace: 'nowrap', boxShadow: isActive ? '0 2px 8px rgba(0,0,0,.15)' : 'none', minHeight: 40, flexShrink: 0 }}>
               <span style={{ color: isActive ? 'var(--p3)' : 'var(--text4)', display: 'flex', transition: 'color .15s' }}>{tab.icon}</span>
               {tab.label}
               {tab.count !== null && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 18, height: 18, borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-bold)', padding: '0 5px',
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 18, height: 18, borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', padding: '0 5px',
                   background: tab.alert ? 'rgba(255,59,92,.15)' : isActive ? 'rgba(108,71,255,.15)' : 'var(--bg4)',
                   color: tab.alert ? 'var(--danger)' : isActive ? 'var(--p3)' : 'var(--text4)',
                   border: `1px solid ${tab.alert ? 'rgba(255,59,92,.3)' : isActive ? 'rgba(108,71,255,.2)' : 'var(--border)'}` }}>
@@ -326,17 +326,17 @@ export default function AdminDashboard() {
                   <div style={{ minWidth: 220, display: 'flex', alignItems: 'center', gap: 12, background: 'color-mix(in srgb, var(--acc2) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--acc2) 25%, var(--border))', borderRadius: 12, padding: '12px 14px' }}>
                     <CheckCircle2 size={30} style={{ color: 'var(--acc2)', flexShrink: 0 }} />
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{i('Toutes vos boutiques ont démarré', 'All your shops have started', 'Todas sus tiendas han arrancado', 'Tutti i tuoi negozi sono partiti')}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 3 }}>{activation.registered} {i('inscrites, chacune avec au moins un produit', 'signed up, each with at least one product', 'registradas, cada una con al menos un producto', 'registrati, ciascuno con almeno un prodotto')}</div>
+                      <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{i('Toutes vos boutiques ont démarré', 'All your shops have started', 'Todas sus tiendas han arrancado', 'Tutti i tuoi negozi sono partiti')}</div>
+                      <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginTop: 3 }}>{activation.registered} {i('inscrites, chacune avec au moins un produit', 'signed up, each with at least one product', 'registradas, cada una con al menos un producto', 'registrati, ciascuno con almeno un prodotto')}</div>
                     </div>
                   </div>
                 ) : (
                 <div style={{ minWidth: 220 }}>
-                  <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--warn)' }}>{i('Jamais activées', 'Never activated', 'Nunca activadas', 'Mai attivate')}</div>
+                  <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--warn)' }}>{i('Jamais activées', 'Never activated', 'Nunca activadas', 'Mai attivate')}</div>
                   <div style={{ fontSize: 46, fontWeight: 'var(--fw-bold)', lineHeight: 1, color: 'var(--text)', fontFamily: 'var(--mono)' }}>
-                    {activation.neverProduct.length}<span style={{ fontSize: 16, color: 'var(--text3)' }}> / {activation.registered} {i('boutiques', 'shops', 'tiendas', 'negozi')}</span>
+                    {activation.neverProduct.length}<span style={{ fontSize: 'var(--fs-md)', color: 'var(--text3)' }}> / {activation.registered} {i('boutiques', 'shops', 'tiendas', 'negozi')}</span>
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--text2)', maxWidth: '42ch', marginTop: 6 }}>
+                  <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text2)', maxWidth: '42ch', marginTop: 6 }}>
                     {i('inscrites sans aucun produit enregistré.', 'signed up with no product recorded.', 'registradas sin ningún producto registrado.', 'registrati senza alcun prodotto registrato.')}
                   </div>
                 </div>
@@ -351,8 +351,8 @@ export default function AdminDashboard() {
                     const w = activation.registered ? Math.round((s.n / activation.registered) * 100) : 0
                     return (
                       <div key={s.lab} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ fontSize: 11, color: 'var(--text3)', minWidth: 130 }}>{s.lab}</span>
-                        <div style={{ height: 24, borderRadius: 6, background: s.c, width: `${Math.max(9, w)}%`, display: 'flex', alignItems: 'center', padding: '0 9px', color: '#fff', fontSize: 12, fontWeight: 'var(--fw-bold)', fontFamily: 'var(--mono)' }}>{s.n}</div>
+                        <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', minWidth: 130 }}>{s.lab}</span>
+                        <div style={{ height: 24, borderRadius: 6, background: s.c, width: `${Math.max(9, w)}%`, display: 'flex', alignItems: 'center', padding: '0 9px', color: '#fff', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-bold)', fontFamily: 'var(--mono)' }}>{s.n}</div>
                       </div>
                     )
                   })}
@@ -364,8 +364,8 @@ export default function AdminDashboard() {
                   {activation.neverProduct.slice(0, 6).map(t => (
                     <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: 150 }}>
-                        <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{t.name}</div>
-                        <div style={{ fontSize: 11, color: t.lastActivityAt ? 'var(--text3)' : 'var(--danger)', fontWeight: t.lastActivityAt ? 'var(--fw-regular)' : 'var(--fw-semibold)' }}>
+                        <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{t.name}</div>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: t.lastActivityAt ? 'var(--text3)' : 'var(--danger)', fontWeight: t.lastActivityAt ? 'var(--fw-regular)' : 'var(--fw-semibold)' }}>
                           {t.lastActivityAt ? `${i('dern. connexion', 'last login', 'últ. conexión', 'ultimo accesso')} ${relTime(t.lastActivityAt, i)}` : i('jamais revenue', 'never returned', 'nunca volvió', 'mai tornata')}
                           {' · '}{i('inscrite', 'joined', 'registrada', 'iscritta')} {relTime(t.createdAt, i)}
                         </div>
@@ -376,7 +376,7 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   ))}
-                  {activation.neverProduct.length > 6 && <div style={{ fontSize: 12, color: 'var(--text3)', paddingLeft: 2 }}>+{activation.neverProduct.length - 6} {i('autres', 'more', 'más', 'altre')}</div>}
+                  {activation.neverProduct.length > 6 && <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', paddingLeft: 2 }}>+{activation.neverProduct.length - 6} {i('autres', 'more', 'más', 'altre')}</div>}
                 </div>
               )}
             </div>
@@ -386,7 +386,7 @@ export default function AdminDashboard() {
                TOUJOURS affichée (outil de surveillance) : vide → état explicite qui nomme chaque
                signal surveillé comme sain, jamais un panneau qui disparaît (= « fonction absente ? »). */}
           <div className="panel">
-              <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Inbox size={15} /> {i('Boutiques à traiter', 'Shops to handle', 'Tiendas por atender', 'Negozi da gestire')} <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: 'var(--bg3)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{toTreat.length}</span></span></div>
+              <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Inbox size={15} /> {i('Boutiques à traiter', 'Shops to handle', 'Tiendas por atender', 'Negozi da gestire')} <span style={{ fontSize: 'var(--fs-caption)', padding: '2px 8px', borderRadius: 99, background: 'var(--bg3)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{toTreat.length}</span></span></div>
               {toTreat.length === 0 ? (
                 <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[
@@ -405,7 +405,7 @@ export default function AdminDashboard() {
                 {toTreat.map(({ tenant, reasons }) => (
                   <div key={tenant.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: 160 }}>
-                      <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{tenant.name}</div>
+                      <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{tenant.name}</div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
                         {reasons.map(r => (
                           <span key={r.kind} style={{ fontSize: 10, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', borderRadius: 99, padding: '2px 8px', background: mix(r.color, 12), color: r.color, border: `1px solid ${mix(r.color, 25)}` }}>{r.label}</span>
@@ -437,7 +437,7 @@ export default function AdminDashboard() {
       {activeTab === 'tenants' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
-            <span style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={15} /> {i('Boutiques', 'Shops', 'Tiendas', 'Negozi')} <span style={{ color: 'var(--text3)', fontFamily: 'var(--mono)' }}>({view.length})</span></span>
+            <span style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={15} /> {i('Boutiques', 'Shops', 'Tiendas', 'Negozi')} <span style={{ color: 'var(--text3)', fontFamily: 'var(--mono)' }}>({view.length})</span></span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ position: 'relative' }}>
                 <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
@@ -480,12 +480,12 @@ export default function AdminDashboard() {
                     <div style={{ height: 3, background: `linear-gradient(90deg,${pc},${mix(pc, 40)})` }} />
                     <div style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, marginBottom: 12 }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg,${pc},${darken(pc, 70)})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 'var(--fw-semibold)', color: '#fff', flexShrink: 0, boxShadow: `0 4px 10px ${mix(pc, 35)}` }}>{initials}</div>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg,${pc},${darken(pc, 70)})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: '#fff', flexShrink: 0, boxShadow: `0 4px 10px ${mix(pc, 35)}` }}>{initials}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 5 }}>{t.name}</div>
+                          <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 5 }}>{t.name}</div>
                           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                            <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', background: mix(pc, 12), color: pc, border: `1px solid ${mix(pc, 22)}` }}>{planKey(t.plan)}</span>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: mix(sc.h, 14), color: sc.h, border: `1px solid ${mix(sc.h, 28)}` }}>
+                            <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', background: mix(pc, 12), color: pc, border: `1px solid ${mix(pc, 22)}` }}>{planKey(t.plan)}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', background: mix(sc.h, 14), color: sc.h, border: `1px solid ${mix(sc.h, 28)}` }}>
                               <span style={{ width: 4, height: 4, borderRadius: '50%', background: sc.h, boxShadow: sc.label === i('Actif', 'Active', 'Activo', 'Attivo') ? `0 0 5px ${sc.h}` : 'none' }} />
                               {sc.label}
                             </span>
@@ -503,24 +503,24 @@ export default function AdminDashboard() {
                           { lbl: i('Users', 'Users', 'Usuarios', 'Utenti'), val: String(t._count?.users ?? 0), color: 'var(--acc2)' },
                         ].map((m, idx) => (
                           <div key={idx} style={{ background: 'var(--card)', padding: '7px 8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: m.color, fontFamily: 'var(--mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.val}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 1 }}>{m.lbl}</div>
+                            <div style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: m.color, fontFamily: 'var(--mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.val}</div>
+                            <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 1 }}>{m.lbl}</div>
                           </div>
                         ))}
                       </div>
 
                       {/* CA boutique (refunded exclu) — donnée réelle via /api/admin/tenants */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '7px 10px', borderRadius: 8, background: mix('var(--acc3)', 8), marginBottom: 10 }}>
-                        <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', display: 'flex', alignItems: 'center', gap: 5 }}><Wallet size={11} /> {i('CA', 'Revenue', 'Ingresos', 'Fatturato')}</span>
-                        <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--acc3)', fontFamily: 'var(--mono)' }}>{fmtXOF(t.revenue ?? 0)}</span>
+                        <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', display: 'flex', alignItems: 'center', gap: 5 }}><Wallet size={11} /> {i('CA', 'Revenue', 'Ingresos', 'Fatturato')}</span>
+                        <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--acc3)', fontFamily: 'var(--mono)' }}>{fmtXOF(t.revenue ?? 0)}</span>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <div style={{ fontSize: 11, color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, display: 'flex', alignItems: 'center', gap: 5 }}>
                           <Clock size={10} style={{ color: 'var(--text4)', flexShrink: 0 }} />
                           {i('Activité', 'Activity', 'Actividad', 'Attività')} {relTime(t.lastActivityAt, i)}
                         </div>
-                        <div style={{ fontSize: 11, color: 'var(--text4)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
                           {new Date(t.createdAt).toLocaleDateString(lang, { day: '2-digit', month: 'short', year: '2-digit' })}
                         </div>
                       </div>
@@ -536,9 +536,9 @@ export default function AdminDashboard() {
       {/* ── Demandes de plan ── */}
       {activeTab === 'requests' && (
         <div>
-          <div style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
             <CreditCard size={15} /> {i('Demandes de plans en attente', 'Pending plan requests', 'Solicitudes de planes pendientes', 'Richieste piani in attesa')}
-            {pendingCount > 0 && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: 'rgba(255,59,92,.15)', color: 'var(--danger)', fontWeight: 'var(--fw-semibold)' }}>{pendingCount}</span>}
+            {pendingCount > 0 && <span style={{ fontSize: 'var(--fs-caption)', padding: '2px 8px', borderRadius: 99, background: 'rgba(255,59,92,.15)', color: 'var(--danger)', fontWeight: 'var(--fw-semibold)' }}>{pendingCount}</span>}
           </div>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}><Skeleton height={92} count={3} /></div>
@@ -556,27 +556,27 @@ export default function AdminDashboard() {
                       <CreditCard size={18} />
                     </div>
                     <div style={{ flex: 1, minWidth: 200 }}>
-                      <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 4 }}>{req.tenant?.name ?? '—'}</div>
+                      <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 4 }}>{req.tenant?.name ?? '—'}</div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                        <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(108,71,255,.1)', color: 'var(--p3)', border: '1px solid rgba(108,71,255,.2)', textTransform: 'capitalize' }}>{req.plan} · {req.period}</span>
-                        <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(255,149,0,.1)', color: 'var(--acc)', border: '1px solid rgba(255,149,0,.2)', fontFamily: 'var(--mono)' }}>{fmtXOF(req.amount ?? 0)}</span>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: mix(pm.c, 12), color: pm.c, border: `1px solid ${mix(pm.c, 25)}` }}>
+                        <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', background: 'rgba(108,71,255,.1)', color: 'var(--p3)', border: '1px solid rgba(108,71,255,.2)', textTransform: 'capitalize' }}>{req.plan} · {req.period}</span>
+                        <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', background: 'rgba(255,149,0,.1)', color: 'var(--acc)', border: '1px solid rgba(255,149,0,.2)', fontFamily: 'var(--mono)' }}>{fmtXOF(req.amount ?? 0)}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', background: mix(pm.c, 12), color: pm.c, border: `1px solid ${mix(pm.c, 25)}` }}>
                           <span style={{ width: 5, height: 5, borderRadius: '50%', background: pm.c }} /> {pm.label}
                         </span>
                       </div>
-                      {req.paymentRef && <div style={{ fontSize: 11, color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 4 }}>{i('Réf', 'Ref', 'Ref', 'Rif')}: {req.paymentRef}</div>}
-                      {req.notes && <div style={{ marginTop: 3, fontStyle: 'italic', color: 'var(--text4)', fontSize: 11 }}>"{req.notes}"</div>}
+                      {req.paymentRef && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 4 }}>{i('Réf', 'Ref', 'Ref', 'Rif')}: {req.paymentRef}</div>}
+                      {req.notes && <div style={{ marginTop: 3, fontStyle: 'italic', color: 'var(--text4)', fontSize: 'var(--fs-caption)' }}>"{req.notes}"</div>}
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
+                    <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
                       {req.createdAt ? new Date(req.createdAt).toLocaleDateString(lang, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
                     </div>
                     <div style={{ display: 'flex', gap: 7, flexShrink: 0 }}>
                       <button onClick={() => handleApprove(req.id)} aria-label={`${i('Approuver', 'Approve', 'Aprobar', 'Approva')} ${req.tenant?.name ?? req.id}`}
-                        style={{ padding: '8px 16px', borderRadius: 9, background: 'linear-gradient(135deg,var(--acc2),#00875A)', border: 'none', color: '#fff', fontSize: 12, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, minHeight: 36 }}>
+                        style={{ padding: '8px 16px', borderRadius: 9, background: 'linear-gradient(135deg,var(--acc2),#00875A)', border: 'none', color: '#fff', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, minHeight: 36 }}>
                         <Check size={13} /> {i('Approuver', 'Approve', 'Aprobar', 'Approva')}
                       </button>
                       <button onClick={() => handleReject(req.id)} aria-label={`${i('Rejeter', 'Reject', 'Rechazar', 'Rifiuta')} ${req.tenant?.name ?? req.id}`}
-                        style={{ padding: '8px 14px', borderRadius: 9, background: 'rgba(255,59,92,.1)', border: '1px solid rgba(255,59,92,.2)', color: 'var(--danger)', fontSize: 12, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, minHeight: 36 }}>
+                        style={{ padding: '8px 14px', borderRadius: 9, background: 'rgba(255,59,92,.1)', border: '1px solid rgba(255,59,92,.2)', color: 'var(--danger)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, minHeight: 36 }}>
                         <X size={13} /> {i('Rejeter', 'Reject', 'Rechazar', 'Rifiuta')}
                       </button>
                     </div>
@@ -594,7 +594,7 @@ export default function AdminDashboard() {
           <div ref={detailBoxRef} style={{ position: 'fixed', top: 0, right: 0, height: '100vh', width: 'min(420px,100vw)', background: 'var(--card,#fff)', borderLeft: '1px solid var(--border,rgba(0,0,0,.08))', boxShadow: '-20px 0 60px rgba(0,0,0,.3)', padding: 24, overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
-                <h3 style={{ fontSize: 18, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0 }}>{selected.name}</h3>
+                <h3 style={{ fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0 }}>{selected.name}</h3>
                 <div style={{ marginTop: 6 }}><PlanBadge plan={planKey(selected.plan)} /></div>
               </div>
               <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={() => setSelected(null)}><X size={14} /></button>
@@ -608,11 +608,11 @@ export default function AdminDashboard() {
               ].map(s => (
                 <div key={s.l} className="kpi-card" style={{ padding: 12 }}>
                   <div className="kpi-label">{s.l}</div>
-                  <div style={{ fontSize: 18, fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>{s.v}</div>
+                  <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>{s.v}</div>
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 'var(--fs-sm)' }}>
               {[
                 ['ID', selected.id],
                 [i('Devise', 'Currency', 'Divisa', 'Valuta'), selected.currency],
@@ -635,7 +635,7 @@ export default function AdminDashboard() {
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')} onClick={e => e.target === e.currentTarget && setShowNewTenant(false)}>
           <div ref={newTenantBoxRef} className="modal-box" style={{ maxWidth: 480 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, alignItems: 'center' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={16} /> {i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</h3>
+              <h3 style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={16} /> {i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</h3>
               <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={() => setShowNewTenant(false)}><X size={14} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -696,7 +696,7 @@ export default function AdminDashboard() {
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={i('Mon compte', 'My account', 'Mi cuenta', 'Il mio account')} onClick={e => e.target === e.currentTarget && setShowAccount(false)}>
           <div ref={accountBoxRef} className="modal-box" style={{ maxWidth: 460 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}><Settings size={16} /> {i('Mon compte', 'My account', 'Mi cuenta', 'Il mio account')}</h3>
+              <h3 style={{ fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}><Settings size={16} /> {i('Mon compte', 'My account', 'Mi cuenta', 'Il mio account')}</h3>
               <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={() => setShowAccount(false)}><X size={14} /></button>
             </div>
 

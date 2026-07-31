@@ -45,7 +45,7 @@ const makeDonutLabel = (pcts: number[]) => ({ cx, cy, midAngle, innerRadius, out
   const y = cy + r * Math.sin(-midAngle * RADIAN)
   return (
     <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central"
-      style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', pointerEvents: 'none' }}>
+      style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', pointerEvents: 'none' }}>
       {`${pct}%`}
     </text>
   )
@@ -70,16 +70,16 @@ const CatTooltip = ({ active, payload }: any) => {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }}/>
-        <span style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{p.name}</span>
+        <span style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{p.name}</span>
       </div>
-      <div style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', marginBottom: 6 }}>
+      <div style={{ fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', marginBottom: 6 }}>
         {fmt(p.value)}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <div style={{ flex: 1, height: 4, background: 'var(--bg3)', borderRadius: 99, overflow: 'hidden' }}>
           <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 99 }}/>
         </div>
-        <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color, fontFamily: 'var(--mono)', minWidth: 36, textAlign: 'right' }}>{pct}%</span>
+        <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color, fontFamily: 'var(--mono)', minWidth: 36, textAlign: 'right' }}>{pct}%</span>
       </div>
     </div>
   )
@@ -98,15 +98,15 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       minWidth: 140,
     }}>
       {label && (
-        <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
+        <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
           {label}
         </div>
       )}
       {payload.map((p: any, i: number) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: i > 0 ? 4 : 0 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color ?? p.fill ?? 'var(--p)', flexShrink: 0 }} />
-          <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 'var(--fw-regular)' }}>{p.name ?? p.dataKey}</span>
-          <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>
+          <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text2)', fontWeight: 'var(--fw-regular)' }}>{p.name ?? p.dataKey}</span>
+          <span style={{ marginLeft: 'auto', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>
             {typeof p.value === 'number' ? fmt(p.value) : p.value}
           </span>
         </div>
@@ -263,7 +263,7 @@ export default function Dashboard() {
       <div className="page-header">
         <div>
           <h1 style={{
-            fontSize: 22, fontWeight: 'var(--fw-semibold)', letterSpacing: '-.4px',
+            fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-semibold)', letterSpacing: '-.4px',
             background: 'linear-gradient(135deg,var(--text) 30%,var(--p3))',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
           }}>
@@ -291,16 +291,16 @@ export default function Dashboard() {
         }}>
           <div style={{ fontSize: 40 }}>🎉</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 4 }}>
+            <div style={{ fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 4 }}>
               {lang === 'fr'
                 ? `Bienvenue sur HabaShop, ${user?.name?.split(' ')[0] ?? ''} !`
                 : `Welcome to HabaShop, ${user?.name?.split(' ')[0] ?? ''}!`}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
+            <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text2)', lineHeight: 1.6 }}>
               {lang === 'en' ? 'Your shop is ready. Start by adding products then open the register.' : lang === 'es' ? 'Su tienda está lista. Comience agregando sus productos y luego abra la caja.' : lang === 'it' ? 'Il tuo negozio è pronto. Inizia aggiungendo i prodotti poi apri la cassa.' : 'Votre boutique est prête. Commencez par ajouter vos produits puis ouvrez la caisse.'}
             </div>
           </div>
-          <button onClick={() => navigate('/app/stock')} className="btn-primary" style={{ flexShrink: 0, fontSize: 13 }}>
+          <button onClick={() => navigate('/app/stock')} className="btn-primary" style={{ flexShrink: 0, fontSize: 'var(--fs-sm)' }}>
             {lang === 'en' ? '+ Add products' : lang === 'es' ? '+ Agregar productos' : lang === 'it' ? '+ Aggiungi prodotti' : '+ Ajouter des produits'}
           </button>
         </div>
@@ -317,7 +317,7 @@ export default function Dashboard() {
           }}
         >
           {inv.reorder > 0 && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--text2)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 'var(--fs-sm)', color: 'var(--text2)' }}>
               <AlertTriangle size={15} style={{ color: 'var(--danger)' }} />
               <strong style={{ color: 'var(--text)' }}>{inv.reorder}</strong>
               {lang === 'en' ? 'to reorder' : lang === 'es' ? 'para reabastecer' : lang === 'it' ? 'da riordinare' : 'à réapprovisionner'}
@@ -325,13 +325,13 @@ export default function Dashboard() {
           )}
           {inv.reorder > 0 && inv.dormant > 0 && <span style={{ color: 'var(--border2)' }}>·</span>}
           {inv.dormant > 0 && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--text2)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 'var(--fs-sm)', color: 'var(--text2)' }}>
               <PackageX size={15} style={{ color: 'var(--warn)' }} />
               <strong style={{ color: 'var(--text)' }}>{inv.dormant}</strong>
               {lang === 'en' ? 'dormant' : lang === 'es' ? 'inactivos' : lang === 'it' ? 'dormienti' : 'dormants'}
             </span>
           )}
-          <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--p3)' }}>
+          <span style={{ marginLeft: 'auto', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: 'var(--p3)' }}>
             {lang === 'en' ? 'View report →' : lang === 'es' ? 'Ver informe →' : lang === 'it' ? 'Vedi report →' : 'Voir le rapport →'}
           </span>
         </button>
@@ -378,7 +378,7 @@ export default function Dashboard() {
                 {k.trend != null && (
                   <span style={{
                     display: 'inline-flex', alignItems: 'center', gap: 3,
-                    padding: '3px 9px', borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)',
+                    padding: '3px 9px', borderRadius: 'var(--r-full)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)',
                     background: up ? 'var(--c-green-bg)' : down ? 'var(--c-red-bg)' : 'var(--bg4)',
                     color: up ? 'var(--acc2)' : down ? 'var(--danger)' : 'var(--text3)',
                     border: `1px solid ${up ? 'var(--c-green-border)' : down ? 'var(--c-red-border)' : 'var(--border)'}`,
@@ -390,7 +390,7 @@ export default function Dashboard() {
               </div>
               <div className="kpi-label">{k.label}</div>
               {/* Valeur 24px mono (langage visuel commun POS/Stock) */}
-              <div className="kpi-value" style={{ color: k.color, fontSize: 24, fontWeight: 'var(--fw-bold)' }}>{k.value}</div>
+              <div className="kpi-value" style={{ color: k.color, fontSize: 'var(--fs-display)', fontWeight: 'var(--fw-bold)' }}>{k.value}</div>
               <div className="kpi-sub" style={{ marginTop: 4 }}>{k.sub}</div>
             </div>
           )
@@ -415,7 +415,7 @@ export default function Dashboard() {
             <div style={{ width: 38, height: 38, borderRadius: 10, background: a.color, color: a.ic, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${a.ic}22` }}>
               <a.Icon size={17} />
             </div>
-            <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', lineHeight: 1.2, textAlign: 'center' }}>{a.label}</span>
+            <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', lineHeight: 1.2, textAlign: 'center' }}>{a.label}</span>
           </button>
         ))}
       </ResponsiveGrid>
@@ -433,7 +433,7 @@ export default function Dashboard() {
                 {lang === 'fr' ? 'Ventes — 7 derniers jours' : lang === 'en' ? 'Sales — Last 7 days' : lang === 'es' ? 'Ventas — Últimos 7 días' : 'Vendite — Ultimi 7 giorni'}
               </span>
             </div>
-            <select className="input" style={{ width: 'auto', fontSize: 12, minHeight: 34 }}
+            <select className="input" style={{ width: 'auto', fontSize: 'var(--fs-label)', minHeight: 34 }}
               value={reportPeriod} onChange={e => setReportPeriod(e.target.value)}>
               <option value="7days">{lang === 'en' ? '7 days' : lang === 'es' ? '7 días' : lang === 'it' ? '7 giorni' : '7 jours'}</option>
               <option value="30days">{lang === 'en' ? '30 days' : lang === 'es' ? '30 días' : lang === 'it' ? '30 giorni' : '30 jours'}</option>
@@ -442,7 +442,7 @@ export default function Dashboard() {
           </div>
           <div role="img" aria-label={lang === 'fr' ? 'Graphique des ventes par jour' : lang === 'en' ? 'Daily sales chart' : lang === 'es' ? 'Gráfico de ventas diarias' : 'Grafico vendite giornaliere'}>
           {salesChart.length === 0 ? (
-            <div style={{ height: 190, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontSize: 13, textAlign: 'center', padding: '0 16px' }}>
+            <div style={{ height: 190, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontSize: 'var(--fs-sm)', textAlign: 'center', padding: '0 16px' }}>
               {lang === 'en' ? 'No sales yet' : lang === 'es' ? 'Sin ventas por ahora' : lang === 'it' ? 'Nessuna vendita per ora' : 'Aucune vente pour le moment'}
             </div>
           ) : (
@@ -459,7 +459,7 @@ export default function Dashboard() {
             <span className="panel-title">{lang === 'en' ? 'Revenue by category' : lang === 'es' ? 'Ingresos por categoría' : lang === 'it' ? 'Ricavi per categoria' : 'CA par catégorie'}</span>
           </div>
           {catData.length === 0 ? (
-            <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+            <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>
               {lang === 'en' ? 'No sales data available' : lang === 'es' ? 'No hay datos de ventas' : lang === 'it' ? 'Nessun dato di vendita' : 'Aucune donnée de vente disponible'}
             </div>
           ) : (<>
@@ -472,7 +472,7 @@ export default function Dashboard() {
               transform: 'translate(-50%,-50%)',
               textAlign: 'center', pointerEvents: 'none',
             }}>
-              <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 2 }}>Total CA</div>
+              <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 2 }}>Total CA</div>
               <div style={{ fontSize: 17, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>
                 {abbr(catTotal)}
               </div>
@@ -482,7 +482,7 @@ export default function Dashboard() {
             {catData.map((d, i) => {
               const pct = catPcts[i]
               return (
-                <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11 }}>
+                <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 'var(--fs-caption)' }}>
                   <div style={{ width: 8, height: 8, borderRadius: 2, background: DONUT_COLORS[i % DONUT_COLORS.length], flexShrink: 0 }} />
                   <span style={{ flex: 1, color: 'var(--text2)' }}>{d.name}</span>
                   <div style={{ width: 48, height: 4, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
@@ -519,7 +519,7 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {stockAlerts.length === 0 ? (
-              <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--acc2)', fontSize: 13, fontWeight: 'var(--fw-regular)' }}>
+              <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--acc2)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-regular)' }}>
                 {lang === 'en' ? '✅ No stock alerts' : lang === 'es' ? '✅ Sin alertas de stock' : lang === 'it' ? '✅ Nessun avviso di stock' : '✅ Aucune alerte de stock'}
               </div>
             ) : stockAlerts.map((a, i) => {
@@ -536,8 +536,8 @@ export default function Dashboard() {
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = ''}
               >
                 <Package size={13} style={{ color: red ? 'var(--danger)' : 'var(--warn)', flexShrink: 0 }} />
-                <div style={{ flex: 1, fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
-                <span style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 'var(--fw-semibold)', color: red ? 'var(--danger)' : 'var(--warn)' }}>
+                <div style={{ flex: 1, fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-regular)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: red ? 'var(--danger)' : 'var(--warn)' }}>
                   {a.stockQty}<span style={{ color: 'var(--text4)', fontWeight: 400 }}>/{a.stockMin}</span>
                 </span>
               </div>
@@ -554,10 +554,10 @@ export default function Dashboard() {
             {recentActivity.length === 0 ? (
               <div style={{ padding: '30px 20px', textAlign: 'center', color: 'var(--text3)' }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>🛍️</div>
-                <div style={{ fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'var(--text2)', marginBottom: 6 }}>
+                <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-regular)', color: 'var(--text2)', marginBottom: 6 }}>
                   {lang === 'en' ? 'No activity yet' : lang === 'es' ? 'Sin actividad por ahora' : lang === 'it' ? 'Nessuna attività per ora' : 'Aucune activité pour le moment'}
                 </div>
-                <div style={{ fontSize: 12 }}>{emptyHint}</div>
+                <div style={{ fontSize: 'var(--fs-label)' }}>{emptyHint}</div>
               </div>
             ) : recentActivity.map((a, i) => {
               const mins = Math.max(0, Math.round((Date.now() - new Date(a.createdAt).getTime()) / 60000))
@@ -576,10 +576,10 @@ export default function Dashboard() {
                   <ActivityIcon type="sale" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : lang === 'it' ? 'Vendita' : 'Vente'} #{String(a.id ?? '').slice(-6).toUpperCase()}
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.4 }}>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', lineHeight: 1.4 }}>
                     {fmt(a.total ?? 0)} · {payModeLabel(a.paymentMode, lang)} · {ago}
                   </div>
                 </div>
@@ -595,7 +595,7 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {topProducts.length === 0 ? (
-              <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 13, lineHeight: 1.6 }}>
+              <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 'var(--fs-sm)', lineHeight: 1.6 }}>
                 {lang === 'en' ? 'No sales recorded yet' : lang === 'es' ? 'Ninguna venta registrada' : lang === 'it' ? 'Nessuna vendita registrata' : 'Aucune vente enregistrée pour le moment'}
               </div>
             ) : topProducts.map((p, i) => {
@@ -609,10 +609,10 @@ export default function Dashboard() {
                     width: 22, height: 22, borderRadius: 6, flexShrink: 0,
                     background: `${color}22`, border: `1px solid ${color}44`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 'var(--fw-semibold)', color,
+                    fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color,
                   }}>{i + 1}</div>
-                  <span style={{ flex: 1, fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 'var(--fw-semibold)', color }}>{fmt(p.ca ?? 0)}</span>
+                  <span style={{ flex: 1, fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-regular)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color }}>{fmt(p.ca ?? 0)}</span>
                 </div>
                 <div style={{ height: 5, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width .4s var(--ease)' }} />

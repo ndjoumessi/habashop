@@ -106,7 +106,7 @@ export default function SignupPage() {
                     background: active ? `linear-gradient(135deg,${D.p},${D.p2})` : 'rgba(255,255,255,.05)',
                     border: `2px solid ${active ? 'transparent' : D.border2}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 13, fontWeight: 900,
+                    fontSize: 'var(--fs-sm)', fontWeight: 900,
                     color: active ? '#fff' : D.text4, transition: 'all .3s',
                     boxShadow: step === s ? '0 4px 14px rgba(124,58,237,.45)' : 'none',
                     flexShrink: 0,
@@ -163,12 +163,12 @@ export default function SignupPage() {
           )}
 
           {/* Footer link */}
-          <div style={{ marginTop: 22, textAlign: 'center', fontSize: 13, color: D.text3 }}>
+          <div style={{ marginTop: 22, textAlign: 'center', fontSize: 'var(--fs-sm)', color: D.text3 }}>
             {step === 1 ? (
               <>
                 {tx.login_q}{' '}
                 <button type="button" onClick={() => navigate('/login')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: D.p3, fontSize: 13, fontWeight: 700, fontFamily: FONT, textDecoration: 'underline' }}>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: D.p3, fontSize: 'var(--fs-sm)', fontWeight: 700, fontFamily: FONT, textDecoration: 'underline' }}>
                   {tx.login_link}
                 </button>
               </>

@@ -104,7 +104,7 @@ export default function Notifications() {
             { id:'danger', label:`${t('notif_critical')} (${dangerCount})`   },
           ] as { id:TabType; label:string }[]).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-              padding:'7px 16px', borderRadius:8, fontSize:13, fontWeight:'var(--fw-regular)',
+              padding:'7px 16px', borderRadius:8, fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)',
               cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
               background: activeTab === tab.id
                 ? 'linear-gradient(135deg, var(--p), var(--p2))' : 'transparent',
@@ -166,18 +166,18 @@ export default function Notifications() {
               <div style={{ flex:1 }}>
                 <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6 }}>
                   <div>
-                    <span style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>{notif.title}</span>
+                    <span style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-bold)', color:'var(--text)' }}>{notif.title}</span>
                     <span style={{
-                      marginLeft:10, fontSize:11, fontWeight:'var(--fw-semibold)',
+                      marginLeft:10, fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)',
                       background:'var(--bg3)', color:'var(--text3)',
                       borderRadius:20, padding:'2px 8px',
                     }}>{notif.module}</span>
                   </div>
-                  <span style={{ fontSize:11, color:'var(--text3)', whiteSpace:'nowrap', marginLeft:12 }}>
+                  <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', whiteSpace:'nowrap', marginLeft:12 }}>
                     {notif.time}
                   </span>
                 </div>
-                <p style={{ fontSize:13, color:'var(--text2)', lineHeight:1.65, marginBottom:12 }}>
+                <p style={{ fontSize:'var(--fs-sm)', color:'var(--text2)', lineHeight:1.65, marginBottom:12 }}>
                   {notif.message}
                 </p>
                 <div style={{ display:'flex', gap:8, alignItems:'center' }}>
@@ -185,7 +185,7 @@ export default function Notifications() {
                     <button style={{
                       background:cfg.bg, border:`1px solid ${cfg.border}`,
                       borderRadius:8, padding:'5px 14px',
-                      fontSize:12, fontWeight:'var(--fw-semibold)', color:cfg.color,
+                      fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:cfg.color,
                       cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
                     }} onClick={() => {
                       const route = NOTIF_ROUTES[notif.module] ?? '/app/dashboard'
@@ -216,7 +216,7 @@ export default function Notifications() {
         {filtered.length === 0 && (
           <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--text3)' }}>
             <Bell size={40} style={{ margin:'0 auto 12px', display:'block', opacity:.3 }} />
-            <div style={{ fontSize:14, fontWeight:'var(--fw-regular)' }}>{lang === 'en' ? 'No notifications' : lang === 'es' ? 'Sin notificaciones' : lang === 'it' ? 'Nessuna notifica' : 'Aucune notification'}</div>
+            <div style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-regular)' }}>{lang === 'en' ? 'No notifications' : lang === 'es' ? 'Sin notificaciones' : lang === 'it' ? 'Nessuna notifica' : 'Aucune notification'}</div>
           </div>
         )}
       </div>
@@ -254,8 +254,8 @@ export default function Notifications() {
               {prefRows.map(row => (
                 <tr key={row.key} style={{ borderBottom:'1px solid var(--border)' }}>
                   <td style={{ padding:'14px 9px' }}>
-                    <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{row.label}</div>
-                    <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>{row.desc}</div>
+                    <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{row.label}</div>
+                    <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', marginTop:2 }}>{row.desc}</div>
                   </td>
                   {(['email','sms','push'] as const).map(canal => {
                     const key = `${canal}_${row.key}` as keyof typeof prefs

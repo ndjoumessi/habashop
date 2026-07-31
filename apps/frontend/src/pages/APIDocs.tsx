@@ -81,14 +81,14 @@ export default function APIDocs() {
   return (
     <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
-        <h1 style={{ fontSize: 20, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0, display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+        <h1 style={{ fontSize: 'var(--fs-xl)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0, display: 'inline-flex', alignItems: 'center', gap: 10 }}>
           <Link2 size={20} strokeWidth={2.2} color="var(--acc2)" />
           {lang === 'fr' ? 'API & Intégrations'
             : lang === 'en' ? 'API & Integrations'
             : lang === 'es' ? 'API & Integraciones'
             : 'API & Integrazioni'}
         </h1>
-        <p style={{ fontSize: 13, color: 'var(--text3)', margin: '4px 0 0' }}>
+        <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)', margin: '4px 0 0' }}>
           {lang === 'en' ? 'Integrate HabaShop into your applications via our REST API' : lang === 'es' ? 'Integre HabaShop en sus aplicaciones a través de nuestra API REST' : lang === 'it' ? 'Integra HabaShop nelle tue applicazioni tramite la nostra API REST' : 'Intégrez HabaShop dans vos applications via notre API REST'}
         </p>
       </div>
@@ -109,7 +109,7 @@ export default function APIDocs() {
           border: '1px solid var(--border)',
           borderRadius: 10,
           fontFamily: 'var(--mono)',
-          fontSize: 14,
+          fontSize: 'var(--fs-body)',
           color: 'var(--p2)',
           display: 'flex',
           justifyContent: 'space-between',
@@ -169,15 +169,15 @@ export default function APIDocs() {
             }}>
               <link.Icon size={22} strokeWidth={2.2} />
             </div>
-            <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{link.title}</div>
-            <div style={{ fontSize: 12, color: 'var(--text3)', flex: 1 }}>{link.desc}</div>
+            <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{link.title}</div>
+            <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', flex: 1 }}>{link.desc}</div>
             <a href={link.url} target="_blank" rel="noopener noreferrer"
               style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 padding: '8px', borderRadius: 9,
                 background: `${link.color}22`,
                 border: `1px solid ${link.color}44`,
-                color: link.color, fontSize: 12, fontWeight: 'var(--fw-regular)',
+                color: link.color, fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-regular)',
                 textDecoration: 'none', transition: 'all .15s',
               }}>
               {link.btn} <ArrowRight size={12} />
@@ -218,19 +218,19 @@ export default function APIDocs() {
                 <tr key={i}>
                   <td>
                     <span style={{
-                      padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 'var(--fw-regular)',
+                      padding: '3px 8px', borderRadius: 6, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)',
                       background: e.method === 'GET' ? 'rgba(14,196,126,.15)' : 'rgba(91,78,232,.15)',
                       color: e.method === 'GET' ? 'var(--acc2)' : 'var(--p2)',
                     }}>{e.method}</span>
                   </td>
                   <td>
                     <code style={{
-                      fontFamily: 'var(--mono)', fontSize: 12,
+                      fontFamily: 'var(--mono)', fontSize: 'var(--fs-label)',
                       color: 'var(--p2)', background: 'rgba(91,78,232,.08)',
                       padding: '2px 6px', borderRadius: 4,
                     }}>{e.path}</code>
                   </td>
-                  <td style={{ fontSize: 12, color: 'var(--text2)' }}>{e.desc}</td>
+                  <td style={{ fontSize: 'var(--fs-label)', color: 'var(--text2)' }}>{e.desc}</td>
                   <td>
                     {e.auth ? (
                       <span style={{
@@ -279,7 +279,7 @@ export default function APIDocs() {
           background: 'var(--bg)',
           border: '1px solid var(--border)',
           borderRadius: 12, padding: '16px',
-          fontSize: 12, color: 'var(--text2)',
+          fontSize: 'var(--fs-label)', color: 'var(--text2)',
           fontFamily: 'var(--mono)',
           overflow: 'auto',
           lineHeight: 1.8,
@@ -365,12 +365,12 @@ main().catch(console.error)`)}
 
         {testerEndpoint.startsWith('POST') && (
           <div style={{ marginBottom:12 }}>
-            <div style={{ fontSize:11, fontWeight:'var(--fw-regular)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+            <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-regular)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
               {lang === 'en' ? 'JSON body' : lang === 'es' ? 'Cuerpo JSON' : lang === 'it' ? 'Corpo JSON' : 'Corps JSON'}
             </div>
             <textarea
               className="input"
-              style={{ width:'100%', fontFamily:'var(--mono)', fontSize:12, minHeight:80, resize:'vertical', boxSizing:'border-box' }}
+              style={{ width:'100%', fontFamily:'var(--mono)', fontSize:'var(--fs-label)', minHeight:80, resize:'vertical', boxSizing:'border-box' }}
               placeholder={testerEndpoint.includes('ai/analyze') ? '{"type": "full", "lang": "fr"}' : '{"messages": [{"role":"user","content":"?"}], "lang":"fr"}'}
               value={testerBody}
               onChange={e => setTesterBody(e.target.value)}
@@ -384,7 +384,7 @@ main().catch(console.error)`)}
           return (
             <div style={{
               background:'var(--bg)', border:'1px solid var(--border)', borderRadius:10,
-              padding:14, fontSize:12, lineHeight:1.7, overflow:'auto', maxHeight:340,
+              padding:14, fontSize:'var(--fs-label)', lineHeight:1.7, overflow:'auto', maxHeight:340,
               color: isError ? 'var(--danger)' : 'var(--acc2)',
               fontFamily:'var(--mono)',
               display: 'flex', alignItems: 'flex-start', gap: 8,
@@ -396,7 +396,7 @@ main().catch(console.error)`)}
         })()}
 
         {!testerResult && !testerLoading && (
-          <div style={{ padding:'20px 0', textAlign:'center', fontSize:12, color:'var(--text3)' }}>
+          <div style={{ padding:'20px 0', textAlign:'center', fontSize:'var(--fs-label)', color:'var(--text3)' }}>
             {lang === 'en' ? 'Select an endpoint and click Test' : lang === 'es' ? 'Seleccione un endpoint y haga clic en Probar' : lang === 'it' ? 'Seleziona un endpoint e clicca Testa' : 'Sélectionnez un endpoint et cliquez Tester'}
           </div>
         )}

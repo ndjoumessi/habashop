@@ -67,11 +67,11 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   return (
     <div style={{ marginBottom: 8, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 12, overflow: 'hidden' }}>
       <button type="button" onClick={() => setOpen(o => !o)}
-        style={{ width: '100%', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', textAlign: 'left' }}>
+        style={{ width: '100%', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', fontSize: 'var(--fs-sm)', fontWeight: 700, fontFamily: 'var(--font)', textAlign: 'left' }}>
         {q}
         <span style={{ color: 'var(--text3)', transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
       </button>
-      {open && <div style={{ padding: '0 18px 14px', fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>{a}</div>}
+      {open && <div style={{ padding: '0 18px 14px', fontSize: 'var(--fs-label)', color: 'var(--text3)', lineHeight: 1.6 }}>{a}</div>}
     </div>
   )
 }
@@ -96,16 +96,16 @@ export default function Pricing() {
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0A0C14,#0D1019,#11151F)', fontFamily: 'var(--font)', padding: '60px 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
-        <button type="button" onClick={() => navigate('/')} style={{ position: 'absolute', top: 24, left: 24, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10, padding: '8px 14px', color: 'var(--text2)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)' }}>← {i('Accueil', 'Home', 'Inicio', 'Home')}</button>
+        <button type="button" onClick={() => navigate('/')} style={{ position: 'absolute', top: 24, left: 24, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10, padding: '8px 14px', color: 'var(--text2)', fontSize: 'var(--fs-label)', cursor: 'pointer', fontFamily: 'var(--font)' }}>← {i('Accueil', 'Home', 'Inicio', 'Home')}</button>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '6px 14px', borderRadius: 99, background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.2)' }}>
           <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--p3)', textTransform: 'uppercase', letterSpacing: '.6px' }}>{i('TARIFS SIMPLES ET TRANSPARENTS', 'SIMPLE & TRANSPARENT PRICING', 'PRECIOS SIMPLES Y TRANSPARENTES', 'PREZZI SEMPLICI E TRASPARENTI')}</span>
         </div>
         <h1 style={{ fontSize: 36, fontWeight: 900, color: '#EAEEF6', letterSpacing: '-1px', marginBottom: 12, lineHeight: 1.15 }}>{i('Choisissez votre plan', 'Choose your plan', 'Elige tu plan', 'Scegli il tuo piano')}</h1>
-        <p style={{ fontSize: 15, color: 'var(--text3)', maxWidth: 480, margin: '0 auto 24px' }}>{i('Commencez gratuitement. Évoluez selon vos besoins.', 'Start for free. Scale as you grow.', 'Empieza gratis. Crece según tus necesidades.', 'Inizia gratis. Cresci secondo le tue esigenze.')}</p>
+        <p style={{ fontSize: 'var(--fs-title)', color: 'var(--text3)', maxWidth: 480, margin: '0 auto 24px' }}>{i('Commencez gratuitement. Évoluez selon vos besoins.', 'Start for free. Scale as you grow.', 'Empieza gratis. Crece según tus necesidades.', 'Inizia gratis. Cresci secondo le tue esigenze.')}</p>
         <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, padding: 4, gap: 4 }}>
           {([{ id: 'monthly', label: i('Mensuel', 'Monthly', 'Mensual', 'Mensile') }, { id: 'yearly', label: i('Annuel -20%', 'Yearly -20%', 'Anual -20%', 'Annuale -20%') }] as const).map(p => (
             <button key={p.id} type="button" onClick={() => setBilling(p.id)}
-              style={{ padding: '8px 20px', borderRadius: 9, background: billing === p.id ? 'linear-gradient(135deg,#6C47FF,#8B6FFF)' : 'transparent', border: 'none', cursor: 'pointer', color: billing === p.id ? '#fff' : 'var(--text3)', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .2s' }}>{p.label}</button>
+              style={{ padding: '8px 20px', borderRadius: 9, background: billing === p.id ? 'linear-gradient(135deg,#6C47FF,#8B6FFF)' : 'transparent', border: 'none', cursor: 'pointer', color: billing === p.id ? '#fff' : 'var(--text3)', fontSize: 'var(--fs-label)', fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .2s' }}>{p.label}</button>
           ))}
         </div>
       </div>
@@ -117,29 +117,29 @@ export default function Pricing() {
           return (
             <div key={plan.id} style={{ background: plan.popular ? 'linear-gradient(160deg,#0D1019,#161C2B)' : 'linear-gradient(160deg,#0D1019,#11151F)', border: `${plan.popular ? '2' : '1'}px solid ${plan.popular ? 'rgba(108,71,255,.4)' : 'rgba(255,255,255,.07)'}`, borderRadius: 24, overflow: 'hidden', position: 'relative', boxShadow: plan.popular ? '0 24px 64px rgba(108,71,255,.2)' : 'none' }}>
               {plan.popular && (
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, textAlign: 'center', padding: 7, background: 'linear-gradient(135deg,#6C47FF,#8B6FFF)', fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: '.3px' }}>⚡ {i('PLUS POPULAIRE', 'MOST POPULAR', 'MÁS POPULAR', 'PIÙ POPOLARE')}</div>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, textAlign: 'center', padding: 7, background: 'linear-gradient(135deg,#6C47FF,#8B6FFF)', fontSize: 'var(--fs-caption)', fontWeight: 800, color: '#fff', letterSpacing: '.3px' }}>⚡ {i('PLUS POPULAIRE', 'MOST POPULAR', 'MÁS POPULAR', 'PIÙ POPOLARE')}</div>
               )}
               <div style={{ padding: `${plan.popular ? '48px' : '28px'} 28px 28px` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 14, background: `${plan.color}20`, border: `1px solid ${plan.color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{plan.icon}</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, background: `${plan.color}20`, border: `1px solid ${plan.color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-2xl)' }}>{plan.icon}</div>
                   <div>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: '#EAEEF6' }}>{plan.label[lang] ?? plan.label.fr}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{plan.desc[lang] ?? plan.desc.fr}</div>
+                    <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 900, color: '#EAEEF6' }}>{plan.label[lang] ?? plan.label.fr}</div>
+                    <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{plan.desc[lang] ?? plan.desc.fr}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
                   <span style={{ fontSize: 36, fontWeight: 900, color: plan.color, fontFamily: 'var(--mono)' }}>{displayPrice.toLocaleString('fr-FR')}</span>
-                  <span style={{ fontSize: 14, color: 'var(--text3)' }}>{symbol}</span>
-                  <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 2 }}>/{billing === 'yearly' ? i('an', 'yr', 'año', 'anno') : i('mois', 'mo', 'mes', 'mese')}</span>
+                  <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text3)' }}>{symbol}</span>
+                  <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginLeft: 2 }}>/{billing === 'yearly' ? i('an', 'yr', 'año', 'anno') : i('mois', 'mo', 'mes', 'mese')}</span>
                 </div>
-                {billing === 'yearly' && <div style={{ fontSize: 11, color: 'var(--acc2)', marginBottom: 20 }}>🎁 {i('2 mois offerts !', '2 months free!', '¡2 meses gratis!', '2 mesi gratis!')}</div>}
+                {billing === 'yearly' && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--acc2)', marginBottom: 20 }}>🎁 {i('2 mois offerts !', '2 months free!', '¡2 meses gratis!', '2 mesi gratis!')}</div>}
                 <div style={{ marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 7, marginTop: billing === 'yearly' ? 0 : 14 }}>
                   {features.map((f, idx) => (
-                    <div key={idx} style={{ fontSize: 12, color: f.startsWith('✅') ? 'var(--text2)' : 'rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', gap: 6 }}>{f}</div>
+                    <div key={idx} style={{ fontSize: 'var(--fs-label)', color: f.startsWith('✅') ? 'var(--text2)' : 'rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', gap: 6 }}>{f}</div>
                   ))}
                 </div>
                 <button onClick={() => handleCTA(plan.id)}
-                  style={{ width: '100%', padding: 13, borderRadius: 12, background: plan.popular ? 'linear-gradient(135deg,#6C47FF,#8B6FFF)' : `${plan.color}18`, border: `1px solid ${plan.color}${plan.popular ? '00' : '44'}`, cursor: 'pointer', color: plan.popular ? '#fff' : plan.color, fontSize: 13, fontWeight: 800, fontFamily: 'var(--font)', transition: 'all .2s', boxShadow: plan.popular ? '0 8px 24px rgba(108,71,255,.35)' : 'none' }}>{plan.cta[lang] ?? plan.cta.fr}</button>
+                  style={{ width: '100%', padding: 13, borderRadius: 12, background: plan.popular ? 'linear-gradient(135deg,#6C47FF,#8B6FFF)' : `${plan.color}18`, border: `1px solid ${plan.color}${plan.popular ? '00' : '44'}`, cursor: 'pointer', color: plan.popular ? '#fff' : plan.color, fontSize: 'var(--fs-sm)', fontWeight: 800, fontFamily: 'var(--font)', transition: 'all .2s', boxShadow: plan.popular ? '0 8px 24px rgba(108,71,255,.35)' : 'none' }}>{plan.cta[lang] ?? plan.cta.fr}</button>
               </div>
             </div>
           )
@@ -147,7 +147,7 @@ export default function Pricing() {
       </div>
 
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
-        <h2 style={{ fontSize: 20, fontWeight: 900, color: '#EAEEF6', textAlign: 'center', marginBottom: 20 }}>{i('Questions fréquentes', 'FAQ', 'Preguntas frecuentes', 'Domande frequenti')}</h2>
+        <h2 style={{ fontSize: 'var(--fs-xl)', fontWeight: 900, color: '#EAEEF6', textAlign: 'center', marginBottom: 20 }}>{i('Questions fréquentes', 'FAQ', 'Preguntas frecuentes', 'Domande frequenti')}</h2>
         {FAQ.map((item, idx) => <FaqItem key={idx} q={item.q[lang] ?? item.q.fr} a={item.a[lang] ?? item.a.fr} />)}
       </div>
     </div>

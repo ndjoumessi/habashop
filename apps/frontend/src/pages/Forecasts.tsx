@@ -70,7 +70,7 @@ export default function Forecasts() {
           }}><Bot size={28} style={{ color:'#fff' }}/></div>
           <div style={{ flex:1 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-              <h2 style={{ fontSize:20, fontWeight:'var(--fw-semibold)', color:'var(--text)', margin:0, letterSpacing:'-.3px' }}>
+              <h2 style={{ fontSize:'var(--fs-xl)', fontWeight:'var(--fw-semibold)', color:'var(--text)', margin:0, letterSpacing:'-.3px' }}>
                 HabaShop
                 <span style={{
                   background:'var(--grad-p)',
@@ -79,7 +79,7 @@ export default function Forecasts() {
                 }}>AI</span>
               </h2>
               <span style={{
-                fontSize:11, fontWeight:'var(--fw-bold)',
+                fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)',
                 background:'rgba(108,71,255,.2)', color:'var(--p3)',
                 border:'1px solid rgba(108,71,255,.3)',
                 borderRadius:99, padding:'2px 8px',
@@ -90,7 +90,7 @@ export default function Forecasts() {
                   width:6, height:6, borderRadius:'50%',
                   background:'var(--acc2)', boxShadow:'0 0 8px var(--acc2)',
                 }}/>
-                <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:'var(--fw-regular)' }}>
+                <span style={{ fontSize:'var(--fs-caption)', color:'var(--acc2)', fontWeight:'var(--fw-regular)' }}>
                   {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}
                 </span>
               </div>
@@ -98,7 +98,7 @@ export default function Forecasts() {
                 <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="mini-btn" style={{ marginLeft:8 }} onClick={() => { setAiAnalysis(null); setAiData(null) }}><X size={14}/></button>
               )}
             </div>
-            <p style={{ fontSize:12, color:'var(--text3)', margin:0, lineHeight:1.5 }}>
+            <p style={{ fontSize:'var(--fs-label)', color:'var(--text3)', margin:0, lineHeight:1.5 }}>
               {lang === 'en' ? 'Your intelligent business assistant — Analyze your sales, stock, finances and get personalized recommendations.' : lang === 'es' ? 'Su asistente comercial inteligente — Analice sus ventas, stock, finanzas y obtenga recomendaciones personalizadas.' : lang === 'it' ? 'Il tuo assistente commerciale intelligente — Analizza vendite, stock, finanze e ottieni raccomandazioni personalizzate.' : 'Votre assistant commercial intelligent — Analysez vos ventes, stock, finances et obtenez des recommandations personnalisées.'}
             </p>
             <div style={{ display:'flex', gap:8, marginTop:8, flexWrap:'wrap' }}>
@@ -109,7 +109,7 @@ export default function Forecasts() {
                 { Icon: MessageSquare, label: lang === 'en' ? 'Free chat' : lang === 'es' ? 'Chat libre' : lang === 'it' ? 'Chat libero' : 'Chat libre' },
               ].map((cap, i) => (
                 <span key={i} style={{
-                  fontSize:11, fontWeight:'var(--fw-regular)', color:'var(--text3)',
+                  fontSize:'var(--fs-caption)', fontWeight:'var(--fw-regular)', color:'var(--text3)',
                   background:'var(--bg3)', border:'1px solid var(--border)',
                   borderRadius:20, padding:'2px 8px',
                   display:'flex', alignItems:'center', gap:4,
@@ -160,8 +160,8 @@ export default function Forecasts() {
                 color: btn.color, flexShrink:0,
               }}><btn.Icon size={18} /></div>
               <div>
-                <div style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:2 }}>{btn.label}</div>
-                <div style={{ fontSize:11, color:'var(--text3)', lineHeight:1.4 }}>{btn.desc}</div>
+                <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:2 }}>{btn.label}</div>
+                <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', lineHeight:1.4 }}>{btn.desc}</div>
               </div>
             </button>
           ))}
@@ -183,13 +183,13 @@ export default function Forecasts() {
               flexShrink:0,
             }} />
             <div>
-              <div style={{ fontSize:14, fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:4 }}>
+              <div style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:4 }}>
                 {lang === 'fr' ? '🤖 Claude analyse vos données...'
                   : lang === 'en' ? '🤖 Claude is analyzing your data...'
                   : lang === 'es' ? '🤖 Claude analiza sus datos...'
                   : '🤖 Claude analizza i dati...'}
               </div>
-              <div style={{ fontSize:12, color:'var(--text3)' }}>
+              <div style={{ fontSize:'var(--fs-label)', color:'var(--text3)' }}>
                 {lang === 'en' ? 'Sales, stock, finances, HR — analysis in progress' : lang === 'es' ? 'Ventas, stock, finanzas, RRHH — análisis en curso' : lang === 'it' ? 'Vendite, stock, finanze, HR — analisi in corso' : 'Ventes, stock, finances, RH — analyse en cours'}
               </div>
             </div>
@@ -201,7 +201,7 @@ export default function Forecasts() {
           <div style={{
             padding:'14px 16px', margin:'0 24px 16px',
             background:'rgba(232,64,74,.08)', border:'1px solid rgba(232,64,74,.2)',
-            borderRadius:10, fontSize:13, color:'var(--danger)',
+            borderRadius:10, fontSize:'var(--fs-sm)', color:'var(--danger)',
           }}>
             <AlertCircle size={14} style={{ flexShrink:0 }}/> {aiError}
           </div>
@@ -223,8 +223,8 @@ export default function Forecasts() {
                     background:'var(--bg4)', border:'1px solid var(--border)',
                     borderRadius:10, padding:'10px 12px', textAlign:'center',
                   }}>
-                    <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>{kpi.label}</div>
-                    <div style={{ fontSize:16, fontWeight:'var(--fw-semibold)', color:kpi.color, fontFamily:'var(--mono)' }}>{kpi.value}</div>
+                    <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>{kpi.label}</div>
+                    <div style={{ fontSize:'var(--fs-md)', fontWeight:'var(--fw-semibold)', color:kpi.color, fontFamily:'var(--mono)' }}>{kpi.value}</div>
                   </div>
                 ))}
               </ResponsiveGrid>
@@ -259,13 +259,13 @@ export default function Forecasts() {
         {!aiAnalysis && !aiLoading && !aiError && (
           <div style={{ textAlign:'center', padding:'24px 24px 32px', color:'var(--text3)' }}>
             <Bot size={32} style={{ color:'var(--text3)', marginBottom:12 }}/>
-            <div style={{ fontSize:14, fontWeight:'var(--fw-regular)', color:'var(--text2)', marginBottom:6 }}>
+            <div style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-regular)', color:'var(--text2)', marginBottom:6 }}>
               {lang === 'fr' ? "Choisissez un type d'analyse"
                 : lang === 'en' ? 'Choose an analysis type'
                 : lang === 'es' ? 'Elija un tipo de análisis'
                 : 'Scegli un tipo di analisi'}
             </div>
-            <div style={{ fontSize:12 }}>
+            <div style={{ fontSize:'var(--fs-label)' }}>
               {lang === 'fr' ? 'Claude analysera vos vraies données PostgreSQL'
                 : lang === 'en' ? 'Claude will analyze your real PostgreSQL data'
                 : lang === 'es' ? 'Claude analizará sus datos reales de PostgreSQL'
