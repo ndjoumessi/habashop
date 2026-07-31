@@ -11,7 +11,7 @@ import { File, Paths } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import * as Haptics from 'expo-haptics'
 import { salesApi, analyticsApi, apiErrorMessage } from '@/services/api'
-import { salesByWeekday, bestCalendarDay, formatDayLabel } from '@/lib/reportsAggregate'
+import { salesByWeekday, bestCalendarDay, formatDayLabel, bubbleLeftPx } from '@/lib/reportsAggregate'
 import type { SaleRecord, DashboardTopProduct } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { Spacing, BorderRadius, FontSize, Shadow, ThemeColors } from '@/constants/theme'
@@ -90,14 +90,11 @@ export default function ReportsScreen() {
     Haptics.selectionAsync().catch(() => {})
   }
 
-  // Centre de la colonne sélectionnée, puis clamp aux bords de la carte pour que la
-  // bulle ne déborde pas sur les barres extrêmes (lundi / dimanche).
-  const bubbleLeft = (() => {
-    if (selected === null || chartW <= 0) return 0
-    const colW = (chartW - CHART_GAP * (byDay.length - 1)) / byDay.length
-    const center = selected * (colW + CHART_GAP) + colW / 2
-    return Math.min(Math.max(center - bubbleW / 2, 0), Math.max(chartW - bubbleW, 0))
-  })()
+  // Centre de la colonne sélectionnée, clampé aux bords de la carte (barres extrêmes
+  // lundi / dimanche). Logique dans `reportsAggregate` : elle n'est vérifiable à l'œil
+  // qu'un extrême à la fois, le test les couvre tous les sept.
+  const bubbleLeft = selected === null ? 0
+    : bubbleLeftPx(selected, chartW, bubbleW, byDay.length, CHART_GAP)
 
   // Répartition paiements
   const payAgg = useMemo(() => {

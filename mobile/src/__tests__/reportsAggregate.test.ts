@@ -1,5 +1,5 @@
 import {
-  salesByWeekday, bestCalendarDay, localDateKey, formatDayLabel, WEEK_ORDER,
+  salesByWeekday, bestCalendarDay, localDateKey, formatDayLabel, bubbleLeftPx, WEEK_ORDER,
   type SaleLike,
 } from '@/lib/reportsAggregate'
 
@@ -135,5 +135,72 @@ describe('localDateKey / formatDayLabel', () => {
   it('rend la chaîne telle quelle sur une clé illisible', () => {
     expect(formatDayLabel('', 'fr')).toBe('')
     expect(formatDayLabel('bidon', 'fr')).toBe('bidon')
+  })
+})
+
+describe('bubbleLeftPx — clamp de la bulle', () => {
+  // Mesures réelles de l'écran : carte pleine largeur sur un téléphone courant,
+  // 7 colonnes, gap Spacing.sm = 8. La bulle (« 2 095,96 € » + « Dim ») est plus LARGE
+  // qu'une colonne : c'est précisément ce qui la fait déborder sans clamp.
+  const CHART = 327, GAP = 8, N = 7
+  const COL = (CHART - GAP * (N - 1)) / N // ≈ 38,7 px
+  const BUBBLE = 96
+
+  it('la bulle est plus large qu une colonne — sinon ce test ne prouve rien', () => {
+    expect(BUBBLE).toBeGreaterThan(COL)
+  })
+
+  // ⚠️ LE cas jamais vu à l'écran (les captures du 2026-07-31 couvraient Dim, pas Lun).
+  it('Lun (extrême GAUCHE) : collé au bord, jamais négatif', () => {
+    const left = bubbleLeftPx(0, CHART, BUBBLE, N, GAP)
+    expect(left).toBe(0)
+    expect(left).toBeGreaterThanOrEqual(0)
+    expect(left + BUBBLE).toBeLessThanOrEqual(CHART)
+  })
+
+  it('Dim (extrême DROITE) : collé au bord opposé', () => {
+    const left = bubbleLeftPx(6, CHART, BUBBLE, N, GAP)
+    expect(left).toBe(CHART - BUBBLE)
+    expect(left + BUBBLE).toBe(CHART)
+  })
+
+  it('barre centrale (Jeu) : centrée sur sa colonne, pas clampée', () => {
+    const left = bubbleLeftPx(3, CHART, BUBBLE, N, GAP)
+    const centre = 3 * (COL + GAP) + COL / 2
+    expect(left + BUBBLE / 2).toBeCloseTo(centre, 5)
+    expect(left).toBeGreaterThan(0)
+    expect(left + BUBBLE).toBeLessThan(CHART)
+  })
+
+  it('invariant : aucune des 7 positions ne sort de la carte', () => {
+    for (let i = 0; i < N; i++) {
+      const left = bubbleLeftPx(i, CHART, BUBBLE, N, GAP)
+      expect(left).toBeGreaterThanOrEqual(0)
+      expect(left + BUBBLE).toBeLessThanOrEqual(CHART)
+    }
+  })
+
+  it('tient sur un très petit écran ET sur une tablette', () => {
+    for (const w of [240, 327, 700, 1024]) {
+      for (let i = 0; i < N; i++) {
+        const left = bubbleLeftPx(i, w, BUBBLE, N, GAP)
+        expect(left).toBeGreaterThanOrEqual(0)
+        expect(left + BUBBLE).toBeLessThanOrEqual(w)
+      }
+    }
+  })
+
+  // Cas dégénéré : sans le `Math.max(chartWidth - bubbleWidth, 0)` de la borne haute,
+  // la borne serait négative et la bulle sortirait par la gauche.
+  it('bulle plus large que le graphe : left = 0, jamais négatif', () => {
+    expect(bubbleLeftPx(0, 100, 400, N, GAP)).toBe(0)
+    expect(bubbleLeftPx(6, 100, 400, N, GAP)).toBe(0)
+  })
+
+  it('entrées absurdes : 0 plutôt qu un NaN qui casserait le rendu', () => {
+    expect(bubbleLeftPx(0, 0, BUBBLE, N, GAP)).toBe(0)   // avant le premier onLayout
+    expect(bubbleLeftPx(-1, CHART, BUBBLE, N, GAP)).toBe(0)
+    expect(bubbleLeftPx(9, CHART, BUBBLE, N, GAP)).toBe(0)
+    expect(bubbleLeftPx(0, CHART, BUBBLE, 0, GAP)).toBe(0)
   })
 })

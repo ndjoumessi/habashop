@@ -112,6 +112,28 @@ export function bestCalendarDay(sales: SaleLike[]): CalendarDay | null {
 }
 
 /**
+ * Abscisse (px) de la bulle de montant au-dessus de la colonne `index`, **clampée** aux
+ * bords du graphe.
+ *
+ * ⚠️ Pourquoi une fonction, et pas trois lignes dans le composant : le clamp n'est
+ * observable qu'aux DEUX extrêmes, et une vérification à l'œil n'en couvre qu'un à la fois
+ * (la campagne de captures du 2026-07-31 a prouvé Dim, jamais Lun). Ici les 7 positions
+ * sont exercées d'un coup, y compris le cas dégénéré « bulle plus large que le graphe ».
+ *
+ * Le `Math.max(chartWidth - bubbleWidth, 0)` de la borne haute est load-bearing : sans lui,
+ * une bulle plus large que la carte rendrait une borne NÉGATIVE, donc un `left` négatif —
+ * la bulle sortirait par la gauche en croyant être clampée.
+ */
+export function bubbleLeftPx(
+  index: number, chartWidth: number, bubbleWidth: number, count: number, gap: number,
+): number {
+  if (count <= 0 || index < 0 || index >= count || chartWidth <= 0) return 0
+  const colW = (chartWidth - gap * (count - 1)) / count
+  const center = index * (colW + gap) + colW / 2
+  return Math.min(Math.max(center - bubbleWidth / 2, 0), Math.max(chartWidth - bubbleWidth, 0))
+}
+
+/**
  * `YYYY-MM-DD` → « Sam 12 juil. ». ⚠️ Découpage manuel de la chaîne, PAS `new Date(iso)` :
  * ce dernier parse en UTC et rendrait la veille dans tout fuseau négatif.
  */
