@@ -56,13 +56,13 @@ export default function LandingFeatures({ lp, i }: Props) {
           <span style={{
             display: 'inline-block', background: 'rgba(234,179,8,.1)',
             border: '1px solid rgba(234,179,8,.3)', color: D.gold2,
-            fontSize: 11, fontWeight: 800, padding: '5px 14px', borderRadius: 99,
+            fontSize: 'var(--fs-caption)', fontWeight: 800, padding: '5px 14px', borderRadius: 99,
             letterSpacing: '.8px',
           }}>{lp.features_label}</span>
           <h2 style={{ fontSize: 'clamp(26px,3.4vw,42px)', fontWeight: 900, color: D.text, letterSpacing: '-1px', margin: '14px 0', lineHeight: 1.2 }}>
             {lp.features_title}
           </h2>
-          <p style={{ fontSize: 16, color: D.text2, maxWidth: 520, margin: '0 auto', lineHeight: 1.7 }}>{lp.features_sub}</p>
+          <p style={{ fontSize: 'var(--fs-md)', color: D.text2, maxWidth: 520, margin: '0 auto', lineHeight: 1.7 }}>{lp.features_sub}</p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(290px,1fr))', gap: 16, maxWidth: 1100, margin: '0 auto' }}>
@@ -86,12 +86,12 @@ export default function LandingFeatures({ lp, i }: Props) {
                 boxShadow: `0 8px 24px ${D.p}40`,
               }}>{f.icon}</div>
 
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: D.text, marginBottom: 8, letterSpacing: '-.2px' }}>{f.title}</h3>
-              <p style={{ fontSize: 13, color: D.text2, lineHeight: 1.7, marginBottom: 16 }}>{f.desc}</p>
+              <h3 style={{ fontSize: 'var(--fs-md)', fontWeight: 700, color: D.text, marginBottom: 8, letterSpacing: '-.2px' }}>{f.title}</h3>
+              <p style={{ fontSize: 'var(--fs-sm)', color: D.text2, lineHeight: 1.7, marginBottom: 16 }}>{f.desc}</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {f.items.map(it => (
-                  <div key={it} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: D.p3 }}>
+                  <div key={it} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-label)', color: D.p3 }}>
                     <span style={{
                       width: 18, height: 18, borderRadius: '50%',
                       background: 'rgba(124,58,237,.18)', color: D.p2, flexShrink: 0,

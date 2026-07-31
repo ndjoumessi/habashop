@@ -30,7 +30,7 @@ export default function LandingCurrencies({ lp, i, lang, setLang }: Props) {
         <h2 style={{ fontSize: 'clamp(22px,3vw,32px)', fontWeight: 900, color: D.text, letterSpacing: '-.5px', marginBottom: 10 }}>
           {lp.cur_title}
         </h2>
-        <p style={{ fontSize: 14, color: D.text3, marginBottom: 28 }}>{lp.cur_sub}</p>
+        <p style={{ fontSize: 'var(--fs-body)', color: D.text3, marginBottom: 28 }}>{lp.cur_sub}</p>
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24, maxWidth: 880, margin: '0 auto 24px' }}>
           {currencyChips.map(c => (
@@ -44,9 +44,9 @@ export default function LandingCurrencies({ lp, i, lang, setLang }: Props) {
               onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,184,0,.08)'; el.style.borderColor = 'rgba(255,184,0,.2)' }}
               onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,.04)'; el.style.borderColor = D.border }}
             >
-              <span style={{ fontSize: 20 }}>{c.flag}</span>
+              <span style={{ fontSize: 'var(--fs-xl)' }}>{c.flag}</span>
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: D.text, fontFamily: MONO }}>{c.code}</div>
+                <div style={{ fontSize: 'var(--fs-label)', fontWeight: 800, color: D.text, fontFamily: MONO }}>{c.code}</div>
                 <div style={{ fontSize: 10, color: D.text3 }}>{c.name}</div>
               </div>
             </div>
@@ -60,7 +60,7 @@ export default function LandingCurrencies({ lp, i, lang, setLang }: Props) {
                 padding: '8px 16px', borderRadius: 99,
                 background: lang === l.code ? 'rgba(108,71,255,.16)' : 'rgba(108,71,255,.06)',
                 border: `1px solid ${lang === l.code ? 'rgba(108,71,255,.4)' : 'rgba(108,71,255,.18)'}`,
-                fontSize: 13, fontWeight: 700, color: D.p3,
+                fontSize: 'var(--fs-sm)', fontWeight: 700, color: D.p3,
                 cursor: 'pointer', fontFamily: FONT,
                 display: 'flex', alignItems: 'center', gap: 6,
                 transition: 'all .15s',

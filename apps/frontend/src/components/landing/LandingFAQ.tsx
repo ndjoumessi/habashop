@@ -17,7 +17,7 @@ export default function LandingFAQ({ lp }: Props) {
     <>
       <section id="section-faq" style={{ padding: '88px clamp(16px,4vw,80px)', background: D.bg2, borderTop: `1px solid ${D.border}` }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <span style={{ display: 'inline-block', background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.25)', color: D.p3, fontSize: 11, fontWeight: 800, padding: '5px 14px', borderRadius: 99, letterSpacing: '.8px' }}>
+          <span style={{ display: 'inline-block', background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.25)', color: D.p3, fontSize: 'var(--fs-caption)', fontWeight: 800, padding: '5px 14px', borderRadius: 99, letterSpacing: '.8px' }}>
             {lp.faq_label}
           </span>
           <h2 style={{ fontSize: 'clamp(26px,3.4vw,42px)', fontWeight: 900, color: D.text, letterSpacing: '-1px', margin: '14px 0 0', lineHeight: 1.2 }}>
@@ -37,9 +37,9 @@ export default function LandingFAQ({ lp }: Props) {
                 userSelect: 'none', listStyle: 'none',
               }}>
                 {f.q}
-                <span style={{ fontSize: 18, color: D.p3, flexShrink: 0, marginLeft: 12 }}>+</span>
+                <span style={{ fontSize: 'var(--fs-lg)', color: D.p3, flexShrink: 0, marginLeft: 12 }}>+</span>
               </summary>
-              <div style={{ padding: '0 22px 18px', fontSize: 14, color: D.text2, lineHeight: 1.75 }}>{f.a}</div>
+              <div style={{ padding: '0 22px 18px', fontSize: 'var(--fs-body)', color: D.text2, lineHeight: 1.75 }}>{f.a}</div>
             </details>
           ))}
         </div>

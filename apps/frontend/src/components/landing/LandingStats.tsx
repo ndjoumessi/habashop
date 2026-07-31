@@ -28,7 +28,7 @@ export default function LandingStats({ lp }: Props) {
             >
               <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle,${s.c}26,transparent 70%)`, pointerEvents: 'none' }}/>
               <div style={{ fontSize: 32, fontWeight: 900, color: s.c, fontFamily: MONO, letterSpacing: '-1px', marginBottom: 6, lineHeight: 1 }}>{s.v}</div>
-              <div style={{ fontSize: 13, color: D.text2, fontWeight: 600 }}>{s.l}</div>
+              <div style={{ fontSize: 'var(--fs-sm)', color: D.text2, fontWeight: 600 }}>{s.l}</div>
             </div>
           ))}
         </div>

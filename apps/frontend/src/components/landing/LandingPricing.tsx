@@ -64,13 +64,13 @@ export default function LandingPricing({ lp, navigate, lang, currency }: Props) 
     <>
       <section id="section-pricing" style={{ padding: '88px clamp(16px,4vw,80px)', background: `linear-gradient(180deg,${D.bg2},${D.bg})`, borderTop: `1px solid ${D.border}` }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <span style={{ display: 'inline-block', background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.25)', color: D.p3, fontSize: 11, fontWeight: 800, padding: '5px 14px', borderRadius: 99, letterSpacing: '.8px' }}>
+          <span style={{ display: 'inline-block', background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.25)', color: D.p3, fontSize: 'var(--fs-caption)', fontWeight: 800, padding: '5px 14px', borderRadius: 99, letterSpacing: '.8px' }}>
             {lp.pricing_label}
           </span>
           <h2 style={{ fontSize: 'clamp(26px,3.4vw,42px)', fontWeight: 900, color: D.text, letterSpacing: '-1px', margin: '14px 0 8' }}>
             {lp.pricing_title}
           </h2>
-          <p style={{ fontSize: 15, color: D.text2 }}>{lp.pricing_sub}</p>
+          <p style={{ fontSize: 'var(--fs-title)', color: D.text2 }}>{lp.pricing_sub}</p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 18, maxWidth: 1000, margin: '0 auto', alignItems: 'start' }}>
@@ -104,10 +104,10 @@ export default function LandingPricing({ lp, navigate, lang, currency }: Props) 
                 </div>
               )}
 
-              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.2px', color: p.pop ? 'rgba(255,255,255,.75)' : D.text3, marginBottom: 6 }}>
+              <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.2px', color: p.pop ? 'rgba(255,255,255,.75)' : D.text3, marginBottom: 6 }}>
                 {p.name}
               </div>
-              <div style={{ fontSize: 13, color: p.pop ? 'rgba(255,255,255,.7)' : D.text2, marginBottom: 18 }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: p.pop ? 'rgba(255,255,255,.7)' : D.text2, marginBottom: 18 }}>
                 {p.sub}
               </div>
 
@@ -116,18 +116,18 @@ export default function LandingPricing({ lp, navigate, lang, currency }: Props) 
                   {p.xof === 0 ? lp.on_estimate : formatPlanPrice(p.xof)}
                 </div>
                 {p.xof !== 0 && (
-                  <div style={{ fontSize: 13, color: p.pop ? 'rgba(255,255,255,.65)' : D.text3, marginTop: 4 }}>
+                  <div style={{ fontSize: 'var(--fs-sm)', color: p.pop ? 'rgba(255,255,255,.65)' : D.text3, marginTop: 4 }}>
                     {lp.per_month}
                   </div>
                 )}
                 {/* Équivalence EUR sous le prix FCFA (conversion approx. au taux fixe 1€=655,957 XOF) */}
                 {p.xof !== 0 && (currency === 'XOF' || currency === 'XAF') && (
-                  <div style={{ fontSize: 11, color: p.pop ? 'rgba(255,255,255,.5)' : D.text4, marginTop: 4, fontFamily: MONO }}>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: p.pop ? 'rgba(255,255,255,.5)' : D.text4, marginTop: 4, fontFamily: MONO }}>
                     ≈ {new Intl.NumberFormat(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(convertAmount(p.xof, 'XOF', 'EUR'))} € {lp.per_month}
                   </div>
                 )}
                 {p.xof !== 0 && currency !== 'XOF' && currency !== 'XAF' && (
-                  <div style={{ fontSize: 11, color: p.pop ? 'rgba(255,255,255,.5)' : D.text4, marginTop: 4, fontFamily: MONO }}>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: p.pop ? 'rgba(255,255,255,.5)' : D.text4, marginTop: 4, fontFamily: MONO }}>
                     ≈ {new Intl.NumberFormat('fr-FR').format(p.xof)} FCFA
                   </div>
                 )}
@@ -137,7 +137,7 @@ export default function LandingPricing({ lp, navigate, lang, currency }: Props) 
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 26 }}>
                 {p.features.map(f => (
-                  <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+                  <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 'var(--fs-sm)' }}>
                     <span style={{
                       width: 20, height: 20, borderRadius: 6, flexShrink: 0,
                       background: p.pop
@@ -161,7 +161,7 @@ export default function LandingPricing({ lp, navigate, lang, currency }: Props) 
                 onClick={() => p.name === lp.enterprise_name ? scrollTo('section-faq') : navigate('/signup')}
                 style={{
                   width: '100%', borderRadius: 13, padding: '13px 0',
-                  fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                  fontSize: 'var(--fs-body)', fontWeight: 800, cursor: 'pointer',
                   fontFamily: FONT, transition: 'all .2s',
                   background: p.btn === 'light' ? `linear-gradient(135deg,${D.p},${D.p2})`
                     : p.btn === 'white' ? '#fff'

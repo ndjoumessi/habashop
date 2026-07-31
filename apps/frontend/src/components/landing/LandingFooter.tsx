@@ -25,12 +25,12 @@ export default function LandingFooter({ lp }: Props) {
             }}>
               <LogoMark />
             </div>
-            <span style={{ fontSize: 16, fontWeight: 900, color: D.text }}>HabaShop</span>
+            <span style={{ fontSize: 'var(--fs-md)', fontWeight: 900, color: D.text }}>HabaShop</span>
           </div>
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
             {lp.footer_links.map(link => (
               <a key={link} href="#" style={{
-                fontSize: 12, color: D.text2, textDecoration: 'none',
+                fontSize: 'var(--fs-label)', color: D.text2, textDecoration: 'none',
                 transition: 'color .15s', cursor: 'pointer',
               }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#fff'}
@@ -39,7 +39,7 @@ export default function LandingFooter({ lp }: Props) {
             ))}
           </div>
         </div>
-        <div style={{ textAlign: 'center', fontSize: 11, color: D.text4, paddingTop: 18, borderTop: `1px solid ${D.border}`, display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center', width: '100%' }}>
+        <div style={{ textAlign: 'center', fontSize: 'var(--fs-caption)', color: D.text4, paddingTop: 18, borderTop: `1px solid ${D.border}`, display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center', width: '100%' }}>
           {lp.footer}<Shield size={11}/>
         </div>
       </footer>

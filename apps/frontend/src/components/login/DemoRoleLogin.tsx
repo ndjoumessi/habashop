@@ -48,7 +48,7 @@ export default function DemoRoleLogin({ i, busyRole, disabled, onPick }: Props) 
     <div style={{ marginTop: 22, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
       <div style={{
         display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 12,
-        fontSize: 11, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase',
+        fontSize: 'var(--fs-caption)', fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase',
         color: 'var(--acc)', background: 'var(--c-orange-bg)',
         border: '1px solid var(--c-orange-border)', borderRadius: 'var(--r-full, 999px)',
         padding: '4px 11px',
@@ -97,8 +97,8 @@ export default function DemoRoleLogin({ i, busyRole, disabled, onPick }: Props) 
                   : <r.Icon size={15} strokeWidth={2.3} />}
               </span>
               <span style={{ minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>{m.label}</span>
-                <span style={{ display: 'block', fontSize: 11, color: 'var(--text3)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.sub}</span>
+                <span style={{ display: 'block', fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>{m.label}</span>
+                <span style={{ display: 'block', fontSize: 'var(--fs-caption)', color: 'var(--text3)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.sub}</span>
               </span>
             </button>
           )

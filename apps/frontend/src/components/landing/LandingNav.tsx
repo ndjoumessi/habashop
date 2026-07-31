@@ -32,7 +32,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
           }}>
             <LogoMark />
           </div>
-          <span style={{ fontSize: 18, fontWeight: 900, color: D.text, letterSpacing: '-.3px', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 'var(--fs-lg)', fontWeight: 900, color: D.text, letterSpacing: '-.3px', whiteSpace: 'nowrap' }}>
             Haba<span style={{ background: `linear-gradient(135deg,${D.p2},${D.p3})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Shop</span>
           </span>
         </div>
@@ -48,7 +48,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
               onClick={e => { e.preventDefault(); scrollTo(it.target) }}
               style={{
                 padding: '7px 14px', borderRadius: 99,
-                color: D.text2, fontSize: 13, fontWeight: 600,
+                color: D.text2, fontSize: 'var(--fs-sm)', fontWeight: 600,
                 textDecoration: 'none', cursor: 'pointer', transition: 'color .15s',
               }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = D.text}
@@ -64,7 +64,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
               appearance: 'none', WebkitAppearance: 'none',
               background: 'rgba(255,255,255,.05)',
               border: `1px solid ${D.border2}`, borderRadius: 9,
-              padding: '6px 24px 6px 10px', fontSize: 12, fontWeight: 700,
+              padding: '6px 24px 6px 10px', fontSize: 'var(--fs-label)', fontWeight: 700,
               color: D.p3, cursor: 'pointer', fontFamily: FONT, outline: 'none',
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A991FF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
               backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center',
@@ -79,7 +79,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
               appearance: 'none', WebkitAppearance: 'none',
               background: 'rgba(255,255,255,.05)',
               border: `1px solid ${D.border2}`, borderRadius: 9,
-              padding: '6px 24px 6px 10px', fontSize: 12, fontWeight: 700,
+              padding: '6px 24px 6px 10px', fontSize: 'var(--fs-label)', fontWeight: 700,
               color: D.p3, cursor: 'pointer', fontFamily: FONT, outline: 'none',
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A991FF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
               backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center',
@@ -100,7 +100,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
             style={{
               padding: '8px 16px', borderRadius: 10, background: 'transparent',
               border: `1px solid ${D.border2}`, color: D.text2,
-              fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+              fontSize: 'var(--fs-sm)', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
               transition: 'all .15s', whiteSpace: 'nowrap',
             }}
             onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,.06)'; el.style.color = D.text }}
@@ -111,7 +111,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
             style={{
               padding: '8px 18px', borderRadius: 10,
               background: `linear-gradient(135deg,${D.p},${D.p2})`,
-              border: 'none', color: '#fff', fontSize: 13, fontWeight: 800,
+              border: 'none', color: '#fff', fontSize: 'var(--fs-sm)', fontWeight: 800,
               cursor: 'pointer', fontFamily: FONT,
               boxShadow: '0 4px 14px rgba(108,71,255,.35)',
               transition: 'all .15s', whiteSpace: 'nowrap',

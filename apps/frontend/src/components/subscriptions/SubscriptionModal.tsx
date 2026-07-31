@@ -29,13 +29,13 @@ function SLabel({ icon, label, required, badge, muted }: {
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
       {icon}
       <span style={{
-        fontSize: 11, fontWeight: 'var(--fw-semibold)',
+        fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)',
         textTransform: 'uppercase', letterSpacing: '0.08em',
         color: muted ? 'var(--text4)' : 'var(--text3)', whiteSpace: 'nowrap',
       }}>
         {label}
       </span>
-      {required && <span aria-hidden style={{ color: 'var(--p2)', fontSize: 13, lineHeight: 1 }}>*</span>}
+      {required && <span aria-hidden style={{ color: 'var(--p2)', fontSize: 'var(--fs-sm)', lineHeight: 1 }}>*</span>}
       {badge !== undefined && badge > 0 && (
         <span style={{
           fontSize: 10, fontWeight: 'var(--fw-semibold)',
@@ -208,10 +208,10 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
               <RefreshCw size={20} color="#fff" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 'var(--fw-semibold)', fontSize: 16, color: 'var(--text)', lineHeight: 1.25 }}>
+              <div style={{ fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-md)', color: 'var(--text)', lineHeight: 1.25 }}>
                 {sub ? tx('edit', lang) : tx('new', lang)}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{tx('modal_sub', lang)}</div>
+              <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginTop: 2 }}>{tx('modal_sub', lang)}</div>
             </div>
             <button className="icon-btn" onClick={onClose} aria-label={tx('cancel', lang)} style={{ flexShrink: 0, width: 32, height: 32 }}>
               <X size={16} />
@@ -243,7 +243,7 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                         fontSize: 13.5, fontWeight: 'var(--fw-semibold)', color: 'var(--text)',
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>{customer.name}</div>
-                      {customer.phone && <div style={{ fontSize: 11, color: 'var(--text3)' }}>{customer.phone}</div>}
+                      {customer.phone && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{customer.phone}</div>}
                     </div>
                     <button
                       className="icon-btn"
@@ -291,8 +291,8 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                               <User size={13} color="var(--p2)" />
                             </div>
                             <div>
-                              <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)' }}>{c.name}</div>
-                              {c.phone && <div style={{ fontSize: 11, color: 'var(--text3)' }}>{c.phone}</div>}
+                              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)' }}>{c.name}</div>
+                              {c.phone && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{c.phone}</div>}
                             </div>
                           </button>
                         ))}
@@ -367,12 +367,12 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                         <div style={{
                           width: 28, height: 28, borderRadius: 'var(--r-sm)', flexShrink: 0,
                           background: 'var(--bg3)', border: '1px solid var(--border)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, lineHeight: 1,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-title)', lineHeight: 1,
                         }}>
                           {p.emoji || <Package size={13} color="var(--text4)" />}
                         </div>
-                        <span style={{ flex: 1, fontSize: 13, fontWeight: 'var(--fw-semibold)' }}>{p.name}</span>
-                        <span style={{ fontSize: 12, flexShrink: 0, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
+                        <span style={{ flex: 1, fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)' }}>{p.name}</span>
+                        <span style={{ fontSize: 'var(--fs-label)', flexShrink: 0, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
                           {fmt(p.sellPrice)}
                         </span>
                       </button>
@@ -390,7 +390,7 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                   <div style={{ fontSize: 13.5, color: 'var(--text2)', fontWeight: 'var(--fw-semibold)', margin: '8px 0 3px' }}>
                     {tx('cart_empty', lang)}
                   </div>
-                  <p style={{ fontSize: 12, margin: 0 }}>{tx('cart_empty_s', lang)}</p>
+                  <p style={{ fontSize: 'var(--fs-label)', margin: 0 }}>{tx('cart_empty_s', lang)}</p>
                 </div>
               ) : (
                 <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
@@ -404,7 +404,7 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                       <div style={{
                         width: 32, height: 32, borderRadius: 'var(--r-sm)', flexShrink: 0,
                         background: 'var(--bg3)', border: '1px solid var(--border)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, lineHeight: 1,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-md)', lineHeight: 1,
                       }}>
                         {it.product.emoji || <Package size={14} color="var(--text4)" />}
                       </div>
@@ -444,7 +444,7 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                         <span
                           aria-label={`${tx('qty_label', lang)} — ${it.product.name}`}
                           style={{
-                            minWidth: 30, textAlign: 'center', fontSize: 13, fontWeight: 'var(--fw-semibold)',
+                            minWidth: 30, textAlign: 'center', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)',
                             color: 'var(--text)', userSelect: 'none', fontFamily: 'var(--mono)',
                           }}
                         >{it.quantity}</span>
@@ -491,7 +491,7 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px',
               background: 'var(--bg3)', border: '1px solid var(--border)',
-              borderRadius: 'var(--r-md)', fontSize: 13, color: 'var(--text2)',
+              borderRadius: 'var(--r-md)', fontSize: 'var(--fs-sm)', color: 'var(--text2)',
             }}>
               <RefreshCw size={15} color="var(--p2)" style={{ flexShrink: 0 }} />
               <span>
@@ -515,7 +515,7 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                       aria-label={longDays[idx]}
                       style={{
                         minWidth: 50, height: 34, padding: '0 12px', borderRadius: 'var(--r-full, 99px)',
-                        fontSize: 12, fontWeight: 'var(--fw-semibold)',
+                        fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)',
                         border: `1.5px ${dow === null ? 'dashed' : 'solid'} ${on ? 'var(--p)' : dow === null ? 'color-mix(in srgb, var(--warn) 45%, transparent)' : 'var(--border2)'}`,
                         background: on ? 'var(--p)' : 'var(--bg3)',
                         color: on ? '#fff' : 'var(--text2)',
@@ -587,9 +587,9 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
             }}>
               <div>
                 <div style={{
-                  fontSize: 11, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--text3)',
+                  fontSize: 'var(--fs-caption)', letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--text3)',
                 }}>{tx('total_deliv', lang)}</div>
-                <div style={{ fontSize: 11, color: 'var(--text4)', marginTop: 3 }}>{tx('at_day_price', lang)}</div>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', marginTop: 3 }}>{tx('at_day_price', lang)}</div>
               </div>
               <div
                 aria-live="polite"
@@ -610,7 +610,7 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                 role="status"
                 style={{
                   display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 11,
-                  fontSize: 12, color: 'var(--warn)', lineHeight: 1.45,
+                  fontSize: 'var(--fs-label)', color: 'var(--warn)', lineHeight: 1.45,
                 }}
               >
                 <AlertCircle size={14} aria-hidden style={{ flexShrink: 0, marginTop: 1 }} />

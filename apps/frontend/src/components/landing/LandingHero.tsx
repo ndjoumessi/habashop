@@ -46,7 +46,7 @@ export default function LandingHero({ lp, i, navigate }: Props) {
           }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--acc)', animation: 'lp-pulse 2s infinite', display: 'inline-block' }}/>
             <Sparkles size={12} strokeWidth={2.4} color="var(--acc)"/>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--p3)' }}>{lp.badge}</span>
+            <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--p3)' }}>{lp.badge}</span>
           </div>
 
           {/* H1 — un seul titre fort, mot d'accent en --p2 */}
@@ -77,7 +77,7 @@ export default function LandingHero({ lp, i, navigate }: Props) {
             <button type="button" onClick={() => navigate('/signup')}
               style={{
                 padding: '14px 30px', borderRadius: 14, background: 'var(--grad-p)',
-                border: 'none', color: '#fff', fontSize: 15, fontWeight: 800,
+                border: 'none', color: '#fff', fontSize: 'var(--fs-title)', fontWeight: 800,
                 cursor: 'pointer', fontFamily: 'var(--font)', boxShadow: 'var(--sh-p2)',
                 transition: 'transform .2s, box-shadow .2s',
                 display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -91,7 +91,7 @@ export default function LandingHero({ lp, i, navigate }: Props) {
               style={{
                 padding: '14px 26px', borderRadius: 14, background: 'var(--card)',
                 border: '1px solid var(--border2)', color: 'var(--text)',
-                fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)',
+                fontSize: 'var(--fs-title)', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)',
                 transition: 'background .2s, border-color .2s',
                 display: 'inline-flex', alignItems: 'center', gap: 8,
               }}
@@ -105,7 +105,7 @@ export default function LandingHero({ lp, i, navigate }: Props) {
           {/* Réassurance */}
           <div className="lp-inline-group" style={{
             display: 'flex', alignItems: 'center', gap: 'clamp(10px,1.6vw,16px)',
-            flexWrap: 'wrap', marginBottom: 30, fontSize: 13, fontWeight: 600, color: 'var(--text3)',
+            flexWrap: 'wrap', marginBottom: 30, fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text3)',
           }}>
             {[
               i('Sans carte', 'No card', 'Sin tarjeta', 'Nessuna carta'),
@@ -132,7 +132,7 @@ export default function LandingHero({ lp, i, navigate }: Props) {
                 {idx > 0 && <div style={{ width: 1, height: 34, background: 'var(--border2)' }}/>}
                 <div>
                   <div style={{ fontSize: 'clamp(22px,2.6vw,28px)', fontWeight: 900, color: 'var(--acc)', fontFamily: 'var(--mono)', letterSpacing: '-1px', lineHeight: 1.1 }}>{s.v}</div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', marginTop: 3 }}>{s.l}</div>
+                  <div style={{ fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--text3)', marginTop: 3 }}>{s.l}</div>
                 </div>
               </div>
             ))}
@@ -141,7 +141,7 @@ export default function LandingHero({ lp, i, navigate }: Props) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                 {[1, 2, 3, 4, 5].map(n => <Star key={n} size={14} fill="var(--acc)" color="var(--acc)"/>)}
               </div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', marginTop: 5 }}>
+              <div style={{ fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--text3)', marginTop: 5 }}>
                 <strong style={{ color: 'var(--text2)' }}>4,9/5</strong>{' · '}{lp.proof_stores}
               </div>
             </div>
@@ -163,20 +163,20 @@ export default function LandingHero({ lp, i, navigate }: Props) {
                 <span style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--acc)' }}/>
                 <span style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--acc2)' }}/>
               </div>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: 'var(--acc2)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--acc2)' }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--acc2)', animation: 'lp-pulse 2s infinite', display: 'inline-block' }}/>
                 {i('En direct', 'Live', 'En vivo', 'In diretta')}
               </span>
             </div>
 
             {/* CA du jour */}
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+            <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
               {i('Chiffre d\'affaires du jour', 'Today\'s revenue', 'Ingresos de hoy', 'Fatturato di oggi')}
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 'clamp(28px,3.4vw,38px)', fontWeight: 900, color: 'var(--acc)', fontFamily: 'var(--mono)', letterSpacing: '-1px', lineHeight: 1 }}>1 240 000</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text3)' }}>FCFA</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: 'var(--acc2)', background: 'color-mix(in srgb,var(--acc2) 14%,transparent)', border: '1px solid color-mix(in srgb,var(--acc2) 28%,transparent)', borderRadius: 99, padding: '2px 8px' }}>
+              <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text3)' }}>FCFA</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-label)', fontWeight: 700, color: 'var(--acc2)', background: 'color-mix(in srgb,var(--acc2) 14%,transparent)', border: '1px solid color-mix(in srgb,var(--acc2) 28%,transparent)', borderRadius: 99, padding: '2px 8px' }}>
                 <TrendingUp size={12} strokeWidth={2.6}/> +18%
               </span>
             </div>
@@ -192,8 +192,8 @@ export default function LandingHero({ lp, i, navigate }: Props) {
                     <k.Icon size={15} strokeWidth={2.4}/>
                   </span>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--mono)', lineHeight: 1.1 }}>{k.v}</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)' }}>{k.l}</div>
+                    <div style={{ fontSize: 'var(--fs-title)', fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--mono)', lineHeight: 1.1 }}>{k.v}</div>
+                    <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 600, color: 'var(--text3)' }}>{k.l}</div>
                   </div>
                 </div>
               ))}
@@ -202,8 +202,8 @@ export default function LandingHero({ lp, i, navigate }: Props) {
             {/* Barre d'objectif — 68 % */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)' }}>{i('Objectif du jour', 'Daily goal', 'Objetivo del día', 'Obiettivo del giorno')}</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>68%</span>
+                <span style={{ fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--text3)' }}>{i('Objectif du jour', 'Daily goal', 'Objetivo del día', 'Obiettivo del giorno')}</span>
+                <span style={{ fontSize: 'var(--fs-label)', fontWeight: 800, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>68%</span>
               </div>
               <div style={{ height: 8, borderRadius: 99, background: 'var(--border)', overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: '68%', borderRadius: 99, background: 'var(--grad-p)', boxShadow: '0 0 12px color-mix(in srgb,var(--p) 50%,transparent)' }}/>
