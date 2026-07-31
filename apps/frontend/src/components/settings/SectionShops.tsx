@@ -87,7 +87,7 @@ export default function SectionShops() {
           <div style={cardBase}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</span>
-              <button type="button" onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={16} /></button>
+              <button type="button" onClick={() => setShowCreate(false)} aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={16} /></button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div style={{ gridColumn: '1 / -1' }}>
@@ -123,7 +123,7 @@ export default function SectionShops() {
           <div style={cardBase}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{i('Inviter un employé', 'Invite an employee', 'Invitar empleado', 'Invita dipendente')}</span>
-              <button type="button" onClick={() => setShowInvite(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={16} /></button>
+              <button type="button" onClick={() => setShowInvite(false)} aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={16} /></button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>

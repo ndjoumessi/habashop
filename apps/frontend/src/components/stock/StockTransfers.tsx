@@ -233,7 +233,7 @@ function NewTransferModal({ tenants, onClose, onCreated }: { tenants: { id: stri
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
           <ArrowLeftRight size={16} style={{ color: 'var(--p2)' }} />
           <span style={{ flex: 1, fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{i('Nouveau transfert', 'New transfer', 'Nueva transferencia', 'Nuovo trasferimento')}</span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={16} /></button>
+          <button onClick={onClose} aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={16} /></button>
         </div>
 
         <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '70vh', overflowY: 'auto' }}>
@@ -254,7 +254,7 @@ function NewTransferModal({ tenants, onClose, onCreated }: { tenants: { id: stri
                   <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{selected.name}</div>
                   <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Stock', 'Stock', 'Stock', 'Stock')}: {selected.stockQty}</div>
                 </div>
-                <button type="button" onClick={() => { setProductId(''); setSearch('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={14} /></button>
+                <button type="button" onClick={() => { setProductId(''); setSearch('') }} aria-label={i('Effacer', 'Clear', 'Borrar', 'Cancella')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={14} /></button>
               </div>
             ) : (
               <>
