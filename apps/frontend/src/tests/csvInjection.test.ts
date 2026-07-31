@@ -37,7 +37,10 @@ describe('sanitizeCsv — cas partagés', () => {
     expect(sanitizeCsv(undefined)).toBe('')
     expect(sanitizeCsv(null)).toBe('')
     expect(sanitizeCsv(0)).toBe('0')
-    expect(sanitizeCsv(-5)).toBe("'-5") // un nombre négatif commence par un déclencheur
+    // ⚠️ Un négatif NU n'est plus préfixé : il ne s'exécute pas, et le préfixe le sortait du
+    // domaine numérique du tableur (ni somme ni tri). La frontière est dans les cas partagés.
+    expect(sanitizeCsv(-5)).toBe('-5')
+    expect(sanitizeCsv('-5+1')).toBe("'-5+1")
   })
 })
 
