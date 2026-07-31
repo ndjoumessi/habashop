@@ -87,7 +87,8 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
       {/* KPI row */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
         {[
-          { icon:<CheckCircle size={20}/>, label:lang === 'en' ? 'Present' : lang === 'es' ? 'Presentes' : lang === 'it' ? 'Presenti' : 'Présents',  count:presentCount,          color:'var(--acc2)', hex:'var(--acc2)' },
+          // hex LITTÉRAL (concaténé `${k.hex}28`/`18`) comme les 3 sœurs ci-dessous : un var(--x) casserait le bord/dégradé en silence.
+          { icon:<CheckCircle size={20}/>, label:lang === 'en' ? 'Present' : lang === 'es' ? 'Presentes' : lang === 'it' ? 'Presenti' : 'Présents',  count:presentCount,          color:'#22C77A', hex:'#22C77A' },
           { icon:<Clock size={20}/>,       label:lang === 'en' ? 'Late' : lang === 'es' ? 'Retrasos' : lang === 'it' ? 'Ritardi' : 'Retards',      count:countByStatus('late'), color:'#F59E0B', hex:'#F59E0B' },
           { icon:<XCircle size={20}/>,     label:lang === 'en' ? 'Absent' : lang === 'es' ? 'Ausentes' : lang === 'it' ? 'Assenti' : 'Absents',    count:countByStatus('absent'),color:'#EF4444', hex:'#EF4444' },
           { icon:<AlertTriangle size={20}/>,label:lang === 'en' ? 'Half-day' : lang === 'es' ? 'Media jornada' : lang === 'it' ? 'Mezza giornata' : 'Mi-temps', count:countByStatus('half'), color:'#3B82F6', hex:'#3B82F6' },

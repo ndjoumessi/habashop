@@ -454,9 +454,11 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               {/* KPIs */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                 {[
-                  { label: i('CA Total', 'Total Revenue', 'Ingresos totales', 'Fatturato totale'), value: fmt(detailCustomer.totalCA), icon: <DollarSign size={20} />, color: 'var(--acc)', hex: 'var(--acc)' },
-                  { label: i('Commandes/mois', 'Orders/month', 'Pedidos/mes', 'Ordini/mese'), value: `${detailCustomer.purchasesPerMonth}`, icon: <ShoppingCart size={20} />, color: 'var(--p2)', hex: 'var(--p)' },
-                  { label: i('Points fidélité', 'Loyalty pts', 'Puntos fidelidad', 'Punti fedeltà'), value: `${detailCustomer.loyaltyPoints} pts`, icon: <Star size={20} />, color: 'var(--warn)', hex: 'var(--warn)' },
+                  // `hex` = HEX LITTÉRAL (concaténé `${k.hex}25`/`15`/`05` pour bord + dégradé) : un
+                  // var(--x) s'y casse en silence. `color` reste un token (usage direct `color:k.color`).
+                  { label: i('CA Total', 'Total Revenue', 'Ingresos totales', 'Fatturato totale'), value: fmt(detailCustomer.totalCA), icon: <DollarSign size={20} />, color: 'var(--acc)', hex: '#FFB020' },
+                  { label: i('Commandes/mois', 'Orders/month', 'Pedidos/mes', 'Ordini/mese'), value: `${detailCustomer.purchasesPerMonth}`, icon: <ShoppingCart size={20} />, color: 'var(--p2)', hex: '#6C47FF' },
+                  { label: i('Points fidélité', 'Loyalty pts', 'Puntos fidelidad', 'Punti fedeltà'), value: `${detailCustomer.loyaltyPoints} pts`, icon: <Star size={20} />, color: 'var(--warn)', hex: '#FFC53D' },
                 ].map(k => (
                   <div key={k.label} style={{ background: `linear-gradient(135deg,${k.hex}15,${k.hex}05)`, border: `1px solid ${k.hex}25`, borderRadius: 12, padding: '14px', textAlign: 'center' }}>
                     <div style={{ display:'flex', justifyContent:'center', marginBottom: 6, color: k.color }}>{k.icon}</div>
