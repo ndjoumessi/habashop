@@ -1169,13 +1169,20 @@ export default function POS() {
 
           {/* Badge réseau : UNIQUEMENT hors-ligne (cash-only) — l'état « En ligne »
               est déjà porté par la barre d'app (pas de doublon). */}
+          {/* Avertissement hors-ligne : ambre PLEIN + encre foncée FIXE, 10,81:1 dans les DEUX
+              thèmes. Avant : tint ambre pâle + texte `--warn` — 10,33:1 en sombre mais 1,50:1 en
+              CLAIR (#193), soit un avertissement de caisse illisible là où il compte le plus.
+              ⚠️ `#1A1A2E` est en dur À DESSEIN, c'est une exception assumée à la règle « var(--)
+              systématiquement » : `--text` vaut `#EAEEF6` en thème sombre et retomberait à
+              1,36:1 sur cet ambre (mesuré). L'encre doit rester foncée parce que le FOND est
+              constant, lui — `--warn` n'est surchargé par aucun thème. */}
           {!isOnline && (
             <span data-testid="pos-network" role="status" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
-              padding: '4px 10px', borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
-              background: 'var(--c-amber-bg, rgba(255,197,61,.14))',
-              border: '1px solid var(--c-amber-border, rgba(255,197,61,.3))',
-              color: 'var(--warn)',
+              padding: '4px 10px', borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-bold)',
+              background: 'var(--warn)',
+              border: '1px solid var(--warn)',
+              color: '#1A1A2E',
             }}>
               <WifiOff size={13} /> {lang === 'en' ? 'Offline' : lang === 'es' ? 'Sin conexión' : lang === 'it' ? 'Offline' : 'Hors-ligne'}
             </span>
