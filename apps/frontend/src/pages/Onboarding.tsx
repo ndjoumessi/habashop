@@ -80,12 +80,12 @@ export default function Onboarding() {
     { id: 5, icon: Rocket, label: i("C'est parti", "Let's go", '¡Vamos!', 'Si parte') },
   ]
 
-  const lbl: React.CSSProperties = { color: 'var(--text2)', fontSize: 12, fontWeight: 'var(--fw-semibold)' as any, display: 'block' }
+  const lbl: React.CSSProperties = { color: 'var(--text2)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)' as any, display: 'block' }
   const inputStyle: React.CSSProperties = { width: '100%', boxSizing: 'border-box', margin: '6px 0 14px' }
   const chip = (active: boolean): React.CSSProperties => ({
     background: active ? 'var(--p)' : 'var(--card)',
     color: active ? '#fff' : 'var(--text2)',
-    fontSize: 12, fontWeight: 'var(--fw-semibold)' as any,
+    fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)' as any,
     padding: '7px 13px', minHeight: 36, borderRadius: 9,
     border: active ? '1px solid var(--p)' : '1px solid var(--border2)',
     cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',

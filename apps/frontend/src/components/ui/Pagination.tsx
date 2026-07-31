@@ -34,7 +34,7 @@ export default function Pagination({
     background: 'var(--bg3)', border: '1px solid var(--border)',
     cursor: disabled ? 'not-allowed' : 'pointer',
     color: disabled ? 'var(--text4)' : 'var(--text2)',
-    fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 'var(--fs-body)', display: 'flex', alignItems: 'center', justifyContent: 'center',
     transition: 'all .15s', opacity: disabled ? .4 : 1,
   })
 
