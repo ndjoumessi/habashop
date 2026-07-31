@@ -99,7 +99,7 @@ export default function AddressAutocompleteInput({
     <div ref={wrapRef} style={{ position: 'relative' }}>
       {label && (
         <label style={{
-          display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)',
+          display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)',
           textTransform: 'uppercase', letterSpacing: '.6px',
           color: 'var(--text3)', marginBottom: 6,
         }}>{label}</label>
@@ -116,7 +116,7 @@ export default function AddressAutocompleteInput({
         opacity: disabled ? 0.5 : 1,
       }}>
         <span style={{
-          padding: '0 4px 0 12px', fontSize: 14, flexShrink: 0,
+          padding: '0 4px 0 12px', fontSize: 'var(--fs-body)', flexShrink: 0,
           color: focused ? 'var(--p2)' : 'var(--text3)',
           transition: 'color .15s', pointerEvents: 'none',
         }}>📍</span>
@@ -135,7 +135,7 @@ export default function AddressAutocompleteInput({
           style={{
             flex: 1, background: 'transparent', border: 'none',
             outline: 'none', padding: '10px 8px',
-            color: 'var(--text)', fontSize: 13, fontFamily: 'var(--font)',
+            color: 'var(--text)', fontSize: 'var(--fs-sm)', fontFamily: 'var(--font)',
           }}
         />
 
@@ -153,7 +153,7 @@ export default function AddressAutocompleteInput({
             <button type="button" onClick={() => { onChange(''); setSuggestions([]) }} style={{
               width: 18, height: 18, borderRadius: '50%',
               background: 'var(--bg4)', border: 'none',
-              cursor: 'pointer', color: 'var(--text3)', fontSize: 11,
+              cursor: 'pointer', color: 'var(--text3)', fontSize: 'var(--fs-caption)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>✕</button>
           )}
@@ -167,7 +167,7 @@ export default function AddressAutocompleteInput({
           background: 'var(--card)', border: '1px solid var(--border)',
           borderRadius: 11, overflow: 'hidden', boxShadow: 'var(--sh-lg)',
         }}>
-          <div style={{ padding: '5px 12px', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text4)', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ padding: '5px 12px', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text4)', borderBottom: '1px solid var(--border)' }}>
             {lang === 'en' ? 'Google Maps Suggestions' : lang === 'es' ? 'Sugerencias de Google Maps' : lang === 'it' ? 'Suggerimenti Google Maps' : 'Suggestions Google Maps'}
           </div>
           {suggestions.map((s, i) => (
@@ -182,8 +182,8 @@ export default function AddressAutocompleteInput({
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.08)'}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
             >
-              <span style={{ fontSize: 13, flexShrink: 0 }}>📍</span>
-              <span style={{ fontSize: 12, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s}</span>
+              <span style={{ fontSize: 'var(--fs-sm)', flexShrink: 0 }}>📍</span>
+              <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s}</span>
             </button>
           ))}
         </div>
@@ -195,7 +195,7 @@ export default function AddressAutocompleteInput({
           position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 9999,
           padding: '10px 14px', background: 'rgba(255,184,0,.08)',
           border: '1px solid rgba(255,184,0,.2)', borderRadius: 9,
-          fontSize: 11, color: 'var(--warn)',
+          fontSize: 'var(--fs-caption)', color: 'var(--warn)',
         }}>
           ⚠️ {lang === 'en' ? 'Manual input (Google Maps not configured)' : lang === 'es' ? 'Entrada manual (Google Maps no configurado)' : lang === 'it' ? 'Inserimento manuale (Google Maps non configurato)' : 'Saisie manuelle (Google Maps non configuré)'}
         </div>

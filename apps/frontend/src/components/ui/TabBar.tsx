@@ -65,14 +65,14 @@ export default function Tabs<T extends string = string>({
             style={segmented ? {
               flex: '1 1 auto', minWidth: 'fit-content', whiteSpace: 'nowrap',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              padding: '9px 12px', borderRadius: 9, fontSize: 13,
+              padding: '9px 12px', borderRadius: 9, fontSize: 'var(--fs-sm)',
               fontWeight: on ? 700 : 500, fontFamily: 'var(--font)', cursor: 'pointer', transition: 'all .15s',
               background: on ? 'linear-gradient(135deg,rgba(108,71,255,.18),rgba(0,184,255,.08))' : 'transparent',
               border: on ? '1px solid rgba(108,71,255,.28)' : '1px solid transparent',
               color: on ? 'var(--p2)' : 'var(--text3)',
             } : {
               display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
-              padding: '7px 16px', borderRadius: 99, fontSize: 13, fontWeight: 'var(--fw-semibold)',
+              padding: '7px 16px', borderRadius: 99, fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)',
               fontFamily: 'var(--font)', cursor: 'pointer', transition: 'all .15s',
               background: on ? 'var(--p)' : 'var(--card)',
               color: on ? '#fff' : 'var(--text2)',

@@ -99,7 +99,7 @@ export default function SyncIndicator() {
         style={{
           display: 'flex', alignItems: 'center', gap: 5,
           background: 'none', border: 'none', padding: '2px 0',
-          color: 'var(--text4)', fontSize: 11, cursor: 'pointer',
+          color: 'var(--text4)', fontSize: 'var(--fs-caption)', cursor: 'pointer',
           fontFamily: 'var(--font)', lineHeight: 1.4,
         }}
       >
@@ -129,7 +129,7 @@ export default function SyncIndicator() {
               const at = freshness[kind]
               const a = at == null ? null : freshnessAge(at, now)
               return (
-                <li key={kind} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, fontSize: 12 }}>
+                <li key={kind} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, fontSize: 'var(--fs-label)' }}>
                   <span style={{ color: 'var(--text2)' }}>{freshnessKindLabel(kind, lang)}</span>
                   <span style={{ color: 'var(--text4)', fontFamily: 'var(--mono)', whiteSpace: 'nowrap' }}>
                     {freshnessLabel(a, lang)}
@@ -148,7 +148,7 @@ export default function SyncIndicator() {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               background: 'var(--bg3)', border: '1px solid var(--border2)',
               borderRadius: 'var(--r-sm)', color: 'var(--text)',
-              fontSize: 12, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)',
+              fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)',
               cursor: busy ? 'progress' : 'pointer',
             }}
           >
@@ -158,7 +158,7 @@ export default function SyncIndicator() {
           </button>
 
           {level === 'fresh' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 7, fontSize: 11, color: 'var(--acc2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 7, fontSize: 'var(--fs-caption)', color: 'var(--acc2)' }}>
               <Check size={11} aria-hidden />
               {i(lang, 'Données à jour', 'Data up to date', 'Datos actualizados', 'Dati aggiornati')}
             </div>

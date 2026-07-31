@@ -93,7 +93,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
       <div ref={boxRef} className="modal-box" style={{ maxWidth: 420 }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 7 }}><Gift size={16} style={{ color: 'var(--p2)' }} /> {i('Carte Fidélité', 'Loyalty Card', 'Tarjeta Fidelidad', 'Carta Fedeltà')}</h3>
+          <h3 style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 7 }}><Gift size={16} style={{ color: 'var(--p2)' }} /> {i('Carte Fidélité', 'Loyalty Card', 'Tarjeta Fidelidad', 'Carta Fedeltà')}</h3>
           <IconButton label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} icon={<X size={14} />} onClick={onClose} variant="surface" />
         </div>
 
@@ -110,7 +110,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
 
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>
+              <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>
                 {customer.name}
               </div>
               <button
@@ -118,7 +118,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
                 onClick={handleCopyId}
                 aria-label={i('Copier le code fidélité', 'Copy loyalty code', 'Copiar el código de fidelidad', 'Copia il codice fedeltà')}
                 title={i('Cliquer pour copier', 'Click to copy', 'Clic para copiar', 'Clicca per copiare')}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--text3)', background: 'none', border: 'none', padding: '2px 0', cursor: 'pointer' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 'var(--fs-caption)', fontFamily: 'var(--mono)', color: 'var(--text3)', background: 'none', border: 'none', padding: '2px 0', cursor: 'pointer' }}
               >
                 HABA-{customer.id.slice(0, 8).toUpperCase()} <Copy size={11} />
               </button>
@@ -150,7 +150,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
 
           {/* Points */}
           {loading ? (
-            <div style={{ height: 40, display: 'flex', alignItems: 'center', gap: 7, color: 'var(--text3)', fontSize: 13 }}>
+            <div style={{ height: 40, display: 'flex', alignItems: 'center', gap: 7, color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>
               <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> {i('Chargement...', 'Loading...', 'Cargando...', 'Caricamento...')}
             </div>
           ) : (
@@ -159,9 +159,9 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
                 <span style={{ fontSize: 36, fontWeight: 'var(--fw-semibold)', color: cfg.color, fontFamily: 'var(--mono)', letterSpacing: '-2px' }}>
                   {points.toLocaleString()}
                 </span>
-                <span style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)' }}>pts</span>
+                <span style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: 'var(--text2)' }}>pts</span>
                 <span style={{
-                  marginLeft: 8, fontSize: 12, fontWeight: 'var(--fw-bold)', padding: '3px 10px',
+                  marginLeft: 8, fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-bold)', padding: '3px 10px',
                   background: cfg.tint, border: `1px solid ${cfg.border}`,
                   borderRadius: 20, color: cfg.color,
                   display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -179,13 +179,13 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
                       width: `${progress}%`, transition: 'width .6s ease',
                     }} />
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>
                     {(nextThreshold - points).toLocaleString()} {i('pts pour passer', 'pts to reach', 'pts para alcanzar', 'pts per raggiungere')} {tier === 'Bronze' ? 'Silver' : 'Gold'}
                   </div>
                 </>
               )}
               {!nextThreshold && (
-                <div style={{ fontSize: 12, color: cfg.color, fontWeight: 'var(--fw-semibold)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ fontSize: 'var(--fs-label)', color: cfg.color, fontWeight: 'var(--fw-semibold)', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <Sparkles size={13} /> {i('Niveau maximum atteint !', 'Maximum level reached!', '¡Nivel máximo alcanzado!', 'Livello massimo raggiunto!')}
                 </div>
               )}
@@ -195,10 +195,10 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
 
         {/* Fonctionnement — v1 : STATUT seulement (gain identique tous paliers, pas de remise) */}
         <div style={{ background: 'var(--bg3)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
+          <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
             {i('Comment ça marche', 'How it works', 'Cómo funciona', 'Come funziona')}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Star size={13} style={{ color: 'var(--warn)', flexShrink: 0 }} /> {i(`1 point par tranche de ${tfmt(perAmount)} dépensé`, `1 point per ${tfmt(perAmount)} spent`, `1 punto por cada ${tfmt(perAmount)} gastado`, `1 punto ogni ${tfmt(perAmount)} speso`)}</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Award size={13} style={{ color: 'var(--p3)', flexShrink: 0 }} /> {i(`Paliers : Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`, `Tiers: Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`, `Niveles: Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`, `Livelli: Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`)}</span>
             {/* Loyalty v2 : remise du palier actuel si configurée, sinon « à venir » */}
@@ -217,14 +217,14 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
         {/* Historique des points (gains / retraits) */}
         {history.length > 0 && (
           <div style={{ background: 'var(--bg3)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
+            <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
               {i('Historique', 'History', 'Historial', 'Cronologia')}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
               {history.slice(0, 6).map((h, idx) => {
                 const earn = (h.points ?? 0) >= 0
                 return (
-                  <div key={h.id ?? idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                  <div key={h.id ?? idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 'var(--fs-label)' }}>
                     <span style={{ color: 'var(--text3)' }}>
                       {earn ? i('Vente', 'Sale', 'Venta', 'Vendita') : i('Remboursement', 'Refund', 'Reembolso', 'Rimborso')}
                       {h.createdAt ? ` · ${new Date(h.createdAt).toLocaleDateString(dloc, { day: '2-digit', month: 'short' })}` : ''}

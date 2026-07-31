@@ -115,7 +115,7 @@ export default function AddressAutocomplete({
         transition: 'border-color .15s',
       }}>
         <span style={{
-          padding: '0 4px 0 12px', fontSize: 15, flexShrink: 0,
+          padding: '0 4px 0 12px', fontSize: 'var(--fs-title)', flexShrink: 0,
           color: focused ? 'var(--p2)' : 'var(--text3)',
           pointerEvents: 'none', transition: 'color .15s',
         }}>📍</span>
@@ -124,7 +124,7 @@ export default function AddressAutocomplete({
           style={{
             flex: 1, background: 'transparent',
             border: 'none', outline: 'none',
-            color: 'var(--text)', fontSize: 13,
+            color: 'var(--text)', fontSize: 'var(--fs-sm)',
             padding: '11px 12px 11px 6px',
             fontFamily: 'var(--font)',
             cursor: disabled ? 'not-allowed' : 'text',
@@ -146,7 +146,7 @@ export default function AddressAutocomplete({
             onMouseDown={e => { e.preventDefault(); onChange(''); setSuggestions([]) }}
             style={{
               padding: '0 10px', background: 'none', border: 'none',
-              cursor: 'pointer', fontSize: 12, color: 'var(--text3)', flexShrink: 0,
+              cursor: 'pointer', fontSize: 'var(--fs-label)', color: 'var(--text3)', flexShrink: 0,
             }}>✕</button>
         )}
       </div>
@@ -176,16 +176,16 @@ export default function AddressAutocomplete({
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.1)'}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
             >
-              <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>📍</span>
+              <span style={{ fontSize: 'var(--fs-sm)', flexShrink: 0, marginTop: 1 }}>📍</span>
               <div style={{ minWidth: 0 }}>
                 <div style={{
-                  fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text)',
+                  fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-regular)', color: 'var(--text)',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {s.structured_formatting?.main_text ?? s.description.split(',')[0]}
                 </div>
                 <div style={{
-                  fontSize: 11, color: 'var(--text3)', marginTop: 2,
+                  fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginTop: 2,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {s.structured_formatting?.secondary_text ?? s.description.split(',').slice(1).join(',')}
@@ -194,7 +194,7 @@ export default function AddressAutocomplete({
             </button>
           ))}
           <div style={{
-            padding: '5px 14px', fontSize: 11, color: 'var(--text4)',
+            padding: '5px 14px', fontSize: 'var(--fs-caption)', color: 'var(--text4)',
             textAlign: 'right', background: 'var(--bg3)',
           }}>
             Powered by Google

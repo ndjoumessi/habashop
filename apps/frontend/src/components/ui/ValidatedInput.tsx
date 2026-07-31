@@ -209,7 +209,7 @@ export default function ValidatedInput({
     <div style={{ width: '100%' }}>
       {label && (
         <label style={{
-          display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)',
+          display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)',
           textTransform: 'uppercase', letterSpacing: '.6px',
           color: hasError ? 'var(--danger)' : 'var(--text3)',
           marginBottom: 6, transition: 'color .15s',
@@ -223,7 +223,7 @@ export default function ValidatedInput({
         {icon && (
           <span style={{
             position: 'absolute', left: 12,
-            fontSize: 14, pointerEvents: 'none',
+            fontSize: 'var(--fs-body)', pointerEvents: 'none',
             color: focused ? 'var(--p2)' : 'var(--text3)',
             zIndex: 1, transition: 'color .15s',
           }}>{icon}</span>
@@ -267,7 +267,7 @@ export default function ValidatedInput({
         />
 
         {touched && value && (
-          <span style={{ position: 'absolute', right: 12, fontSize: 14, pointerEvents: 'none' }}>
+          <span style={{ position: 'absolute', right: 12, fontSize: 'var(--fs-body)', pointerEvents: 'none' }}>
             {hasError ? '❌' : '✅'}
           </span>
         )}
@@ -275,7 +275,7 @@ export default function ValidatedInput({
 
       {error && (
         <div style={{
-          fontSize: 11, color: 'var(--danger)',
+          fontSize: 'var(--fs-caption)', color: 'var(--danger)',
           marginTop: 5, fontWeight: 'var(--fw-regular)',
           display: 'flex', alignItems: 'center', gap: 4,
         }}>

@@ -25,7 +25,7 @@ export default function Field({ label, error, hint, required, children }: FieldP
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
       <label htmlFor={uid} style={{
-        display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)',
+        display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)',
         textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)',
       }}>
         {label}
@@ -35,11 +35,11 @@ export default function Field({ label, error, hint, required, children }: FieldP
       {child}
 
       {hint && !error && (
-        <span id={`${uid}-hint`} style={{ fontSize: 11, color: 'var(--text3)' }}>{hint}</span>
+        <span id={`${uid}-hint`} style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{hint}</span>
       )}
       {error && (
         <span id={`${uid}-error`} role="alert" style={{
-          fontSize: 11, color: 'var(--danger)', fontWeight: 'var(--fw-regular)',
+          fontSize: 'var(--fs-caption)', color: 'var(--danger)', fontWeight: 'var(--fw-regular)',
           display: 'flex', alignItems: 'center', gap: 4,
         }}>⚠ {error}</span>
       )}

@@ -122,7 +122,7 @@ export default function PhoneInputWithCountry({
     <div ref={wrapRef} style={{ position: 'relative' }}>
       {label && (
         <label style={{
-          display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)',
+          display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)',
           textTransform: 'uppercase', letterSpacing: '.6px',
           color: 'var(--text3)', marginBottom: 6,
         }}>{label}</label>
@@ -161,9 +161,9 @@ export default function PhoneInputWithCountry({
           onMouseLeave={e =>
             ((e.currentTarget as HTMLElement).style.background = 'var(--bg3)')}
         >
-          <span style={{ fontSize: 18 }}>{flag}</span>
-          <span style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>{code}</span>
-          <span style={{ fontSize: 11, color: 'var(--text3)', transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none', display: 'inline-block' }}>▾</span>
+          <span style={{ fontSize: 'var(--fs-lg)' }}>{flag}</span>
+          <span style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>{code}</span>
+          <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none', display: 'inline-block' }}>▾</span>
         </button>
 
         {/* Input numéro */}
@@ -192,7 +192,7 @@ export default function PhoneInputWithCountry({
           style={{
             flex: 1, background: 'transparent', border: 'none',
             outline: 'none', padding: '10px 12px',
-            color: 'var(--text)', fontSize: 14,
+            color: 'var(--text)', fontSize: 'var(--fs-body)',
             fontFamily: 'var(--mono)', letterSpacing: '.5px',
           }}
         />
@@ -209,7 +209,7 @@ export default function PhoneInputWithCountry({
               <button type="button" onClick={() => { setNumber(''); onChange(code) }} style={{
                 width: 18, height: 18, borderRadius: '50%',
                 background: 'var(--bg4)', border: 'none',
-                cursor: 'pointer', color: 'var(--text3)', fontSize: 11,
+                cursor: 'pointer', color: 'var(--text3)', fontSize: 'var(--fs-caption)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>✕</button>
             )}
@@ -219,8 +219,8 @@ export default function PhoneInputWithCountry({
 
       {/* Aperçu numéro complet */}
       {isValid && (
-        <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ fontSize: 13 }}>{flag}</span>
+        <div style={{ marginTop: 4, fontSize: 'var(--fs-caption)', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ fontSize: 'var(--fs-sm)' }}>{flag}</span>
           <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)' }}>
             {code} {number}
           </span>
@@ -249,7 +249,7 @@ export default function PhoneInputWithCountry({
               border: '1px solid var(--border)',
               borderRadius: 8, padding: '6px 10px',
             }}>
-              <span style={{ color: 'var(--text3)', fontSize: 12 }}>🔍</span>
+              <span style={{ color: 'var(--text3)', fontSize: 'var(--fs-label)' }}>🔍</span>
               <input
                 autoFocus
                 type="text"
@@ -259,14 +259,14 @@ export default function PhoneInputWithCountry({
                 onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setSearch('') } }}
                 style={{
                   flex: 1, background: 'transparent', border: 'none',
-                  outline: 'none', color: 'var(--text)', fontSize: 12,
+                  outline: 'none', color: 'var(--text)', fontSize: 'var(--fs-label)',
                   fontFamily: 'var(--font)',
                 }}
               />
               {search && (
                 <button type="button" onClick={() => setSearch('')} style={{
                   background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'var(--text3)', fontSize: 12,
+                  color: 'var(--text3)', fontSize: 'var(--fs-label)',
                 }}>✕</button>
               )}
             </div>
@@ -275,7 +275,7 @@ export default function PhoneInputWithCountry({
           {/* Liste */}
           <div role="listbox" style={{ maxHeight: 250, overflowY: 'auto' }}>
             {filtered.length === 0 ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text3)', fontSize: 12 }}>
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text3)', fontSize: 'var(--fs-label)' }}>
                 {lang === 'en' ? 'No results' : lang === 'es' ? 'Sin resultados' : lang === 'it' ? 'Nessun risultato' : 'Aucun résultat'}
               </div>
             ) : search ? (
@@ -289,7 +289,7 @@ export default function PhoneInputWithCountry({
                 return (
                   <div key={region}>
                     <div style={{
-                      padding: '6px 12px 3px', fontSize: 11, fontWeight: 'var(--fw-bold)',
+                      padding: '6px 12px 3px', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)',
                       textTransform: 'uppercase', letterSpacing: '.7px',
                       color: 'var(--text4)', background: 'var(--bg3)',
                     }}>{region}</div>
@@ -325,19 +325,19 @@ function CountryRow({ c, selected, onSelect }: { c: CountryEntry; selected: bool
         cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)',
       }}
     >
-      <span style={{ fontSize: 18, width: 26, textAlign: 'center' }}>{c.flag}</span>
+      <span style={{ fontSize: 'var(--fs-lg)', width: 26, textAlign: 'center' }}>{c.flag}</span>
       <span style={{
-        flex: 1, fontSize: 12, fontWeight: 'var(--fw-regular)',
+        flex: 1, fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-regular)',
         color: selected ? 'var(--p3)' : 'var(--text)',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{c.country}</span>
       <span style={{
-        fontSize: 11, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)',
+        fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)',
         color: selected ? 'var(--p3)' : 'var(--text3)',
         background: selected ? 'rgba(108,71,255,.15)' : 'var(--bg3)',
         padding: '2px 7px', borderRadius: 6, flexShrink: 0,
       }}>{c.code}</span>
-      {selected && <span style={{ color: 'var(--p3)', fontSize: 11 }}>✓</span>}
+      {selected && <span style={{ color: 'var(--p3)', fontSize: 'var(--fs-caption)' }}>✓</span>}
     </button>
   )
 }

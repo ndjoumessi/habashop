@@ -40,7 +40,7 @@ export default function OfflineBanner() {
         display: 'flex',
         alignItems: 'center',
         gap: 10,
-        fontSize: 13,
+        fontSize: 'var(--fs-sm)',
         fontWeight: 'var(--fw-regular)',
         color: offline ? 'var(--danger)' : 'var(--acc2)',
         transition: 'all .3s',

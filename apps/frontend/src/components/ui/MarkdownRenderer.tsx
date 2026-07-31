@@ -29,7 +29,7 @@ export default function MarkdownRenderer({ content, style }: Props) {
     if (line.startsWith('# ')) {
       elements.push(
         <h1 key={i} style={{
-          fontSize: 22, fontWeight: 'var(--fw-semibold)',
+          fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-semibold)',
           color: 'var(--text)', margin: '24px 0 12px',
           letterSpacing: '-.3px',
           paddingBottom: 10,
@@ -59,7 +59,7 @@ export default function MarkdownRenderer({ content, style }: Props) {
     if (line.startsWith('### ')) {
       elements.push(
         <h3 key={i} style={{
-          fontSize: 14, fontWeight: 'var(--fw-bold)',
+          fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-bold)',
           color: 'var(--acc)', margin: '16px 0 6px',
         }}>
           {renderInline(line.slice(4))}
@@ -74,7 +74,7 @@ export default function MarkdownRenderer({ content, style }: Props) {
           borderLeft: '3px solid var(--p)',
           paddingLeft: 14, margin: '10px 0',
           color: 'var(--text2)',
-          fontSize: 13, fontStyle: 'italic',
+          fontSize: 'var(--fs-sm)', fontStyle: 'italic',
         }}>
           {renderInline(line.slice(2))}
         </blockquote>
@@ -94,7 +94,7 @@ export default function MarkdownRenderer({ content, style }: Props) {
           background: 'var(--bg4)',
           border: '1px solid var(--border)',
           borderRadius: 10, padding: '12px 16px',
-          fontSize: 12, fontFamily: 'var(--mono)',
+          fontSize: 'var(--fs-label)', fontFamily: 'var(--mono)',
           color: 'var(--acc2)', overflow: 'auto',
           margin: '10px 0', lineHeight: 1.6,
         }}>
@@ -130,11 +130,11 @@ export default function MarkdownRenderer({ content, style }: Props) {
           {listItems.map((item, j) => (
             <li key={j} style={{
               display: 'flex', gap: 8,
-              alignItems: 'flex-start', fontSize: 13,
+              alignItems: 'flex-start', fontSize: 'var(--fs-sm)',
             }}>
               <span style={{
                 color: 'var(--p2)', flexShrink: 0,
-                marginTop: 2, fontSize: 11,
+                marginTop: 2, fontSize: 'var(--fs-caption)',
               }}>▶</span>
               <span style={{ color: 'var(--text2)', lineHeight: 1.6 }}>
                 {renderInline(item)}
@@ -161,12 +161,12 @@ export default function MarkdownRenderer({ content, style }: Props) {
           {listItems.map((item, j) => (
             <li key={j} style={{
               display: 'flex', gap: 10,
-              alignItems: 'flex-start', fontSize: 13,
+              alignItems: 'flex-start', fontSize: 'var(--fs-sm)',
             }}>
               <span style={{
                 width: 22, height: 22, borderRadius: '50%',
                 background: 'var(--p)',
-                color: '#fff', fontSize: 11, fontWeight: 'var(--fw-bold)',
+                color: '#fff', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)',
                 display: 'flex', alignItems: 'center',
                 justifyContent: 'center', flexShrink: 0,
                 marginTop: 1,
@@ -201,10 +201,10 @@ export default function MarkdownRenderer({ content, style }: Props) {
           {items.map((item, j) => (
             <div key={j} style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              fontSize: 13,
+              fontSize: 'var(--fs-sm)',
             }}>
               <span style={{
-                fontSize: 16,
+                fontSize: 'var(--fs-md)',
                 color: item.checked ? 'var(--acc2)' : 'var(--text3)',
               }}>
                 {item.checked ? '☑' : '☐'}
@@ -263,7 +263,7 @@ function MarkdownTable({ lines }: { lines: string[] }) {
             {headers.map((h, i) => (
               <th key={i} style={{
                 padding: '9px 12px', textAlign: 'left',
-                fontSize: 11, fontWeight: 'var(--fw-bold)',
+                fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)',
                 textTransform: 'uppercase', letterSpacing: '.6px',
                 color: 'var(--text3)',
                 borderBottom: '1px solid var(--border)',
@@ -280,7 +280,7 @@ function MarkdownTable({ lines }: { lines: string[] }) {
             }}>
               {row.map((cell, j) => (
                 <td key={j} style={{
-                  padding: '8px 12px', fontSize: 12,
+                  padding: '8px 12px', fontSize: 'var(--fs-label)',
                   color: 'var(--text2)',
                   borderBottom: i < rows.length - 1
                     ? '1px solid var(--border)' : 'none',
@@ -327,7 +327,7 @@ function renderInline(text: string): React.ReactNode {
           background: 'var(--bg4)',
           border: '1px solid var(--border)',
           borderRadius: 4, padding: '1px 6px',
-          fontSize: 12, fontFamily: 'var(--mono)',
+          fontSize: 'var(--fs-label)', fontFamily: 'var(--mono)',
           color: 'var(--acc)', letterSpacing: 0,
         }}>
           {match[4]}

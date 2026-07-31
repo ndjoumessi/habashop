@@ -31,12 +31,12 @@ export default function LanguageSwitcher() {
         type="button"
         aria-label={tooltipText}
         style={{
-          gap: 4, padding: '6px 10px', fontSize: 13, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)',
+          gap: 4, padding: '6px 10px', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)',
           cursor: 'help',
         }}
       >
         <span>{current.flag}</span>
-        <span style={{ color: 'var(--text2)', fontSize: 11 }}>{current.label}</span>
+        <span style={{ color: 'var(--text2)', fontSize: 'var(--fs-caption)' }}>{current.label}</span>
         <Lock size={10} style={{ color: 'var(--text3)', verticalAlign: 'middle' }} />
       </button>
     </FocusTooltip>
