@@ -99,7 +99,7 @@ export default function Sidebar() {
         {!collapsed && (
           <div style={{ minWidth: 0 }}>
             <div style={{
-              fontSize: 16, fontWeight: 'var(--fw-bold)', letterSpacing: '-.3px',
+              fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-bold)', letterSpacing: '-.3px',
               background: 'linear-gradient(135deg,var(--p2),var(--p))',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',

@@ -63,7 +63,7 @@ export default function TenantSwitcher({ collapsed }: { collapsed: boolean }) {
         <Store size={15} style={{ color: 'var(--p2)', flexShrink: 0 }} />
         {!collapsed && (
           <>
-            <span style={{ flex: 1, minWidth: 0, textAlign: 'left', fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{active.name}</span>
+            <span style={{ flex: 1, minWidth: 0, textAlign: 'left', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{active.name}</span>
             <ChevronDown size={14} style={{ color: 'var(--text4)', flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
           </>
         )}
@@ -105,7 +105,7 @@ export default function TenantSwitcher({ collapsed }: { collapsed: boolean }) {
               >
                 <Store size={14} style={{ color: isActive ? 'var(--p2)' : 'var(--text3)', flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
                   <div style={{ fontSize: 10, color: 'var(--text3)' }}>{t.currency} · {t.role}</div>
                 </div>
                 {isPending

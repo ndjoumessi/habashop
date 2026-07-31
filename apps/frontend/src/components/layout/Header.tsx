@@ -235,7 +235,7 @@ export default function Header() {
         <div style={{
           background: 'rgba(255,184,0,.10)', border: '1px solid rgba(255,184,0,.25)',
           borderLeft: 'none', borderRight: 'none', padding: '7px 20px',
-          display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--warn)',
+          display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-regular)', color: 'var(--warn)',
         }}>
           <WifiOff size={13} />
           <span>{lang === 'en' ? 'Offline — Data will sync on reconnect' : lang === 'es' ? 'Sin conexión — Los datos se sincronizarán al reconectar' : lang === 'it' ? 'Offline — I dati si sincronizzeranno alla riconnessione' : 'Mode hors-ligne — Synchronisation au retour de connexion'}</span>
@@ -261,7 +261,7 @@ export default function Header() {
             <input
               type="search"
               className="input"
-              style={{ paddingLeft: 32, width: 230, fontSize: 12, minHeight: 36 }}
+              style={{ paddingLeft: 32, width: 230, fontSize: 'var(--fs-label)', minHeight: 36 }}
               aria-label={lang === 'en' ? 'Global search' : lang === 'es' ? 'Búsqueda global' : lang === 'it' ? 'Ricerca globale' : 'Recherche globale'}
               aria-expanded={showResults}
               autoComplete="off"
@@ -316,16 +316,16 @@ export default function Header() {
                       <ItemIcon size={14} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-regular)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {highlight(item.label)}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{item.sub}</div>
+                      <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginTop: 1 }}>{item.sub}</div>
                     </div>
-                    <span style={{ fontSize: 11, color: 'var(--text3)', background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 6px', flexShrink: 0 }}>{item.type}</span>
+                    <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 6px', flexShrink: 0 }}>{item.type}</span>
                   </button>
                 )
               })}
-              <div style={{ padding: '8px 14px', fontSize: 11, color: 'var(--text4)', borderTop: '1px solid var(--border)' }}>
+              <div style={{ padding: '8px 14px', fontSize: 'var(--fs-caption)', color: 'var(--text4)', borderTop: '1px solid var(--border)' }}>
                 {searchResults.length} résultat{searchResults.length > 1 ? 's' : ''} pour « {searchQuery} »
               </div>
             </div>
@@ -351,7 +351,7 @@ export default function Header() {
               : <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--warn)', animation: 'pulse 1.4s ease-in-out infinite' }} />
           }
           <span style={{
-            fontSize: 11, fontWeight: 'var(--fw-semibold)',
+            fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)',
             color: apiStatus === 'online' ? 'var(--acc2)' : apiStatus === 'offline' ? 'var(--danger)' : 'var(--warn)',
           }}>
             {apiStatus === 'online'
@@ -378,7 +378,7 @@ export default function Header() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20,
                 background: bg, border: `1px solid ${border}`, color, flexShrink: 0,
-                fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', cursor: 'default',
+                fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', cursor: 'default',
               }}>
               {trial.isTrial
                 ? <><Clock size={11} />{lang === 'en' ? `Trial · ${trial.daysLeft}d` : lang === 'es' ? `Prueba · ${trial.daysLeft}d` : lang === 'it' ? `Prova · ${trial.daysLeft}g` : `Essai · ${trial.daysLeft}j`}</>
@@ -411,7 +411,7 @@ export default function Header() {
               animation: 'slideDown .2s var(--spring)',
             }}>
               <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '60%', height: 1, background: 'linear-gradient(90deg,transparent,var(--p),transparent)' }} />
-              <div style={{ padding: '6px 10px 8px', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.8px', color: 'var(--text4)' }}>
+              <div style={{ padding: '6px 10px 8px', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.8px', color: 'var(--text4)' }}>
                 {lang === 'en' ? 'QUICK CREATE' : lang === 'es' ? 'CREAR RÁPIDO' : lang === 'it' ? 'CREA RAPIDO' : 'CRÉER RAPIDEMENT'}
               </div>
               {NEW_ITEMS.map((item, i) => {
@@ -434,7 +434,7 @@ export default function Header() {
                     }}>
                       <ItemIcon size={15} />
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>{item.label}</span>
+                    <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>{item.label}</span>
                   </button>
                 )
               })}
@@ -463,7 +463,7 @@ export default function Header() {
               <div style={{
                 position: 'absolute', top: 3, right: 3, width: 16, height: 16,
                 borderRadius: '50%', background: 'var(--danger)', color: '#fff',
-                fontSize: 11, fontWeight: 'var(--fw-bold)', display: 'flex', alignItems: 'center',
+                fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', border: '2px solid var(--bg2)',
                 boxShadow: '0 0 8px rgba(255,59,92,.5)',
               }}>{unreadCount}</div>
@@ -491,12 +491,12 @@ export default function Header() {
                   }}>
                     <Bell size={14} />
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>Notifications</span>
+                  <span style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>Notifications</span>
                 </div>
                 {unreadCount > 0 && (
                   <span style={{
                     background: 'var(--danger)', color: '#fff',
-                    borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 'var(--fw-bold)',
+                    borderRadius: 20, padding: '2px 8px', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)',
                   }}>{unreadCount} non lues</span>
                 )}
               </div>
@@ -521,10 +521,10 @@ export default function Header() {
                         {v.icon}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>{v.title}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{v.message}</div>
+                        <div style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>{v.title}</div>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{v.message}</div>
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--text4)', flexShrink: 0, marginTop: 3 }}>
+                      <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', flexShrink: 0, marginTop: 3 }}>
                         {new Date(n.ts).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </button>
@@ -547,10 +547,10 @@ export default function Header() {
                       <Package size={13} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>
+                      <div style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>
                         {lang === 'en' ? 'Low stock' : lang === 'es' ? 'Stock bajo' : lang === 'it' ? 'Stock basso' : 'Rupture stock'} — {product.name}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                      <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>
                         Stock: {product.stockQty} / Seuil: {product.stockMin}
                       </div>
                     </div>
@@ -562,7 +562,7 @@ export default function Header() {
                 {liveNotifs.length === 0 && lowStockAlerts.length === 0 && (
                   <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text3)' }}>
                     <Bell size={24} style={{ opacity: .4, marginBottom: 8 }} />
-                    <div style={{ fontSize: 13 }}>{lang === 'en' ? 'No notifications' : lang === 'es' ? 'Sin notificaciones' : lang === 'it' ? 'Nessuna notifica' : 'Aucune notification'}</div>
+                    <div style={{ fontSize: 'var(--fs-sm)' }}>{lang === 'en' ? 'No notifications' : lang === 'es' ? 'Sin notificaciones' : lang === 'it' ? 'Nessuna notifica' : 'Aucune notification'}</div>
                   </div>
                 )}
               </div>
@@ -572,7 +572,7 @@ export default function Header() {
                 <button
                   onClick={() => { navigate('/app/notifications'); setShowNotifs(false) }}
                   className="btn-primary"
-                  style={{ width: '100%', justifyContent: 'center', fontSize: 12, padding: '9px', borderRadius: 10 }}
+                  style={{ width: '100%', justifyContent: 'center', fontSize: 'var(--fs-label)', padding: '9px', borderRadius: 10 }}
                 >
                   {lang === 'en' ? 'View all notifications' : lang === 'es' ? 'Ver todas las notificaciones' : lang === 'it' ? 'Vedi tutte le notifiche' : 'Voir toutes les notifications'}
                 </button>
@@ -593,13 +593,13 @@ export default function Header() {
           animation: 'slideUp .3s ease',
         }}>
           <Zap size={15} style={{ color: 'var(--p3)', flexShrink: 0 }} />
-          <span style={{ fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>
+          <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>
             {lang === 'en' ? 'Update available' : lang === 'es' ? 'Actualización disponible' : lang === 'it' ? 'Aggiornamento disponibile' : 'Mise à jour disponible'}
           </span>
           <button
             onClick={() => window.location.reload()}
             className="btn-primary"
-            style={{ padding: '5px 12px', borderRadius: 8, fontSize: 12, minHeight: 'auto' }}
+            style={{ padding: '5px 12px', borderRadius: 8, fontSize: 'var(--fs-label)', minHeight: 'auto' }}
           >
             {lang === 'en' ? 'Refresh' : lang === 'es' ? 'Actualizar' : lang === 'it' ? 'Aggiorna' : 'Actualiser'}
           </button>

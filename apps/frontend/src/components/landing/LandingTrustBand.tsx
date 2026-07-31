@@ -24,7 +24,7 @@ export default function LandingTrustBand({ lp, i }: Props) {
         borderTop: `1px solid ${D.border}`, borderBottom: `1px solid ${D.border}`,
         background: 'rgba(255,255,255,.02)',
       }}>
-        <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: D.text2, textTransform: 'uppercase', marginBottom: 18 }}>
+        <div style={{ textAlign: 'center', fontSize: 'var(--fs-caption)', fontWeight: 800, letterSpacing: '.8px', color: D.text2, textTransform: 'uppercase', marginBottom: 18 }}>
           {lp.trust_title}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(16px,3vw,40px)', flexWrap: 'wrap' }}>
@@ -33,8 +33,8 @@ export default function LandingTrustBand({ lp, i }: Props) {
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '.85'}
             >
-              <span style={{ fontSize: 22 }}>{c.flag}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: D.text2 }}>{c.name}</span>
+              <span style={{ fontSize: 'var(--fs-2xl)' }}>{c.flag}</span>
+              <span style={{ fontSize: 'var(--fs-label)', fontWeight: 700, color: D.text2 }}>{c.name}</span>
             </div>
           ))}
         </div>
