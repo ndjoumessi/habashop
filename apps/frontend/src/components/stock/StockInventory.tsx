@@ -112,8 +112,9 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                 ['SKU', i('Produit','Product','Producto','Prodotto'), i('Catégorie','Category','Categoría','Categoria'),
                  `${i('Prix achat','Buy price','Precio compra','Prezzo acquisto')} (${currency})`,
                  `${i('Prix vente','Sell price','Precio venta','Prezzo vendita')} (${currency})`,
+                 `${i('Marge','Margin','Margen','Margine')} (%)`, `${i('Profit','Profit','Beneficio','Profitto')} (${currency})`,
                  'Stock', i('Seuil','Threshold','Umbral','Soglia'), i('Fournisseur','Supplier','Proveedor','Fornitore'), i('Statut','Status','Estado','Stato')],
-                products.map(p => [p.sku, p.name, p.category, cv(p.buy), cv(p.sell), p.stock, p.threshold, p.supplier, statusOf(p.stock,p.threshold).label])
+                products.map(p => [p.sku, p.name, p.category, cv(p.buy), cv(p.sell), productMargin(p.buy, p.sell).pct ?? '', cv(productMargin(p.buy, p.sell).profitXof), p.stock, p.threshold, p.supplier, statusOf(p.stock,p.threshold).label])
               )
               toast.success(i('Export CSV téléchargé !','CSV export downloaded!','¡Exportación CSV descargada!','Esportazione CSV scaricata!'))
             }}>
