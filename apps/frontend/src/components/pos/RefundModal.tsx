@@ -41,7 +41,7 @@ export default function RefundModal({ sale, onClose, onConfirm, saving, lang, fm
       <div ref={boxRef} className="modal-box" style={{ maxWidth: 460 }}>
         {/* En-tête */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <span style={{ fontWeight: 'var(--fw-bold)', fontSize: 16, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-md)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <RotateCcw size={16} style={{ color: 'var(--danger)' }} />
             {i('Rembourser la vente', 'Refund Sale', 'Reembolsar venta', 'Rimborsa vendita')}
           </span>
@@ -57,7 +57,7 @@ export default function RefundModal({ sale, onClose, onConfirm, saving, lang, fm
             <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>
               {i('Vente', 'Sale', 'Venta', 'Vendita')} #{String(sale.id).slice(-6).toUpperCase()}
             </span>
-            <span style={{ fontSize: 18, fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>{fmt(sale.total)}</span>
+            <span style={{ fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>{fmt(sale.total)}</span>
           </div>
           <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', marginTop: 4 }}>
             {i('Remboursement total — la vente sera conservée mais exclue du chiffre d’affaires.',
@@ -78,7 +78,7 @@ export default function RefundModal({ sale, onClose, onConfirm, saving, lang, fm
           rows={3}
           autoFocus
           placeholder={i('Ex. produit défectueux, erreur de caisse…', 'E.g. faulty product, checkout error…', 'Ej. producto defectuoso, error de caja…', 'Es. prodotto difettoso, errore di cassa…')}
-          style={{ width: '100%', resize: 'vertical', fontFamily: 'var(--font)', fontSize: 13, marginBottom: 14 }}
+          style={{ width: '100%', resize: 'vertical', fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)', marginBottom: 14 }}
         />
 
         {/* Remettre en stock (pré-coché) */}
@@ -88,7 +88,7 @@ export default function RefundModal({ sale, onClose, onConfirm, saving, lang, fm
             {restock && <PackageCheck size={12} style={{ color: '#fff' }} />}
           </span>
           <span style={{ flex: 1 }}>
-            <span style={{ display: 'block', fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
+            <span style={{ display: 'block', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
               {i('Remettre les articles en stock', 'Return items to stock', 'Devolver artículos al stock', 'Rimetti gli articoli in stock')}
             </span>
             <span style={{ display: 'block', fontSize: 'var(--fs-caption)', color: 'var(--text4)', marginTop: 1 }}>

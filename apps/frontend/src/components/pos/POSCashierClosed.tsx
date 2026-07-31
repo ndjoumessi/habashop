@@ -44,16 +44,16 @@ export default function POSCashierClosed({
           display:'flex', alignItems:'center', justifyContent:'center',
           margin:'0 auto 20px',
         }}><Lock size={36} style={{ color:'var(--p2)' }} /></div>
-        <h2 style={{ fontSize:22, fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:8, letterSpacing:'-0.5px' }}>
+        <h2 style={{ fontSize:'var(--fs-2xl)', fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:8, letterSpacing:'-0.5px' }}>
           {ct.closed_title}
         </h2>
-        <p style={{ fontSize:13, color:'var(--text2)', marginBottom:28, lineHeight:1.6 }}>
+        <p style={{ fontSize:'var(--fs-sm)', color:'var(--text2)', marginBottom:28, lineHeight:1.6 }}>
           {ct.closed_sub}
         </p>
         {showFundInput && (
         <div style={{ marginBottom:20, textAlign:'left' }}>
           <label style={{
-            display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase',
+            display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase',
             letterSpacing:'.5px', color:'var(--text3)', marginBottom:6,
           }}>{ct.fund_label}</label>
           <div style={{ position:'relative' }}>
@@ -67,15 +67,15 @@ export default function POSCashierClosed({
               onChange={e => { if (!e.target.value.startsWith('-')) setOpeningFundInput(e.target.value) }}
               // Filet de sécurité (collage, molette…) : ramène une valeur négative/NaN à vide.
               onBlur={e => { if (e.target.value !== '' && !(parseFloat(e.target.value) >= 0)) setOpeningFundInput('') }}
-              style={{ fontSize:16, textAlign:'right', paddingRight:60 }}
+              style={{ fontSize:'var(--fs-md)', textAlign:'right', paddingRight:60 }}
             />
             <span style={{
               position:'absolute', right:12, top:'50%', transform:'translateY(-50%)',
-              fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--text3)',
+              fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:'var(--text3)',
             }}>{currencySymbol}</span>
           </div>
           {openingFundInput && (
-            <div style={{ marginTop:6, fontSize:12, color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:'var(--fw-regular)' }}>
+            <div style={{ marginTop:6, fontSize:'var(--fs-label)', color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:'var(--fw-regular)' }}>
               {fundPreview ?? displayFund}
             </div>
           )}
@@ -91,11 +91,11 @@ export default function POSCashierClosed({
             width:36, height:36, borderRadius:'50%',
             background:'linear-gradient(135deg,var(--p),var(--p2))',
             display:'flex', alignItems:'center', justifyContent:'center',
-            color:'#fff', fontSize:14, fontWeight:'var(--fw-bold)', flexShrink:0,
+            color:'#fff', fontSize:'var(--fs-body)', fontWeight:'var(--fw-bold)', flexShrink:0,
           }}>{cashierInitial}</div>
           <div>
-            <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{cashierName}</div>
-            <div style={{ fontSize:11, color:'var(--text3)' }}>
+            <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{cashierName}</div>
+            <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>
               {ct.cashier_label} · {new Date().toLocaleDateString(locale, { weekday:'long', day:'numeric', month:'long' })}
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function POSCashierClosed({
             width:'100%',
             background:'linear-gradient(135deg,var(--p),var(--p2))',
             border:'none', borderRadius:12, padding:'14px',
-            fontSize:15, fontWeight:'var(--fw-bold)', color:'#fff',
+            fontSize:'var(--fs-title)', fontWeight:'var(--fw-bold)', color:'#fff',
             cursor:'pointer', fontFamily:'var(--font)',
             boxShadow:'0 6px 20px rgba(91,78,232,.4)',
             display:'flex', alignItems:'center', justifyContent:'center', gap:8,

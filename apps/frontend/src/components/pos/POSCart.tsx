@@ -49,11 +49,11 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
       <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
         {/* 2 nœuds texte séparés : l'E2E matche ^Panier$|^Cart$ sur le 1er */}
         <span style={{ display: 'flex', alignItems: 'baseline', gap: 5, minWidth: 0 }}>
-          <span style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
+          <span style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
             {lang === 'fr' ? 'Panier' : lang === 'en' ? 'Cart' : lang === 'es' ? 'Carrito' : 'Carrello'}
           </span>
           {cart.length > 0 && (
-            <span style={{ fontSize: 13, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>· {cart.length}</span>
+            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>· {cart.length}</span>
           )}
         </span>
         {cart.length > 0 && (
@@ -65,7 +65,7 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
               background: 'transparent', border: 'none', padding: '4px 2px',
               minHeight: isMobile ? 44 : undefined,
               cursor: 'pointer', fontFamily: 'var(--font)',
-              fontSize: 12, color: 'var(--text3)', transition: 'color .15s',
+              fontSize: 'var(--fs-label)', color: 'var(--text3)', transition: 'color .15s',
             }}
             onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--danger)')}
             onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text3)')}
@@ -104,10 +104,10 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
               border:'2px dashed var(--border)',
               display:'flex', alignItems:'center', justifyContent:'center',
             }}><ShoppingCart size={24} style={{ color:'var(--text3)' }} /></div>
-            <div style={{ fontSize:13, textAlign:'center', color:'var(--text2)' }}>
+            <div style={{ fontSize:'var(--fs-sm)', textAlign:'center', color:'var(--text2)' }}>
               {lang === 'fr' ? 'Panier vide' : lang === 'en' ? 'Empty cart' : lang === 'es' ? 'Carrito vacío' : 'Carrello vuoto'}
             </div>
-            <div style={{ fontSize:11, color:'var(--text3)', textAlign:'center' }}>
+            <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', textAlign:'center' }}>
               {lang === 'fr' ? 'Cliquez sur un produit' : lang === 'en' ? 'Click on a product' : lang === 'es' ? 'Haga clic en un producto' : 'Clicca su un prodotto'}
             </div>
           </div>
@@ -120,8 +120,8 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
                 <div key={item.id}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ color: 'var(--text)', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
-                      <div style={{ color: 'var(--text3)', fontSize: 11, fontFamily: 'var(--mono)', marginTop: 1 }}>
+                      <div style={{ color: 'var(--text)', fontSize: 'var(--fs-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                      <div style={{ color: 'var(--text3)', fontSize: 'var(--fs-caption)', fontFamily: 'var(--mono)', marginTop: 1 }}>
                         {fmt(item.price)} × {item.qty}
                         {item.tierLabel && (
                           <span style={{ fontFamily: 'var(--font)', color: 'var(--acc3)', marginLeft: 6 }}>· {item.tierLabel}</span>
@@ -138,12 +138,12 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
                           width: tapSize, height: tapSize, borderRadius: 7,
                           background: item.qty === 1 ? 'var(--c-red-bg)' : 'var(--card2)',
                           border: item.qty === 1 ? '1px solid var(--c-red-border)' : '1px solid transparent',
-                          cursor: 'pointer', fontSize: 13,
+                          cursor: 'pointer', fontSize: 'var(--fs-sm)',
                           color: item.qty === 1 ? 'var(--danger)' : 'var(--text2)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s',
                         }}>{item.qty === 1 ? '×' : '−'}</button>
                       <span style={{
-                        fontSize: 13, color: 'var(--text)', fontFamily: 'var(--mono)',
+                        fontSize: 'var(--fs-sm)', color: 'var(--text)', fontFamily: 'var(--mono)',
                         minWidth: 14, textAlign: 'center', lineHeight: 1,
                       }}>{item.qty}</span>
                       <button type="button"
@@ -153,7 +153,7 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
                         style={{
                           width: tapSize, height: tapSize, borderRadius: 7,
                           background: 'var(--card2)', border: '1px solid transparent',
-                          cursor: atMax ? 'not-allowed' : 'pointer', fontSize: 13,
+                          cursor: atMax ? 'not-allowed' : 'pointer', fontSize: 'var(--fs-sm)',
                           color: atMax ? 'var(--text3)' : 'var(--text2)', opacity: atMax ? 0.4 : 1,
                           display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s',
                         }}>+</button>
@@ -179,13 +179,13 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
                 background: 'transparent', border: 'none', padding: '4px 0',
                 minHeight: isMobile ? 44 : undefined,
                 cursor: 'pointer', fontFamily: 'var(--font)',
-                fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)',
+                fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: 'var(--text3)',
               }}>
               <Tag size={12} />
               {lang === 'en' ? 'Apply manual discount' : lang === 'es' ? 'Aplicar descuento manual' : lang === 'it' ? 'Applica sconto manuale' : 'Appliquer une remise manuelle'}
             </button>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 'var(--fs-label)' }}>
               <span style={{ color: 'var(--acc2)', fontWeight: 'var(--fw-semibold)', display: 'flex', alignItems: 'center', gap: 5 }}>
                 <Tag size={12} />
                 {lang === 'en' ? 'Manual discount' : lang === 'es' ? 'Descuento manual' : lang === 'it' ? 'Sconto manuale' : 'Remise manuelle'} : {discount.type === 'percent' ? `${discount.value} %` : fmt(discount.value)}
@@ -197,7 +197,7 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
                   style={{
                     width: 24, height: 24, borderRadius: 7, flexShrink: 0,
                     background: 'var(--c-red-bg)', border: '1px solid var(--c-red-border)',
-                    color: 'var(--danger)', cursor: 'pointer', fontSize: 11,
+                    color: 'var(--danger)', cursor: 'pointer', fontSize: 'var(--fs-caption)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>✕</button>
               )}
@@ -210,18 +210,18 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
       <div style={{ flexShrink: 0, borderTop: '1px solid var(--border)', marginTop: 12, paddingTop: 12 }}>
         {cart.length > 0 && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text2)', fontSize: 13, marginBottom: 5 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text2)', fontSize: 'var(--fs-sm)', marginBottom: 5 }}>
               <span>{lang === 'en' ? 'Subtotal' : lang === 'es' ? 'Subtotal' : lang === 'it' ? 'Subtotale' : 'Sous-total'}</span>
               <span style={{ fontFamily: 'var(--mono)' }}>{fmt(cartSubtotal)}</span>
             </div>
             {discount && discountAmount > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--acc2)', fontSize: 13, marginBottom: 5 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--acc2)', fontSize: 'var(--fs-sm)', marginBottom: 5 }}>
                 <span>{lang === 'en' ? 'Manual discount' : lang === 'es' ? 'Descuento manual' : lang === 'it' ? 'Sconto manuale' : 'Remise manuelle'}{discount.type === 'percent' ? ` (${discount.value}%)` : ''}</span>
                 <span style={{ fontFamily: 'var(--mono)' }}>− {fmt(discountAmount)}</span>
               </div>
             )}
             {loyaltyDiscount > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--acc2)', fontSize: 13, marginBottom: 5 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--acc2)', fontSize: 'var(--fs-sm)', marginBottom: 5 }}>
                 <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {lang === 'en' ? 'Loyalty discount' : lang === 'es' ? 'Descuento fidelidad' : lang === 'it' ? 'Sconto fedeltà' : 'Remise fidélité'} ({loyaltyPct}%)
                   {loyaltyCustomerName ? ` · ${loyaltyCustomerName}` : ''}
@@ -230,18 +230,18 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
               </div>
             )}
             {/* Ventilation fiscale (spec §1, complément maquette) — discrète */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text3)', marginBottom: 3 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginBottom: 3 }}>
               <span>{lang === 'en' ? 'Net total (excl. VAT)' : lang === 'es' ? 'Total sin IVA' : lang === 'it' ? 'Totale imponibile' : 'Total HT'}</span>
               <span style={{ fontFamily: 'var(--mono)' }}>{fmt(Math.round(totalHT))}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginBottom: 8 }}>
               <span>{lang === 'en' ? 'VAT' : lang === 'es' ? 'IVA' : lang === 'it' ? 'IVA' : 'TVA'} ({posTaxRate}%)</span>
               <span style={{ fontFamily: 'var(--mono)' }}>{fmt(Math.round(tva))}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-              <span style={{ color: 'var(--text)', fontSize: 14, fontWeight: 'var(--fw-semibold)' }}>Total</span>
+              <span style={{ color: 'var(--text)', fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)' }}>Total</span>
               {/* Chiffre héros : or --acc (code couleur argent) */}
-              <span style={{ color: 'var(--acc)', fontSize: 24, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>{fmt(total)}</span>
+              <span style={{ color: 'var(--acc)', fontSize: 'var(--fs-display)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>{fmt(total)}</span>
             </div>
           </>
         )}
@@ -253,7 +253,7 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
           style={{
             width: '100%', minHeight: 50, padding: 14,
             background: cart.length === 0 ? 'var(--bg4)' : 'var(--grad-p)',
-            border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 'var(--fw-semibold)',
+            border: 'none', borderRadius: 12, fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-semibold)',
             color: cart.length === 0 ? 'var(--text3)' : '#fff',
             cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
             fontFamily: 'var(--font)', boxShadow: cart.length === 0 ? 'none' : 'var(--sh-md)',

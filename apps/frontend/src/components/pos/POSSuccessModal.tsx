@@ -52,23 +52,23 @@ export default function POSSuccessModal({ show, lang, total, monnaie, showChange
             padding: '12px 14px', marginBottom: 18,
             background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10,
           }}>
-            <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)' }}>
+            <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text2)' }}>
               {lang === 'en' ? 'Change' : lang === 'es' ? 'Cambio' : lang === 'it' ? 'Resto' : 'Monnaie à rendre'}
             </span>
-            <span style={{ fontSize: 20, fontWeight: 'var(--fw-bold)', fontFamily: 'var(--mono)', color: 'var(--text)' }}>{fmt(monnaie)}</span>
+            <span style={{ fontSize: 'var(--fs-xl)', fontWeight: 'var(--fw-bold)', fontFamily: 'var(--mono)', color: 'var(--text)' }}>{fmt(monnaie)}</span>
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button type="button" onClick={onPrint}
             style={{ width: '100%', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 'var(--r-md)',
-              fontSize: 14, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: 'pointer' }}>
+              fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: 'pointer' }}>
             <Printer size={16} /> {lang === 'en' ? 'Print receipt' : lang === 'es' ? 'Imprimir recibo' : lang === 'it' ? 'Stampa scontrino' : 'Imprimer le reçu'}
           </button>
           <button type="button" onClick={onNewSale}
             style={{ width: '100%', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               background: 'linear-gradient(135deg, var(--p), var(--p2))', border: 'none', color: '#fff', borderRadius: 'var(--r-md)',
-              fontSize: 14, fontWeight: 'var(--fw-bold)', fontFamily: 'var(--font)', cursor: 'pointer' }}>
+              fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-bold)', fontFamily: 'var(--font)', cursor: 'pointer' }}>
             <Plus size={16} /> {lang === 'en' ? 'New sale' : lang === 'es' ? 'Nueva venta' : lang === 'it' ? 'Nuova vendita' : 'Nouvelle vente'}
           </button>
         </div>

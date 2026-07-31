@@ -39,8 +39,8 @@ export default function TicketZModal({ onClose }: Props) {
 
   const Stat = ({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string; color?: string }) => (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--text2)' }}>{icon} {label}</span>
-      <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', fontSize: 13, color: color ?? 'var(--text)' }}>{value}</span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 'var(--fs-sm)', color: 'var(--text2)' }}>{icon} {label}</span>
+      <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-sm)', color: color ?? 'var(--text)' }}>{value}</span>
     </div>
   )
 
@@ -52,7 +52,7 @@ export default function TicketZModal({ onClose }: Props) {
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div ref={boxRef} className="modal-box" style={{ maxWidth: 460 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h3 style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <ClipboardList size={16} style={{ color: 'var(--p2)' }} /> {i('Clôture journalière', 'Daily closing', 'Cierre diario', 'Chiusura giornaliera')}
           </h3>
           <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="mini-btn" style={{ minWidth: 44, minHeight: 44 }} onClick={onClose}><X size={14} /></button>
@@ -78,12 +78,12 @@ export default function TicketZModal({ onClose }: Props) {
                 <button type="button" onClick={() => ticketZApi.openPdf(today.id).catch(() => toast.error('PDF'))}
                   style={{ width: '100%', marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, minHeight: 44,
                     background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 'var(--r-md)',
-                    fontSize: 13, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: 'pointer' }}>
+                    fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: 'pointer' }}>
                   <FileText size={15} /> {i('Télécharger le PDF', 'Download PDF', 'Descargar PDF', 'Scarica PDF')}
                 </button>
               </div>
             ) : (
-              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>
                 {i('Aucune clôture aujourd\'hui. Générez le Ticket Z.', 'No closing today. Generate the Z ticket.', 'Sin cierre hoy. Genere el ticket Z.', 'Nessuna chiusura oggi. Genera il ticket Z.')}
               </div>
             )}
@@ -92,7 +92,7 @@ export default function TicketZModal({ onClose }: Props) {
             <button type="button" onClick={generate} disabled={generating}
               style={{ width: '100%', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44,
                 background: 'linear-gradient(135deg, var(--p), var(--p2))', border: 'none', color: '#fff', borderRadius: 'var(--r-md)',
-                fontSize: 13, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: generating ? 'wait' : 'pointer', opacity: generating ? 0.7 : 1 }}>
+                fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: generating ? 'wait' : 'pointer', opacity: generating ? 0.7 : 1 }}>
               {generating ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={15} />}
               {today ? i('Regénérer', 'Regenerate', 'Regenerar', 'Rigenera') : i('Clôturer la journée', 'Close the day', 'Cerrar el día', 'Chiudi la giornata')}
             </button>
@@ -100,17 +100,17 @@ export default function TicketZModal({ onClose }: Props) {
             {/* Historique */}
             {history.length > 0 && (
               <div>
-                <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
                   {i('Historique (30 jours)', 'History (30 days)', 'Historial (30 días)', 'Cronologia (30 giorni)')}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
                   {history.map(h => (
                     <div key={h.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 10px', background: 'var(--bg3)', borderRadius: 'var(--r-sm)' }}>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{new Date(h.date).toLocaleDateString(dloc, { weekday: 'short', day: '2-digit', month: 'short' })}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{h.nbVentes} {i('ventes', 'sales', 'ventas', 'vendite')}</div>
+                        <div style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{new Date(h.date).toLocaleDateString(dloc, { weekday: 'short', day: '2-digit', month: 'short' })}</div>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{h.nbVentes} {i('ventes', 'sales', 'ventas', 'vendite')}</div>
                       </div>
-                      <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', fontSize: 12, color: 'var(--p2)', marginLeft: 'auto' }}>{fmt(h.caNets)}</span>
+                      <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-label)', color: 'var(--p2)', marginLeft: 'auto' }}>{fmt(h.caNets)}</span>
                       <button type="button" aria-label="PDF" onClick={() => ticketZApi.openPdf(h.id).catch(() => toast.error('PDF'))}
                         style={{ flexShrink: 0, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text2)', borderRadius: 'var(--r-sm)', cursor: 'pointer' }}>
                         <FileText size={14} />

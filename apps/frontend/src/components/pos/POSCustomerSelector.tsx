@@ -102,17 +102,17 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
             width: 28, height: 28, borderRadius: 8, flexShrink: 0,
             background: 'color-mix(in srgb, var(--p) 16%, transparent)', color: 'var(--p3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, fontWeight: 'var(--fw-semibold)', letterSpacing: '.5px',
+            fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', letterSpacing: '.5px',
           }}>
             {linkedCustomer.name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('')}
           </span>
           <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ display: 'block', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {linkedCustomer.name}
             </span>
             {enableLoyalty && loyaltyTier && (
               /* ⚠️ E2E matche /Bronze · −5%/ — garder « <palier> · −X% », les points APRÈS */
-              <span style={{ display: 'block', fontSize: 11, color: 'var(--text3)' }}>
+              <span style={{ display: 'block', fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>
                 {tierLabel(loyaltyTier)}{loyaltyPct > 0 ? ` · −${loyaltyPct}%` : ''}{loyaltyPoints != null ? ` · ${loyaltyPoints} pts` : ''}
               </span>
             )}
@@ -130,7 +130,7 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
             <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
             <input
               className="input"
-              style={{ width: '100%', paddingLeft: 32, fontSize: 13 }}
+              style={{ width: '100%', paddingLeft: 32, fontSize: 'var(--fs-sm)' }}
               aria-label={i('Ajouter un client (nom, téléphone…)', 'Add a customer (name, phone…)', 'Añadir cliente (nombre, teléfono…)', 'Aggiungi cliente (nome, telefono…)')}
               placeholder={i('Ajouter un client (nom, téléphone…)', 'Add a customer (name, phone…)', 'Añadir cliente (nombre, teléfono…)', 'Aggiungi cliente (nome, telefono…)')}
               aria-expanded={open}
@@ -146,7 +146,7 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
             style={{
               flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '0 12px',
               background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10,
-              cursor: resolving ? 'default' : 'pointer', color: 'var(--text2)', fontSize: 13, fontFamily: 'var(--font)', fontWeight: 'var(--fw-semibold)',
+              cursor: resolving ? 'default' : 'pointer', color: 'var(--text2)', fontSize: 'var(--fs-sm)', fontFamily: 'var(--font)', fontWeight: 'var(--fw-semibold)',
             }}>
             {resolving ? <Loader2 size={15} style={{ animation: 'spin .7s linear infinite' }} /> : <QrCode size={15} />}
             <span>{i('Scanner', 'Scan', 'Escanear', 'Scansiona')}</span>
@@ -160,7 +160,7 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
               boxShadow: 'var(--sh-xl, 0 10px 40px rgba(0,0,0,.3))', overflow: 'hidden', maxHeight: 240, overflowY: 'auto',
             }}>
               {results.length === 0 ? (
-                <div role="status" style={{ padding: '12px 14px', fontSize: 12, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div role="status" style={{ padding: '12px 14px', fontSize: 'var(--fs-label)', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <UserPlus size={13} aria-hidden="true" /> {i('Aucun client trouvé', 'No customer found', 'Ningún cliente', 'Nessun cliente')}
                 </div>
               ) : results.map(c => (
@@ -173,8 +173,8 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg3)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                   <span style={{ minWidth: 0 }}>
-                    <span style={{ display: 'block', fontSize: 13, fontWeight: 'var(--fw-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-                    {c.phone && <span style={{ display: 'block', fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{c.phone}</span>}
+                    <span style={{ display: 'block', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                    {c.phone && <span style={{ display: 'block', fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{c.phone}</span>}
                   </span>
                   {enableLoyalty && c.tier && (
                     <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 'var(--fw-bold)', padding: '2px 8px', borderRadius: 99, background: 'var(--bg4)', color: 'var(--text2)' }}>{tierLabel(c.tier)}</span>
