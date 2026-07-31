@@ -135,7 +135,7 @@ export default function SectionNotif() {
         <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <MessageCircle size={14} color="var(--acc2)" />
-            <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)' as any, color: 'var(--text)' }}>
+            <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)' as any, color: 'var(--text)' }}>
               {i('Rapports WhatsApp du gérant', "Owner's WhatsApp reports", 'Informes WhatsApp del gerente', 'Report WhatsApp del gestore')}
             </span>
           </div>

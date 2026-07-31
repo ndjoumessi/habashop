@@ -136,10 +136,10 @@ export default function SectionSecurity() {
               : <Unlock size={20} color="var(--acc2)" />}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>
+            <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>
               {locked ? i('Paramètres verrouillés', 'Settings locked', 'Ajustes bloqueados', 'Impostazioni bloccate') : i('Paramètres déverrouillés', 'Settings unlocked', 'Ajustes desbloqueados', 'Impostazioni sbloccate')}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--text3)' }}>
+            <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)' }}>
               {i('Verrouille langue & devise dans le header', 'Locks language & currency in the header', 'Bloquea idioma y divisa en el encabezado', 'Blocca lingua e valuta nell\'header')}
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function SectionSecurity() {
               border: '1px solid var(--border)',
               cursor: 'pointer', fontFamily: 'var(--font)',
               color: 'var(--text)',
-              fontSize: 12, fontWeight: 'var(--fw-semibold)', transition: 'all .15s', flexShrink: 0,
+              fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', transition: 'all .15s', flexShrink: 0,
             }}>
             {locked ? i('Déverrouiller', 'Unlock', 'Desbloquear', 'Sblocca') : i('Verrouiller', 'Lock', 'Bloquear', 'Blocca')}
           </button>
@@ -170,15 +170,15 @@ export default function SectionSecurity() {
               <Key size={20} color="var(--p)" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 'var(--fw-regular)', color: 'var(--text)', marginBottom: 4 }}>
+              <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-regular)', color: 'var(--text)', marginBottom: 4 }}>
                 JWT · {i('Rôle', 'Role', 'Rol', 'Ruolo')}: {tokenInfo.role}
               </div>
-              <div style={{ fontSize: 13, color: 'var(--text3)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                 <span>{i('Expire le', 'Expires on', 'Expira el', 'Scade il')} {tokenInfo.exp}</span>
-                <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: jwtStatus.color, background: `color-mix(in srgb, ${jwtStatus.color} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${jwtStatus.color} 30%, transparent)`, borderRadius: 99, padding: '2px 10px', whiteSpace: 'nowrap' }}>{jwtStatus.label}</span>
+                <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: jwtStatus.color, background: `color-mix(in srgb, ${jwtStatus.color} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${jwtStatus.color} 30%, transparent)`, borderRadius: 99, padding: '2px 10px', whiteSpace: 'nowrap' }}>{jwtStatus.label}</span>
               </div>
               {jwtStatus.suggest && (
-                <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4, fontStyle: 'italic' }}>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--danger)', marginTop: 4, fontStyle: 'italic' }}>
                   {jwtStatus.suggest}
                 </div>
               )}
@@ -187,7 +187,7 @@ export default function SectionSecurity() {
               onClick={handleLogout}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--danger) 18%, transparent)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--danger) 10%, transparent)' }}
-              style={{ padding: '8px 14px', fontSize: 11, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', borderRadius: 10, background: 'color-mix(in srgb, var(--danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 22%, transparent)', color: 'var(--danger)', fontFamily: 'var(--font)', transition: 'background .15s', flexShrink: 0 }}>
+              style={{ padding: '8px 14px', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', cursor: 'pointer', borderRadius: 10, background: 'color-mix(in srgb, var(--danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 22%, transparent)', color: 'var(--danger)', fontFamily: 'var(--font)', transition: 'background .15s', flexShrink: 0 }}>
               {i('Déconnecter', 'Log out', 'Cerrar sesión', 'Disconnetti')}
             </button>
           </div>
@@ -204,10 +204,10 @@ export default function SectionSecurity() {
               <ShieldCheck size={20} color="var(--acc2)" />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>
+              <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>
                 {i('Changer le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password')}
               </div>
-              <div style={{ fontSize: 13, color: 'var(--text3)' }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)' }}>
                 {i('Au moins 8 caractères', 'At least 8 characters', 'Al menos 8 caracteres', 'Almeno 8 caratteri')}
               </div>
             </div>
@@ -230,7 +230,7 @@ export default function SectionSecurity() {
               value={pwForm.confirm} onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))} />
           </div>
           {pwError && (
-            <div style={{ fontSize: 11, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <AlertTriangle size={12} /> {pwError}
             </div>
           )}
@@ -239,7 +239,7 @@ export default function SectionSecurity() {
             onMouseEnter={e => { if (!pwLoading) (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none' }}
             style={{
-              alignSelf: 'flex-start', padding: '11px 22px', fontSize: 13, fontWeight: 'var(--fw-regular)',
+              alignSelf: 'flex-start', padding: '11px 22px', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-regular)',
               borderRadius: 12, boxShadow: pwLoading ? 'none' : '0 4px 16px color-mix(in srgb, var(--p) 25%, transparent)',
               cursor: pwLoading ? 'not-allowed' : 'pointer', opacity: pwLoading ? .6 : 1,
               transition: 'transform .15s, box-shadow .15s',

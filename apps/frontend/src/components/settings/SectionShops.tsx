@@ -70,11 +70,11 @@ export default function SectionShops() {
         right={(
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="button" onClick={() => { setShowInvite(false); setShowCreate(s => !s) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--p)', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 12, fontWeight: 700 }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--p)', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 'var(--fs-label)', fontWeight: 700 }}>
               <Plus size={14} /> {i('Ajouter', 'Add', 'Añadir', 'Aggiungi')}
             </button>
             <button type="button" onClick={() => { setShowCreate(false); setShowInvite(s => !s) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 12, fontWeight: 700 }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 'var(--fs-label)', fontWeight: 700 }}>
               <UserPlus size={14} /> {i('Inviter', 'Invite', 'Invitar', 'Invita')}
             </button>
           </div>
@@ -86,7 +86,7 @@ export default function SectionShops() {
         {showCreate && (
           <div style={cardBase}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</span>
+              <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 800, color: 'var(--text)' }}>{i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</span>
               <button type="button" onClick={() => setShowCreate(false)} aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={16} /></button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -111,7 +111,7 @@ export default function SectionShops() {
                 <input className="input" value={shop.address} onChange={e => setShop({ ...shop, address: e.target.value })} />
               </div>
             </div>
-            <button type="button" disabled={busy} onClick={handleCreate} style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', padding: 11, borderRadius: 10, border: 'none', background: 'var(--p)', color: '#fff', cursor: busy ? 'default' : 'pointer', fontFamily: 'var(--font)', fontSize: 14, fontWeight: 800 }}>
+            <button type="button" disabled={busy} onClick={handleCreate} style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', padding: 11, borderRadius: 10, border: 'none', background: 'var(--p)', color: '#fff', cursor: busy ? 'default' : 'pointer', fontFamily: 'var(--font)', fontSize: 'var(--fs-body)', fontWeight: 800 }}>
               {busy ? <Loader2 size={15} style={{ animation: 'spin .6s linear infinite' }} /> : <Plus size={15} />}
               {i('Créer la boutique', 'Create shop', 'Crear tienda', 'Crea negozio')}
             </button>
@@ -122,7 +122,7 @@ export default function SectionShops() {
         {showInvite && (
           <div style={cardBase}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{i('Inviter un employé', 'Invite an employee', 'Invitar empleado', 'Invita dipendente')}</span>
+              <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 800, color: 'var(--text)' }}>{i('Inviter un employé', 'Invite an employee', 'Invitar empleado', 'Invita dipendente')}</span>
               <button type="button" onClick={() => setShowInvite(false)} aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={16} /></button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -152,7 +152,7 @@ export default function SectionShops() {
                 <input className="input" type="text" value={invite.password} onChange={e => setInvite({ ...invite, password: e.target.value })} placeholder={i('Laisser vide si déjà inscrit', 'Leave empty if already registered', 'Vacío si ya registrado', 'Vuoto se già registrato')} />
               </div>
             </div>
-            <button type="button" disabled={busy} onClick={handleInvite} style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', padding: 11, borderRadius: 10, border: 'none', background: 'var(--p)', color: '#fff', cursor: busy ? 'default' : 'pointer', fontFamily: 'var(--font)', fontSize: 14, fontWeight: 800 }}>
+            <button type="button" disabled={busy} onClick={handleInvite} style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', padding: 11, borderRadius: 10, border: 'none', background: 'var(--p)', color: '#fff', cursor: busy ? 'default' : 'pointer', fontFamily: 'var(--font)', fontSize: 'var(--fs-body)', fontWeight: 800 }}>
               {busy ? <Loader2 size={15} style={{ animation: 'spin .6s linear infinite' }} /> : <UserPlus size={15} />}
               {i('Envoyer l’invitation', 'Send invitation', 'Enviar invitación', 'Invia invito')}
             </button>
@@ -169,17 +169,17 @@ export default function SectionShops() {
                   <Store size={18} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
                     {t.name}
                     {isActive && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 800, color: 'var(--p2)' }}><Check size={11} /> {i('active', 'active', 'activa', 'attiva')}</span>}
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>{t.currency} · {t.plan} · {t.role}</div>
+                  <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>{t.currency} · {t.plan} · {t.role}</div>
                 </div>
               </div>
             )
           })}
           {list.length === 0 && (
-            <div style={{ textAlign: 'center', padding: 24, color: 'var(--text3)', fontSize: 13 }}>{i('Aucune boutique', 'No shop', 'Sin tiendas', 'Nessun negozio')}</div>
+            <div style={{ textAlign: 'center', padding: 24, color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>{i('Aucune boutique', 'No shop', 'Sin tiendas', 'Nessun negozio')}</div>
           )}
         </div>
       </div>
