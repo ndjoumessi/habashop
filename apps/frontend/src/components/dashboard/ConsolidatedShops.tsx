@@ -50,12 +50,12 @@ export default function ConsolidatedShops() {
           <Layers size={16} />
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{i('Vue globale', 'Global view', 'Vista global', 'Vista globale')}</div>
-          <div style={{ fontSize: 12, color: 'var(--text3)' }}>{i('Toutes vos boutiques — aujourd’hui', 'All your shops — today', 'Todas tus tiendas — hoy', 'Tutti i tuoi negozi — oggi')}</div>
+          <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{i('Vue globale', 'Global view', 'Vista global', 'Vista globale')}</div>
+          <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>{i('Toutes vos boutiques — aujourd’hui', 'All your shops — today', 'Todas tus tiendas — hoy', 'Tutti i tuoi negozi — oggi')}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 'var(--fw-semibold)' }}>{i('CA consolidé', 'Total revenue', 'Ingresos totales', 'Ricavi totali')}</div>
-          <div style={{ fontSize: 18, fontWeight: 'var(--fw-bold)', color: 'var(--p2)', fontFamily: 'var(--mono)' }}>{loading ? '…' : fmt(totals.ca)}</div>
+          <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontWeight: 'var(--fw-semibold)' }}>{i('CA consolidé', 'Total revenue', 'Ingresos totales', 'Ricavi totali')}</div>
+          <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-bold)', color: 'var(--p2)', fontFamily: 'var(--mono)' }}>{loading ? '…' : fmt(totals.ca)}</div>
         </div>
       </div>
 
@@ -65,13 +65,13 @@ export default function ConsolidatedShops() {
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-sm)' }}>
             <thead>
               <tr style={{ textAlign: 'left', color: 'var(--text3)' }}>
-                <th style={{ padding: '10px 20px', fontWeight: 'var(--fw-semibold)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.4px' }}>{i('Boutique', 'Shop', 'Tienda', 'Negozio')}</th>
-                <th style={{ padding: '10px 12px', fontWeight: 'var(--fw-semibold)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.4px', textAlign: 'right' }}>{i('CA jour', 'Revenue', 'Ingresos', 'Ricavi')}</th>
-                <th style={{ padding: '10px 12px', fontWeight: 'var(--fw-semibold)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.4px', textAlign: 'right' }}>{i('Ventes', 'Sales', 'Ventas', 'Vendite')}</th>
-                <th style={{ padding: '10px 20px', fontWeight: 'var(--fw-semibold)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.4px', textAlign: 'right' }}>{i('Alertes', 'Alerts', 'Alertas', 'Avvisi')}</th>
+                <th style={{ padding: '10px 20px', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-caption)', textTransform: 'uppercase', letterSpacing: '.4px' }}>{i('Boutique', 'Shop', 'Tienda', 'Negozio')}</th>
+                <th style={{ padding: '10px 12px', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-caption)', textTransform: 'uppercase', letterSpacing: '.4px', textAlign: 'right' }}>{i('CA jour', 'Revenue', 'Ingresos', 'Ricavi')}</th>
+                <th style={{ padding: '10px 12px', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-caption)', textTransform: 'uppercase', letterSpacing: '.4px', textAlign: 'right' }}>{i('Ventes', 'Sales', 'Ventas', 'Vendite')}</th>
+                <th style={{ padding: '10px 20px', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-caption)', textTransform: 'uppercase', letterSpacing: '.4px', textAlign: 'right' }}>{i('Alertes', 'Alerts', 'Alertas', 'Avvisi')}</th>
               </tr>
             </thead>
             <tbody>
@@ -98,7 +98,7 @@ export default function ConsolidatedShops() {
                     <td style={{ padding: '12px', textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--text2)' }}>{r.transactionsToday}</td>
                     <td style={{ padding: '12px 20px', textAlign: 'right' }}>
                       {r.stockAlerts > 0 ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--warn)' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: 'var(--warn)' }}>
                           <AlertTriangle size={12} /> {r.stockAlerts}
                         </span>
                       ) : <span style={{ color: 'var(--text4)' }}>—</span>}

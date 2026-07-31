@@ -49,12 +49,12 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           {(percent * 100).toFixed(0)}%
         </text>
         <text x={cx} y={cy + 14} textAnchor="middle" dominantBaseline="middle"
-          style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', fill: 'var(--text2)', fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '.5px' }}>
+          style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', fill: 'var(--text2)', fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '.5px' }}>
           {payload.name}
         </text>
         {payload.amount > 0 && (
           <text x={cx} y={cy + 32} textAnchor="middle"
-            style={{ fontSize: 11, fill: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace' }}>
+            style={{ fontSize: 'var(--fs-caption)', fill: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace' }}>
             {fmt(payload.amount)}
           </text>
         )}
@@ -73,13 +73,13 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.color, boxShadow: `0 0 8px ${d.color}`, flexShrink: 0 }} />
-          <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{d.name}</span>
+          <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{d.name}</span>
         </div>
-        <div style={{ fontSize: 24, fontWeight: 'var(--fw-semibold)', color: d.color, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-1px', marginBottom: d.amount > 0 ? 4 : 0 }}>
+        <div style={{ fontSize: 'var(--fs-display)', fontWeight: 'var(--fw-semibold)', color: d.color, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-1px', marginBottom: d.amount > 0 ? 4 : 0 }}>
           {d.value}%
         </div>
         {d.amount > 0 && (
-          <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace' }}>{fmt(d.amount)}</div>
+          <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace' }}>{fmt(d.amount)}</div>
         )}
       </div>
     )
@@ -92,7 +92,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
     const y = cy + r * Math.sin(-midAngle * RADIAN)
     return (
       <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
-        style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', fill: '#fff', fontFamily: 'JetBrains Mono, monospace' }}>
+        style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', fill: '#fff', fontFamily: 'JetBrains Mono, monospace' }}>
         {(percent * 100).toFixed(0)}%
       </text>
     )
@@ -110,7 +110,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
             <span className="panel-title">{t('reports_chart_week')}</span>
-            <span style={{ fontSize:11, color:'var(--text3)' }}>Semaine du 7 au 13 mai 2026</span>
+            <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>Semaine du 7 au 13 mai 2026</span>
           </div>
           <ResponsiveContainer width="100%" height={160}>
             <AreaChart data={chartData} margin={{ top:4, right:8, left:0, bottom:0 }}>
@@ -145,7 +145,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
               }}><CreditCard size={18} style={{ color:'var(--p3)' }}/></div>
               <div>
                 <div className="panel-title">{lang === 'en' ? 'Payment breakdown' : lang === 'es' ? 'Desglose de pagos' : lang === 'it' ? 'Ripartizione pagamenti' : 'Répartition paiements'}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>
                   {salesData.length > 0
                     ? `${salesData.length} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`
                     : lang === 'en' ? 'Demo data' : lang === 'es' ? 'Datos de demostración' : lang === 'it' ? 'Dati dimostrativi' : 'Données de démonstration'}
@@ -188,10 +188,10 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                   transform: 'translate(-50%,-50%)',
                   textAlign: 'center', pointerEvents: 'none',
                 }}>
-                  <div style={{ fontSize: 22, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-1px' }}>
+                  <div style={{ fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-1px' }}>
                     {paymentData.length}
                   </div>
-                  <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.6px' }}>
+                  <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.6px' }}>
                     {lang === 'en' ? 'modes' : lang === 'es' ? 'modos' : lang === 'it' ? 'modalità' : 'modes'}
                   </div>
                 </div>
@@ -225,17 +225,17 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                       flexShrink: 0, transition: 'box-shadow .15s',
                     }} />
                     <span style={{
-                      fontSize: 13, fontWeight: 'var(--fw-regular)',
+                      fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-regular)',
                       color: activePayIndex === i ? 'var(--text)' : 'var(--text2)',
                       transition: 'color .15s',
                     }}>{item.name}</span>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 15, fontWeight: 'var(--fw-semibold)', color: item.color, fontFamily: 'var(--mono)', letterSpacing: '-0.5px' }}>
+                    <div style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-semibold)', color: item.color, fontFamily: 'var(--mono)', letterSpacing: '-0.5px' }}>
                       {item.value}%
                     </div>
                     {item.amount > 0 && (
-                      <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(item.amount)}</div>
+                      <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(item.amount)}</div>
                     )}
                   </div>
                 </div>
@@ -255,7 +255,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           </div>
           <div className="space-y-1">
             {topProducts.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text3)', fontSize: 13 }}>
+              <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>
                 {lang === 'en' ? 'No sales in this period' : lang === 'es' ? 'Sin ventas en el período' : lang === 'it' ? 'Nessuna vendita nel periodo' : 'Aucune vente sur la période'}
               </div>
             ) : topProducts.map(p => (
@@ -265,7 +265,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                   width: 26, height: 26, borderRadius: 8, flexShrink: 0,
                   background: p.rank === 1 ? 'rgba(240,165,0,.2)' : p.rank === 2 ? 'rgba(136,134,168,.2)' : 'rgba(91,78,232,.1)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 'var(--fw-bold)',
+                  fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)',
                   color: p.rank === 1 ? 'var(--acc)' : p.rank === 2 ? 'var(--text2)' : 'var(--p3)',
                 }}>#{p.rank}</div>
                 <div className="flex-1">
@@ -343,12 +343,12 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
               { cat:'Laitiers',   pct:61, val:fmt(870000),  color:'#60A5FA' },
             ].map(row => (
               <div key={row.cat} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
-                <span style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)', width:100, flexShrink:0 }}>{row.cat}</span>
+                <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', color:'var(--text)', width:100, flexShrink:0 }}>{row.cat}</span>
                 <div style={{ flex:1, height:8, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
                   <div style={{ height:'100%', width:`${row.pct}%`, background:row.color, borderRadius:99, opacity:.85 }} />
                 </div>
-                <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:row.color, width:36, textAlign:'right' }}>{row.pct}%</span>
-                <span style={{ fontSize:12, fontFamily:'var(--mono)', color:'var(--text2)', width:80, textAlign:'right' }}>{row.val}</span>
+                <span style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:row.color, width:36, textAlign:'right' }}>{row.pct}%</span>
+                <span style={{ fontSize:'var(--fs-label)', fontFamily:'var(--mono)', color:'var(--text2)', width:80, textAlign:'right' }}>{row.val}</span>
               </div>
             ))}
           </div>
@@ -372,10 +372,10 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                     <div style={{ width:10, height:10, borderRadius:'50%', background:seg.color }} />
-                    <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{seg.label}</span>
-                    <span style={{ fontSize:11, color:'var(--text3)', background:'var(--bg3)', border:'1px solid var(--border)', padding:'1px 8px', borderRadius:'var(--r-full)' }}>{seg.count} clients</span>
+                    <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{seg.label}</span>
+                    <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', background:'var(--bg3)', border:'1px solid var(--border)', padding:'1px 8px', borderRadius:'var(--r-full)' }}>{seg.count} clients</span>
                   </div>
-                  <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:seg.color, fontFamily:'var(--mono)' }}>{seg.ca}</span>
+                  <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-bold)', color:seg.color, fontFamily:'var(--mono)' }}>{seg.ca}</span>
                 </div>
                 <div style={{ height:6, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
                   <div style={{ height:'100%', width:`${seg.pct}%`, background:seg.color, borderRadius:99 }} />
@@ -394,8 +394,8 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
               { label: lang === 'en' ? 'Estimated NPS' : lang === 'es' ? 'NPS estimado' : lang === 'it' ? 'NPS stimato' : 'NPS estimé',     value:'67',      color:'#A78BFA'    },
             ].map(m => (
               <div key={m.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 0', borderBottom:'1px solid var(--border)' }}>
-                <span style={{ fontSize:13, color:'var(--text2)' }}>{m.label}</span>
-                <span style={{ fontSize:16, fontWeight:'var(--fw-semibold)', color:m.color, fontFamily:'var(--mono)' }}>{m.value}</span>
+                <span style={{ fontSize:'var(--fs-sm)', color:'var(--text2)' }}>{m.label}</span>
+                <span style={{ fontSize:'var(--fs-md)', fontWeight:'var(--fw-semibold)', color:m.color, fontFamily:'var(--mono)' }}>{m.value}</span>
               </div>
             ))}
           </div>
@@ -421,8 +421,8 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 borderBottom: i < 4 ? '1px solid var(--border)' : 'none',
                 borderTop: i === 4 ? '2px solid var(--border)' : 'none',
               }}>
-                <span style={{ fontSize:13, color:'var(--text2)' }}>{row.prefix && <span style={{ color:row.color, fontWeight:'var(--fw-regular)', marginRight:6 }}>{row.prefix}</span>}{row.label}</span>
-                <span style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:row.color, fontFamily:'var(--mono)' }}>{row.value}</span>
+                <span style={{ fontSize:'var(--fs-sm)', color:'var(--text2)' }}>{row.prefix && <span style={{ color:row.color, fontWeight:'var(--fw-regular)', marginRight:6 }}>{row.prefix}</span>}{row.label}</span>
+                <span style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-bold)', color:row.color, fontFamily:'var(--mono)' }}>{row.value}</span>
               </div>
             ))}
           </div>
@@ -437,8 +437,8 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
               { label: lang === 'en' ? 'Transactions' : lang === 'es' ? 'Transacciones' : lang === 'it' ? 'Transazioni' : 'Transactions',    value:String(data.transactions), color:'var(--text2)' },
             ].map(r => (
               <div key={r.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 0', borderBottom:'1px solid var(--border)' }}>
-                <span style={{ fontSize:13, color:'var(--text2)' }}>{r.label}</span>
-                <span style={{ fontSize:18, fontWeight:'var(--fw-semibold)', color:r.color, fontFamily:'var(--mono)' }}>{r.value}</span>
+                <span style={{ fontSize:'var(--fs-sm)', color:'var(--text2)' }}>{r.label}</span>
+                <span style={{ fontSize:'var(--fs-lg)', fontWeight:'var(--fw-semibold)', color:r.color, fontFamily:'var(--mono)' }}>{r.value}</span>
               </div>
             ))}
           </div>
@@ -472,16 +472,16 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
             ].map(emp => (
               <div key={emp.nom} style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
                 <div style={{ width:36, height:36, borderRadius:10, background:'rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                  <span style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--p3)' }}>{emp.nom[0]}</span>
+                  <span style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-bold)', color:'var(--p3)' }}>{emp.nom[0]}</span>
                 </div>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{emp.nom}</div>
-                  <div style={{ fontSize:11, color:'var(--text3)' }}>{emp.poste} · {emp.dept}</div>
+                  <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{emp.nom}</div>
+                  <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{emp.poste} · {emp.dept}</div>
                 </div>
-                <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)', color:'var(--text2)' }}>{emp.salaire}</span>
+                <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)', color:'var(--text2)' }}>{emp.salaire}</span>
                 <span style={{
                   display:'inline-flex', alignItems:'center',
-                  padding:'3px 9px', borderRadius:'var(--r-full)', fontSize:12, fontWeight:'var(--fw-semibold)',
+                  padding:'3px 9px', borderRadius:'var(--r-full)', fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
                   background: emp.status === 'Présent' || emp.status === 'Present' ? 'var(--c-green-bg)' : 'var(--c-orange-bg)',
                   border:     emp.status === 'Présent' || emp.status === 'Present' ? '1px solid var(--c-green-border)' : '1px solid var(--c-orange-border)',
                   color:       emp.status === 'Présent' || emp.status === 'Present' ? 'var(--acc2)' : 'var(--warn)',

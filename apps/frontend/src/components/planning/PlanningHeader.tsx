@@ -33,7 +33,7 @@ export default function PlanningHeader({ lang, view, setView, weekDays, monthAnc
     : `${weekDays[0].toLocaleDateString(locale, {day:'numeric',month:'long'})} — ${weekDays[6].toLocaleDateString(locale, {day:'numeric',month:'long',year:'numeric'})}`
 
   const segBtn = (v: View, label: string): React.CSSProperties => ({
-    border:'none', cursor:'pointer', fontSize:12, fontWeight:'var(--fw-semibold)', padding:'6px 14px',
+    border:'none', cursor:'pointer', fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', padding:'6px 14px',
     borderRadius:8, transition:'all .12s',
     background: view===v ? 'var(--p)' : 'transparent',
     color: view===v ? '#fff' : 'var(--text3)',

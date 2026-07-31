@@ -21,11 +21,11 @@ export default function UsersToolbar({ search, setSearch, roleFilter, setRoleFil
       <div style={{ display:'flex', gap:10, flex:1, flexWrap:'wrap' }}>
         <div style={{ position:'relative', flex:1, minWidth:200 }}>
           <Search size={14} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none' }} />
-          <input className="input" style={{ paddingLeft:34, fontSize:13 }}
+          <input className="input" style={{ paddingLeft:34, fontSize:'var(--fs-sm)' }}
             placeholder={lang === 'en' ? 'Name, email...' : lang === 'es' ? 'Nombre, email...' : lang === 'it' ? 'Nome, email...' : 'Nom, email...'}
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="input" style={{ width:'auto', fontSize:13 }}
+        <select className="input" style={{ width:'auto', fontSize:'var(--fs-sm)' }}
           value={roleFilter} onChange={e => setRoleFilter(e.target.value as Role | '')}>
           <option value="">{lang === 'en' ? 'All roles' : lang === 'es' ? 'Todos los roles' : lang === 'it' ? 'Tutti i ruoli' : 'Tous les rôles'}</option>
           {(Object.keys(ROLE_CONFIG) as Role[]).map(r => (

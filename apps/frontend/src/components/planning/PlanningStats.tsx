@@ -22,15 +22,15 @@ export default function PlanningStats({ lang, stats }: Props) {
             borderRadius:12, padding:'12px 14px',
             display:'flex', alignItems:'center', gap:8,
           }}>
-            <span style={{ color:s.color, display:'flex', fontSize:20 }}>{s.icon}</span>
+            <span style={{ color:s.color, display:'flex', fontSize:'var(--fs-xl)' }}>{s.icon}</span>
             <div>
               <div style={{
-                fontSize:11,fontWeight:'var(--fw-semibold)',
+                fontSize:'var(--fs-caption)',fontWeight:'var(--fw-semibold)',
                 textTransform:'uppercase',
                 color:'var(--text3)',
               }}>{shiftLabel(key, lang)}</div>
               <div style={{
-                fontSize:20,fontWeight:'var(--fw-bold)',
+                fontSize:'var(--fs-xl)',fontWeight:'var(--fw-bold)',
                 color:s.color,fontFamily:'var(--mono)',
               }}>{count}</div>
             </div>

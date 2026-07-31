@@ -22,14 +22,14 @@ export default function OpsInfrastructure() {
               <div style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><itg.IconSvg /></div>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{itg.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itg.endpoint}</div>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itg.endpoint}</div>
               </div>
               <span title={ok
                 ? (lang === 'en' ? 'Operational' : lang === 'es' ? 'Operativo' : lang === 'it' ? 'Operativo' : 'Opérationnel')
                 : (lang === 'en' ? 'Not configured' : lang === 'es' ? 'No configurado' : lang === 'it' ? 'Non configurato' : 'Non configuré')}
                 style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: ok ? 'var(--acc2)' : 'var(--text4)', boxShadow: ok ? '0 0 6px var(--acc2)' : 'none' }} />
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 11 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 'var(--fs-caption)' }}>
               <span style={{ color: 'var(--text3)', fontFamily: 'var(--mono)', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 7px' }}>{API_VERSION[itg.id]}</span>
               {detail && <span style={{ color: 'var(--text3)' }}>{detail}</span>}
             </div>

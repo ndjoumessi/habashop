@@ -151,7 +151,7 @@ export default function ResendMonitor({
           display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
           background: alert.level === 'danger' ? 'rgba(255,59,92,.08)' : 'rgba(255,149,0,.08)',
           border: `1px solid ${alert.level === 'danger' ? 'rgba(255,59,92,.25)' : 'rgba(255,149,0,.25)'}`,
-          borderRadius: 10, fontSize: 12,
+          borderRadius: 10, fontSize: 'var(--fs-label)',
           color: alert.level === 'danger' ? 'var(--danger)' : 'var(--acc)', fontWeight: 'var(--fw-regular)',
         }}>
           <span>{alert.level === 'danger' ? '🔴' : '⚠️'}</span>
@@ -166,11 +166,11 @@ export default function ResendMonitor({
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--acc3)" strokeWidth="2.5" strokeLinecap="round">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
             </svg>
-            <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Rate Limit API</span>
+            <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Rate Limit API</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)', animation: 'pulse 2s infinite' }} />
-            <span style={{ fontSize: 11, color: 'var(--text4)', fontFamily: 'var(--mono)' }}>live</span>
+            <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', fontFamily: 'var(--mono)' }}>live</span>
           </div>
         </div>
         <div style={{ height: 8, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden', marginBottom: 8 }}>
@@ -180,7 +180,7 @@ export default function ResendMonitor({
             borderRadius: 99, transition: 'width .5s ease',
           }} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text3)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>
           <span>
             <span style={{ fontWeight: 'var(--fw-bold)', color: 'var(--acc3)', fontFamily: 'var(--mono)' }}>{liveRemaining}</span>
             /{ratelimitLimit} {lang === 'en' ? 'req/s left' : lang === 'es' ? 'req/s restantes' : lang === 'it' ? 'req/s rimaste' : 'req/s restantes'}
@@ -198,18 +198,18 @@ export default function ResendMonitor({
           const color = getColor(q.used, q.total)
           return (
             <div key={i} style={{ background: 'var(--bg3)', border: `1px solid ${q.pct > 80 ? 'rgba(255,59,92,.25)' : 'var(--border)'}`, borderRadius: 12, padding: '14px' }}>
-              <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 8 }}>{q.label}</div>
+              <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 8 }}>{q.label}</div>
               <div style={{ position: 'relative', width: 64, height: 64, margin: '0 auto 10px' }}>
                 <svg viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%' }}>
                   <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" strokeWidth="3" />
                   <circle cx="18" cy="18" r="15.9" fill="none" stroke={color} strokeWidth="3" strokeDasharray={`${q.pct} ${100 - q.pct}`} strokeLinecap="round" style={{ transition: 'stroke-dasharray .5s ease' }} />
                 </svg>
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 'var(--fw-semibold)', color, fontFamily: 'var(--mono)' }}>{q.pct}%</div>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color, fontFamily: 'var(--mono)' }}>{q.pct}%</div>
               </div>
-              <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
+              <div style={{ textAlign: 'center', fontSize: 'var(--fs-caption)', color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
                 <span style={{ fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{q.used.toLocaleString('fr-FR')}</span>/{q.total.toLocaleString('fr-FR')}
               </div>
-              <div style={{ textAlign: 'center', fontSize: 11, color: q.pct > 80 ? 'var(--danger)' : 'var(--text4)', marginTop: 2, fontWeight: q.pct > 80 ? 700 : 400 }}>{q.sublabel}</div>
+              <div style={{ textAlign: 'center', fontSize: 'var(--fs-caption)', color: q.pct > 80 ? 'var(--danger)' : 'var(--text4)', marginTop: 2, fontWeight: q.pct > 80 ? 700 : 400 }}>{q.sublabel}</div>
             </div>
           )
         })}
@@ -225,10 +225,10 @@ export default function ResendMonitor({
           { lbl: lang === 'en' ? 'Latency' : lang === 'es' ? 'Latencia' : lang === 'it' ? 'Latenza' : 'Latence', val: `${liveStats.avgDuration}ms`, color: liveStats.avgDuration > 2000 ? 'var(--danger)' : liveStats.avgDuration > 1000 ? 'var(--acc)' : 'var(--text2)' },
         ].map((s, i) => (
           <div key={i} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
-            <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: s.color, fontFamily: 'var(--mono)', letterSpacing: '-.3px', marginBottom: 3 }}>
+            <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: s.color, fontFamily: 'var(--mono)', letterSpacing: '-.3px', marginBottom: 3 }}>
               {typeof s.val === 'number' ? s.val.toLocaleString('fr-FR') : s.val}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.5px', fontWeight: 'var(--fw-regular)' }}>{s.lbl}</div>
+            <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.5px', fontWeight: 'var(--fw-regular)' }}>{s.lbl}</div>
           </div>
         ))}
       </ResponsiveGrid>
@@ -240,9 +240,9 @@ export default function ResendMonitor({
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--p3)" strokeWidth="2.5" strokeLinecap="round">
               <path d="M18 20V10" /><path d="M12 20V4" /><path d="M6 20v-6" />
             </svg>
-            <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.4px' }}>{lang === 'en' ? 'Webhook Events' : lang === 'es' ? 'Eventos Webhook' : lang === 'it' ? 'Eventi Webhook' : 'Événements Webhook'}</span>
+            <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.4px' }}>{lang === 'en' ? 'Webhook Events' : lang === 'es' ? 'Eventos Webhook' : lang === 'it' ? 'Eventi Webhook' : 'Événements Webhook'}</span>
           </div>
-          <span style={{ fontSize: 11, color: 'var(--text4)', fontFamily: 'var(--mono)' }}>{lang === 'en' ? 'last 24h' : lang === 'es' ? 'últimas 24h' : lang === 'it' ? 'ultime 24h' : 'dernières 24h'}</span>
+          <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', fontFamily: 'var(--mono)' }}>{lang === 'en' ? 'last 24h' : lang === 'es' ? 'últimas 24h' : lang === 'it' ? 'ultime 24h' : 'dernières 24h'}</span>
         </div>
         <div style={{ maxHeight: 220, overflowY: 'auto' }}>
           {liveEvents.map((evt, i) => {
@@ -253,12 +253,12 @@ export default function ResendMonitor({
                 borderBottom: i < liveEvents.length - 1 ? '1px solid var(--border)' : 'none',
                 background: i === 0 && tick > 0 ? 'rgba(108,71,255,.04)' : 'transparent', transition: 'background .3s',
               }}>
-                <div style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0, background: `${cfg.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>{cfg.icon}</div>
+                <div style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0, background: `${cfg.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-body)' }}>{cfg.icon}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 'var(--fw-regular)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{evt.email}</div>
-                  <div style={{ fontSize: 11, color: cfg.color, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.4px', marginTop: 1 }}>{cfg.label}</div>
+                  <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{evt.email}</div>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: cfg.color, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.4px', marginTop: 1 }}>{cfg.label}</div>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text4)', fontFamily: 'var(--mono)', flexShrink: 0 }}>{evt.timestamp}</div>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', fontFamily: 'var(--mono)', flexShrink: 0 }}>{evt.timestamp}</div>
               </div>
             )
           })}
@@ -267,14 +267,14 @@ export default function ResendMonitor({
 
       {/* ── PLAN BADGE ────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg4)', borderRadius: 10, border: '1px solid var(--border)' }}>
-        <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6 }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text4)" strokeWidth="2">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
           {lang === 'en' ? 'Current plan' : lang === 'es' ? 'Plan actual' : lang === 'it' ? 'Piano attuale' : 'Plan actuel'}
         </div>
         <span style={{
-          padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px',
+          padding: '3px 10px', borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px',
           background: plan === 'free' ? 'rgba(136,136,168,.1)' : plan === 'pro' ? 'rgba(0,208,132,.1)' : 'rgba(108,71,255,.1)',
           color: plan === 'free' ? 'var(--text3)' : plan === 'pro' ? 'var(--acc2)' : 'var(--p3)',
           border: plan === 'free' ? '1px solid var(--border)' : plan === 'pro' ? '1px solid rgba(0,208,132,.25)' : '1px solid rgba(108,71,255,.25)',

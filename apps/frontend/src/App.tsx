@@ -43,7 +43,7 @@ const PublicCatalog  = lazy(() => import('@/pages/PublicCatalog'))
 
 function RouteFallback() {
   return (
-    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontFamily: 'var(--font)', fontSize: 14 }}>
+    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontFamily: 'var(--font)', fontSize: 'var(--fs-body)' }}>
       Chargement…
     </div>
   )

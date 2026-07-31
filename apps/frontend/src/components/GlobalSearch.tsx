@@ -158,7 +158,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                 'Productos, clientes, pedidos, proveedores…',
                 'Prodotti, clienti, ordini, fornitori…',
               )}
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: 'var(--text)', fontFamily: 'var(--font)', caretColor: 'var(--p)' }}
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 'var(--fs-body)', color: 'var(--text)', fontFamily: 'var(--font)', caretColor: 'var(--p)' }}
             />
             {loading && (
               <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid var(--border)', borderTopColor: 'var(--p)', animation: 'spin 0.6s linear infinite', flexShrink: 0 }} />
@@ -191,7 +191,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
               <>
                 <div style={{ padding: '18px 12px 10px', textAlign: 'center' }}>
                   <Search size={26} style={{ display: 'block', margin: '0 auto 8px', color: 'var(--border)' }} />
-                  <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.55 }}>
+                  <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', lineHeight: 1.55 }}>
                     {i('Tapez pour rechercher produits, clients,\ncommandes et fournisseurs…',
                        'Type to search products, customers,\norders and suppliers…',
                        'Escribe para buscar productos, clientes,\npedidos y proveedores…',
@@ -207,7 +207,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                         key={a.id}
                         value={a.id}
                         onSelect={() => go(a.path)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 13, color: 'var(--text)', transition: 'background .1s' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 'var(--fs-sm)', color: 'var(--text)', transition: 'background .1s' }}
                       >
                         <ItemIcon color={a.color} bg={a.bg}><a.Icon size={13} /></ItemIcon>
                         <span style={{ fontWeight: 'var(--fw-semibold)', flex: 1 }}>{a.label}</span>
@@ -224,11 +224,11 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
               <Command.Empty>
                 <div style={{ padding: '28px 16px', textAlign: 'center' }}>
                   <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
-                  <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)', marginBottom: 6 }}>
+                  <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: 'var(--text2)', marginBottom: 6 }}>
                     {i('Aucun résultat pour', 'No results for', 'Sin resultados para', 'Nessun risultato per')}{' '}
                     <span style={{ color: 'var(--p2)' }}>«{query}»</span>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+                  <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>
                     {i("Essayez un autre terme ou vérifiez l'orthographe.", 'Try a different term or check spelling.', 'Prueba otro término o verifica la ortografía.', 'Prova un altro termine o verifica l\'ortografia.')}
                   </div>
                 </div>
@@ -245,12 +245,12 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                         key={p.id}
                         value={`product-${p.id}`}
                         onSelect={() => go('/app/stock')}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 13, color: 'var(--text)', transition: 'background .1s' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 'var(--fs-sm)', color: 'var(--text)', transition: 'background .1s' }}
                       >
                         <ItemIcon color="var(--p2)" bg="rgba(108,71,255,.1)"><Package size={13} /></ItemIcon>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 'var(--fw-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                          {p.sku && <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.sku}</div>}
+                          {p.sku && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{p.sku}</div>}
                         </div>
                         <span style={ENTER_HINT}>↵</span>
                       </Command.Item>
@@ -265,12 +265,12 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                         key={c.id}
                         value={`customer-${c.id}`}
                         onSelect={() => go('/app/customers')}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 13, color: 'var(--text)', transition: 'background .1s' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 'var(--fs-sm)', color: 'var(--text)', transition: 'background .1s' }}
                       >
                         <ItemIcon color="var(--acc3,#00B8FF)" bg="rgba(0,184,255,.1)"><Users size={13} /></ItemIcon>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 'var(--fw-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
-                          {c.phone && <div style={{ fontSize: 11, color: 'var(--text3)' }}>{c.phone}</div>}
+                          {c.phone && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{c.phone}</div>}
                         </div>
                         <span style={ENTER_HINT}>↵</span>
                       </Command.Item>
@@ -285,12 +285,12 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                         key={o.id}
                         value={`order-${o.id}`}
                         onSelect={() => go('/app/orders')}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 13, color: 'var(--text)', transition: 'background .1s' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 'var(--fs-sm)', color: 'var(--text)', transition: 'background .1s' }}
                       >
                         <ItemIcon color="var(--warn)" bg="rgba(251,146,60,.1)"><ClipboardList size={13} /></ItemIcon>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 'var(--fw-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.ref}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text3)' }}>{orderStatusText(o.status)}</div>
+                          <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{orderStatusText(o.status)}</div>
                         </div>
                         <span style={ENTER_HINT}>↵</span>
                       </Command.Item>
@@ -305,12 +305,12 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                         key={s.id}
                         value={`supplier-${s.id}`}
                         onSelect={() => go('/app/suppliers')}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 13, color: 'var(--text)', transition: 'background .1s' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 'var(--fs-sm)', color: 'var(--text)', transition: 'background .1s' }}
                       >
                         <ItemIcon color="var(--acc2)" bg="rgba(0,208,132,.1)"><Truck size={13} /></ItemIcon>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 'var(--fw-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</div>
-                          {s.categories && <div style={{ fontSize: 11, color: 'var(--text3)' }}>{s.categories}</div>}
+                          {s.categories && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{s.categories}</div>}
                         </div>
                         <span style={ENTER_HINT}>↵</span>
                       </Command.Item>
@@ -326,7 +326,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                         key={a.id}
                         value={a.id}
                         onSelect={() => go(a.path)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 13, color: 'var(--text)', transition: 'background .1s' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, fontSize: 'var(--fs-sm)', color: 'var(--text)', transition: 'background .1s' }}
                       >
                         <ItemIcon color={a.color} bg={a.bg}><a.Icon size={13} /></ItemIcon>
                         <span style={{ fontWeight: 'var(--fw-semibold)', flex: 1 }}>{a.label}</span>
@@ -346,7 +346,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
               { key: '↵',  label: i('ouvrir',   'open',     'abrir',   'apri') },
               { key: 'Esc',label: i('fermer',   'close',    'cerrar',  'chiudi') },
             ].map(({ key, label }) => (
-              <span key={key} style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span key={key} style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <kbd style={{ padding: '1px 5px', border: '1px solid var(--border)', borderRadius: 4, fontSize: 10, background: 'var(--bg3)', fontFamily: 'var(--mono)', color: 'var(--text2)' }}>{key}</kbd>
                 {label}
               </span>

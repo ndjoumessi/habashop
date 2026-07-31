@@ -42,10 +42,10 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
           display:'flex', alignItems:'center', justifyContent:'space-between',
         }}>
           <div>
-            <div style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
+            <div style={{ fontSize:'var(--fs-title)', fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
               {lang === 'en' ? 'Assign shift' : lang === 'es' ? 'Asignar un turno' : lang === 'it' ? 'Assegna un turno' : 'Assigner un shift'}
             </div>
-            <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>
+            <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', marginTop:2 }}>
               {shiftModal.name} · {weekDays[shiftModal.di]?.toLocaleDateString(locale,{weekday:'short',day:'numeric',month:'short'})}
             </div>
           </div>
@@ -54,7 +54,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
 
         {/* Shift type buttons */}
         <div style={{ padding:'16px 20px', display:'flex', flexDirection:'column', gap:8 }}>
-          <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:2 }}>
+          <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:2 }}>
             {lang === 'en' ? 'SHIFT TYPE' : lang === 'es' ? 'TIPO DE TURNO' : lang === 'it' ? 'TIPO DI TURNO' : 'TYPE DE SHIFT'}
           </div>
           <ResponsiveGrid min={160} gap={8}>
@@ -68,14 +68,14 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
                   border:`1.5px solid ${modalShift===key ? s.color : 'var(--border)'}`,
                   background: modalShift===key ? s.bg : 'var(--bg3)',
                   cursor:'pointer', fontFamily:'var(--font)',
-                  fontSize:12, fontWeight:'var(--fw-semibold)',
+                  fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
                   color: modalShift===key ? s.color : 'var(--text3)',
                   transition:'all .1s',
                 }}>
                 <span style={{ color: modalShift===key ? s.color : 'var(--text3)', display:'flex' }}>{s.icon}</span>
                 <div style={{ textAlign:'left' }}>
-                  <div style={{ fontSize:12, fontWeight:'var(--fw-semibold)' }}>{shiftLabel(key, lang)}</div>
-                  {s.hours && <div style={{ fontSize:11, fontFamily:'var(--mono)', opacity:.7 }}>{s.hours}</div>}
+                  <div style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)' }}>{shiftLabel(key, lang)}</div>
+                  {s.hours && <div style={{ fontSize:'var(--fs-caption)', fontFamily:'var(--mono)', opacity:.7 }}>{s.hours}</div>}
                 </div>
                 {modalShift===key && (
                   <span style={{ marginLeft:'auto', display:'inline-flex', alignItems:'center', background:`${s.color}30`, color:s.color, borderRadius:99, padding:'3px 6px' }}><Check size={11} aria-hidden="true" /></span>
@@ -92,7 +92,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
                 flex:1, padding:'11px', borderRadius:10,
                 background:`linear-gradient(135deg,${SHIFT_TYPES[modalShift].color},${SHIFT_TYPES[modalShift].color}CC)`,
                 border:'none', cursor:'pointer',
-                fontSize:13, fontWeight:'var(--fw-semibold)', color:'#fff',
+                fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'#fff',
                 fontFamily:'var(--font)',
                 boxShadow:`0 4px 14px ${SHIFT_TYPES[modalShift].color}40`,
                 transition:'all .15s',
@@ -106,7 +106,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
                 background:'var(--bg3)',
                 border:'1px solid var(--border)',
                 cursor:'pointer', color:'var(--text3)',
-                fontSize:13, fontFamily:'var(--font)',
+                fontSize:'var(--fs-sm)', fontFamily:'var(--font)',
               }}>
               {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
             </button>

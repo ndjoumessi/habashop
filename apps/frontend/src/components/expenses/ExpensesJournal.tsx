@@ -103,11 +103,11 @@ export default function ExpensesJournal(props: Props) {
                   <td className="td-mono text-xs">{e.date}</td>
                   <td>
                     <div className="td-bold text-xs">{e.label}</div>
-                    {e.recurrent && <div style={{ fontSize:11, color:'var(--p2)', marginTop:2, display:'flex', alignItems:'center', gap:3 }}><RefreshCw size={9}/> {tr('Récurrent','Recurring','Recurrente','Ricorrente')}</div>}
+                    {e.recurrent && <div style={{ fontSize:'var(--fs-caption)', color:'var(--p2)', marginTop:2, display:'flex', alignItems:'center', gap:3 }}><RefreshCw size={9}/> {tr('Récurrent','Recurring','Recurrente','Ricorrente')}</div>}
                   </td>
                   <td><CatPill cat={e.category} lang={lang} /></td>
                   <td className="td-num text-sm">{fmt(e.amount)}</td>
-                  <td style={{ fontSize:12, color:'var(--text3)' }}>{e.vat} %</td>
+                  <td style={{ fontSize:'var(--fs-label)', color:'var(--text3)' }}>{e.vat} %</td>
                   <td className="td-num text-sm" style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)' }}>{fmt(ttcAmount(e))}</td>
                   <td>
                     <span className="badge badge-gray">{e.mode}</span>
@@ -120,7 +120,7 @@ export default function ExpensesJournal(props: Props) {
                   <td>
                     <span style={{
                       display:'inline-flex', alignItems:'center', gap:4,
-                      padding:'3px 9px', borderRadius:'var(--r-full)', fontSize:12, fontWeight:'var(--fw-semibold)',
+                      padding:'3px 9px', borderRadius:'var(--r-full)', fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
                       background: e.status === 'PAYÉ' ? 'var(--c-green-bg)' : 'var(--c-orange-bg)',
                       color:       e.status === 'PAYÉ' ? 'var(--acc2)'      : 'var(--warn)',
                       border:      e.status === 'PAYÉ' ? '1px solid var(--c-green-border)' : '1px solid var(--c-orange-border)',
@@ -142,7 +142,7 @@ export default function ExpensesJournal(props: Props) {
               )
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={10} style={{ textAlign:'center', color:'var(--text3)', padding:'24px', fontSize:13 }}>{tr('Aucune dépense trouvée','No expense found','Sin gastos encontrados','Nessuna spesa trovata')}</td></tr>
+              <tr><td colSpan={10} style={{ textAlign:'center', color:'var(--text3)', padding:'24px', fontSize:'var(--fs-sm)' }}>{tr('Aucune dépense trouvée','No expense found','Sin gastos encontrados','Nessuna spesa trovata')}</td></tr>
             )}
             </>)}
           </tbody>

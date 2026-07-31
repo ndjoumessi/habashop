@@ -109,7 +109,7 @@ export default function SuppliersTable(props: Props) {
                       background:'color-mix(in srgb, var(--p) 10%, transparent)',
                       border:'1px solid color-mix(in srgb, var(--p) 16%, transparent)',
                       display:'flex', alignItems:'center', justifyContent:'center',
-                      fontSize:13, fontWeight:'var(--fw-semibold)' as any, color:'var(--p2)',
+                      fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)' as any, color:'var(--p2)',
                     }}>{s.name[0]}</div>
                     <div>
                       <div className="td-bold">{s.name}</div>
@@ -145,7 +145,7 @@ export default function SuppliersTable(props: Props) {
                       <Trash2 size={14} />
                     </button>
                     <button className="btn btn-sm"
-                      style={{ background: 'color-mix(in srgb, var(--p) 12%, transparent)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
+                      style={{ background: 'color-mix(in srgb, var(--p) 12%, transparent)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 'var(--fs-caption)', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
                       onClick={onOrder}>
                       <Package size={11} /> {i('Commander', 'Order', 'Pedir', 'Ordinare')}
                     </button>

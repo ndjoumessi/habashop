@@ -113,14 +113,14 @@ export default function SignupStep1({ tx, i, lang, form, setForm, currencyTouche
                         background: D.bg4,
                         border: `1.5px solid ${showCountry ? D.p2 : D.border2}`,
                         borderRadius: 10, cursor: 'pointer',
-                        fontFamily: FONT, fontSize: 13,
+                        fontFamily: FONT, fontSize: 'var(--fs-sm)',
                         color: D.text, textAlign: 'left',
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
                         transition: 'border-color .15s', boxSizing: 'border-box',
                       }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
-                        <span style={{ fontSize: 16 }}>{selectedCountry.flag}</span>
-                        <span style={{ fontWeight: 600, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedCountry.name}</span>
+                        <span style={{ fontSize: 'var(--fs-md)' }}>{selectedCountry.flag}</span>
+                        <span style={{ fontWeight: 600, fontSize: 'var(--fs-label)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedCountry.name}</span>
                       </div>
                       <span style={{ fontSize: 9, color: D.text3, transform: showCountry ? 'rotate(180deg)' : 'none', transition: 'transform .2s', display: 'inline-block', flexShrink: 0 }}>▼</span>
                     </button>
@@ -140,14 +140,14 @@ export default function SignupStep1({ tx, i, lang, form, setForm, currencyTouche
                               style={{
                                 width: '100%', padding: '7px 10px 7px 30px',
                                 background: D.bg4, border: `1px solid ${D.border}`,
-                                borderRadius: 8, fontSize: 12,
+                                borderRadius: 8, fontSize: 'var(--fs-label)',
                                 color: D.text, fontFamily: FONT, outline: 'none', boxSizing: 'border-box',
                               }}/>
                           </div>
                         </div>
                         <div style={{ maxHeight: 220, overflowY: 'auto' }}>
                           {filteredCountries.length === 0 ? (
-                            <div style={{ padding: 18, textAlign: 'center', color: D.text3, fontSize: 12 }}>
+                            <div style={{ padding: 18, textAlign: 'center', color: D.text3, fontSize: 'var(--fs-label)' }}>
                               {tx.no_country}
                             </div>
                           ) : filteredCountries.map(c => (
@@ -163,13 +163,13 @@ export default function SignupStep1({ tx, i, lang, form, setForm, currencyTouche
                                 background: form.country === c.code ? 'rgba(124,58,237,.14)' : 'transparent',
                                 border: 'none', borderBottom: `1px solid ${D.border}`,
                                 cursor: 'pointer', fontFamily: FONT,
-                                fontSize: 12, textAlign: 'left',
+                                fontSize: 'var(--fs-label)', textAlign: 'left',
                                 color: form.country === c.code ? D.p3 : D.text,
                               }}
                               onMouseEnter={e => { if (form.country !== c.code) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.04)' }}
                               onMouseLeave={e => { if (form.country !== c.code) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
                             >
-                              <span style={{ fontSize: 16 }}>{c.flag}</span>
+                              <span style={{ fontSize: 'var(--fs-md)' }}>{c.flag}</span>
                               <span style={{ flex: 1, fontWeight: form.country === c.code ? 700 : 500 }}>{c.name}</span>
                               {form.country === c.code && <Check size={13} color={D.p3} strokeWidth={3}/>}
                             </button>
@@ -202,7 +202,7 @@ export default function SignupStep1({ tx, i, lang, form, setForm, currencyTouche
 
               {/* Error */}
               {error && (
-                <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(255,59,92,.1)', border: '1px solid rgba(255,59,92,.25)', color: D.danger, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(255,59,92,.1)', border: '1px solid rgba(255,59,92,.25)', color: D.danger, fontSize: 'var(--fs-sm)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <AlertCircle size={14}/>{error}
                 </div>
               )}
@@ -216,7 +216,7 @@ export default function SignupStep1({ tx, i, lang, form, setForm, currencyTouche
                   border: step1Valid ? 'none' : `1px solid ${D.border}`,
                   borderRadius: 12,
                   color: step1Valid ? '#fff' : D.text4,
-                  fontSize: 14, fontWeight: 800,
+                  fontSize: 'var(--fs-body)', fontWeight: 800,
                   cursor: step1Valid ? 'pointer' : 'not-allowed',
                   fontFamily: FONT,
                   boxShadow: step1Valid ? '0 6px 20px rgba(124,58,237,.4)' : 'none',
