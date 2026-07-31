@@ -144,6 +144,9 @@ export default function Customers() {
   const retentionRate = customers.length > 0
     ? Math.round((customers.filter(c => c.purchasesPerMonth >= 3).length / customers.length) * 100)
     : 0
+  // « — » plutôt que « 0 % / 0 € » quand AUCUNE vente : distingue « pas de donnée » de « mauvaise
+  // perf ». Un écran de boutique neuve (1 client, 0 achat) ne doit pas se lire comme un échec.
+  const hasSales = customers.some(c => (c.totalCA ?? 0) > 0)
 
   // Export : UN SEUL contrôle (menu CSV + PDF dans le header) — le doublon
   // barre-du-haut vs section (Exporter/PDF dans le panel) est supprimé.
@@ -288,8 +291,8 @@ export default function Customers() {
         {[
           { label: t('customers_total'),     value: customers.length.toString(), hex: 'var(--p)', icon: <Users size={18} /> },
           { label: t('customers_active'),    value: activeThisMonth.toString(),  hex: 'var(--acc2)', icon: <UserCheck size={18} /> },
-          { label: t('customers_avg_cart'),  value: <AmountCur xof={avgCart} suffixSize={12} />, hex: 'var(--acc)', icon: <ShoppingCart size={18} /> },
-          { label: t('customers_retention'), value: `${retentionRate}%`,         hex: 'var(--acc3)', icon: <TrendingUp size={18} /> },
+          { label: t('customers_avg_cart'),  value: hasSales ? <AmountCur xof={avgCart} suffixSize={12} /> : '—', hex: 'var(--acc)', icon: <ShoppingCart size={18} /> },
+          { label: t('customers_retention'), value: hasSales ? `${retentionRate}%` : '—',        hex: 'var(--acc3)', icon: <TrendingUp size={18} /> },
         ].map(k => (
           /* KPI compact (icône + label + valeur sur une ligne) — densité dashboard NKONI, sans espace mort */
           <div key={k.label} className="kpi-card" style={{ display:'flex', alignItems:'center', gap:12, background:'var(--bg2)', border:'0.5px solid var(--border)', borderRadius:12, padding:'12px 14px', cursor:'default' }}>
