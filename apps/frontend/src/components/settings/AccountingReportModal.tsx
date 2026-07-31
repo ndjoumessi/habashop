@@ -137,7 +137,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
     exportCSV(`Comptabilite_${month}`, [i('Rubrique', 'Item', 'Concepto', 'Voce'), i('Valeur', 'Value', 'Valor', 'Valore')], rows)
   }
 
-  const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }
+  const lbl: React.CSSProperties = { fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }
   const boxRef = useModalFocus<HTMLDivElement>()
 
   return (

@@ -17,7 +17,7 @@ export default function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: 
   const diff = newSalaryXOF - oldSalaryXOF
   const pct  = oldSalaryXOF > 0 ? Math.round((diff / oldSalaryXOF) * 100) : 0
 
-  const lbl: React.CSSProperties = { display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }
+  const lbl: React.CSSProperties = { display:'block', fontSize: 'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>

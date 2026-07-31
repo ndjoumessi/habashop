@@ -251,6 +251,6 @@ export function Stars({ v = 0 }: { v: number }) {
 }
 
 export const labelStyle: React.CSSProperties = {
-  fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase',
+  fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase',
   letterSpacing: '.5px', color: 'var(--text3)', display: 'block', marginBottom: 6,
 }

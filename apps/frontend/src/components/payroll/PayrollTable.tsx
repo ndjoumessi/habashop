@@ -42,7 +42,7 @@ export default function PayrollTable(props: Props) {
   const netPill: React.CSSProperties = {
     display: 'inline-block', padding: '3px 10px', borderRadius: 'var(--r-full)',
     background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)', color: 'var(--acc2)',
-    fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)', fontSize: 12, whiteSpace: 'nowrap',
+    fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-label)', whiteSpace: 'nowrap',
   }
 
   return (

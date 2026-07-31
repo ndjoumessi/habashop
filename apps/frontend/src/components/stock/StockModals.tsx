@@ -130,7 +130,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
   // bouton Scanner étant déjà à côté.
   const renderEanWarning = (onActivate?: () => void) => {
     if (!eanMissing) return null
-    const baseStyle: CSSProperties = { marginTop:8, display:'flex', alignItems:'center', gap:8, background:'color-mix(in srgb, var(--warn) 10%, transparent)', border:'1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius:6, padding:'8px 10px', fontSize:12, color:'var(--warn)' }
+    const baseStyle: CSSProperties = { marginTop:8, display:'flex', alignItems:'center', gap:8, background:'color-mix(in srgb, var(--warn) 10%, transparent)', border:'1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius:6, padding:'8px 10px', fontSize: 'var(--fs-label)', color:'var(--warn)' }
     const label = i("Aucun code-barres — scannez l'emballage pour l'ajouter", 'No barcode — scan the packaging to add it', 'Sin código de barras — escanea el envase para añadirlo', 'Nessun codice a barre — scansiona la confezione per aggiungerlo')
     if (!onActivate) {
       return (

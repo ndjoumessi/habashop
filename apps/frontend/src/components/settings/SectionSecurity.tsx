@@ -105,7 +105,7 @@ export default function SectionSecurity() {
   // inline prime sur .input:focus). className="input" conservé pour ::placeholder + autofill.
   const pwInputStyle: React.CSSProperties = {
     width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)',
-    borderRadius: 12, color: 'var(--text)', padding: '12px 16px', fontSize: 14,
+    borderRadius: 12, color: 'var(--text)', padding: '12px 16px', fontSize: 'var(--fs-body)',
     fontFamily: 'var(--font)', outline: 'none', transition: 'border-color .2s, box-shadow .2s',
   }
   const onPwFocus = (e: React.FocusEvent<HTMLInputElement>) => {

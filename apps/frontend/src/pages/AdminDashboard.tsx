@@ -738,4 +738,4 @@ export default function AdminDashboard() {
   )
 }
 
-const lbl: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }
+const lbl: React.CSSProperties = { display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }
