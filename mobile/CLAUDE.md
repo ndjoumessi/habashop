@@ -39,6 +39,8 @@ App mobile React Native (iOS + Android) — caisse POS, stock, dashboard, client
 6. **`expo-barcode-scanner` supprimé SDK 52** → utiliser **`expo-camera`**.
 7. **Push = dev build ou production seulement** (pas Expo Go depuis SDK 53).
 8. **Crash Fabric `addViewAt`** (release, Android entrée de gamme) : modales empilées → crash natif. **Parade = on-demand** (`{open && <Modal/>}`). Corrigé `d949c78`.
+9. **`app/` = ROUTES uniquement — la logique pure va dans `src/lib/`.** Tout `.ts`/`.tsx` sous `app/` devient une route (`getRoutesCore.js` avertit « missing the required default export ») et, `app.json` ayant `experiments.typedRoutes: true`, pollue l'union `Href` générée. Un helper « posé à côté de l'écran » crée donc une route fantôme. Si une consigne demande `app/<écran>/helper.ts`, réconcilier vers `src/lib/` — c'est aussi là que `jest` (`testMatch: **/__tests__/**`) et l'alias `@/` attendent le code.
+10. **Archéologie git avant la fusion subtree (juillet 2026) : les chemins n'ont PAS de préfixe `mobile/`.** Un `git diff <vieux-commit> HEAD -- mobile/app.json` rend « new file » et laisse croire que tout a changé. Utiliser les chemins racine de l'ex-dépôt : `git show 39e33151:app.json`, `diff <(git show <old>:package.json) <(git show HEAD:mobile/package.json)`.
 
 ---
 
@@ -51,8 +53,10 @@ App mobile React Native (iOS + Android) — caisse POS, stock, dashboard, client
 - `ndjoumessi` · Project ID : `e7399d7a-e5ba-4e30-a333-8cff7ad10eb4` · Keystore Android : `sH_oz3rpgx`.
 - ⚠️ **Un identifiant EAS n'est PAS un commit.** Builds (`1f6bf56f-…`), updates OTA (`019f6dfe-…`) et update groups (`95673916-…`) sont des **UUID**, consultables par `eas build:view <id>` / `eas update:view <id>` — jamais par `git show`. Écrits tronqués à 8 caractères entre backticks, ils ressemblent à un SHA court et se font prendre pour tel : `git cat-file -e` échoue, on en conclut à tort un historique réécrit. **Écrire l'UUID entier et le préfixer de « build EAS » / « update EAS ».** Les vrais commits mobiles, eux, ont survécu à la fusion `git subtree` : `f95133f` (27/05) et `d949c78` (01/06) résolvent toujours.
 - `appVersionSource: remote` → versionCode géré EAS. `runtimeVersion.policy = appVersion` → **bump version = change runtime** (OTA = même runtime seulement ; sinon build natif requis).
-- **`app.json` = 1.5.0** (runtime 1.5.0) MAIS **build natif 1.5.0 JAMAIS fait** (quota EAS Free). Le **device tourne encore en runtime 1.4.3**. → OTA vers le device = **swap temporaire `app.json` version→1.4.3**, `eas update --branch preview`, restaure 1.5.0 (non commité). Le build 1.5.0 (à faire quand quota débloqué : reset 1er août / upgrade) embarquera **logo Sac+H + police Geist**.
+- **`app.json` = 1.5.0** (runtime 1.5.0) MAIS **build natif 1.5.0 JAMAIS fait** (quota EAS Free). Le **device tourne encore en runtime 1.4.3**. → OTA vers le device = **swap temporaire `app.json` version→1.4.3**, `eas update --branch preview`, restaure 1.5.0 (non commité). Le build 1.5.0 (à faire quand quota débloqué : reset 1er août / upgrade) embarquera **logo Sac+H + police Geist**. ⚠️ **Il n'existe AUCUN repli documenté si le quota est épuisé** *(vérifié 2026-07-31 : aucun `.md` du dépôt ne mentionne `ANDROID_HOME`, `gradlew` ni `eas build --local`)* — ne pas compter sur un skill `expo-eas-local-build` qui peut être absent de l'environnement. Rédaction de la procédure suivie dans **#188**, foyer prévu = `PLAY_STORE.md` § 9.
 - ⚠️ **Polices `@expo-google-fonts` non livrables par OTA** (.ttf bundlées au build natif seulement) → mobile reste en **Outfit** ; Geist attend le build 1.5.0 (issue #13). Label Réglages : `Constants.expoConfig?.version`.
+- ⚠️ **« OTA » ci-dessus = l'APPAREIL DE TEST, canal `preview`. Le parc PROD est HORS D'ATTEINTE d'une OTA** *(mesuré 2026-07-31)* : le seul build store (`1f6bf56f-…`) est en **runtime 1.2.0**, et `eas channel:view production` rend **« No branches are pointed to this channel »** — les 3 update groups de la branche `production` sont en 1.4.3 et n'ont donc **jamais rien livré**. Ne pas transposer le swap 1.4.3 à la prod : `main` a franchi des **ruptures natives** depuis 1.2.0 (Sentry, `expo-background-fetch`→`expo-background-task`, plugin `withLocalizedPermissions`), qu'une OTA ne porte pas → **crash au lancement du parc**. Suivi : **#187** (pipeline OTA) · **#188** (release native 1.5.0).
+- ⚠️ **AVANT toute OTA, prouver la portabilité par l'EMPREINTE, pas par lecture de diff** : `eas fingerprint:compare --build-id <id-du-build-cible>` — il liste les chemins à dépendance native et le delta d'autolinking. *(Flag `--build-id`, pas `--buildId` ; et `eas build:view` REFUSE `--non-interactive`.)*
 - Play Store : AAB v1.2.0 — **build EAS** `1f6bf56f-1f95-45e0-b8f5-cd301e1470ef` (versionCode **3** ; c'est le plus haut publié, cf. § Versions). `assets/feature_graphic.png` (1024×500). Politique : `https://habashop.vercel.app/privacy`. iOS : `IOS_BUILD.md`.
 
 ---
@@ -64,13 +68,26 @@ lsof -ti tcp:8081 | xargs kill 2>/dev/null
 npx expo start --clear        # Expo Go SDK 54
 npx expo start --dev-client
 npx tsc --noEmit              # 0 erreur — rituel avant commit
-npm test                      # jest-expo (267 tests / 26 suites — mesuré 2026-07-31)
+npm test                      # jest-expo — ⚠️ pour le COMPTE, lancer la suite ; aucun chiffre figé ici
 npx expo-doctor               # objectif 18/18
-
-eas build --platform android --profile preview      # APK
+eas fingerprint:compare --build-id <id>   # portabilité OTA : natif identique au build cible ?
+```
+**Vérifier Metro sans device** (le `--clear` en sortie non interactive n'imprime **ni QR ni URL**) :
+```bash
+ipconfig getifaddr en0                                     # → exp://<IP>:8081
+node -e "require('qrcode-terminal').generate('exp://<IP>:8081',{small:true})"
+# Le bundle compile-t-il VRAIMENT ? ⚠️ l'entrée est expo-router/entry, PAS ./index (sinon 404
+# UnableToResolveError, qui ressemble à une erreur de code alors que c'est la sonde qui est fausse).
+curl -s "http://localhost:8081/node_modules/expo-router/entry.bundle?platform=android&dev=true&transform.routerRoot=app" -o /tmp/b.out -w "%{http_code}\n"
+# URL d'entrée faisant foi, si elle change : curl -H "expo-platform: android" -H "accept: application/expo+json,application/json" http://localhost:8081/
+```
+**Builds / OTA :**
+```bash
+eas build --platform android --profile preview       # APK
 eas build --platform android --profile production    # AAB
-eas update --branch preview --message "…"
-eas update --branch production --message "…"
+eas update --branch preview --message "…"            # appareil de TEST (runtime 1.4.3, cf. swap)
+eas update --branch production --message "…"         # ⚠️ N'ATTEINT PERSONNE en l'état — canal non
+                                                     # lié + parc en runtime 1.2.0 (#187/#188)
 ```
 **Télécharger l'APK :**
 ```bash
@@ -241,7 +258,7 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 
 ## État courant
 - **Monorepo** : le mobile vit désormais dans `ndjoumessi/habashop` sous `mobile/` (les repos `habashop-mobile`/`-legal` sont archivés). `.env` mobile non commité (gitignored).
-- `main`, `tsc` 0, **267 tests verts (26 suites)** *(mesuré 2026-07-31)*. `app.json` **1.5.0** (runtime 1.5.0) mais **device en runtime 1.4.3** (build 1.5.0 pas encore fait, cf. section Versions).
+- `main`, `tsc` 0, **suite verte** (pour le compte : `cd mobile && npx jest`). `app.json` **1.5.0** (runtime 1.5.0) mais **device en runtime 1.4.3** (build 1.5.0 pas encore fait, cf. section Versions).
 - **Item 11 (portage refonte UX web) — lot UI OTA'd sur canal preview** : fuites devise, POS 01 (tuiles bi-ton + stock bas), safe-area panier, encaissement 02 (Mixte tuile + pluriel), fix argent fidélité (NET), carte fidélité 04. **Hors lot (logique, à cadrer)** : Ticket Z, onboarding, sélecteur tarif, fraîcheur cache POS, provider MTN. Cf. `[[mobile-item11-scope]]`. *(Codes-barres = FAIT, Chantier A : scan/complétion fiche + recherche SKU + règle canonique partagée.)*
 - **Livré par OTA (canal preview, runtime 1.4.3)** : fix multi-boutiques (auto-sélection boutique), **mode sombre NKONI** (fond bleu-noir `#0A0C14`, cartes `#121724`, or `#FFB020`, `border3` glow violet ; `src/constants/theme.ts` `Colors`+`DarkColors`), **thèmes réduits à 3** (Sombre/Clair/Système, #19) + grille 3 colonnes (#20) — dernier update group `95673916-5efe-44f7-a521-719616634a1c` (Android `019f6dfe-d23e-7f55…`, iOS `019f6dfe-d23e-7592…`, commit `1c38fae4`). Police = **Outfit** (Geist attend le build natif, #13).
 - **En attente du build natif 1.5.0** (quota EAS) : **logo Sac+H** (icône/splash) + **police Geist**.
