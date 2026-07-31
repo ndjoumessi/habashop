@@ -69,14 +69,14 @@ export default function StockBackfill({ products, lang, onClose, onSave, saving 
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div ref={boxRef} className="modal-box" style={{ maxWidth: 640, display: 'flex', flexDirection: 'column', maxHeight: '88vh' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <h3 style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Tag size={14} /> {i('Codes-barres manquants', 'Missing barcodes', 'Códigos faltantes', 'Codici mancanti')}
             <span style={{ color: 'var(--text3)', fontWeight: 'var(--fw-regular)' }}>({products.length})</span>
           </h3>
           <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={onClose}><X size={14} /></button>
         </div>
 
-        <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.4 }}>
+        <p style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginBottom: 12, lineHeight: 1.4 }}>
           {i(
             'Scannez le code fabricant sur l\'emballage de chaque produit. Réservez le code interne aux produits vendus en vrac (cochez-les puis « Générer »).',
             'Scan the manufacturer code on each product\'s packaging. Reserve the internal code for bulk products (tick them, then "Generate").',
@@ -86,7 +86,7 @@ export default function StockBackfill({ products, lang, onClose, onSave, saving 
         </p>
 
         {products.length === 0 ? (
-          <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+          <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>
             <Check size={22} style={{ color: 'var(--acc2)' }} /><br />
             {i('Tous les produits ont un code-barres.', 'All products have a barcode.', 'Todos los productos tienen código.', 'Tutti i prodotti hanno un codice.')}
           </div>
@@ -101,7 +101,7 @@ export default function StockBackfill({ products, lang, onClose, onSave, saving 
                 <Wand2 size={13} /> {i('Générer un code interne (vrac)', 'Generate internal code (bulk)', 'Generar código interno (granel)', 'Genera codice interno (sfuso)')}
                 {selectableForGen > 0 ? ` — ${selectableForGen}` : ''}
               </button>
-              <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+              <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>
                 {validEntries.length}/{products.length} {i('prêts', 'ready', 'listos', 'pronti')}
               </span>
             </div>
@@ -117,8 +117,8 @@ export default function StockBackfill({ products, lang, onClose, onSave, saving 
                     <input type="checkbox" checked={selected.has(p.sku)} onChange={() => toggle(p.sku)}
                       aria-label={`${i('Vrac', 'Bulk', 'Granel', 'Sfuso')} ${p.name}`}
                       style={{ accentColor: 'var(--p)', cursor: 'pointer', flexShrink: 0 }} />
-                    <span style={{ fontSize: 16 }}>{p.name.match(/^\S+/)?.[0] ?? '📦'}</span>
-                    <span style={{ flex: 1, fontSize: 12, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: 'var(--fs-md)' }}>{p.name.match(/^\S+/)?.[0] ?? '📦'}</span>
+                    <span style={{ flex: 1, fontSize: 'var(--fs-label)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {p.name.replace(/^\S+\s?/, '')}
                     </span>
                     <input className="input text-sm" style={{ width: 140, borderColor: invalid ? 'var(--danger)' : ok ? 'var(--acc2)' : undefined }}
@@ -131,7 +131,7 @@ export default function StockBackfill({ products, lang, onClose, onSave, saving 
                       onClick={() => setScanningSku(p.sku)}
                       style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', flexShrink: 0,
                         background: 'var(--p2)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer',
-                        fontSize: 12, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)' }}>
+                        fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)' }}>
                       <Camera size={14} /> {i('Scanner', 'Scan', 'Escanear', 'Scansiona')}
                     </button>
                     {ok && <Check size={15} style={{ color: 'var(--acc2)', flexShrink: 0 }} />}
@@ -141,7 +141,7 @@ export default function StockBackfill({ products, lang, onClose, onSave, saving 
             </div>
 
             {anyInvalid && (
-              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--warn)' }}>
+              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-label)', color: 'var(--warn)' }}>
                 <AlertTriangle size={14} /> {i('Certains codes sont invalides (non enregistrés).', 'Some codes are invalid (not saved).', 'Algunos códigos son inválidos (no guardados).', 'Alcuni codici non sono validi (non salvati).')}
               </div>
             )}

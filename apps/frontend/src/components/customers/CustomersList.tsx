@@ -111,7 +111,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                         <span aria-hidden="true" style={{
                           width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
                           background: 'linear-gradient(135deg, var(--p), var(--p2))',
-                          color: '#fff', fontSize: 11, fontWeight: 'var(--fw-bold)',
+                          color: '#fff', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)',
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         }}>
                           {c.name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()}
@@ -210,15 +210,15 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                   <div style={{ height: 3, background: `linear-gradient(135deg,${tc.h},${tc.h}CC)`, flexShrink: 0 }} />
                   {/* TOP : avatar + nom + badge + points */}
                   <div style={{ padding: '16px 16px 12px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <div style={{ width: 46, height: 46, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg,${tc.h},${tc.h}CC)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 'var(--fw-semibold)', color: '#fff', letterSpacing: '-0.5px', boxShadow: `0 4px 14px rgba(${tc.rgb},.35)`, position: 'relative' }}>
+                    <div style={{ width: 46, height: 46, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg,${tc.h},${tc.h}CC)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-semibold)', color: '#fff', letterSpacing: '-0.5px', boxShadow: `0 4px 14px rgba(${tc.rgb},.35)`, position: 'relative' }}>
                       {initials}
                       {(c.loyaltyPoints ?? 0) > 100 && (
                         <div style={{ position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: '50%', background: '#00D084', border: '2px solid var(--card)', boxShadow: '0 0 6px #00D084' }} />
                       )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 6 }}>{c.name}</div>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', letterSpacing: '.3px', background: `rgba(${tc.rgb},.1)`, color: tc.h, border: `1px solid rgba(${tc.rgb},.25)` }}>
+                      <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 6 }}>{c.name}</div>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', letterSpacing: '.3px', background: `rgba(${tc.rgb},.1)`, color: tc.h, border: `1px solid rgba(${tc.rgb},.25)` }}>
                         <div style={{ width: 4, height: 4, borderRadius: '50%', background: tc.h }} />
                         {typeLabel(c.type, lang)}
                       </div>
@@ -226,7 +226,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     {(c.loyaltyPoints ?? 0) > 0 && (
                       <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                         <Star size={13} fill="currentColor" stroke="currentColor" style={{ color: 'var(--warn)' }} />
-                        <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', color: 'var(--warn)', fontFamily: 'var(--mono)' }}>{c.loyaltyPoints}</div>
+                        <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', color: 'var(--warn)', fontFamily: 'var(--mono)' }}>{c.loyaltyPoints}</div>
                       </div>
                     )}
                   </div>
@@ -239,8 +239,8 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                       { label: 'Pts', value: String(c.loyaltyPoints ?? 0), color: '#00D084' },
                     ].map((m, idx) => (
                       <div key={idx} style={{ background: 'var(--card)', padding: '8px 10px', textAlign: 'center' }}>
-                        <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: m.color, fontFamily: 'var(--mono)', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.value}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.4px', marginTop: 2, fontWeight: 'var(--fw-regular)' }}>{m.label}</div>
+                        <div style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: m.color, fontFamily: 'var(--mono)', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.value}</div>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.4px', marginTop: 2, fontWeight: 'var(--fw-regular)' }}>{m.label}</div>
                       </div>
                     ))}
                   </div>
@@ -248,7 +248,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                   {/* CONTACT */}
                   <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 5, flex: 1 }}>
                     {c.phone && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, color: 'var(--text2)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 'var(--fs-caption)', color: 'var(--text2)' }}>
                         <Phone size={11} style={{ color: 'var(--text4)', flexShrink: 0 }} />
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.phone}</span>
                       </div>
@@ -256,7 +256,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     {c.address && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 8px', background: `rgba(${tc.rgb},.05)`, border: `1px solid rgba(${tc.rgb},.12)`, borderRadius: 8 }}>
                         <MapPin size={10} style={{ color: tc.h, flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0, fontSize: 11, fontWeight: 'var(--fw-regular)', color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.address}</div>
+                        <div style={{ flex: 1, minWidth: 0, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.address}</div>
                         <a
                           href={`https://maps.google.com/maps?q=${encodeURIComponent(c.address)}`}
                           target="_blank" rel="noopener noreferrer"
@@ -276,7 +276,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                   <div className="customer-actions" style={{ maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'all .2s ease', borderTop: '1px solid var(--border)', background: 'var(--bg3)' }}>
                     <div style={{ padding: '8px 12px', display: 'flex', gap: 7 }}>
                       <button type="button" onClick={e => { e.stopPropagation(); openDetail() }} aria-label={`${i('Voir', 'View', 'Ver', 'Vedi')} ${c.name}`}
-                        style={{ flex: 1, minHeight: 44, borderRadius: 8, background: `rgba(${tc.rgb},.1)`, border: `1px solid rgba(${tc.rgb},.2)`, color: tc.h, fontSize: 12, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        style={{ flex: 1, minHeight: 44, borderRadius: 8, background: `rgba(${tc.rgb},.1)`, border: `1px solid rgba(${tc.rgb},.2)`, color: tc.h, fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                         <Eye size={13} /> {lang === 'fr' ? 'Voir' : lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : 'Vedi'}
                       </button>
                       <button type="button" onClick={e => { e.stopPropagation(); onDelete(c.id) }} aria-label={`${i('Supprimer', 'Delete', 'Eliminar', 'Elimina')} ${c.name}`}
@@ -289,7 +289,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
               )
             })}
             {filtered.length === 0 && (
-              <div role="status" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '48px 0', color: 'var(--text3)', fontSize: 14 }}><div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><Users size={28} aria-hidden="true" style={{ color: 'var(--text4)' }} /></div>{i('Aucun client trouvé', 'No customer found', 'Ningún cliente encontrado', 'Nessun cliente trovato')}</div>
+              <div role="status" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '48px 0', color: 'var(--text3)', fontSize: 'var(--fs-body)' }}><div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><Users size={28} aria-hidden="true" style={{ color: 'var(--text4)' }} /></div>{i('Aucun client trouvé', 'No customer found', 'Ningún cliente encontrado', 'Nessun cliente trovato')}</div>
             )}
           </ResponsiveGrid>
         )}

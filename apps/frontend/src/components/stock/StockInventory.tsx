@@ -211,13 +211,13 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
           {/* Filtre « En promotion » — TOUJOURS visible (même à 0) pour NOMMER la fonction :
               c'est le levier de découvrabilité, la promo produit étant sinon invisible en liste. */}
           <button type="button" onClick={() => setPromoOnly(!promoOnly)} aria-pressed={promoOnly}
-            style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:13, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer',
+            style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer',
               borderRadius:'var(--r-full)', padding:'7px 13px', minHeight:36,
               background: promoOnly ? 'var(--c-purple-bg)' : 'var(--card)', color: promoOnly ? 'var(--p2)' : 'var(--text2)',
               border:`1px solid ${promoOnly ? 'var(--border3)' : 'var(--border)'}` }}>
             <Sparkles size={14} style={{ flexShrink:0 }} />
             {i('En promotion', 'On promotion', 'En promoción', 'In promozione')}
-            <span style={{ fontFamily:'var(--mono)', fontSize:12, opacity:.85 }}>{promoCount}</span>
+            <span style={{ fontFamily:'var(--mono)', fontSize:'var(--fs-label)', opacity:.85 }}>{promoCount}</span>
           </button>
         </div>
 
@@ -232,10 +232,10 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
         {promoOnly && pg.total === 0 ? (
           <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--text3)' }}>
             <Sparkles size={32} style={{ color:'var(--p2)', marginBottom:12 }} />
-            <div style={{ fontSize:14, color:'var(--text2)', fontWeight:'var(--fw-semibold)', marginBottom:6 }}>
+            <div style={{ fontSize:'var(--fs-body)', color:'var(--text2)', fontWeight:'var(--fw-semibold)', marginBottom:6 }}>
               {i('Aucune promotion active', 'No active promotion', 'Sin promoción activa', 'Nessuna promozione attiva')}
             </div>
-            <div style={{ fontSize:13, maxWidth:360, margin:'0 auto', lineHeight:1.5 }}>
+            <div style={{ fontSize:'var(--fs-sm)', maxWidth:360, margin:'0 auto', lineHeight:1.5 }}>
               {i('Pour mettre un produit en promotion : ouvrez sa fiche, cliquez sur « Modifier », puis activez « Produit en promotion » et fixez un prix promo + une date de fin.',
                  'To put a product on promotion: open its details, click “Edit”, then turn on “Product on promotion” and set a promo price + end date.',
                  'Para poner un producto en promoción: abra su ficha, haga clic en «Editar», active «Producto en promoción» y fije un precio promo + fecha de fin.',
@@ -271,14 +271,14 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                     }}
                   />
                   <div style={{ display:'flex', alignItems:'center', gap:10, paddingRight: 28 }}>
-                    <div style={{ width:42, height:42, borderRadius:12, background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>
+                    <div style={{ width:42, height:42, borderRadius:12, background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-2xl)', flexShrink:0 }}>
                       {p.name.match(/^\S+/)?.[0]}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                      <div style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                         {p.name.replace(/^\S+\s?/, '')}
                       </div>
-                      {stockShowSKU && <div style={{ fontSize:11, color:'var(--text4)', fontFamily:'var(--mono)' }}>{p.sku}</div>}
+                      {stockShowSKU && <div style={{ fontSize:'var(--fs-caption)', color:'var(--text4)', fontFamily:'var(--mono)' }}>{p.sku}</div>}
                     </div>
                     {isActivePromo(p) && (
                       <span style={{ flexShrink:0, display:'inline-flex', alignItems:'center', gap:3, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px', background:'var(--c-purple-bg)', color:'var(--p2)', border:'1px solid var(--border3)' }}>
@@ -289,16 +289,16 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
                     <div style={{ padding:'7px 9px', borderRadius:8, background:'var(--c-purple-bg2)', border:'1px solid rgba(108,71,255,.15)' }}>
-                      <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'en' ? 'Buy' : lang === 'es' ? 'Compra' : lang === 'it' ? 'Acquisto' : 'Achat'}</div>
-                      <div style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--p3)', fontFamily:'var(--mono)' }}>{fmt(p.buy)}</div>
+                      <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'en' ? 'Buy' : lang === 'es' ? 'Compra' : lang === 'it' ? 'Acquisto' : 'Achat'}</div>
+                      <div style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-bold)', color:'var(--p3)', fontFamily:'var(--mono)' }}>{fmt(p.buy)}</div>
                     </div>
                     <div style={{ padding:'7px 9px', borderRadius:8, background:'var(--c-green-bg2)', border:'1px solid rgba(0,208,132,.15)' }}>
-                      <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'en' ? 'Sell' : lang === 'es' ? 'Vender' : lang === 'it' ? 'Vendi' : 'Vente'}</div>
-                      <div style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>{fmt(p.sell)}</div>
+                      <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'en' ? 'Sell' : lang === 'es' ? 'Vender' : lang === 'it' ? 'Vendi' : 'Vente'}</div>
+                      <div style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>{fmt(p.sell)}</div>
                     </div>
                   </div>
                   <div>
-                    <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'var(--text3)', marginBottom:4 }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', fontSize:'var(--fs-caption)', color:'var(--text3)', marginBottom:4 }}>
                       <span>Stock</span>
                       <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)', color: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--acc)' : 'var(--acc2)' }}>
                         {p.stock}<span style={{ color:'var(--text4)', fontWeight:400 }}>/{p.threshold}</span>
@@ -310,7 +310,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                   </div>
                   <div style={{ display:'flex', gap:5, marginTop:2 }}>
                     {st.cls !== 'badge-green' && (
-                      <button className="mini-btn" style={{ flex:1, cursor:'pointer', justifyContent:'center', display:'flex', alignItems:'center', gap:4, fontSize:11 }} onClick={() => navigate('/app/orders')}>
+                      <button className="mini-btn" style={{ flex:1, cursor:'pointer', justifyContent:'center', display:'flex', alignItems:'center', gap:4, fontSize:'var(--fs-caption)' }} onClick={() => navigate('/app/orders')}>
                         <Package size={11} /> {lang === 'en' ? 'Order' : lang === 'es' ? 'Pedir' : lang === 'it' ? 'Ordina' : 'Commander'}
                       </button>
                     )}
@@ -373,9 +373,9 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       </td>
                       <td>
                         <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0 }}>
-                          <span aria-hidden="true" style={{ fontSize:18, flexShrink:0, lineHeight:1 }}>{p.name.match(/^\S+/)?.[0]}</span>
+                          <span aria-hidden="true" style={{ fontSize:'var(--fs-lg)', flexShrink:0, lineHeight:1 }}>{p.name.match(/^\S+/)?.[0]}</span>
                           <span style={{ minWidth:0 }}>
-                            <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:14, fontWeight:'var(--fw-regular)', color:'var(--text)', minWidth:0 }}>
+                            <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:'var(--fs-body)', fontWeight:'var(--fw-regular)', color:'var(--text)', minWidth:0 }}>
                               <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.name.replace(/^\S+\s?/, '')}</span>
                               {isActivePromo(p) && (
                                 <span style={{ flexShrink:0, display:'inline-flex', alignItems:'center', gap:3, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'1px 6px', background:'var(--c-purple-bg)', color:'var(--p2)', border:'1px solid var(--border3)' }}>
@@ -384,7 +384,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                               )}
                             </span>
                             {stockShowSKU && (
-                              <span style={{ display:'block', fontSize:12, color:'var(--text3)', fontFamily:'var(--mono)' }}>{p.sku}</span>
+                              <span style={{ display:'block', fontSize:'var(--fs-label)', color:'var(--text3)', fontFamily:'var(--mono)' }}>{p.sku}</span>
                             )}
                           </span>
                         </div>
@@ -394,13 +394,13 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(p.sell)}</td>
                       <td className="td-num" style={{ color: mgColor }}>
                         {mg.pct === null ? '—' : `${mg.pct}%`}
-                        {mg.pct !== null && <span style={{ display: 'block', fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(mg.profitXof)}</span>}
+                        {mg.pct !== null && <span style={{ display: 'block', fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(mg.profitXof)}</span>}
                       </td>
                       <td>
                         <span style={{
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                           minWidth: 34, padding: '3px 9px', borderRadius: 'var(--r-full)',
-                          fontSize: 13, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', lineHeight: 1.4,
+                          fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', lineHeight: 1.4,
                           background: st.cls === 'badge-red' ? 'var(--c-red-bg)' : st.cls === 'badge-amber' ? 'var(--c-orange-bg)' : 'var(--c-green-bg)',
                           border: `1px solid ${st.cls === 'badge-red' ? 'var(--c-red-border)' : st.cls === 'badge-amber' ? 'var(--c-orange-border)' : 'var(--c-green-border)'}`,
                           color: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--warn)' : 'var(--acc2)',
@@ -411,7 +411,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                         {p.supplier ? (
                           <span style={{
                             display: 'inline-block', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                            padding: '3px 10px', borderRadius: 'var(--r-full)', fontSize: 12,
+                            padding: '3px 10px', borderRadius: 'var(--r-full)', fontSize: 'var(--fs-label)',
                             background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)',
                           }}>{p.supplier}</span>
                         ) : <span style={{ color: 'var(--text4)' }}>—</span>}

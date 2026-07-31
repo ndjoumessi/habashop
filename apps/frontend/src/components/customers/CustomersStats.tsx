@@ -30,9 +30,9 @@ export default function CustomersStats({ customers, fmt, lang, i, setViewCustome
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{typeLabel(type, lang)}</span>
+                        <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{typeLabel(type, lang)}</span>
                       </div>
-                      <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
+                      <div style={{ display: 'flex', gap: 16, fontSize: 'var(--fs-label)' }}>
                         <span style={{ color: 'var(--text3)' }}>{count} {count > 1 ? i('clients', 'customers', 'clientes', 'clienti') : i('client', 'customer', 'cliente', 'cliente')}</span>
                         <span style={{ color, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)' }}>{fmt(ca)}</span>
                         <span style={{ color: 'var(--text2)', fontWeight: 'var(--fw-regular)', minWidth: 32, textAlign: 'right' }}>{pct}%</span>
@@ -81,18 +81,18 @@ export default function CustomersStats({ customers, fmt, lang, i, setViewCustome
                         width: 32, height: 32, borderRadius: 10, flexShrink: 0,
                         background: i < 3 ? medalColors[i] : 'var(--bg4)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 12, fontWeight: 'var(--fw-semibold)', color: i < 3 ? '#fff' : 'var(--text3)',
+                        fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: i < 3 ? '#fff' : 'var(--text3)',
                       }}>
                         {i < 3 ? (i + 1) : i + 1}
                       </div>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: `linear-gradient(135deg,${cfg.color},${cfg.color}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 'var(--fw-semibold)', color: '#fff' }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: `linear-gradient(135deg,${cfg.color},${cfg.color}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: '#fff' }}>
                         {initials}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{typeLabel(c.type, lang)} · {c.loyaltyPoints} pts</div>
+                        <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{typeLabel(c.type, lang)} · {c.loyaltyPoints} pts</div>
                       </div>
-                      <div style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: cfg.color, fontFamily: 'var(--mono)', flexShrink: 0 }}>
+                      <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-bold)', color: cfg.color, fontFamily: 'var(--mono)', flexShrink: 0 }}>
                         {fmt(c.totalCA ?? 0)}
                       </div>
                     </div>

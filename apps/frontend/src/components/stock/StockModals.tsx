@@ -92,7 +92,7 @@ export function BarcodeVignette({ value, lang }: { value: string; lang: string }
       </span>
       <svg ref={svgRef} style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }} />
       {/* Affordance copie — chiffres NON répétés (déjà sous les barres) */}
-      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 2, fontSize: 11, fontWeight: 'var(--fw-semibold)', color: copied ? '#059669' : '#6B7280' }}>
+      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 2, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: copied ? '#059669' : '#6B7280' }}>
         {copied ? <Check size={12} /> : <Copy size={12} />}
         {copied ? i('Copié', 'Copied', 'Copiado', 'Copiato') : i('Copier', 'Copy', 'Copiar', 'Copia')}
       </span>
@@ -220,11 +220,11 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 {!productEditMode
                   ? <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
                       <Eye size={13} />
-                      <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:'var(--fw-regular)' }}>{lang === 'en' ? 'View mode — click Edit to make changes' : lang === 'es' ? 'Modo visualización — haz clic en Editar para modificar' : lang === 'it' ? 'Modalità visualizzazione — clicca su Modifica per modificare' : 'Mode visualisation — cliquez sur Modifier pour éditer'}</span>
+                      <span style={{ fontSize:'var(--fs-label)', color:'var(--acc3)', fontWeight:'var(--fw-regular)' }}>{lang === 'en' ? 'View mode — click Edit to make changes' : lang === 'es' ? 'Modo visualización — haz clic en Editar para modificar' : lang === 'it' ? 'Modalità visualizzazione — clicca su Modifica per modificare' : 'Mode visualisation — cliquez sur Modifier pour éditer'}</span>
                     </div>
                   : <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
                       <Pencil size={13} />
-                      <span style={{ fontSize:12, color:'var(--warn)', fontWeight:'var(--fw-regular)' }}>{lang === 'en' ? 'Edit mode — unsaved changes' : lang === 'es' ? 'Modo edición — cambios sin guardar' : lang === 'it' ? 'Modalità modifica — modifiche non salvate' : 'Mode édition — modifications non sauvegardées'}</span>
+                      <span style={{ fontSize:'var(--fs-label)', color:'var(--warn)', fontWeight:'var(--fw-regular)' }}>{lang === 'en' ? 'Edit mode — unsaved changes' : lang === 'es' ? 'Modo edición — cambios sin guardar' : lang === 'it' ? 'Modalità modifica — modifiche non salvate' : 'Mode édition — modifications non sauvegardées'}</span>
                     </div>
                 }
               </div>
@@ -239,7 +239,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   { id:'avance',  label: i('Avancé', 'Advanced', 'Avanzado', 'Avanzato') },
                 ] as { id:'general'|'prix'|'avance'; label:string }[]).map(tb => (
                   <button key={tb.id} onClick={() => setModalTab(tb.id)} aria-pressed={modalTab === tb.id} style={{
-                    flex:1, padding:'8px 12px', borderRadius:8, fontSize:12, fontWeight:'var(--fw-semibold)',
+                    flex:1, padding:'8px 12px', borderRadius:8, fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
                     cursor:'pointer', fontFamily:'var(--font)', border:'none', transition:'all .15s',
                     background: modalTab === tb.id ? 'var(--p)' : 'transparent',
                     color: modalTab === tb.id ? '#fff' : 'var(--text2)',
@@ -262,7 +262,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:8 }}>
                       {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','🫧','📦'].map(em => (
                         <button key={em} type="button" aria-label={`${i("Choisir l'image", 'Choose image', 'Elegir imagen', 'Scegli immagine')} ${em}`} aria-pressed={form.image === em} onClick={() => setForm(f => ({...f, image:em}))} style={{
-                          width:40, height:40, borderRadius:10, fontSize:20,
+                          width:40, height:40, borderRadius:10, fontSize:'var(--fs-xl)',
                           background: form.image === em ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
                           border:`1.5px solid ${form.image === em ? 'var(--p2)' : 'var(--border)'}`,
                           cursor:'pointer', transition:'all .15s',
@@ -271,7 +271,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     </div>
                     <input className="input text-sm" placeholder={lang === 'en' ? 'Or type a custom emoji...' : lang === 'es' ? 'O escribe un emoji personalizado...' : lang === 'it' ? 'O digita un emoji personalizzato...' : 'Ou tapez un emoji personnalisé...'}
                       value={form.image} onChange={e => setForm(f => ({...f, image:e.target.value}))}
-                      style={{ fontSize:18, width:220 }} />
+                      style={{ fontSize:'var(--fs-lg)', width:220 }} />
                   </div>
                 )}
 
@@ -279,7 +279,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 <ViewField label={lang === 'en' ? 'Product name *' : lang === 'es' ? 'Nombre del producto *' : lang === 'it' ? 'Nome prodotto *' : 'Nom du produit *'} value={`${form.image} ${form.name}`} editing={productEditMode} emptyLabel={emptyLabel}>
                   <input className="input" placeholder={lang === 'en' ? 'Ex: Fragrant rice 5kg' : lang === 'es' ? 'Ej: Arroz aromático 5kg' : lang === 'it' ? 'Es: Riso profumato 5kg' : 'Ex: Riz parfumé 5kg'}
                     value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))}
-                    style={{ width:'100%', fontSize:15, fontWeight:'var(--fw-regular)' }}
+                    style={{ width:'100%', fontSize:'var(--fs-title)', fontWeight:'var(--fw-regular)' }}
                     autoFocus />
                 </ViewField>
 
@@ -334,12 +334,12 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         }}>
                           <button type="button" role="option" aria-selected={!form.supplierId} onMouseDown={() => { setForm(f => ({...f, supplierId:'', supplier:''})); setSupOpen(false) }} style={{
                             width:'100%', textAlign:'left', padding:'8px 12px', background:'transparent', border:'none',
-                            borderBottom:'1px solid var(--border)', cursor:'pointer', fontSize:12, color:'var(--text3)', fontStyle:'italic',
+                            borderBottom:'1px solid var(--border)', cursor:'pointer', fontSize:'var(--fs-label)', color:'var(--text3)', fontStyle:'italic',
                           }}>
                             {lang === 'en' ? 'No supplier' : lang === 'es' ? 'Sin proveedor' : lang === 'it' ? 'Nessun fornitore' : 'Aucun fournisseur'}
                           </button>
                           {filteredSuppliers.length === 0 ? (
-                            <div style={{ padding:'10px 12px', fontSize:12, color:'var(--text3)' }}>
+                            <div style={{ padding:'10px 12px', fontSize:'var(--fs-label)', color:'var(--text3)' }}>
                               {lang === 'en' ? 'No supplier found' : lang === 'es' ? 'No se encontró ningún proveedor' : lang === 'it' ? 'Nessun fornitore trovato' : 'Aucun fournisseur trouvé'}
                             </div>
                           ) : (
@@ -348,7 +348,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                                 onMouseDown={() => { setForm(f => ({...f, supplierId:s.id, supplier:s.name})); setSupOpen(false) }}
                                 style={{
                                   width:'100%', textAlign:'left', padding:'8px 12px', background: form.supplierId === s.id ? 'rgba(91,78,232,.1)' : 'transparent',
-                                  border:'none', cursor:'pointer', fontSize:13, color:'var(--text)',
+                                  border:'none', cursor:'pointer', fontSize:'var(--fs-sm)', color:'var(--text)',
                                   borderBottom:'1px solid var(--border)',
                                 }}>
                                 {s.name}
@@ -372,7 +372,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         title={i('Scanner un code-barres', 'Scan a barcode', 'Escanear un código de barras', 'Scansiona un codice a barre')}
                         style={{ display:'flex', alignItems:'center', gap:7, padding:'8px 16px', minHeight:40, whiteSpace:'nowrap',
                           background:'var(--p2)', color:'#fff', border:'none', borderRadius:8, cursor:'pointer',
-                          fontSize:13, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', transition:'all .15s' }}>
+                          fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', transition:'all .15s' }}>
                         <Camera size={17} /> {i('Scanner', 'Scan', 'Escanear', 'Scansiona')}
                       </button>
                     </div>
@@ -389,30 +389,30 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         if (form.barcode && !window.confirm(lang === 'en' ? 'Replace the existing barcode?' : lang === 'es' ? '¿Reemplazar el código de barras existente?' : lang === 'it' ? 'Sostituire il codice a barre esistente?' : 'Remplacer le code-barres existant ?')) return
                         setForm(f => ({ ...f, barcode: generateEAN13() }))
                       }}
-                      style={{ marginTop:8, display:'inline-flex', alignItems:'center', gap:6, background:'transparent', border:'none', padding:0, color:'var(--text3)', fontSize:12, fontFamily:'var(--font)', cursor:'pointer' }}>
+                      style={{ marginTop:8, display:'inline-flex', alignItems:'center', gap:6, background:'transparent', border:'none', padding:0, color:'var(--text3)', fontSize:'var(--fs-label)', fontFamily:'var(--font)', cursor:'pointer' }}>
                       <Wand2 size={13} /> {i('Pas de code fabricant ? Générer un code interne', 'No manufacturer code? Generate an internal one', 'Sin código del fabricante? Generar un código interno', 'Nessun codice produttore? Genera un codice interno')}
                     </button>
                     {/* État du lookup Open Food Facts (ajout seulement) */}
                     {!editingSku && offLooking && (
-                      <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', alignItems:'center', gap:6 }}>
+                      <div style={{ marginTop:6, fontSize:'var(--fs-caption)', color:'var(--text3)', display:'flex', alignItems:'center', gap:6 }}>
                         <span style={{ width:11, height:11, border:'2px solid var(--border)', borderTopColor:'var(--p2)', borderRadius:'50%', display:'inline-block', animation:'spin .7s linear infinite' }} />
                         {i('Recherche du produit…', 'Looking up product…', 'Buscando producto…', 'Ricerca prodotto…')}
                       </div>
                     )}
                     {!editingSku && !offLooking && offFilled.length > 0 && (
-                      <div style={{ marginTop:6, fontSize:11, color:'var(--acc2)', fontWeight:'var(--fw-regular)', display:'flex', alignItems:'center', gap:5 }}>
+                      <div style={{ marginTop:6, fontSize:'var(--fs-caption)', color:'var(--acc2)', fontWeight:'var(--fw-regular)', display:'flex', alignItems:'center', gap:5 }}>
                         <Wand2 size={12} /> {i('Pré-rempli via Open Food Facts — modifiable', 'Pre-filled via Open Food Facts — editable', 'Rellenado vía Open Food Facts — editable', 'Precompilato via Open Food Facts — modificabile')}
                       </div>
                     )}
                   </ViewField>
                 ) : (
                   <div>
-                    <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
+                    <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
                     {form.barcode && isValidBarcode(normalizeBarcode(form.barcode)) ? (
                       <BarcodeVignette value={form.barcode} lang={lang} />
                     ) : (
-                      <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:13, minHeight:40, display:'flex', alignItems:'center' }}>
-                        <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{emptyLabel}</span>
+                      <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:'var(--fs-sm)', minHeight:40, display:'flex', alignItems:'center' }}>
+                        <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:'var(--fs-label)' }}>{emptyLabel}</span>
                       </div>
                     )}
                     {/* Warning EAN manquant — ACTIONNABLE en visualisation : clic → édition + scanner
@@ -450,7 +450,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 </div>
                 {/* Marge calculée */}
                 {form.buy > 0 && form.sell > 0 && (
-                  <div style={{ padding:'10px 14px', background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)', borderRadius:10, fontSize:13 }}>
+                  <div style={{ padding:'10px 14px', background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)', borderRadius:10, fontSize:'var(--fs-sm)' }}>
                     {i('Marge', 'Margin', 'Margen', 'Margine')} : <strong style={{ color:'var(--acc2)' }}>{((form.sell - form.buy) / form.buy * 100).toFixed(1)} %</strong>
                     <span style={{ color:'var(--text3)', marginLeft:12 }}>({fmtForm(form.sell - form.buy)} / {i('unité', 'unit', 'unidad', 'unità')})</span>
                   </div>
@@ -463,10 +463,10 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: 6 }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
+                      <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
                         {i('Tarification par palier', 'Tiered pricing', 'Precios por escala', 'Prezzi a scaglioni')}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                      <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginTop: 2 }}>
                         {i(
                           'Définissez des prix automatiques selon la quantité achetée',
                           'Set automatic prices based on quantity purchased',
@@ -490,7 +490,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
 
                   {form.priceTiers && form.priceTiers.length > 0 ? (
                     <>
-                      <div style={{ display:'grid', gridTemplateColumns: productEditMode ? '110px 140px 1fr 32px' : '110px 140px 1fr', gap: 8, fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 4, padding: '0 4px' }}>
+                      <div style={{ display:'grid', gridTemplateColumns: productEditMode ? '110px 140px 1fr 32px' : '110px 140px 1fr', gap: 8, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 4, padding: '0 4px' }}>
                         <span>{i('Quantité min', 'Min quantity', 'Cantidad mín', 'Quantità min')}</span>
                         <span>{i('Prix unitaire', 'Unit price', 'Precio unitario', 'Prezzo unitario')}</span>
                         <span>{i('Étiquette', 'Label', 'Etiqueta', 'Etichetta')} ({i('optionnelle', 'optional', 'opcional', 'opzionale')})</span>
@@ -509,7 +509,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                                   const v = parseInt(e.target.value, 10) || 0
                                   setForm(f => ({ ...f, priceTiers: f.priceTiers!.map((t, i2) => i2 === idx ? { ...t, minQty: v } : t) }))
                                 }} />
-                            ) : <span style={{ fontFamily:'var(--mono)', fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{tier.minQty}+</span>}
+                            ) : <span style={{ fontFamily:'var(--mono)', fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{tier.minQty}+</span>}
                             {productEditMode ? (
                               <input className="input text-sm" type="number" min={0}
                                 value={tier.price || ''}
@@ -517,7 +517,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                                   const v = parseFloat(e.target.value) || 0
                                   setForm(f => ({ ...f, priceTiers: f.priceTiers!.map((t, i2) => i2 === idx ? { ...t, price: v } : t) }))
                                 }} />
-                            ) : <span style={{ fontFamily:'var(--mono)', fontSize:13, color:'var(--acc2)' }}>{fmtForm(tier.price)}</span>}
+                            ) : <span style={{ fontFamily:'var(--mono)', fontSize:'var(--fs-sm)', color:'var(--acc2)' }}>{fmtForm(tier.price)}</span>}
                             {productEditMode ? (
                               <input className="input text-sm" type="text"
                                 placeholder={i('ex: demi-gros', 'e.g.: semi-wholesale', 'ej.: semi-mayorista', 'es.: semi-ingrosso')}
@@ -526,7 +526,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                                   const v = e.target.value
                                   setForm(f => ({ ...f, priceTiers: f.priceTiers!.map((t, i2) => i2 === idx ? { ...t, label: v } : t) }))
                                 }} />
-                            ) : <span style={{ fontSize:12, color:'var(--text2)' }}>{tier.label || '—'}</span>}
+                            ) : <span style={{ fontSize:'var(--fs-label)', color:'var(--text2)' }}>{tier.label || '—'}</span>}
                             {productEditMode && (
                               <button type="button" className="mini-btn"
                                 aria-label={i('Supprimer le palier', 'Delete tier', 'Eliminar escala', 'Elimina scaglione')}
@@ -539,7 +539,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         )
                       })}
                       {/* Preview lecture */}
-                      <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 6, background: 'rgba(0,184,255,.08)', border:'1px solid rgba(0,184,255,.18)', fontSize: 11, color: 'var(--text2)', fontFamily:'var(--mono)' }}>
+                      <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 6, background: 'rgba(0,184,255,.08)', border:'1px solid rgba(0,184,255,.18)', fontSize: 'var(--fs-caption)', color: 'var(--text2)', fontFamily:'var(--mono)' }}>
                         {[...form.priceTiers].sort((a,b) => a.minQty - b.minQty).reduce((acc, t, idx, arr) => {
                           const next = arr[idx + 1]
                           const range = next ? `${t.minQty}-${next.minQty - 1}` : `${t.minQty}+`
@@ -554,14 +554,14 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         const priceUp = sorted.some((t, i) => i > 0 && t.price > sorted[i-1].price)
                         return (
                           <>
-                            {dup && <div style={{ marginTop:6, fontSize:11, color:'var(--danger)' }}>⚠️ {i('Quantité min en double — corrigez avant d\'enregistrer', 'Duplicate min quantity — fix before saving', 'Cantidad mín duplicada — corrija antes de guardar', 'Quantità min duplicata — correggi prima di salvare')}</div>}
-                            {priceUp && !dup && <div style={{ marginTop:6, fontSize:11, color:'var(--warn)' }}>ℹ️ {i('Prix qui augmentent avec la quantité — vérifiez si voulu', 'Prices increase with quantity — verify if intended', 'Precios que aumentan con la cantidad — verifique si es intencional', 'Prezzi che aumentano con la quantità — verifica se voluto')}</div>}
+                            {dup && <div style={{ marginTop:6, fontSize:'var(--fs-caption)', color:'var(--danger)' }}>⚠️ {i('Quantité min en double — corrigez avant d\'enregistrer', 'Duplicate min quantity — fix before saving', 'Cantidad mín duplicada — corrija antes de guardar', 'Quantità min duplicata — correggi prima di salvare')}</div>}
+                            {priceUp && !dup && <div style={{ marginTop:6, fontSize:'var(--fs-caption)', color:'var(--warn)' }}>ℹ️ {i('Prix qui augmentent avec la quantité — vérifiez si voulu', 'Prices increase with quantity — verify if intended', 'Precios que aumentan con la cantidad — verifique si es intencional', 'Prezzi che aumentano con la quantità — verifica se voluto')}</div>}
                           </>
                         )
                       })()}
                     </>
                   ) : (
-                    <div style={{ padding: '12px', borderRadius: 6, background: 'var(--bg4)', fontSize: 12, color: 'var(--text3)', textAlign: 'center' }}>
+                    <div style={{ padding: '12px', borderRadius: 6, background: 'var(--bg4)', fontSize: 'var(--fs-label)', color: 'var(--text3)', textAlign: 'center' }}>
                       {i('Aucun palier défini. Le prix de vente s\'applique pour toutes les quantités.', 'No tiers defined. Selling price applies to all quantities.', 'Sin escalas. El precio de venta se aplica a todas las cantidades.', 'Nessuno scaglione definito. Il prezzo di vendita si applica a tutte le quantità.')}
                     </div>
                   )}
@@ -582,8 +582,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 {/* Toggle promotion */}
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)' }}>
                   <div>
-                    <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{i('Produit en promotion', 'Product on promotion', 'Producto en promoción', 'Prodotto in promozione')}</div>
-                    <div style={{ fontSize:11, color:'var(--text3)' }}>{i('Affiche un badge PROMO au POS', 'Shows a PROMO badge at POS', 'Muestra una insignia PROMO en POS', 'Mostra un badge PROMO al POS')}</div>
+                    <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{i('Produit en promotion', 'Product on promotion', 'Producto en promoción', 'Prodotto in promozione')}</div>
+                    <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{i('Affiche un badge PROMO au POS', 'Shows a PROMO badge at POS', 'Muestra una insignia PROMO en POS', 'Mostra un badge PROMO al POS')}</div>
                   </div>
                   <button role="switch" aria-checked={form.hasPromotion}
                     aria-label={i('Produit en promotion', 'Product on promotion', 'Producto en promoción', 'Prodotto in promozione')}
@@ -617,8 +617,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 ].map(tog => (
                   <div key={tog.key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)' }}>
                     <div>
-                      <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{tog.label}</div>
-                      <div style={{ fontSize:11, color:'var(--text3)' }}>{tog.sub}</div>
+                      <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{tog.label}</div>
+                      <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{tog.sub}</div>
                     </div>
                     <button role="switch" aria-checked={!!form[tog.key]} aria-label={tog.label}
                       onClick={() => productEditMode && setForm(f => ({...f, [tog.key]:!f[tog.key]}))} style={{
@@ -703,7 +703,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
           onClick={e => e.target === e.currentTarget && setShowCatModal(false)}>
           <div ref={catBoxRef} className="modal-box" style={{ maxWidth:440 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
-              <h3 style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
+              <h3 style={{ fontSize:'var(--fs-title)', fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
                 {editCat
                   ? i('Modifier la catégorie', 'Edit category', 'Editar categoría', 'Modifica categoria')
                   : i('Nouvelle catégorie', 'New category', 'Nueva categoría', 'Nuova categoria')}
@@ -720,13 +720,13 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
                   {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','🥤','🍫','🌽','🫚'].map(emoji => (
                     <button key={emoji} aria-label={`${i("Choisir l'icône", 'Choose icon', 'Elegir icono', "Scegli l'icona")} ${emoji}`} aria-pressed={catForm.icon === emoji} onClick={() => setCatForm(f => ({...f, icon:emoji}))} style={{
-                      width:36, height:36, borderRadius:8, fontSize:18, cursor:'pointer',
+                      width:36, height:36, borderRadius:8, fontSize:'var(--fs-lg)', cursor:'pointer',
                       background: catForm.icon === emoji ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
                       border:`1.5px solid ${catForm.icon === emoji ? 'var(--p2)' : 'var(--border)'}`,
                     }}>{emoji}</button>
                   ))}
                 </div>
-                <input className="input" value={catForm.icon} onChange={e => setCatForm(f => ({...f, icon:e.target.value}))} placeholder={i('Ou tapez un emoji...', 'Or type an emoji...', 'O escribe un emoji...', 'O digita un emoji...')} style={{ fontSize:20 }} />
+                <input className="input" value={catForm.icon} onChange={e => setCatForm(f => ({...f, icon:e.target.value}))} placeholder={i('Ou tapez un emoji...', 'Or type an emoji...', 'O escribe un emoji...', 'O digita un emoji...')} style={{ fontSize:'var(--fs-xl)' }} />
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{i('Couleur', 'Color', 'Color', 'Colore')}</label>
@@ -747,10 +747,10 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
               </div>
               {/* Preview */}
               <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:10, background:'var(--bg3)', border:'1px solid var(--border)', borderLeft:`4px solid ${catForm.color}` }}>
-                <div style={{ width:36, height:36, borderRadius:10, background:`${catForm.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>{catForm.icon}</div>
+                <div style={{ width:36, height:36, borderRadius:10, background:`${catForm.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-xl)' }}>{catForm.icon}</div>
                 <div>
                   <div style={{ fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{catForm.name || i('Nom catégorie', 'Category name', 'Nombre categoría', 'Nome categoria')}</div>
-                  <div style={{ fontSize:11, color:'var(--text3)' }}>{catForm.description || i('Description...', 'Description...', 'Descripción...', 'Descrizione...')}</div>
+                  <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{catForm.description || i('Description...', 'Description...', 'Descripción...', 'Descrizione...')}</div>
                 </div>
               </div>
             </div>
@@ -779,7 +779,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
           onClick={e => e.target === e.currentTarget && setShowLabelModal(false)}>
           <div ref={labelBoxRef} className="modal-box" style={{ maxWidth: 500 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
+              <h3 style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
                 <Tag size={14} /> {lang === 'en' ? 'Print labels' : lang === 'es' ? 'Imprimir etiquetas' : lang === 'it' ? 'Stampa etichette' : 'Imprimer des étiquettes'}
               </h3>
               <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={() => setShowLabelModal(false)}><X size={14} /></button>
@@ -788,14 +788,14 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {/* Format de planche Avery */}
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
                   {i('Format de planche', 'Sheet format', 'Formato de hoja', 'Formato foglio')}
                 </label>
                 <select
                   className="input"
                   value={labelConfig.averyPreset ?? 'L7160'}
                   onChange={e => setLabelConfig(f => ({ ...f, averyPreset: e.target.value as LabelConfig['averyPreset'] }))}
-                  style={{ fontSize: 13 }}
+                  style={{ fontSize: 'var(--fs-sm)' }}
                 >
                   <option value="L7160">Avery L7160 — 63.5×38.1mm — 21/page</option>
                   <option value="L7163">Avery L7163 — 99.1×38.1mm — 14/page</option>
@@ -804,7 +804,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   <option value="CUSTOM">{i('Personnalisé (sans grille A4)', 'Custom (no A4 grid)', 'Personalizado (sin cuadrícula A4)', 'Personalizzato (senza griglia A4)')}</option>
                   <option value="THERMAL_40x30">{i('Thermique 40×30 mm (PDF, à l\'unité)', 'Thermal 40×30 mm (PDF, per unit)', 'Térmica 40×30 mm (PDF, por unidad)', 'Termica 40×30 mm (PDF, per unità)')}</option>
                 </select>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6, lineHeight: 1.4 }}>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginTop: 6, lineHeight: 1.4 }}>
                   {labelConfig.averyPreset === 'THERMAL_40x30'
                     ? i(
                       'PDF au format exact 40×30 mm (une étiquette par page) — imprimez à « taille réelle » sur votre imprimante thermique.',
@@ -823,7 +823,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
 
               {/* Taille (utilisé seulement en mode CUSTOM) */}
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
                   {lang === 'en' ? 'Label size' : lang === 'es' ? 'Tamaño de etiquetas' : lang === 'it' ? 'Dimensione etichette' : 'Taille des étiquettes'}
                   {(labelConfig.averyPreset ?? 'L7160') !== 'CUSTOM' && <span style={{ marginLeft: 6, color: 'var(--text4)', fontWeight: 400, textTransform: 'none' }}>({i('utilisée en mode personnalisé', 'used in custom mode', 'usado en modo personalizado', 'usato in modalità personalizzata')})</span>}
                 </label>
@@ -840,7 +840,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         background: labelConfig.size === size.id ? 'rgba(91,78,232,.15)' : 'var(--bg3)',
                         border: `1.5px solid ${labelConfig.size === size.id ? 'var(--p2)' : 'var(--border)'}`,
                         cursor: 'pointer', fontFamily: 'var(--font)',
-                        fontSize: 12, fontWeight: 'var(--fw-regular)',
+                        fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-regular)',
                         color: labelConfig.size === size.id ? 'var(--p2)' : 'var(--text2)',
                         whiteSpace: 'pre-line', transition: 'all .15s',
                       }}>
@@ -852,7 +852,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
 
               {/* Options */}
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
                   {lang === 'en' ? 'Information to display' : lang === 'es' ? 'Información a mostrar' : lang === 'it' ? 'Informazioni da mostrare' : 'Informations à afficher'}
                 </label>
                 {[
@@ -866,21 +866,21 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                       onChange={e => setLabelConfig(f => ({ ...f, [opt.key]: e.target.checked }))}
                       style={{ width: 16, height: 16, accentColor: 'var(--p)', cursor: 'pointer' }}
                     />
-                    <span style={{ fontSize: 13, color: 'var(--text)' }}>{opt.label}</span>
+                    <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text)' }}>{opt.label}</span>
                   </label>
                 ))}
               </div>
 
               {/* Copies */}
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }}>
                   {lang === 'en' ? 'Copies per product' : lang === 'es' ? 'Copias por producto' : lang === 'it' ? 'Copie per prodotto' : 'Copies par produit'}
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <button type="button" className="mini-btn"
                     onClick={() => setLabelConfig(f => ({ ...f, copies: Math.max(1, f.copies - 1) }))}
                     style={{ width: 36, height: 36, justifyContent: 'center' }}>−</button>
-                  <span style={{ fontSize: 20, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', minWidth: 40, textAlign: 'center' }}>
+                  <span style={{ fontSize: 'var(--fs-xl)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', minWidth: 40, textAlign: 'center' }}>
                     {labelConfig.copies}
                   </span>
                   <button type="button" className="mini-btn"
@@ -895,7 +895,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   padding: '10px 14px', borderRadius: 8,
                   background: 'rgba(91,78,232,.08)', border: '1px solid rgba(91,78,232,.2)',
                   display: 'flex', alignItems: 'center', gap: 8,
-                  fontSize: 12, color: 'var(--text2)',
+                  fontSize: 'var(--fs-label)', color: 'var(--text2)',
                 }}>
                   <Tag size={14} style={{ color: 'var(--p2)' }} />
                   <span>
@@ -908,7 +908,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 </div>
               ) : (
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
                   {lang === 'en' ? 'Products to label' : lang === 'es' ? 'Productos a etiquetar' : lang === 'it' ? 'Prodotti da etichettare' : 'Produits à étiqueter'}
                 </label>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
@@ -930,13 +930,13 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         }}
                         style={{ accentColor: 'var(--p)', cursor: 'pointer' }}
                       />
-                      <span style={{ fontSize: 16 }}>{p.name.split(' ')[0]}</span>
-                      <span style={{ fontSize: 12, color: 'var(--text)', flex: 1 }}>{p.name.split(' ').slice(1).join(' ')}</span>
-                      <span style={{ fontSize: 11, color: 'var(--p2)', fontFamily: 'var(--mono)' }}>{fmt(p.sell)}</span>
+                      <span style={{ fontSize: 'var(--fs-md)' }}>{p.name.split(' ')[0]}</span>
+                      <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text)', flex: 1 }}>{p.name.split(' ').slice(1).join(' ')}</span>
+                      <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--p2)', fontFamily: 'var(--mono)' }}>{fmt(p.sell)}</span>
                     </label>
                   ))}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginTop: 4 }}>
                   {selectedForLabel.length} {lang === 'en' ? 'selected' : lang === 'es' ? 'seleccionado(s)' : lang === 'it' ? 'selezionato/i' : 'sélectionné(s)'}
                   {' → '}{selectedForLabel.length * labelConfig.copies} {lang === 'en' ? 'label(s)' : lang === 'es' ? 'etiqueta(s)' : lang === 'it' ? 'etichetta/e' : 'étiquette(s)'}
                 </div>
@@ -954,7 +954,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
               return (
                 <button type="button" onClick={onOpenBackfill}
                   style={{ marginTop: 12, width: '100%', display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left', cursor: 'pointer', fontFamily: 'var(--font)',
-                    background: 'color-mix(in srgb, var(--warn) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: 'var(--warn)' }}>
+                    background: 'color-mix(in srgb, var(--warn) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius: 8, padding: '10px 12px', fontSize: 'var(--fs-label)', color: 'var(--warn)' }}>
                   <AlertTriangle size={15} style={{ flexShrink: 0 }} />
                   <span style={{ flex: 1 }}>
                     {i(
