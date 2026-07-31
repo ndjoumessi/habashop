@@ -206,7 +206,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
           width: 22, height: 22,
           display: 'flex', alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 11, fontWeight: 'var(--fw-bold)',
+          fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)',
           border: '2px solid var(--bg)',
         }}>×{qty}</div>
       )}
@@ -215,12 +215,12 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
       <div style={{
         height: 38,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 22,
+        fontSize: 'var(--fs-2xl)',
       }} aria-hidden="true">{p.emoji}</div>
 
       {/* Nom — gauche, 12px (maquette) */}
       <div style={{
-        fontSize: 12,
+        fontSize: 'var(--fs-label)',
         fontWeight: 'var(--fw-semibold)',
         color: 'var(--text)',
         lineHeight: 1.3,
@@ -235,7 +235,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
           </span>
         )}
         <span style={{
-          fontSize: 13, fontWeight: 'var(--fw-semibold)',
+          fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)',
           color: isPromoRetail ? 'var(--danger)' : 'var(--acc)',
           fontFamily: 'var(--mono)',
         }}>{amount}</span>{' '}
@@ -248,7 +248,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
           position: 'absolute', bottom: 8, right: 8,
           display: 'inline-flex', alignItems: 'center', gap: 3,
           padding: '2px 7px', borderRadius: 'var(--r-full)',
-          fontSize: 11, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', lineHeight: 1.4,
+          fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', lineHeight: 1.4,
           background: isOut ? 'var(--c-red-bg)' : isLowStock ? 'var(--c-orange-bg)' : 'var(--c-green-bg)',
           border: `1px solid ${isOut ? 'var(--c-red-border)' : isLowStock ? 'var(--c-orange-border)' : 'var(--c-green-border)'}`,
           color: isOut ? 'var(--danger)' : isLowStock ? 'var(--warn)' : 'var(--acc2)',
@@ -330,7 +330,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                       padding: '6px 13px',
                       minHeight: isMobile ? 44 : 30, // cible tactile ≥ 44px en usage réel (spec)
                       borderRadius: 'var(--r-full)',
-                      fontSize: 12,
+                      fontSize: 'var(--fs-label)',
                       fontWeight: 'var(--fw-semibold)',
                       cursor: 'pointer',
                       fontFamily: 'var(--font)',
@@ -371,7 +371,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                     style={{
                       padding: isMobile ? '8px 10px' : '5px 10px', borderRadius: 'var(--r-full)',
                       minHeight: isMobile ? 40 : undefined,
-                      fontSize: 11, fontWeight: 'var(--fw-semibold)',
+                      fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)',
                       cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
                       background: clientType === ct.id ? 'var(--p)' : 'transparent',
                       border: 'none',
@@ -398,7 +398,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
               loin à droite) : explique pourquoi les prix diffèrent du prix détail. Affichée
               seulement hors Détail (le mode par défaut n'a rien à justifier). */}
           {posTab === 'pos' && clientType !== 'retail' && (
-            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text2)' }}>
+            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-caption)', color: 'var(--text2)' }}>
               <span style={{ display: 'flex', color: 'var(--p2)' }}>
                 {clientType === 'wholesale' ? <Factory size={12} /> : <Package size={12} />}
               </span>
@@ -453,23 +453,23 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                 loadingProducts ? (
                   <div role="status" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', gap: 10, color: 'var(--text3)' }}>
                     <Loader2 size={22} style={{ animation: 'spin 1s linear infinite', color: 'var(--p)', flexShrink: 0 }} />
-                    <span style={{ fontSize: 14 }}>{lang === 'en' ? 'Loading products…' : lang === 'es' ? 'Cargando productos…' : lang === 'it' ? 'Caricamento prodotti…' : 'Chargement des produits…'}</span>
+                    <span style={{ fontSize: 'var(--fs-body)' }}>{lang === 'en' ? 'Loading products…' : lang === 'es' ? 'Cargando productos…' : lang === 'it' ? 'Caricamento prodotti…' : 'Chargement des produits…'}</span>
                   </div>
                 ) : totalProducts === 0 ? (
                   <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center' }}>
                     <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
-                    <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)', marginBottom: 6 }}>
+                    <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: 'var(--text2)', marginBottom: 6 }}>
                       {lang === 'fr' ? 'Aucun produit en stock' : lang === 'es' ? 'Sin productos en stock' : lang === 'it' ? 'Nessun prodotto in stock' : 'No products in stock'}
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16, maxWidth: 280 }}>
+                    <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginBottom: 16, maxWidth: 280 }}>
                       {lang === 'fr' ? 'Ajoutez vos produits dans Stock pour commencer à vendre.' : lang === 'es' ? 'Agregue productos en Stock para comenzar a vender.' : lang === 'it' ? 'Aggiungi prodotti in Stock per iniziare a vendere.' : 'Add products in Stock to start selling.'}
                     </div>
-                    <button type="button" onClick={() => navigate('/app/stock')} className="topbar-btn" style={{ fontSize: 13 }}>
+                    <button type="button" onClick={() => navigate('/app/stock')} className="topbar-btn" style={{ fontSize: 'var(--fs-sm)' }}>
                       {lang === 'fr' ? '+ Ajouter des produits' : lang === 'es' ? '+ Agregar productos' : lang === 'it' ? '+ Aggiungi prodotti' : '+ Add products'}
                     </button>
                   </div>
                 ) : (
-                  <div role="status" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: 'var(--text3)', fontSize: 14 }}>
+                  <div role="status" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: 'var(--text3)', fontSize: 'var(--fs-body)' }}>
                     {t('pos_not_found')}
                   </div>
                 )
@@ -485,7 +485,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                 <button type="button" onClick={onCloseDay}
                   style={{ width:'100%', marginBottom:12, display:'flex', alignItems:'center', justifyContent:'center', gap:8,
                     background:'linear-gradient(135deg, var(--p), var(--p2))', border:'none', color:'#fff',
-                    borderRadius:'var(--r-md)', padding:'12px', minHeight:44, fontSize:13, fontWeight:'var(--fw-semibold)',
+                    borderRadius:'var(--r-md)', padding:'12px', minHeight:44, fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)',
                     fontFamily:'var(--font)', cursor:'pointer' }}>
                   <ClipboardList size={15} /> {lang === 'en' ? 'Close the day (Z ticket)' : lang === 'es' ? 'Cerrar el día (ticket Z)' : lang === 'it' ? 'Chiudi la giornata (ticket Z)' : 'Clôturer la journée (Ticket Z)'}
                 </button>
@@ -494,7 +494,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
               {canAuditPrices && (
                 <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', padding:'0 4px 10px' }}>
                   <button type="button" onClick={() => onToggleDivergence(!divergenceOnly)} aria-pressed={divergenceOnly}
-                    style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer',
+                    style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer',
                       borderRadius:'var(--r-full)', padding:'5px 12px', minHeight:32,
                       background: divergenceOnly ? 'var(--c-amber-bg)' : 'var(--card)', color: divergenceOnly ? 'var(--warn)' : 'var(--text2)',
                       border:`1px solid ${divergenceOnly ? 'var(--c-amber-border)' : 'var(--border)'}` }}>
@@ -509,7 +509,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                     const on = gapFilter === f.key
                     return (
                       <button key={f.key} type="button" onClick={() => setGapFilter(on ? 'none' : f.key)} aria-pressed={on}
-                        style={{ fontSize:12, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer', borderRadius:'var(--r-full)', padding:'5px 12px', minHeight:32,
+                        style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer', borderRadius:'var(--r-full)', padding:'5px 12px', minHeight:32,
                           background: on ? 'var(--c-purple-bg)' : 'var(--card)', color: on ? 'var(--p2)' : 'var(--text2)',
                           border:`1px solid ${on ? 'var(--border3)' : 'var(--border)'}` }}>
                         {f.label}
@@ -521,7 +521,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
               {loadingHistory ? (
                 <div role="status" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:40, color:'var(--text3)' }}>
                   <Loader2 size={20} style={{ animation:'spin 1s linear infinite', color:'var(--p)', flexShrink:0 }} />
-                  <span style={{ fontSize:14 }}>{lang === 'en' ? 'Loading…' : lang === 'es' ? 'Cargando…' : lang === 'it' ? 'Caricamento…' : 'Chargement…'}</span>
+                  <span style={{ fontSize:'var(--fs-body)' }}>{lang === 'en' ? 'Loading…' : lang === 'es' ? 'Cargando…' : lang === 'it' ? 'Caricamento…' : 'Chargement…'}</span>
                 </div>
               ) : historyToShow.length === 0 ? (
                 <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>
@@ -556,7 +556,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                       }}>
                         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
                           <div>
-                            <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:2, display:'flex', alignItems:'center', gap:5, flexWrap:'wrap' }}>
+                            <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:2, display:'flex', alignItems:'center', gap:5, flexWrap:'wrap' }}>
                               <CreditCard size={13} /> {lang === 'fr' ? 'Vente' : lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : 'Vendita'} #{String(sale.id).slice(-6).toUpperCase()}
                               {refunded && (
                                 <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px', background:'var(--c-red-bg)', color:'var(--danger)', border:'1px solid var(--c-red-border)' }}>
@@ -579,19 +579,19 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                                 </span>
                               )}
                             </div>
-                            <div style={{ fontSize:11, color:'var(--text3)' }}>
+                            <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>
                               {date.toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'it-IT')}
                               {' · '}{date.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}
                               {' · '}{timeLabel}
                             </div>
                           </div>
                           <div style={{ textAlign:'right' }}>
-                            <div style={{ fontSize:15, fontWeight:'var(--fw-semibold)', color: refunded ? 'var(--text4)' : 'var(--p2)', fontFamily:'var(--mono)', textDecoration: refunded ? 'line-through' : 'none' }}>{fmt(sale.total)}</div>
+                            <div style={{ fontSize:'var(--fs-title)', fontWeight:'var(--fw-semibold)', color: refunded ? 'var(--text4)' : 'var(--p2)', fontFamily:'var(--mono)', textDecoration: refunded ? 'line-through' : 'none' }}>{fmt(sale.total)}</div>
                             {(sale.loyaltyDiscount ?? 0) > 0 && (
                               <div style={{ fontSize:10, color:'var(--acc2)', fontFamily:'var(--mono)' }}>⭐ −{fmt(sale.loyaltyDiscount)}</div>
                             )}
                             <span style={{
-                              fontSize:11, fontWeight:'var(--fw-semibold)', borderRadius:20, padding:'2px 8px',
+                              fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', borderRadius:20, padding:'2px 8px',
                               background: sale.paymentMode === 'cash' ? 'rgba(14,196,126,.12)' : sale.paymentMode === 'card' ? 'rgba(91,78,232,.12)' : 'rgba(240,165,0,.12)',
                               color: sale.paymentMode === 'cash' ? 'var(--acc2)' : sale.paymentMode === 'card' ? 'var(--p2)' : 'var(--acc)',
                             }}>
@@ -601,7 +601,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                         </div>
                         {sale.items?.slice(0, 3).map((item: any, j: number) => (
                           <div key={j} style={{
-                            fontSize:11, color:'var(--text2)',
+                            fontSize:'var(--fs-caption)', color:'var(--text2)',
                             display:'flex', justifyContent:'space-between',
                             padding: j === 0 ? '8px 0 3px' : '3px 0',
                             borderTop: j === 0 ? '1px solid var(--border)' : 'none',
@@ -612,7 +612,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                           </div>
                         ))}
                         {sale.items?.length > 3 && (
-                          <div style={{ fontSize:11, color:'var(--text3)', marginTop:4 }}>
+                          <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', marginTop:4 }}>
                             +{sale.items.length - 3} {lang === 'en' ? 'more items' : lang === 'es' ? 'otros artículos' : lang === 'it' ? 'altri articoli' : 'autres articles'}
                           </div>
                         )}
@@ -633,13 +633,13 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                                   ? (lang === 'en' ? 'Catalog price had just changed' : lang === 'es' ? 'La tarifa acababa de cambiar' : lang === 'it' ? 'La tariffa era appena cambiata' : 'Le tarif venait de changer')
                                   : (lang === 'en' ? 'Amount honored (offline)' : lang === 'es' ? 'Monto respetado (sin conexión)' : lang === 'it' ? 'Importo onorato (offline)' : 'Montant honoré (hors-ligne)')}
                               </span>
-                              <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', fontFamily:'var(--mono)', color: totalDeltaXOF < 0 ? 'var(--danger)' : 'var(--acc2)' }}>
+                              <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-bold)', fontFamily:'var(--mono)', color: totalDeltaXOF < 0 ? 'var(--danger)' : 'var(--acc2)' }}>
                                 {totalDeltaXOF < 0 ? '−' : '+'}{fmt(Math.abs(totalDeltaXOF))}
                               </span>
                             </div>
                             {divRows.map((r, k) => (
                               <div key={k} style={{ padding:'2px 0' }}>
-                                <div style={{ display:'flex', justifyContent:'space-between', gap:8, fontSize:11, color:'var(--text2)', flexWrap:'wrap' }}>
+                                <div style={{ display:'flex', justifyContent:'space-between', gap:8, fontSize:'var(--fs-caption)', color:'var(--text2)', flexWrap:'wrap' }}>
                                   <span>×{r.qty} {r.name}</span>
                                   <span style={{ fontFamily:'var(--mono)' }}>
                                     {lang === 'en' ? 'submitted' : lang === 'es' ? 'enviado' : lang === 'it' ? 'inviato' : 'soumis'} {fmt(r.submitted)}
@@ -666,7 +666,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                           onClick={() => salesApi.openInvoice(sale.id).catch(() => toast.error(lang === 'en' ? 'Invoice error' : lang === 'es' ? 'Error de factura' : lang === 'it' ? 'Errore fattura' : 'Erreur facture'))}
                           style={{ marginTop:10, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:6,
                             background:'transparent', border:'1px solid var(--border)', color:'var(--text2)',
-                            borderRadius:'var(--r-md)', padding:'7px 12px', fontSize:12, fontWeight:'var(--fw-semibold)',
+                            borderRadius:'var(--r-md)', padding:'7px 12px', fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
                             fontFamily:'var(--font)', cursor:'pointer' }}>
                           <FileText size={13} /> {lang === 'en' ? 'PDF Invoice' : lang === 'es' ? 'Factura PDF' : lang === 'it' ? 'Fattura PDF' : 'Facture PDF'}
                         </button>
@@ -675,7 +675,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                           <button type="button" onClick={() => onRefundClick(sale)}
                             style={{ marginTop:8, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:6,
                               background:'transparent', border:'1px solid var(--c-red-border)', color:'var(--danger)',
-                              borderRadius:'var(--r-md)', padding:'7px 12px', fontSize:12, fontWeight:'var(--fw-semibold)',
+                              borderRadius:'var(--r-md)', padding:'7px 12px', fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
                               fontFamily:'var(--font)', cursor:'pointer' }}>
                             <RotateCcw size={13} /> {lang === 'en' ? 'Refund' : lang === 'es' ? 'Reembolsar' : lang === 'it' ? 'Rimborsa' : 'Rembourser'}
                           </button>

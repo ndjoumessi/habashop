@@ -52,7 +52,7 @@ export default function POSCashField({ lang, cashGiven, setCashGiven, monnaie, c
     <div>
       {/* Libellé visible façon maquette ; le nom accessible complet reste sur l'input */}
       <div aria-hidden="true" style={{
-        marginBottom: 9, fontSize: 11, letterSpacing: '.5px',
+        marginBottom: 9, fontSize: 'var(--fs-caption)', letterSpacing: '.5px',
         color: 'var(--text3)', textTransform: 'uppercase', fontWeight: 'var(--fw-semibold)',
       }}>
         {lang === 'en' ? 'Amount received' : lang === 'es' ? 'Importe recibido' : lang === 'it' ? 'Importo ricevuto' : 'Montant reçu'}
@@ -74,11 +74,11 @@ export default function POSCashField({ lang, cashGiven, setCashGiven, monnaie, c
           style={{
             flex: 1, minWidth: 0, textAlign: 'right',
             background: 'transparent', border: 'none', outline: 'none',
-            color: 'var(--text)', fontSize: 24, fontWeight: 'var(--fw-semibold)',
+            color: 'var(--text)', fontSize: 'var(--fs-display)', fontWeight: 'var(--fw-semibold)',
             fontFamily: 'var(--mono)', padding: '7px 0', boxSizing: 'border-box',
           }}
         />
-        <span aria-hidden="true" style={{ color: 'var(--text3)', fontSize: 14, flexShrink: 0 }}>{currencySymbol}</span>
+        <span aria-hidden="true" style={{ color: 'var(--text3)', fontSize: 'var(--fs-body)', flexShrink: 0 }}>{currencySymbol}</span>
       </div>
 
       {/* Raccourcis Exact / arrondis */}
@@ -93,7 +93,7 @@ export default function POSCashField({ lang, cashGiven, setCashGiven, monnaie, c
                   background: 'var(--card2)',
                   border: `1px solid ${active ? 'var(--p)' : 'var(--border2)'}`,
                   borderRadius: 9, color: active ? 'var(--text)' : 'var(--text2)',
-                  fontSize: 12, fontFamily: 'var(--font)', cursor: 'pointer', transition: 'all .15s',
+                  fontSize: 'var(--fs-label)', fontFamily: 'var(--font)', cursor: 'pointer', transition: 'all .15s',
                 }}>{q.label}</button>
             )
           })}
@@ -103,7 +103,7 @@ export default function POSCashField({ lang, cashGiven, setCashGiven, monnaie, c
       {cashInsufficient && (
         <div role="status" style={{
           marginTop: 10, display: 'flex', alignItems: 'center', gap: 5,
-          fontSize: 12, color: 'var(--danger)', transition: 'opacity .2s ease',
+          fontSize: 'var(--fs-label)', color: 'var(--danger)', transition: 'opacity .2s ease',
         }}>
           <AlertCircle size={13} style={{ flexShrink: 0 }} />
           {lang === 'en' ? 'Insufficient amount' : lang === 'es' ? 'Importe insuficiente' : lang === 'it' ? 'Importo insufficiente' : 'Montant insuffisant'}
@@ -116,10 +116,10 @@ export default function POSCashField({ lang, cashGiven, setCashGiven, monnaie, c
           background: 'color-mix(in srgb, var(--acc2) 10%, transparent)',
           borderRadius: 11, padding: '12px 15px', transition: 'all .2s ease',
         }}>
-          <span style={{ color: 'var(--text2)', fontSize: 13 }}>
+          <span style={{ color: 'var(--text2)', fontSize: 'var(--fs-sm)' }}>
             {lang === 'en' ? 'Change due' : lang === 'es' ? 'Cambio' : lang === 'it' ? 'Resto' : 'Rendu monnaie'}
           </span>
-          <span style={{ fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', fontSize: 18, color: 'var(--acc2)' }}>
+          <span style={{ fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', fontSize: 'var(--fs-lg)', color: 'var(--acc2)' }}>
             {fmt(monnaie)}
           </span>
         </div>

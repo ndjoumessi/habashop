@@ -30,7 +30,7 @@ export default function POSPaydunyaOverlay({ status, method, qrDataUrl, paymentU
       onClick={e => e.target === e.currentTarget && onCancel()}>
       <div ref={boxRef} className="modal-box" style={{ maxWidth: 380, textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>
+          <h3 style={{ fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>
             {label} <span style={{ color: 'var(--text3)', fontWeight: 'var(--fw-regular)' }}>· PayDunya</span>
           </h3>
           <button type="button" onClick={onCancel} aria-label={i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}
@@ -39,14 +39,14 @@ export default function POSPaydunyaOverlay({ status, method, qrDataUrl, paymentU
           </button>
         </div>
 
-        <div style={{ fontSize: 22, fontWeight: 'var(--fw-bold)', color: accent, fontFamily: 'var(--mono)', marginBottom: 16 }}>
+        <div style={{ fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-bold)', color: accent, fontFamily: 'var(--mono)', marginBottom: 16 }}>
           {amountLabel}
         </div>
 
         {(status === 'requesting') && (
           <div role="status" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '24px 0', color: 'var(--text3)' }}>
             <Loader2 size={28} style={{ animation: 'spin 1s linear infinite', color: accent, flexShrink: 0 }} />
-            <span style={{ fontSize: 13 }}>{i('Création du paiement…', 'Creating payment…', 'Creando el pago…', 'Creazione pagamento…')}</span>
+            <span style={{ fontSize: 'var(--fs-sm)' }}>{i('Création du paiement…', 'Creating payment…', 'Creando el pago…', 'Creazione pagamento…')}</span>
           </div>
         )}
 
@@ -59,11 +59,11 @@ export default function POSPaydunyaOverlay({ status, method, qrDataUrl, paymentU
             )}
             {paymentUrl && (
               <a href={paymentUrl} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 'var(--fw-semibold)', color: accent, textDecoration: 'none', marginBottom: 14 }}>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: accent, textDecoration: 'none', marginBottom: 14 }}>
                 <ExternalLink size={14} /> {i('Ouvrir la page de paiement', 'Open payment page', 'Abrir página de pago', 'Apri pagina di pagamento')}
               </a>
             )}
-            <div role="status" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--text2)', fontSize: 13, marginTop: 4 }}>
+            <div role="status" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--text2)', fontSize: 'var(--fs-sm)', marginTop: 4 }}>
               <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
               {i(`En attente du paiement ${label}…`, `Waiting for ${label} payment…`, `Esperando el pago ${label}…`, `In attesa del pagamento ${label}…`)}
             </div>
@@ -73,7 +73,7 @@ export default function POSPaydunyaOverlay({ status, method, qrDataUrl, paymentU
         {status === 'success' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '24px 0', color: 'var(--acc2)' }}>
             <CheckCircle size={32} style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)' }}>{i('Paiement confirmé', 'Payment confirmed', 'Pago confirmado', 'Pagamento confermato')}</span>
+            <span style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)' }}>{i('Paiement confirmé', 'Payment confirmed', 'Pago confirmado', 'Pagamento confermato')}</span>
           </div>
         )}
 
@@ -81,7 +81,7 @@ export default function POSPaydunyaOverlay({ status, method, qrDataUrl, paymentU
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '16px 0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--danger)' }}>
               <AlertTriangle size={22} style={{ flexShrink: 0 }} />
-              <span style={{ fontSize: 13 }}>
+              <span style={{ fontSize: 'var(--fs-sm)' }}>
                 {status === 'timeout'
                   ? i('Délai dépassé — paiement non confirmé', 'Timed out — payment not confirmed', 'Tiempo agotado — pago no confirmado', 'Tempo scaduto — pagamento non confermato')
                   : i('Paiement échoué ou annulé', 'Payment failed or cancelled', 'Pago fallido o cancelado', 'Pagamento fallito o annullato')}

@@ -274,9 +274,9 @@ export function CountryItem({ c, selected, onSelect }: {
       onMouseEnter={e => { if (!selected) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg3)' }}
       onMouseLeave={e => { if (!selected) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
     >
-      <span style={{ fontSize:20 }}>{c.flag}</span>
-      <span style={{ flex:1, fontSize:13, color:'var(--text)', fontWeight: selected ? 700 : 400 }}>{c.country}</span>
-      <span style={{ fontSize:12, color:'var(--text3)', fontFamily:'var(--mono)' }}>{c.code}</span>
+      <span style={{ fontSize:'var(--fs-xl)' }}>{c.flag}</span>
+      <span style={{ flex:1, fontSize:'var(--fs-sm)', color:'var(--text)', fontWeight: selected ? 700 : 400 }}>{c.country}</span>
+      <span style={{ fontSize:'var(--fs-label)', color:'var(--text3)', fontFamily:'var(--mono)' }}>{c.code}</span>
     </button>
   )
 }

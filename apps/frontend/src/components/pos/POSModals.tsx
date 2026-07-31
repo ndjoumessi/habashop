@@ -148,13 +148,13 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
           onClick={e => e.target === e.currentTarget && setShowDiscountModal(false)}>
           <div ref={discountBoxRef} className="modal-box" style={{ maxWidth:420 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
-              <h3 style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>🏷️ Appliquer une remise manuelle</h3>
+              <h3 style={{ fontSize:'var(--fs-title)', fontWeight:'var(--fw-bold)', color:'var(--text)' }}>🏷️ Appliquer une remise manuelle</h3>
               <button className="mini-btn" aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={() => setShowDiscountModal(false)}>✕</button>
             </div>
 
             {/* Type */}
             <div style={{ marginBottom:16 }}>
-              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:8 }}>Type de remise</label>
+              <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:8 }}>Type de remise</label>
               <ResponsiveGrid min={160} gap={8}>
                 {([
                   { type:'percent', label:'Pourcentage (%)', icon:<Percent size={22} /> },
@@ -162,7 +162,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 ] as { type:'percent'|'amount'; label:string; icon:JSX.Element }[]).map(rt => (
                   <button key={rt.type} onClick={() => setDiscountForm(f => ({...f, type:rt.type}))} style={{
                     padding:'12px', borderRadius:10, cursor:'pointer', fontFamily:'var(--font)',
-                    fontSize:13, fontWeight:'var(--fw-regular)', transition:'all .15s',
+                    fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', transition:'all .15s',
                     background: discountForm.type === rt.type ? 'rgba(91,78,232,.15)' : 'var(--bg3)',
                     border:`1.5px solid ${discountForm.type === rt.type ? 'var(--p2)' : 'var(--border)'}`,
                     color: discountForm.type === rt.type ? 'var(--p2)' : 'var(--text2)',
@@ -178,11 +178,11 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             {/* Remises rapides % */}
             {discountForm.type === 'percent' && (
               <div style={{ marginBottom:14 }}>
-                <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:8 }}>Remise rapide</label>
+                <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:8 }}>Remise rapide</label>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                   {[5,10,15,20,25,30].map(pct => (
                     <button key={pct} onClick={() => setDiscountForm(f => ({...f, value:pct}))} style={{
-                      padding:'7px 14px', borderRadius:8, fontSize:13, fontWeight:'var(--fw-semibold)',
+                      padding:'7px 14px', borderRadius:8, fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)',
                       cursor:'pointer', fontFamily:'var(--font)', border:'none', transition:'all .15s',
                       background: discountForm.value === pct ? 'var(--p)' : 'var(--bg3)',
                       color: discountForm.value === pct ? '#fff' : 'var(--text2)',
@@ -194,7 +194,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
 
             {/* Valeur personnalisée */}
             <div style={{ marginBottom:14 }}>
-              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+              <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
                 {discountForm.type === 'percent' ? 'Pourcentage personnalisé' : 'Montant de la remise'}
               </label>
               <div style={{ position:'relative' }}>
@@ -203,12 +203,12 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   value={discountForm.value || ''}
                   onChange={e => setDiscountForm(f => ({...f, value:+e.target.value}))}
                   style={{ paddingRight:60 }} />
-                <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text3)' }}>
+                <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text3)' }}>
                   {discountForm.type === 'percent' ? '%' : currencySymbol}
                 </span>
               </div>
               {discountForm.value > 0 && (
-                <div style={{ marginTop:8, padding:'8px 12px', background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)', borderRadius:8, fontSize:12, display:'flex', justifyContent:'space-between' }}>
+                <div style={{ marginTop:8, padding:'8px 12px', background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)', borderRadius:8, fontSize:'var(--fs-label)', display:'flex', justifyContent:'space-between' }}>
                   <span style={{ color:'var(--text2)' }}>Remise sur {fmt(subtotalBeforeDiscount)}</span>
                   <span style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)' }}>
                     − {discountForm.type === 'percent'
@@ -221,7 +221,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
 
             {/* Motif */}
             <div style={{ marginBottom:20 }}>
-              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Reason (optional)' : lang === 'es' ? 'Motivo (opcional)' : lang === 'it' ? 'Motivo (opzionale)' : 'Motif (optionnel)'}</label>
+              <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Reason (optional)' : lang === 'es' ? 'Motivo (opcional)' : lang === 'it' ? 'Motivo (opzionale)' : 'Motif (optionnel)'}</label>
               <input aria-label={lang === 'en' ? 'Reason (optional)' : lang === 'es' ? 'Motivo (opcional)' : lang === 'it' ? 'Motivo (opzionale)' : 'Motif (optionnel)'} className="input" placeholder={lang === 'en' ? 'Ex: Loyal customer, daily promo...' : lang === 'es' ? 'Ej: Cliente fiel, promoción del día...' : lang === 'it' ? 'Es: Cliente fedele, promo del giorno...' : 'Ex: Client fidèle, promotion du jour...'}
                 value={discountForm.reason}
                 onChange={e => setDiscountForm(f => ({...f, reason:e.target.value}))} />
@@ -257,16 +257,16 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
           <div ref={closeBoxRef} className="modal-box" style={{ maxWidth:420 }}>
             {/* Header — « Clôture de caisse » + badge Ticket Z · date (maquette 03) */}
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4, gap:8 }}>
-              <span style={{ color:'var(--text)', fontSize:16, fontWeight:'var(--fw-semibold)' }}>{ct.close_title}</span>
+              <span style={{ color:'var(--text)', fontSize:'var(--fs-md)', fontWeight:'var(--fw-semibold)' }}>{ct.close_title}</span>
               <span style={{
                 background:'color-mix(in srgb, var(--p) 16%, transparent)', color:'var(--p3)',
-                fontSize:11, fontWeight:'var(--fw-semibold)', padding:'4px 10px', borderRadius:'var(--r-full)', flexShrink:0,
+                fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', padding:'4px 10px', borderRadius:'var(--r-full)', flexShrink:0,
               }}>
                 Ticket Z · {new Date().toLocaleDateString(locale, { day:'2-digit', month:'2-digit' })}
               </span>
             </div>
             {/* Ligne session : caissier · heure d'ouverture · N ventes */}
-            <div style={{ color:'var(--text3)', fontSize:12, marginBottom:16 }}>
+            <div style={{ color:'var(--text3)', fontSize:'var(--fs-label)', marginBottom:16 }}>
               {cashierName || ct.cashier_label}
               {' · '}
               {lang === 'en' ? 'opened at' : lang === 'es' ? 'abierta a las' : lang === 'it' ? 'aperta alle' : 'ouverte à'}{' '}
@@ -278,7 +278,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             {/* VENTES PAR MODE — pastilles couleur → Total ventes (or) */}
             {dayByMode && Object.keys(dayByMode).length > 0 && (
               <>
-                <div style={{ color:'var(--text3)', fontSize:11, letterSpacing:'.5px', textTransform:'uppercase', fontWeight:'var(--fw-semibold)', marginBottom:9 }}>
+                <div style={{ color:'var(--text3)', fontSize:'var(--fs-caption)', letterSpacing:'.5px', textTransform:'uppercase', fontWeight:'var(--fw-semibold)', marginBottom:9 }}>
                   {lang === 'en' ? 'Sales by method' : lang === 'es' ? 'Ventas por método' : lang === 'it' ? 'Vendite per metodo' : 'Ventes par mode'}
                 </div>
                 <div style={{ background:'var(--bg)', border:'1px solid var(--border2)', borderRadius:12, padding:'6px 14px', marginBottom:16 }}>
@@ -290,19 +290,19 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       : (lang==='en'?'Mixed':lang==='es'?'Mixto':lang==='it'?'Misto':'Mixte')
                     return (
                       <div key={m} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid color-mix(in srgb, var(--border) 55%, transparent)' }}>
-                        <span style={{ color:'var(--text)', fontSize:13, display:'flex', alignItems:'center' }}>
+                        <span style={{ color:'var(--text)', fontSize:'var(--fs-sm)', display:'flex', alignItems:'center' }}>
                           <span aria-hidden="true" style={{ display:'inline-block', width:8, height:8, borderRadius:'50%', background:dot, marginRight:8 }} />
                           {label}
                         </span>
-                        <span style={{ color:'var(--text2)', fontSize:13, fontFamily:'var(--mono)' }}>{fmt(dayByMode[m])}</span>
+                        <span style={{ color:'var(--text2)', fontSize:'var(--fs-sm)', fontFamily:'var(--mono)' }}>{fmt(dayByMode[m])}</span>
                       </div>
                     )
                   })}
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0' }}>
-                    <span style={{ color:'var(--text)', fontSize:14, fontWeight:'var(--fw-semibold)' }}>
+                    <span style={{ color:'var(--text)', fontSize:'var(--fs-body)', fontWeight:'var(--fw-semibold)' }}>
                       {lang === 'en' ? 'Total sales' : lang === 'es' ? 'Total ventas' : lang === 'it' ? 'Totale vendite' : 'Total ventes'}
                     </span>
-                    <span style={{ color:'var(--acc)', fontSize:16, fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)' }}>
+                    <span style={{ color:'var(--acc)', fontSize:'var(--fs-md)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)' }}>
                       {fmt(Object.values(dayByMode).reduce((a, b) => a + b, 0))}
                     </span>
                   </div>
@@ -311,18 +311,18 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             )}
 
             {/* CAISSE ESPÈCES : fond + ventes espèces = attendu */}
-            <div style={{ color:'var(--text3)', fontSize:11, letterSpacing:'.5px', textTransform:'uppercase', fontWeight:'var(--fw-semibold)', marginBottom:9 }}>
+            <div style={{ color:'var(--text3)', fontSize:'var(--fs-caption)', letterSpacing:'.5px', textTransform:'uppercase', fontWeight:'var(--fw-semibold)', marginBottom:9 }}>
               {lang === 'en' ? 'Cash drawer' : lang === 'es' ? 'Caja efectivo' : lang === 'it' ? 'Cassa contanti' : 'Caisse espèces'}
             </div>
             <div style={{ background:'var(--bg)', border:'1px solid var(--border2)', borderRadius:12, padding:'12px 14px', marginBottom:16 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', color:'var(--text2)', fontSize:13, marginBottom:6 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', color:'var(--text2)', fontSize:'var(--fs-sm)', marginBottom:6 }}>
                 <span>{ct.initial_fund}</span><span style={{ fontFamily:'var(--mono)' }}>{fmt(cashierOpeningFund)}</span>
               </div>
-              <div style={{ display:'flex', justifyContent:'space-between', color:'var(--text2)', fontSize:13, marginBottom:6 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', color:'var(--text2)', fontSize:'var(--fs-sm)', marginBottom:6 }}>
                 <span>+ {lang === 'en' ? 'Cash sales' : lang === 'es' ? 'Ventas en efectivo' : lang === 'it' ? 'Vendite in contanti' : 'Ventes espèces'}</span>
                 <span style={{ fontFamily:'var(--mono)' }}>{fmt(dayCashSales ?? cashierSessionCA)}</span>
               </div>
-              <div style={{ display:'flex', justifyContent:'space-between', color:'var(--text)', fontSize:13, fontWeight:'var(--fw-semibold)', paddingTop:6, borderTop:'1px solid color-mix(in srgb, var(--border) 55%, transparent)' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', color:'var(--text)', fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', paddingTop:6, borderTop:'1px solid color-mix(in srgb, var(--border) 55%, transparent)' }}>
                 <span>= {lang === 'en' ? 'Expected cash' : lang === 'es' ? 'Efectivo esperado' : lang === 'it' ? 'Contanti attesi' : 'Espèces attendues'}</span>
                 <span style={{ fontFamily:'var(--mono)' }}>{fmt(expectedCash)}</span>
               </div>
@@ -330,15 +330,15 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
 
             {/* Montant compté (devise d'affichage → XOF pour l'écart) */}
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, marginBottom:10, flexWrap:'wrap' }}>
-              <label htmlFor="counted-amount" style={{ color:'var(--text2)', fontSize:13 }}>{ct.counted_label}</label>
+              <label htmlFor="counted-amount" style={{ color:'var(--text2)', fontSize:'var(--fs-sm)' }}>{ct.counted_label}</label>
               <div style={{ background:'var(--bg)', border:'1px solid var(--border)', borderRadius:10, padding:'2px 13px', display:'flex', alignItems:'baseline', gap:5, flex:1, maxWidth:200 }}>
                 <input id="counted-amount" className="no-spin" type="number" min={0} inputMode="decimal"
                   placeholder={ct.counted_placeholder}
                   value={countedInput}
                   onKeyDown={e => { if (e.key === '-') e.preventDefault() }}
                   onChange={e => { const v = e.target.value; setCountedInput(v === '' ? '' : (parseFloat(v) < 0 ? '0' : v)) }}
-                  style={{ flex:1, minWidth:0, textAlign:'right', background:'transparent', border:'none', outline:'none', color:'var(--text)', fontSize:16, fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)', padding:'7px 0' }} />
-                <span aria-hidden="true" style={{ color:'var(--text3)', fontSize:12, flexShrink:0 }}>
+                  style={{ flex:1, minWidth:0, textAlign:'right', background:'transparent', border:'none', outline:'none', color:'var(--text)', fontSize:'var(--fs-md)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)', padding:'7px 0' }} />
+                <span aria-hidden="true" style={{ color:'var(--text3)', fontSize:'var(--fs-label)', flexShrink:0 }}>
                   {CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] ?? currency}
                 </span>
               </div>
@@ -353,7 +353,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   : 'color-mix(in srgb, var(--danger) 10%, transparent)',
                 borderRadius:11, padding:'11px 14px', marginBottom:18,
               }}>
-                <span style={{ color:'var(--text2)', fontSize:13, display:'flex', alignItems:'center', gap:6 }}>
+                <span style={{ color:'var(--text2)', fontSize:'var(--fs-sm)', display:'flex', alignItems:'center', gap:6 }}>
                   {gapLevel === 'ok'
                     ? <Check size={14} style={{ color:'var(--acc2)' }} />
                     : <AlertTriangle size={14} style={{ color: gapLevel === 'warn' ? 'var(--warn)' : 'var(--danger)' }} />}
@@ -363,7 +363,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 </span>
                 <span style={{
                   color: gapLevel === 'ok' ? 'var(--acc2)' : gapLevel === 'warn' ? 'var(--warn)' : 'var(--danger)',
-                  fontSize:16, fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)',
+                  fontSize:'var(--fs-md)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)',
                 }}>
                   {gapLevel === 'ok' ? fmt(0) : `${cashGap > 0 ? '+ ' : '− '}${fmt(Math.abs(cashGap))}`}
                 </span>
@@ -374,7 +374,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             <div style={{ display:'flex', gap:9 }}>
               <button type="button" onClick={() => setShowCloseModal(false)}
                 style={{ flex:1, background:'var(--card2)', color:'var(--text2)', border:'1px solid var(--border)',
-                  borderRadius:12, padding:13, minHeight:48, fontSize:14, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer' }}>
+                  borderRadius:12, padding:13, minHeight:48, fontSize:'var(--fs-body)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer' }}>
                 {ct.cancel}
               </button>
               <button type="button"
@@ -421,7 +421,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   toast.success(lang === 'en' ? 'Register closed — Z report printed' : lang === 'es' ? 'Caja cerrada — informe Z impreso' : lang === 'it' ? 'Cassa chiusa — rapporto Z stampato' : 'Caisse fermée — Ticket Z imprimé')
                 }}
                 style={{ flex:2, background:'var(--grad-p)', color:'#fff', border:'none',
-                  borderRadius:12, padding:13, minHeight:48, fontSize:14, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)',
+                  borderRadius:12, padding:13, minHeight:48, fontSize:'var(--fs-body)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)',
                   cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'var(--sh-md)' }}>
                 <Printer size={15} /> {lang === 'en' ? 'Close & print Z' : lang === 'es' ? 'Cerrar e imprimir Z' : lang === 'it' ? 'Chiudi e stampa Z' : 'Clôturer & imprimer Z'}
               </button>
@@ -445,10 +445,10 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               marginBottom: 16,
             }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
-                <span style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
+                <span style={{ fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
                   {lang === 'en' ? 'Checkout' : lang === 'es' ? 'Cobro' : lang === 'it' ? 'Incasso' : 'Encaissement'}
                 </span>
-                <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>
                   {cart.length} article{cart.length > 1 ? 's' : ''}
                 </span>
               </div>
@@ -463,14 +463,14 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               border: '1px solid color-mix(in srgb, var(--acc) 20%, transparent)',
               borderRadius: 12, padding: 16, textAlign: 'center', marginBottom: 18,
             }}>
-              <div style={{ color: 'var(--text3)', fontSize: 11, letterSpacing: '.5px', textTransform: 'uppercase', fontWeight: 'var(--fw-semibold)' }}>
+              <div style={{ color: 'var(--text3)', fontSize: 'var(--fs-caption)', letterSpacing: '.5px', textTransform: 'uppercase', fontWeight: 'var(--fw-semibold)' }}>
                 {lang === 'en' ? 'Total to pay' : lang === 'es' ? 'Total a pagar' : lang === 'it' ? 'Totale da pagare' : 'Total à payer'}
               </div>
               <div style={{ color: 'var(--acc)', fontSize: 30, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', marginTop: 3, letterSpacing: '-.5px' }}>
                 {fmt(total)}
               </div>
               {tvaAmount > 0 && (
-                <div style={{ color: 'var(--text3)', fontSize: 11, marginTop: 4 }}>
+                <div style={{ color: 'var(--text3)', fontSize: 'var(--fs-caption)', marginTop: 4 }}>
                   {lang === 'en' ? 'incl. VAT' : lang === 'es' ? 'IVA incl.' : lang === 'it' ? 'IVA incl.' : 'dont TVA'}
                   {tvaRate > 0 ? ` (${tvaRate} %)` : ''}{' · '}
                   <span style={{ fontFamily: 'var(--mono)' }}>{fmt(Math.round(tvaAmount))}</span>
@@ -487,12 +487,12 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 background: 'var(--c-amber-bg)', border: '1px solid var(--c-amber-border)',
                 borderRadius: 12, padding: 12, marginBottom: 14,
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--warn)', fontSize: 12, fontWeight: 'var(--fw-bold)', marginBottom: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--warn)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-bold)', marginBottom: 6 }}>
                   <AlertTriangle size={14} style={{ flexShrink: 0 }} />
                   {lang === 'en' ? 'Price changed since added to cart' : lang === 'es' ? 'La tarifa cambió desde que se agregó' : lang === 'it' ? 'La tariffa è cambiata dopo l’aggiunta' : 'Le tarif a changé depuis l’ajout au panier'}
                 </div>
                 {priceDrift.map(d => (
-                  <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11, color: 'var(--text2)', flexWrap: 'wrap', padding: '1px 0' }}>
+                  <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 'var(--fs-caption)', color: 'var(--text2)', flexWrap: 'wrap', padding: '1px 0' }}>
                     <span>{d.name}</span>
                     <span style={{ fontFamily: 'var(--mono)' }}>
                       {fmt(d.oldPrice)} <span style={{ color: 'var(--text3)' }}>→</span> {fmt(d.newPrice)}
@@ -502,7 +502,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 <button type="button" onClick={() => onApplyPriceDrift?.()}
                   style={{ marginTop: 8, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     background: 'var(--warn)', border: 'none', color: '#fff', borderRadius: 'var(--r-md)',
-                    padding: '8px 12px', minHeight: 40, fontSize: 12, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: 'pointer' }}>
+                    padding: '8px 12px', minHeight: 40, fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: 'pointer' }}>
                   <Check size={14} /> {lang === 'en' ? 'Update cart to new prices' : lang === 'es' ? 'Actualizar el carrito' : lang === 'it' ? 'Aggiorna il carrello' : 'Mettre à jour le panier'}
                 </button>
               </div>
@@ -510,7 +510,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
 
             {/* ── MODE DE PAIEMENT — grille 3×2, Mixte en tuile pointillée (maquette 02) ── */}
             <div style={{ marginBottom: 14 }}>
-              <div style={{ color: 'var(--text3)', fontSize: 11, letterSpacing: '.5px', textTransform: 'uppercase', fontWeight: 'var(--fw-semibold)', marginBottom: 9 }}>
+              <div style={{ color: 'var(--text3)', fontSize: 'var(--fs-caption)', letterSpacing: '.5px', textTransform: 'uppercase', fontWeight: 'var(--fw-semibold)', marginBottom: 9 }}>
                 {lang === 'en' ? 'Payment method' : lang === 'es' ? 'Método de pago' : lang === 'it' ? 'Metodo di pagamento' : 'Mode de paiement'}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
@@ -549,7 +549,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                         background: `color-mix(in srgb, ${tint} 17%, transparent)`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center', color: tint,
                       }}><TileIcon size={16} /></span>
-                      <span style={{ display: 'block', color: 'var(--text)', fontSize: 12, fontWeight: 'var(--fw-semibold)', marginTop: 6 }}>{mode.label}</span>
+                      <span style={{ display: 'block', color: 'var(--text)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', marginTop: 6 }}>{mode.label}</span>
                     </button>
                   )
                 })}
@@ -566,14 +566,14 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   }}>
                   <span style={{ color: mixedOn ? 'var(--p3)' : 'var(--text3)', display: 'flex' }}><Split size={16} /></span>
-                  <span style={{ color: mixedOn ? 'var(--text)' : 'var(--text3)', fontSize: 12, fontWeight: 'var(--fw-semibold)', marginTop: 6 }}>
+                  <span style={{ color: mixedOn ? 'var(--text)' : 'var(--text3)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', marginTop: 6 }}>
                     {lang === 'en' ? 'Mixed' : lang === 'es' ? 'Mixto' : lang === 'it' ? 'Misto' : 'Mixte'}
                   </span>
                 </button>
               </div>
 
               {!isOnline && (
-                <div role="status" style={{ marginBottom: 6, fontSize: 11, color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div role="status" style={{ marginBottom: 6, fontSize: 'var(--fs-caption)', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <AlertCircle size={12} style={{ flexShrink: 0 }} />
                   {lang === 'en' ? 'Offline — cash only' : lang === 'es' ? 'Sin conexión — solo efectivo' : lang === 'it' ? 'Offline — solo contanti' : 'Hors-ligne — espèces uniquement'}
                 </div>
@@ -585,20 +585,20 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     <MethodPicker value={mixedM1} lang={lang} onChange={m => { setMixedM1(m); if (m === mixedM2) setMixedM2((['cash', 'mobile', 'card'] as const).find(x => x !== m)!) }} />
                     <input type="number" inputMode="decimal" min={0} value={mixedAmt1} onChange={e => setMixedAmt1(e.target.value)}
                       placeholder="0" aria-label={lang === 'en' ? 'Amount 1' : lang === 'es' ? 'Importe 1' : lang === 'it' ? 'Importo 1' : 'Montant 1'}
-                      style={{ flex: 1, minWidth: 0, height: 36, padding: '0 8px', background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontSize: 13, fontFamily: 'var(--mono)', textAlign: 'right', boxSizing: 'border-box' }} />
+                      style={{ flex: 1, minWidth: 0, height: 36, padding: '0 8px', background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontSize: 'var(--fs-sm)', fontFamily: 'var(--mono)', textAlign: 'right', boxSizing: 'border-box' }} />
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <MethodPicker value={mixedM2} exclude={mixedM1} lang={lang} onChange={setMixedM2} />
                     {/* « Reste à payer » décompté (spec §2) — complété par la 2e méthode */}
-                    <div style={{ flex: 1, minWidth: 0, height: 36, padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, background: 'var(--bg3)', border: '1px dashed var(--border)', borderRadius: 8, fontSize: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0, height: 36, padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, background: 'var(--bg3)', border: '1px dashed var(--border)', borderRadius: 8, fontSize: 'var(--fs-label)' }}>
                       <span style={{ color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {lang === 'en' ? 'Remaining' : lang === 'es' ? 'Restante' : lang === 'it' ? 'Rimanente' : 'Reste à payer'}
                       </span>
-                      <span style={{ color: 'var(--text2)', fontFamily: 'var(--mono)', fontSize: 13, flexShrink: 0 }}>{fmt(mixedAmt2XOF)}</span>
+                      <span style={{ color: 'var(--text2)', fontFamily: 'var(--mono)', fontSize: 'var(--fs-sm)', flexShrink: 0 }}>{fmt(mixedAmt2XOF)}</span>
                     </div>
                   </div>
                   {!mixedValid && (
-                    <div style={{ fontSize: 11, color: 'var(--danger)' }}>
+                    <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--danger)' }}>
                       {lang === 'en' ? 'Amount 1 must be between 0 and the total' : lang === 'es' ? 'El monto 1 debe estar entre 0 y el total' : lang === 'it' ? "L'importo 1 deve essere tra 0 e il totale" : 'Le montant 1 doit être entre 0 et le total'}
                     </div>
                   )}
@@ -619,10 +619,10 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <Smartphone size={20} />
                   <div>
-                    <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>
+                    <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', color:'var(--text)' }}>
                       {lang === 'fr' ? 'Envoyer le ticket WhatsApp' : lang === 'en' ? 'Send WhatsApp receipt' : lang === 'es' ? 'Enviar ticket WhatsApp' : 'Invia scontrino WhatsApp'}
                     </div>
-                    <div style={{ fontSize:11, color:'var(--text3)' }}>
+                    <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>
                       {lang === 'fr' ? 'Le client recevra son reçu sur WhatsApp' : lang === 'en' ? 'Customer receives receipt on WhatsApp' : lang === 'es' ? 'El cliente recibirá su recibo por WhatsApp' : 'Il cliente riceverà la ricevuta su WhatsApp'}
                     </div>
                   </div>
@@ -653,7 +653,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               </div>
               {sendWhatsApp && (
                 <div>
-                  <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
+                  <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
                     {lang==='fr' ? 'Numéro WhatsApp (ticket)' : lang==='en' ? 'WhatsApp number (receipt)' : lang==='es' ? 'Número WhatsApp (recibo)' : 'Numero WhatsApp (ricevuta)'}
                   </label>
                   <div style={{ display:'flex', gap:6, alignItems:'stretch' }}>
@@ -671,12 +671,12 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                           minHeight:44, minWidth:90, padding:'0 10px',
                           background:'var(--bg4)', border:'1.5px solid var(--border)',
                           borderRadius:10, cursor:'pointer', color:'var(--text)',
-                          fontSize:13, fontFamily:'var(--font)', transition:'border-color .15s',
+                          fontSize:'var(--fs-sm)', fontFamily:'var(--font)', transition:'border-color .15s',
                         }}
                       >
-                        <span style={{ fontSize:18 }}>{waCountryFlag}</span>
+                        <span style={{ fontSize:'var(--fs-lg)' }}>{waCountryFlag}</span>
                         <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)' }}>{waCountryCode}</span>
-                        <span style={{ fontSize:11, color:'var(--text3)', marginLeft:2 }}>▼</span>
+                        <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', marginLeft:2 }}>▼</span>
                       </button>
                       {showCountryPicker && (
                         <div
@@ -703,7 +703,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                               style={{
                                 width:'100%', padding:'7px 10px',
                                 background:'var(--bg4)', border:'1.5px solid var(--border)',
-                                borderRadius:8, color:'var(--text)', fontSize:12,
+                                borderRadius:8, color:'var(--text)', fontSize:'var(--fs-label)',
                                 fontFamily:'var(--font)', outline:'none', boxSizing:'border-box',
                               }}
                             />
@@ -718,7 +718,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                             const regions = Array.from(new Set(filtered.map(c => c.region)))
                             return regions.map(region => (
                               <div key={region} role="group" aria-label={region} style={{ padding:'4px 0' }}>
-                                <div aria-hidden="true" style={{ padding:'6px 12px 2px', fontSize:11, fontWeight:'var(--fw-regular)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)' }}>
+                                <div aria-hidden="true" style={{ padding:'6px 12px 2px', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-regular)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)' }}>
                                   {region}
                                 </div>
                                 {filtered.filter(c => c.region === region).map(c => (
@@ -753,7 +753,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                           background:'var(--bg4)',
                           border:`1.5px solid ${waNumber && !/^[\d\s\-]+$/.test(waNumber) ? 'var(--danger)' : 'var(--border)'}`,
                           borderRadius:10, padding:'10px 36px 10px 13px',
-                          color:'var(--text)', fontSize:13, fontFamily:'var(--font)',
+                          color:'var(--text)', fontSize:'var(--fs-sm)', fontFamily:'var(--font)',
                           outline:'none', transition:'border-color .15s, box-shadow .15s',
                         }}
                         onFocus={e => { e.target.style.borderColor='var(--p2)'; e.target.style.boxShadow='0 0 0 3px rgba(124,111,240,.15)' }}
@@ -781,7 +781,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   </div>
                   {/* Aperçu numéro complet */}
                   {waNumber.trim().length > 0 && (
-                    <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', alignItems:'center', gap:6 }}>
+                    <div style={{ marginTop:6, fontSize:'var(--fs-caption)', color:'var(--text3)', display:'flex', alignItems:'center', gap:6 }}>
                       <span>{lang==='fr' ? 'Numéro complet :' : lang==='en' ? 'Full number:' : lang==='es' ? 'Número completo:' : 'Numero completo:'}</span>
                       <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)', color:'#25D366' }}>
                         {waCountryCode}{waNumber.replace(/\s/g, '')}
@@ -790,7 +790,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   )}
                   {/* Message erreur */}
                   {waNumber.length > 0 && !/^[\d\s\-]{6,}$/.test(waNumber) && (
-                    <div style={{ marginTop:5, fontSize:11, color:'var(--danger)', fontWeight:'var(--fw-regular)', display:'flex', gap:4, alignItems:'center' }}>
+                    <div style={{ marginTop:5, fontSize:'var(--fs-caption)', color:'var(--danger)', fontWeight:'var(--fw-regular)', display:'flex', gap:4, alignItems:'center' }}>
                       <AlertTriangle size={10} /> {lang==='fr' ? 'Chiffres uniquement (ex: 77 000 00 00)' : lang==='en' ? 'Digits only (ex: 77 000 00 00)' : lang==='es' ? 'Solo dígitos (ej: 77 000 00 00)' : 'Solo cifre (es: 77 000 00 00)'}
                     </div>
                   )}
@@ -801,14 +801,14 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             {/* ── Section MTN MoMo ── */}
             {isMtnMode && (
               <div style={{ padding:'14px 16px', marginBottom:12, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
-                <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'#FFCC00', marginBottom:10, display:'flex', alignItems:'center', gap:7 }}>
-                  <span style={{ fontWeight:'var(--fw-bold)', fontSize:15 }}>M</span> MTN MoMo
+                <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'#FFCC00', marginBottom:10, display:'flex', alignItems:'center', gap:7 }}>
+                  <span style={{ fontWeight:'var(--fw-bold)', fontSize:'var(--fs-title)' }}>M</span> MTN MoMo
                 </div>
 
                 {/* Idle / requesting : saisie numéro */}
                 {(mtnStatus === 'idle' || mtnStatus === 'requesting') && (
                   <div>
-                    <label htmlFor="mtn-phone" style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+                    <label htmlFor="mtn-phone" style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
                       {lang === 'en' ? 'MTN number (e.g. 677000000)' : lang === 'es' ? 'Número MTN (ej: 677000000)' : lang === 'it' ? 'Numero MTN (es: 677000000)' : 'Numéro MTN (ex: 677000000)'}
                     </label>
                     <div style={{ display:'flex', gap:8 }}>
@@ -825,7 +825,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                           flex:1, minHeight:44, padding:'0 12px',
                           background:'var(--bg4)',
                           border:`1.5px solid ${mtnError ? 'var(--danger)' : 'var(--border)'}`,
-                          borderRadius:10, color:'var(--text)', fontSize:13,
+                          borderRadius:10, color:'var(--text)', fontSize:'var(--fs-sm)',
                           fontFamily:'var(--mono)', outline:'none',
                           boxSizing:'border-box' as const,
                         }}
@@ -838,7 +838,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                           minHeight:44, padding:'0 14px', borderRadius:10, border:'none',
                           background: (!mtnPhone.trim() || mtnStatus === 'requesting') ? 'var(--bg5)' : '#FFCC00',
                           color: (!mtnPhone.trim() || mtnStatus === 'requesting') ? 'var(--text3)' : '#1a1a1a',
-                          fontWeight:'var(--fw-semibold)', fontSize:12, cursor: (!mtnPhone.trim() || mtnStatus === 'requesting') ? 'not-allowed' : 'pointer',
+                          fontWeight:'var(--fw-semibold)', fontSize:'var(--fs-label)', cursor: (!mtnPhone.trim() || mtnStatus === 'requesting') ? 'not-allowed' : 'pointer',
                           fontFamily:'inherit', whiteSpace:'nowrap' as const,
                           display:'flex', alignItems:'center', gap:5,
                         }}
@@ -849,7 +849,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       </button>
                     </div>
                     {mtnError && (
-                      <div id="mtn-phone-error" role="alert" style={{ marginTop:5, fontSize:11, color:'var(--danger)', fontWeight:'var(--fw-regular)', display:'flex', gap:4, alignItems:'center' }}>
+                      <div id="mtn-phone-error" role="alert" style={{ marginTop:5, fontSize:'var(--fs-caption)', color:'var(--danger)', fontWeight:'var(--fw-regular)', display:'flex', gap:4, alignItems:'center' }}>
                         <AlertTriangle size={10} /> {mtnError}
                       </div>
                     )}
@@ -861,10 +861,10 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 0' }}>
                     <Loader2 size={20} style={{ animation:'spin 1s linear infinite', color:'#FFCC00', flexShrink:0 }} />
                     <div>
-                      <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>
+                      <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>
                         {lang === 'en' ? 'Waiting for customer confirmation…' : lang === 'es' ? 'Esperando confirmación del cliente…' : lang === 'it' ? 'In attesa della conferma del cliente…' : 'En attente de confirmation client…'}
                       </div>
-                      <div style={{ fontSize:11, color:'var(--text3)', marginTop:3 }}>
+                      <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', marginTop:3 }}>
                         {lang === 'en' ? 'Customer received USSD prompt on their phone' : lang === 'es' ? 'El cliente recibió la solicitud USSD en su teléfono' : lang === 'it' ? 'Il cliente ha ricevuto il prompt USSD sul telefono' : 'Le client a reçu la demande USSD sur son téléphone'}
                       </div>
                     </div>
@@ -874,7 +874,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 {/* Failed / timeout : erreur + retry */}
                 {(mtnStatus === 'failed' || mtnStatus === 'timeout') && (
                   <div>
-                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 0', color:'var(--danger)', fontSize:13 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 0', color:'var(--danger)', fontSize:'var(--fs-sm)' }}>
                       <AlertTriangle size={14} style={{ flexShrink:0 }} />
                       {mtnStatus === 'timeout'
                         ? (lang === 'en' ? 'Payment timeout (2 min). Retry?' : lang === 'es' ? 'Tiempo de espera agotado (2 min). ¿Reintentar?' : lang === 'it' ? 'Timeout pagamento (2 min). Riprovare?' : 'Délai dépassé (2 min). Réessayer ?')
@@ -886,7 +886,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       style={{
                         padding:'8px 14px', borderRadius:8, border:'none',
                         background:'rgba(255,204,0,.15)', color:'#FFCC00',
-                        fontSize:12, fontWeight:'var(--fw-semibold)',
+                        fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
                         cursor:'pointer', fontFamily:'inherit',
                       }}
                     >
@@ -900,14 +900,14 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             {/* ── Section Orange Money (Campay) ── */}
             {isOrangeMode && (
               <div style={{ padding:'14px 16px', marginBottom:12, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
-                <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'#FF6600', marginBottom:10, display:'flex', alignItems:'center', gap:7 }}>
-                  <span style={{ fontWeight:'var(--fw-bold)', fontSize:15 }}>OM</span> Orange Money
+                <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'#FF6600', marginBottom:10, display:'flex', alignItems:'center', gap:7 }}>
+                  <span style={{ fontWeight:'var(--fw-bold)', fontSize:'var(--fs-title)' }}>OM</span> Orange Money
                 </div>
 
                 {/* Idle / requesting */}
                 {(orangeStatus === 'idle' || orangeStatus === 'requesting') && (
                   <div>
-                    <label htmlFor="orange-phone" style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+                    <label htmlFor="orange-phone" style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
                       {lang === 'en' ? 'Orange number (e.g. 699000000)' : lang === 'es' ? 'Número Orange (ej: 699000000)' : lang === 'it' ? 'Numero Orange (es: 699000000)' : 'Numéro Orange (ex: 699000000)'}
                     </label>
                     <div style={{ display:'flex', gap:8 }}>
@@ -924,7 +924,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                           flex:1, minHeight:44, padding:'0 12px',
                           background:'var(--bg4)',
                           border:`1.5px solid ${orangeError ? 'var(--danger)' : 'var(--border)'}`,
-                          borderRadius:10, color:'var(--text)', fontSize:13,
+                          borderRadius:10, color:'var(--text)', fontSize:'var(--fs-sm)',
                           fontFamily:'var(--mono)', outline:'none',
                           boxSizing:'border-box' as const,
                         }}
@@ -937,7 +937,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                           minHeight:44, padding:'0 14px', borderRadius:10, border:'none',
                           background: (!orangePhone.trim() || orangeStatus === 'requesting') ? 'var(--bg5)' : '#FF6600',
                           color: (!orangePhone.trim() || orangeStatus === 'requesting') ? 'var(--text3)' : '#fff',
-                          fontWeight:'var(--fw-semibold)', fontSize:12, cursor: (!orangePhone.trim() || orangeStatus === 'requesting') ? 'not-allowed' : 'pointer',
+                          fontWeight:'var(--fw-semibold)', fontSize:'var(--fs-label)', cursor: (!orangePhone.trim() || orangeStatus === 'requesting') ? 'not-allowed' : 'pointer',
                           fontFamily:'inherit', whiteSpace:'nowrap' as const,
                           display:'flex', alignItems:'center', gap:5,
                         }}
@@ -948,7 +948,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       </button>
                     </div>
                     {orangeError && (
-                      <div id="orange-phone-error" role="alert" style={{ marginTop:5, fontSize:11, color:'var(--danger)', fontWeight:'var(--fw-regular)', display:'flex', gap:4, alignItems:'center' }}>
+                      <div id="orange-phone-error" role="alert" style={{ marginTop:5, fontSize:'var(--fs-caption)', color:'var(--danger)', fontWeight:'var(--fw-regular)', display:'flex', gap:4, alignItems:'center' }}>
                         <AlertTriangle size={10} /> {orangeError}
                       </div>
                     )}
@@ -960,10 +960,10 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 0' }}>
                     <Loader2 size={20} style={{ animation:'spin 1s linear infinite', color:'#FF6600', flexShrink:0 }} />
                     <div>
-                      <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>
+                      <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>
                         {lang === 'en' ? 'Waiting for customer confirmation…' : lang === 'es' ? 'Esperando confirmación del cliente…' : lang === 'it' ? 'In attesa della conferma del cliente…' : 'En attente de confirmation client…'}
                       </div>
-                      <div style={{ fontSize:11, color:'var(--text3)', marginTop:3 }}>
+                      <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', marginTop:3 }}>
                         {lang === 'en' ? 'Customer received Orange Money prompt on their phone' : lang === 'es' ? 'El cliente recibió la solicitud en su teléfono' : lang === 'it' ? 'Il cliente ha ricevuto la richiesta sul telefono' : 'Le client a reçu la demande Orange Money sur son téléphone'}
                       </div>
                     </div>
@@ -973,7 +973,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 {/* Failed / timeout */}
                 {(orangeStatus === 'failed' || orangeStatus === 'timeout') && (
                   <div>
-                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 0', color:'var(--danger)', fontSize:13 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 0', color:'var(--danger)', fontSize:'var(--fs-sm)' }}>
                       <AlertTriangle size={14} style={{ flexShrink:0 }} />
                       {orangeStatus === 'timeout'
                         ? (lang === 'en' ? 'Payment timeout (2 min). Retry?' : lang === 'es' ? 'Tiempo de espera agotado (2 min). ¿Reintentar?' : lang === 'it' ? 'Timeout pagamento (2 min). Riprovare?' : 'Délai dépassé (2 min). Réessayer ?')
@@ -985,7 +985,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       style={{
                         padding:'8px 14px', borderRadius:8, border:'none',
                         background:'rgba(255,102,0,.15)', color:'#FF6600',
-                        fontSize:12, fontWeight:'var(--fw-semibold)',
+                        fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
                         cursor:'pointer', fontFamily:'inherit',
                       }}
                     >
@@ -999,8 +999,8 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             {/* ── Section Carte Campay (QR / lien hébergé) ── */}
             {isCardMode && (
               <div style={{ padding:'14px 16px', marginBottom:12, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
-                <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'#5B4EE8', marginBottom:10, display:'flex', alignItems:'center', gap:7 }}>
-                  <span style={{ fontWeight:'var(--fw-bold)', fontSize:15 }}>💳</span>
+                <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'#5B4EE8', marginBottom:10, display:'flex', alignItems:'center', gap:7 }}>
+                  <span style={{ fontWeight:'var(--fw-bold)', fontSize:'var(--fs-title)' }}>💳</span>
                   {lang === 'en' ? 'Card payment (Visa / Mastercard)' : lang === 'es' ? 'Pago con tarjeta (Visa / Mastercard)' : lang === 'it' ? 'Pagamento carta (Visa / Mastercard)' : 'Paiement carte (Visa / Mastercard)'}
                 </div>
 
@@ -1012,7 +1012,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     style={{
                       width:'100%', minHeight:44, borderRadius:10, border:'none',
                       background:'#5B4EE8', color:'#fff',
-                      fontWeight:'var(--fw-semibold)', fontSize:13,
+                      fontWeight:'var(--fw-semibold)', fontSize:'var(--fs-sm)',
                       cursor:'pointer', fontFamily:'inherit',
                     }}
                   >
@@ -1024,7 +1024,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 {cardStatus === 'requesting' && (
                   <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 0' }}>
                     <Loader2 size={20} style={{ animation:'spin 1s linear infinite', color:'#5B4EE8', flexShrink:0 }} />
-                    <span style={{ fontSize:13, color:'var(--text3)' }}>
+                    <span style={{ fontSize:'var(--fs-sm)', color:'var(--text3)' }}>
                       {lang === 'en' ? 'Generating payment link…' : lang === 'es' ? 'Generando enlace de pago…' : lang === 'it' ? 'Generazione link di pagamento…' : 'Génération du lien de paiement…'}
                     </span>
                   </div>
@@ -1037,7 +1037,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       /* Sandbox : lien fictif → indicateur mode test, pas de QR */
                       <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 12px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, marginBottom:10 }}>
                         <TestTube size={18} style={{ color:'var(--text2)', flexShrink:0 }} />
-                        <span style={{ fontSize:12, color:'var(--text2)', fontWeight:'var(--fw-semibold)' }}>
+                        <span style={{ fontSize:'var(--fs-label)', color:'var(--text2)', fontWeight:'var(--fw-semibold)' }}>
                           {lang === 'en' ? 'Sandbox mode — payment simulated automatically' : lang === 'es' ? 'Modo sandbox — pago simulado automáticamente' : lang === 'it' ? 'Modalità sandbox — pagamento simulato automaticamente' : 'Mode sandbox — paiement simulé automatiquement'}
                         </span>
                       </div>
@@ -1055,14 +1055,14 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                         {cardPaymentUrl && (
                           <div style={{ textAlign:'center', marginBottom:8 }}>
                             <a href={cardPaymentUrl} target="_blank" rel="noopener noreferrer"
-                              style={{ fontSize:11, color:'#5B4EE8', wordBreak:'break-all' as const }}>
+                              style={{ fontSize:'var(--fs-caption)', color:'#5B4EE8', wordBreak:'break-all' as const }}>
                               {lang === 'en' ? 'Or share this link' : lang === 'es' ? 'O comparta este enlace' : lang === 'it' ? 'O condividi questo link' : 'Ou partagez ce lien'}
                             </a>
                           </div>
                         )}
                       </>
                     )}
-                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'8px 0', color:'var(--text3)', fontSize:12 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'8px 0', color:'var(--text3)', fontSize:'var(--fs-label)' }}>
                       <Loader2 size={14} style={{ animation:'spin 1s linear infinite', flexShrink:0 }} />
                       {lang === 'en' ? 'Scan QR or share link — waiting for payment…' : lang === 'es' ? 'Escanee el QR o comparta el enlace — esperando pago…' : lang === 'it' ? 'Scansiona il QR o condividi il link — in attesa del pagamento…' : 'Scannez le QR ou partagez le lien — en attente du paiement…'}
                     </div>
@@ -1072,7 +1072,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 {/* Failed / timeout */}
                 {(cardStatus === 'failed' || cardStatus === 'timeout') && (
                   <div>
-                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 0', color:'var(--danger)', fontSize:13 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 0', color:'var(--danger)', fontSize:'var(--fs-sm)' }}>
                       <AlertTriangle size={14} style={{ flexShrink:0 }} />
                       {cardStatus === 'timeout'
                         ? (lang === 'en' ? 'Payment timeout (2 min). Retry?' : lang === 'es' ? 'Tiempo de espera agotado (2 min). ¿Reintentar?' : lang === 'it' ? 'Timeout pagamento (2 min). Riprovare?' : 'Délai dépassé (2 min). Réessayer ?')
@@ -1084,7 +1084,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       style={{
                         padding:'8px 14px', borderRadius:8, border:'none',
                         background:'rgba(91,78,232,.15)', color:'#5B4EE8',
-                        fontSize:12, fontWeight:'var(--fw-semibold)',
+                        fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
                         cursor:'pointer', fontFamily:'inherit',
                       }}
                     >
@@ -1106,7 +1106,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   style={{
                     flex: 1, minHeight: 44, padding: '12px', borderRadius: 10, border: 'none',
                     background: payMode === 'wave' ? '#1B9AF5' : '#FF6600',
-                    color: '#fff', fontSize: 14, fontWeight: 'var(--fw-semibold)',
+                    color: '#fff', fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)',
                     cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--sh-md)',
                   }}
                 >
@@ -1125,7 +1125,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     borderRadius: 12,
                     padding: '14px',
                     minHeight: 48,
-                    fontSize: 15,
+                    fontSize: 'var(--fs-title)',
                     fontWeight: 'var(--fw-semibold)',
                     color: blocked ? 'var(--text3)' : '#fff',
                     cursor: blocked ? 'not-allowed' : 'pointer',
@@ -1168,7 +1168,7 @@ function MethodPicker({ value, onChange, exclude, lang }: {
     <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
       {methods.map(m => (
         <button key={m} type="button" onClick={() => onChange(m)}
-          style={{ padding: '0 7px', height: 36, borderRadius: 7, fontSize: 11, fontWeight: 'var(--fw-regular)', cursor: 'pointer', fontFamily: 'var(--font)',
+          style={{ padding: '0 7px', height: 36, borderRadius: 7, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', cursor: 'pointer', fontFamily: 'var(--font)',
             background: value === m ? 'var(--p)' : 'var(--bg4)', color: value === m ? '#fff' : 'var(--text2)',
             border: `1px solid ${value === m ? 'var(--p)' : 'var(--border)'}` }}>
           {methodLabel(m, lang)}
