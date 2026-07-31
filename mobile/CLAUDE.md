@@ -64,7 +64,7 @@ lsof -ti tcp:8081 | xargs kill 2>/dev/null
 npx expo start --clear        # Expo Go SDK 54
 npx expo start --dev-client
 npx tsc --noEmit              # 0 erreur — rituel avant commit
-npm test                      # jest-expo (193 tests)
+npm test                      # jest-expo (267 tests / 26 suites — mesuré 2026-07-31)
 npx expo-doctor               # objectif 18/18
 
 eas build --platform android --profile preview      # APK
@@ -227,6 +227,7 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 ---
 
 ## Divers
+- **Rapports (`(app)/reports`) ⚠️ UNE SEULE FENÊTRE :** `salesByWeekday` / `bestCalendarDay` / `topProductsInPeriod` (`src/lib/reportsAggregate.ts`, **purs**) agrègent le tableau reçu et **n'ont aucune notion de période** — l'écran les nourrit avec `filtered`. Ne JAMAIS refenêtrer localement : l'ancien `Math.min(periodDays, 7)` faisait répondre le graphe et « Meilleure journée » sur 7 jours pendant que CA/Transactions/Panier moyen portaient sur 90 — **2,90 € à côté d'un panier de 52,83 €**, deux vérités sur le même écran. ⚠️ **La seconde fenêtre peut aussi venir d'une AUTRE REQUÊTE, pas d'un refenêtrage** : le Top produits lisait `dash.topProducts`, calculé backend sur le **mois calendaire** (`monthStart`) — donc immobile en 7 j / 30 j / 90 j, « Huile végétale 25,91 € » à côté d'un CA de 17 010 €. Corrigé en repartant du **même `filtered`** (requête `dashboard` retirée de l'écran), agrégation **par nom** comme le web, tri **par CA**. ⚠️ Ce tri ne se prouve pas sur le cas nominal : il reste **VERT sous un tri par `qty`** (le produit le plus vendu y est aussi le plus gros CA) — seul un cas où les deux ordres divergent (100 bonbons à 2 000 vs 1 sac de riz à 12 000) discrimine. Totaux sommés en **XOF brut**, `fmt` convertit UNE fois à l'affichage. Clé calendaire **locale** (`toISOString()` ferait basculer une vente de 23 h au lendemain) et libellés jours/mois **en dur** (Hermes ignore `toLocaleDateString`). ⚠️ **Le clamp de la bulle (`bubbleLeftPx`) est extrait exprès** : un clamp ne s'observe qu'**un bord à la fois**, donc une vérification à l'œil en laisse toujours un non prouvé (la campagne de captures couvrait Dim, jamais Lun) — le test exerce les 7 positions sur 4 largeurs. Verrou `reportsAggregate.test.ts` (28, sabotages vérifiés).
 - **Biométrie :** `disableDeviceFallback:true` ; SecureStore ; `useRef` anti-double-trigger ; `setAuth` différé (modale activation avant redirect).
 - **Photo profil :** locale URI AsyncStorage (pas uploadée), 200×200 JPEG.
 - **Widget CA :** notification persistante (`sticky:true`+`autoDismiss:false`), canal LOW, refresh background-task → dev build.
@@ -240,7 +241,7 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 
 ## État courant
 - **Monorepo** : le mobile vit désormais dans `ndjoumessi/habashop` sous `mobile/` (les repos `habashop-mobile`/`-legal` sont archivés). `.env` mobile non commité (gitignored).
-- `main`, `tsc` 0, **151 tests verts (18 suites)**. `app.json` **1.5.0** (runtime 1.5.0) mais **device en runtime 1.4.3** (build 1.5.0 pas encore fait, cf. section Versions).
+- `main`, `tsc` 0, **267 tests verts (26 suites)** *(mesuré 2026-07-31)*. `app.json` **1.5.0** (runtime 1.5.0) mais **device en runtime 1.4.3** (build 1.5.0 pas encore fait, cf. section Versions).
 - **Item 11 (portage refonte UX web) — lot UI OTA'd sur canal preview** : fuites devise, POS 01 (tuiles bi-ton + stock bas), safe-area panier, encaissement 02 (Mixte tuile + pluriel), fix argent fidélité (NET), carte fidélité 04. **Hors lot (logique, à cadrer)** : Ticket Z, onboarding, sélecteur tarif, fraîcheur cache POS, provider MTN. Cf. `[[mobile-item11-scope]]`. *(Codes-barres = FAIT, Chantier A : scan/complétion fiche + recherche SKU + règle canonique partagée.)*
 - **Livré par OTA (canal preview, runtime 1.4.3)** : fix multi-boutiques (auto-sélection boutique), **mode sombre NKONI** (fond bleu-noir `#0A0C14`, cartes `#121724`, or `#FFB020`, `border3` glow violet ; `src/constants/theme.ts` `Colors`+`DarkColors`), **thèmes réduits à 3** (Sombre/Clair/Système, #19) + grille 3 colonnes (#20) — dernier update group `95673916-5efe-44f7-a521-719616634a1c` (Android `019f6dfe-d23e-7f55…`, iOS `019f6dfe-d23e-7592…`, commit `1c38fae4`). Police = **Outfit** (Geist attend le build natif, #13).
 - **En attente du build natif 1.5.0** (quota EAS) : **logo Sac+H** (icône/splash) + **police Geist**.

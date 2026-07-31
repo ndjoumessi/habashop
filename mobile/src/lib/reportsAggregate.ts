@@ -145,3 +145,61 @@ export function formatDayLabel(dateISO: string, lang: string): string {
   const mo = (MONTH_LABELS[lang] ?? MONTH_LABELS.fr)[m - 1]
   return `${wd} ${d} ${mo}`
 }
+
+/** Ligne de vente minimale consommée par `topProductsInPeriod` — juste ce qu'il faut. */
+export interface SaleItemLike {
+  qty?: number | null
+  total?: number | null
+  product?: { name?: string | null } | null
+}
+
+/** Vente porteuse de ses lignes (forme minimale). */
+export interface SaleWithItems {
+  items?: SaleItemLike[] | null
+}
+
+export interface TopProduct {
+  /** Nom du produit (clé d'agrégation), ou repli localisé si le produit a été supprimé. */
+  name: string
+  /** Quantité cumulée vendue sur la période. */
+  qty: number
+  /** CA cumulé en XOF — converti UNE fois à l'affichage, jamais ici. */
+  ca: number
+}
+
+const PRODUCT_FALLBACK: Record<string, string> = {
+  fr: 'Produit', en: 'Product', es: 'Producto', it: 'Prodotto',
+}
+
+/**
+ * Top produits SUR LA PÉRIODE reçue — reçoit les ventes DÉJÀ filtrées (comme `salesByWeekday`
+ * / `bestCalendarDay`) et agrège leurs lignes par NOM. Tri par CA décroissant, top N.
+ *
+ * ⚠️ POURQUOI : l'écran Rapports affichait `dash.topProducts`, calculé côté backend sur le
+ * MOIS calendaire (`monthStart`), INDÉPENDANT du sélecteur de période. Sous « 90 jours » le CA
+ * portait sur 90 j mais le top produits sur le mois seul — d'où « Huile végétale 25,91 € »
+ * (≈ CA de juillet) à côté d'un CA de 17 010 €, immobile en 7 j / 30 j / 90 j. En repartant du
+ * MÊME `filtered` que les KPI, le top colle toujours au CA affiché (même plafond `limit` sur
+ * les ventes chargées) : deux surfaces, une seule fenêtre.
+ *
+ * Agrégation par NOM comme le web (`Reports.tsx`), pour que les deux plateformes disent la même
+ * chose. `total` en XOF sommé brut ; la conversion est faite à l'affichage par `fmt()`.
+ */
+export function topProductsInPeriod(
+  sales: SaleWithItems[], topN = 5, lang = 'fr',
+): TopProduct[] {
+  const fallback = PRODUCT_FALLBACK[lang] ?? PRODUCT_FALLBACK.fr
+  const byName = new Map<string, TopProduct>()
+
+  for (const s of sales) {
+    for (const it of s.items ?? []) {
+      const name = it.product?.name ?? fallback
+      const cur = byName.get(name) ?? { name, qty: 0, ca: 0 }
+      cur.qty += it.qty ?? 0
+      cur.ca += it.total ?? 0
+      byName.set(name, cur)
+    }
+  }
+
+  return [...byName.values()].sort((a, b) => b.ca - a.ca).slice(0, topN)
+}

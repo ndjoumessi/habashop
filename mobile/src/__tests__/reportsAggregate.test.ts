@@ -1,6 +1,7 @@
 import {
   salesByWeekday, bestCalendarDay, localDateKey, formatDayLabel, bubbleLeftPx, WEEK_ORDER,
-  type SaleLike,
+  topProductsInPeriod,
+  type SaleLike, type SaleItemLike,
 } from '@/lib/reportsAggregate'
 
 // ⚠️ Les dates sont construites par `new Date(y, m-1, d, h)` — constructeur LOCAL, donc
@@ -202,5 +203,52 @@ describe('bubbleLeftPx — clamp de la bulle', () => {
     expect(bubbleLeftPx(-1, CHART, BUBBLE, N, GAP)).toBe(0)
     expect(bubbleLeftPx(9, CHART, BUBBLE, N, GAP)).toBe(0)
     expect(bubbleLeftPx(0, CHART, BUBBLE, 0, GAP)).toBe(0)
+  })
+})
+
+describe('topProductsInPeriod', () => {
+  const item = (name: string | null, qty: number, total: number): SaleItemLike =>
+    ({ qty, total, product: name === null ? null : { name } })
+  const saleOf = (...items: SaleItemLike[]) => ({ items })
+
+  it('agrège par produit sur TOUT le tableau reçu, trié par CA décroissant', () => {
+    const top = topProductsInPeriod([
+      saleOf(item('Riz', 2, 6_000), item('Huile', 1, 5_000)),
+      saleOf(item('Riz', 3, 9_000)),
+    ])
+    expect(top.map(p => p.name)).toEqual(['Riz', 'Huile'])
+    expect(top[0]).toEqual({ name: 'Riz', qty: 5, ca: 15_000 })
+    expect(top[1]).toEqual({ name: 'Huile', qty: 1, ca: 5_000 })
+  })
+
+  // ⚠️ LE cas load-bearing : le classement est par CA, pas par quantité. Trier par `qty`
+  // passerait vert alors que l'écran range visiblement par montant.
+  it('classe par CA, pas par quantité vendue', () => {
+    const top = topProductsInPeriod([
+      saleOf(item('Bonbon', 100, 2_000)),    // beaucoup d'unités, petit CA
+      saleOf(item('Sac de riz', 1, 12_000)), // une unité, gros CA
+    ])
+    expect(top[0].name).toBe('Sac de riz')
+    expect(top[1].name).toBe('Bonbon')
+  })
+
+  it('limite au top N demandé', () => {
+    const sales = ['A', 'B', 'C', 'D', 'E', 'F'].map((n, k) => saleOf(item(n, 1, (6 - k) * 1_000)))
+    expect(topProductsInPeriod(sales, 3).map(p => p.name)).toEqual(['A', 'B', 'C'])
+  })
+
+  it('un produit supprimé retombe sur un nom localisé', () => {
+    expect(topProductsInPeriod([saleOf(item(null, 1, 500))])[0].name).toBe('Produit')
+    expect(topProductsInPeriod([saleOf(item(null, 1, 500))], 5, 'en')[0].name).toBe('Product')
+  })
+
+  it('ventes sans lignes ou tableau vide : [] plutôt qu un plantage', () => {
+    expect(topProductsInPeriod([])).toEqual([])
+    expect(topProductsInPeriod([{ items: null }, {}])).toEqual([])
+  })
+
+  it('qty/total absents comptés comme 0, sans NaN', () => {
+    const top = topProductsInPeriod([saleOf({ product: { name: 'X' } }, item('X', 2, 1_000))])
+    expect(top[0]).toEqual({ name: 'X', qty: 2, ca: 1_000 })
   })
 })
