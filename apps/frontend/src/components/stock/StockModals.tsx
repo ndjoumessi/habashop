@@ -82,9 +82,18 @@ export function BarcodeVignette({ value, lang }: { value: string; lang: string }
     <button type="button" onClick={copy}
       aria-label={`${i('Copier le code-barres', 'Copy the barcode', 'Copiar el código de barras', 'Copia il codice a barre')} ${canonical}`}
       style={{
-        position: 'relative', display: 'block', width: '100%', minHeight: 44, cursor: 'pointer',
+        // Étiquette blanche qui ÉPOUSE le code-barres (fit-content) et se centre, au lieu d'un
+        // bandeau blanc pleine largeur : le SVG a sa largeur naturelle (quiet zones bakées), donc
+        // width:100% laissait de grandes marges blanches latérales inutiles. Le blanc reste
+        // intentionnel (scannabilité) — on réduit son EMPRISE, pas sa couleur ni les quiet zones.
+        position: 'relative', display: 'block', width: 'fit-content', maxWidth: '100%', margin: '0 auto',
+        minHeight: 44, cursor: 'pointer',
         background: '#FFFFFF', border: '1px solid var(--border)', borderRadius: 10, boxShadow: 'var(--sh-sm)',
-        padding: '8px 14px 6px', fontFamily: 'var(--font)', transition: 'box-shadow .15s',
+        // ⚠️ padding-top 20 (et non 8) : le badge de format est en position ABSOLUE top:6. Tant que
+        // la carte faisait width:100%, il flottait sur du blanc libre à droite du SVG ; en
+        // fit-content elle épouse le SVG, et le badge retombait SUR les barres (chevauchement
+        // mesuré 34×11 px, quiet zone droite incluse). Ce padding lui réserve sa bande.
+        padding: '20px 12px 6px', fontFamily: 'var(--font)', transition: 'box-shadow .15s',
       }}>
       {/* Badge format détecté (surface blanche → gris fixe discret) */}
       <span style={{ position: 'absolute', top: 6, right: 8, fontSize: 10, fontWeight: 'var(--fw-semibold)', letterSpacing: '.4px', color: '#9CA3AF' }}>
