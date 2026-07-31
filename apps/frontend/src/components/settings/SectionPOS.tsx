@@ -150,10 +150,10 @@ export default function SectionPOS() {
           sub={i('Caisse, TVA et paiements', 'Cashier, VAT and payments', 'Caja, IVA y pagos', 'Cassa, IVA e pagamenti')}
           right={editMode
             ? <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-primary gap-1.5" style={{ padding: '8px 16px', fontSize: 12, cursor: 'pointer' }} onClick={save}><Check size={13} /> {i('Sauvegarder', 'Save', 'Guardar', 'Salva')}</button>
-                <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={() => setEditMode(false)}>{i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}</button>
+                <button className="btn btn-primary gap-1.5" style={{ padding: '8px 16px', fontSize: 'var(--fs-label)', cursor: 'pointer' }} onClick={save}><Check size={13} /> {i('Sauvegarder', 'Save', 'Guardar', 'Salva')}</button>
+                <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 'var(--fs-label)', cursor: 'pointer' }} onClick={() => setEditMode(false)}>{i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}</button>
               </div>
-            : <button className="btn btn-ghost gap-1.5" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={startEdit}><Pencil size={13} /> {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>} />
+            : <button className="btn btn-ghost gap-1.5" style={{ padding: '8px 14px', fontSize: 'var(--fs-label)', cursor: 'pointer' }} onClick={startEdit}><Pencil size={13} /> {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>} />
 
         <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {/* ── Tickets ── */}
@@ -172,17 +172,17 @@ export default function SectionPOS() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--c-green-bg2)', border: '1px solid var(--c-green-border)', color: 'var(--acc2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Banknote size={18} /></div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Fond de caisse', 'Opening fund', 'Fondo de caja', 'Fondo cassa')}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Montant initial en caisse', 'Initial cash amount', 'Monto inicial en caja', 'Importo iniziale in cassa')}</div>
+                <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Fond de caisse', 'Opening fund', 'Fondo de caja', 'Fondo cassa')}</div>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{i('Montant initial en caisse', 'Initial cash amount', 'Monto inicial en caja', 'Importo iniziale in cassa')}</div>
               </div>
             </div>
             {editMode ? (
               <div style={{ position: 'relative' }}>
                 <input type="number" min={0} step={1} className="input" aria-label={i('Fond de caisse', 'Opening fund', 'Fondo de caja', 'Fondo cassa')} style={{ width: 150, textAlign: 'right', paddingRight: 44 }} value={fundInput} onChange={e => setFundInput(e.target.value)} />
-                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', fontSize: 11, pointerEvents: 'none', fontWeight: 'var(--fw-semibold)' }}>{symbol}</span>
+                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', fontSize: 'var(--fs-caption)', pointerEvents: 'none', fontWeight: 'var(--fw-semibold)' }}>{symbol}</span>
               </div>
             ) : (
-              <div style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{fmt(cfg.posDefaultFund)}</div>
+              <div style={{ fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{fmt(cfg.posDefaultFund)}</div>
             )}
           </div>
 
@@ -195,47 +195,47 @@ export default function SectionPOS() {
             <div style={{ padding: '14px 16px', background: 'var(--bg3)', border: `1px solid ${editMode && loyaltyErr ? 'var(--danger)' : 'var(--border)'}`, borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Star size={15} color="var(--warn)" />
-                <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Règles de fidélité', 'Loyalty rules', 'Reglas de fidelidad', 'Regole fedeltà')}</span>
+                <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Règles de fidélité', 'Loyalty rules', 'Reglas de fidelidad', 'Regole fedeltà')}</span>
               </div>
 
               {/* 1 point pour chaque X CURRENCY */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <span style={{ fontSize: 12, color: 'var(--text2)' }}>{i('1 point pour chaque', '1 point per', '1 punto por cada', '1 punto ogni')}</span>
+                <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text2)' }}>{i('1 point pour chaque', '1 point per', '1 punto por cada', '1 punto ogni')}</span>
                 {editMode ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <input type="number" min={1} step={1} className="input" aria-label={i('1 point pour chaque', '1 point per', '1 punto por cada', '1 punto ogni')} style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.pointsPerAmount}
                       onChange={e => setLoyaltyDraft(p => ({ ...p, pointsPerAmount: Math.max(1, Math.floor(+e.target.value || 0)) }))} />
-                    <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 'var(--fw-semibold)', minWidth: 40 }}>{symbol}</span>
+                    <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', fontWeight: 'var(--fw-semibold)', minWidth: 40 }}>{symbol}</span>
                   </div>
                 ) : <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{loyaltyV.pointsPerAmount} {symbol}</span>}
               </div>
 
               {/* Seuil Bronze */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <span style={{ fontSize: 12, color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Medal size={12} color="var(--text3)" /> {i('Seuil Bronze', 'Bronze threshold', 'Umbral Bronze', 'Soglia Bronze')}</span>
+                <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Medal size={12} color="var(--text3)" /> {i('Seuil Bronze', 'Bronze threshold', 'Umbral Bronze', 'Soglia Bronze')}</span>
                 {editMode ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <input type="number" min={1} step={1} className="input" aria-label={i('Seuil Bronze', 'Bronze threshold', 'Umbral Bronze', 'Soglia Bronze')} style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.bronzeThreshold}
                       onChange={e => setLoyaltyDraft(p => ({ ...p, bronzeThreshold: Math.max(1, Math.floor(+e.target.value || 0)) }))} />
-                    <span style={{ fontSize: 12, color: 'var(--text3)', minWidth: 40 }}>pts</span>
+                    <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', minWidth: 40 }}>pts</span>
                   </div>
                 ) : <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{loyaltyV.bronzeThreshold} pts</span>}
               </div>
 
               {/* Seuil Silver */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <span style={{ fontSize: 12, color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Medal size={12} color="var(--text3)" /> {i('Seuil Silver', 'Silver threshold', 'Umbral Silver', 'Soglia Silver')}</span>
+                <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Medal size={12} color="var(--text3)" /> {i('Seuil Silver', 'Silver threshold', 'Umbral Silver', 'Soglia Silver')}</span>
                 {editMode ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <input type="number" min={1} step={1} className="input" aria-label={i('Seuil Silver', 'Silver threshold', 'Umbral Silver', 'Soglia Silver')} style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.silverThreshold}
                       onChange={e => setLoyaltyDraft(p => ({ ...p, silverThreshold: Math.max(1, Math.floor(+e.target.value || 0)) }))} />
-                    <span style={{ fontSize: 12, color: 'var(--text3)', minWidth: 40 }}>pts</span>
+                    <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', minWidth: 40 }}>pts</span>
                   </div>
                 ) : <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{loyaltyV.silverThreshold} pts</span>}
               </div>
 
               {/* Remises par palier (v2 — 0 = désactivé) */}
-              <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
                 <CreditCard size={12} /> {i('Remises automatiques par palier (0 = désactivé)', 'Automatic tier discounts (0 = off)', 'Descuentos automáticos por nivel (0 = desact.)', 'Sconti automatici per livello (0 = disatt.)')}
               </div>
               {[
@@ -244,12 +244,12 @@ export default function SectionPOS() {
                 { key: 'goldDiscount'   as const, label: 'Gold'   },
               ].map(({ key, label }) => (
                 <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                  <span style={{ fontSize: 12, color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Medal size={12} color="var(--text3)" /> {label}</span>
+                  <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Medal size={12} color="var(--text3)" /> {label}</span>
                   {editMode ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <input type="number" min={0} max={100} step={0.5} className="input" aria-label={`${i('Remise', 'Discount', 'Descuento', 'Sconto')} ${label}`} style={{ width: 80, textAlign: 'right' }} value={loyaltyDraft[key]}
                         onChange={e => setLoyaltyDraft(p => ({ ...p, [key]: Math.max(0, Math.min(100, +e.target.value || 0)) }))} />
-                      <span style={{ fontSize: 12, color: 'var(--text3)', minWidth: 20 }}>%</span>
+                      <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', minWidth: 20 }}>%</span>
                     </div>
                   ) : <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', color: loyaltyV[key] > 0 ? 'var(--acc2)' : 'var(--text3)' }}>{loyaltyV[key] > 0 ? `${loyaltyV[key]} %` : i('désactivé', 'off', 'desact.', 'disatt.')}</span>}
                 </div>
@@ -257,13 +257,13 @@ export default function SectionPOS() {
 
               {/* Validation inline : bronze < silver */}
               {editMode && loyaltyErr && (
-                <div style={{ fontSize: 11, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <AlertTriangle size={12} /> {i('Le seuil Bronze doit être inférieur au seuil Silver.', 'Bronze threshold must be below Silver.', 'El umbral Bronze debe ser menor que Silver.', 'La soglia Bronze deve essere inferiore a Silver.')}
                 </div>
               )}
 
               {/* Note non-rétroactif */}
-              <div style={{ fontSize: 11, color: 'var(--text4)', fontStyle: 'italic' }}>
+              <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', fontStyle: 'italic' }}>
                 {i("S'applique aux prochaines ventes uniquement.", 'Applies to future sales only.', 'Se aplica solo a ventas futuras.', 'Si applica solo alle vendite future.')}
               </div>
             </div>
@@ -277,8 +277,8 @@ export default function SectionPOS() {
             {PRICE_MODES.map(m => (
               <button key={m.id} type="button" disabled={!editMode} onClick={() => editMode && setDraft(p => ({ ...p, priceMode: m.id }))}
                 style={{ flex: 1, padding: 14, borderRadius: 12, cursor: editMode ? 'pointer' : 'default', opacity: editMode ? 1 : .7, textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .15s', background: v.priceMode === m.id ? 'color-mix(in srgb, var(--p) 10%, transparent)' : 'var(--bg3)', border: `2px solid ${v.priceMode === m.id ? 'var(--p)' : 'var(--border)'}` }}>
-                <div style={{ fontSize: 15, fontWeight: 'var(--fw-semibold)', color: v.priceMode === m.id ? 'var(--p3)' : 'var(--text)', display: 'flex', alignItems: 'center', gap: 5 }}>{m.title}{v.priceMode === m.id && <Check size={14} aria-hidden="true" />}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{m.sub}</div>
+                <div style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-semibold)', color: v.priceMode === m.id ? 'var(--p3)' : 'var(--text)', display: 'flex', alignItems: 'center', gap: 5 }}>{m.title}{v.priceMode === m.id && <Check size={14} aria-hidden="true" />}</div>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginTop: 2 }}>{m.sub}</div>
               </button>
             ))}
           </div>
@@ -288,22 +288,22 @@ export default function SectionPOS() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)', color: 'var(--acc)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Percent size={18} /></div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Taux de TVA', 'VAT Rate', 'Tasa IVA', 'Aliquota IVA')}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Appliqué sur les ventes POS', 'Applied on POS sales', 'Aplicado en ventas TPV', 'Applicato sulle vendite POS')}</div>
+                <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Taux de TVA', 'VAT Rate', 'Tasa IVA', 'Aliquota IVA')}</div>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{i('Appliqué sur les ventes POS', 'Applied on POS sales', 'Aplicado en ventas TPV', 'Applicato sulle vendite POS')}</div>
               </div>
             </div>
             {editMode ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input type="number" min={0} max={100} step={0.5} className="input" aria-label={i('Taux de TVA', 'VAT Rate', 'Tasa IVA', 'Aliquota IVA')} style={{ width: 80, textAlign: 'right' }} value={draft.posTaxRate} onChange={e => setDraft(p => ({ ...p, posTaxRate: Math.max(0, Math.min(100, +e.target.value)) }))} />
-                <span style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--acc)', width: 20 }}>%</span>
+                <span style={{ fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-bold)', color: 'var(--acc)', width: 20 }}>%</span>
               </div>
             ) : (
-              <div style={{ fontSize: 22, fontWeight: 'var(--fw-semibold)', color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{cfg.posTaxRate}%</div>
+              <div style={{ fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-semibold)', color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{cfg.posTaxRate}%</div>
             )}
           </div>
 
           {editMode && (
-            <div style={{ padding: '10px 14px', background: 'var(--c-amber-bg)', border: '1px solid var(--c-amber-border)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--warn)' }}>
+            <div style={{ padding: '10px 14px', background: 'var(--c-amber-bg)', border: '1px solid var(--c-amber-border)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-caption)', color: 'var(--warn)' }}>
               <AlertTriangle size={13} style={{ flexShrink: 0 }} />
               <span>{i('Modifications non sauvegardées — cliquez sur Sauvegarder', 'Unsaved changes — click Save to apply', 'Cambios sin guardar — haga clic en Guardar', 'Modifiche non salvate — clicca Salva')}</span>
             </div>

@@ -39,8 +39,8 @@ export function ToggleCard({ icon, color, label, desc, on, onChange, disabled }:
       style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'var(--bg3)', border: `1px solid var(--border)`, borderRadius: 14, transition: 'border-color .2s', cursor: disabled ? 'default' : 'pointer', userSelect: 'none' }}>
       <div style={{ width: 40, height: 40, borderRadius: 12, background: `color-mix(in srgb, ${color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 18%, transparent)`, color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>{label}</div>
-        <div id={descId} style={{ fontSize: 11, color: 'var(--text3)' }}>{desc}</div>
+        <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>{label}</div>
+        <div id={descId} style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{desc}</div>
       </div>
       <Switch on={on} onClick={onChange} color={color} disabled={disabled} label={label} describedBy={descId} />
     </div>
@@ -52,7 +52,7 @@ export function GroupLabel({ icon, label }: { icon: React.ReactNode; label: stri
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 8, marginBottom: 2 }}>
       <span style={{ display: 'flex', color: 'var(--text3)' }}>{icon}</span>
-      <span style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.7px', color: 'var(--text3)' }}>{label}</span>
+      <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.7px', color: 'var(--text3)' }}>{label}</span>
     </div>
   )
 }
@@ -64,8 +64,8 @@ export function Head({ icon, title, sub, tint, right }: { icon: React.ReactNode;
       <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ display: 'flex', color: 'var(--p2)', flexShrink: 0 }}>{icon}</span>
         <div style={{ minWidth: 0 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', margin: 0, marginBottom: sub ? 3 : 0 }}>{title}</h2>
-          {sub && <p style={{ fontSize: 11, color: 'var(--text3)', margin: 0 }}>{sub}</p>}
+          <h2 style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', margin: 0, marginBottom: sub ? 3 : 0 }}>{title}</h2>
+          {sub && <p style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', margin: 0 }}>{sub}</p>}
         </div>
       </div>
       {right}

@@ -22,8 +22,8 @@ function ReadOnlyValue({ flag, value, note }: { flag: string; value: string; not
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, background: 'var(--bg3)', border: '1px solid var(--border)' }}>
         <span style={{ fontSize: 26 }}>{flag}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{value}</div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+          <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{value}</div>
+          <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
             <Lock size={11} /> {note}
           </div>
         </div>
@@ -86,8 +86,8 @@ export default function SectionLang() {
                   }}>
                   <span style={{ fontSize: 28 }}>{l.flag}</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: active ? 'var(--p)' : 'var(--text)' }}>{l.native}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{l.name}</div>
+                    <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: active ? 'var(--p)' : 'var(--text)' }}>{l.native}</div>
+                    <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{l.name}</div>
                   </div>
                   {active && (
                     <div style={{
@@ -154,22 +154,22 @@ export default function SectionLang() {
                   </div>
                 )}
                 <span style={{ fontSize: 26 }}>{c.flag}</span>
-                <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: active ? 'var(--warn)' : 'var(--text)', fontFamily: 'var(--mono)' }}>{c.code}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.3 }}>{pick(lang, c.name)}</div>
+                <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: active ? 'var(--warn)' : 'var(--text)', fontFamily: 'var(--mono)' }}>{c.code}</div>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', textAlign: 'center', lineHeight: 1.3 }}>{pick(lang, c.name)}</div>
               </button>
             )
           })}
         </div>
         )}
         <div style={{ margin: '0 22px 20px', padding: 16, background: 'rgba(255,184,0,.03)', border: '1px solid rgba(255,184,0,.08)', borderRadius: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', marginBottom: 12 }}>
+          <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', marginBottom: 12 }}>
             {i('APERÇU — Conversion temps réel', 'PREVIEW — Real-time conversion', 'VISTA PREVIA — Conversión en tiempo real', 'ANTEPRIMA — Conversione in tempo reale')}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
             {[100000, 500000, 1000000].map(xof => (
               <div key={xof} style={{ textAlign: 'center', padding: 10, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10 }}>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{xof.toLocaleString('fr-FR')} XOF</div>
-                <div style={{ fontSize: 15, fontWeight: 'var(--fw-semibold)', color: 'var(--warn)', fontFamily: 'var(--mono)' }}>{fmt(xof)}</div>
+                <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginBottom: 4 }}>{xof.toLocaleString('fr-FR')} XOF</div>
+                <div style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-semibold)', color: 'var(--warn)', fontFamily: 'var(--mono)' }}>{fmt(xof)}</div>
               </div>
             ))}
           </div>
@@ -183,7 +183,7 @@ export default function SectionLang() {
           sub={i('Thème et couleur d\'accent', 'Theme and accent color', 'Tema y color de acento', 'Tema e colore d\'accento')} />
         <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10 }}>{i('Thème', 'Theme', 'Tema', 'Tema')}</div>
+            <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10 }}>{i('Thème', 'Theme', 'Tema', 'Tema')}</div>
             <ResponsiveGrid min={118} gap={10}>
               {THEME_OPTIONS.map(({ key, emoji, label }) => {
                 const active = cfg.theme === key
@@ -203,8 +203,8 @@ export default function SectionLang() {
                       </div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 16, marginBottom: 1 }}>{emoji}</div>
-                      <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: active ? 'var(--p3)' : 'var(--text2)' }}>{pick(lang, label)}</div>
+                      <div style={{ fontSize: 'var(--fs-md)', marginBottom: 1 }}>{emoji}</div>
+                      <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: active ? 'var(--p3)' : 'var(--text2)' }}>{pick(lang, label)}</div>
                     </div>
                   </button>
                 )
@@ -212,7 +212,7 @@ export default function SectionLang() {
             </ResponsiveGrid>
           </div>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {i('Couleur d\'accent', 'Accent color', 'Color de acento', 'Colore d\'accento')}
             </div>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

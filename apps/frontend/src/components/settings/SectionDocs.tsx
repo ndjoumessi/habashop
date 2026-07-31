@@ -64,8 +64,8 @@ export default function SectionDocs() {
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none' }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: `color-mix(in srgb, ${d.color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${d.color} 18%, transparent)`, color: d.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{d.icon}</div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 3 }}>{pick(lang, d.label)}</div>
-              <div style={{ fontSize: 11, color: 'var(--text3)' }}>{pick(lang, d.desc)}</div>
+              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 3 }}>{pick(lang, d.label)}</div>
+              <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{pick(lang, d.desc)}</div>
             </div>
           </button>
         ))}

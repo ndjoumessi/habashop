@@ -110,7 +110,7 @@ export default function SectionCatalog() {
         <label style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', borderTop:'1px solid var(--border)', cursor:'pointer' }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             {form.catalogVisible ? <Eye size={16} style={{ color:'var(--acc2)' }} /> : <EyeOff size={16} style={{ color:'var(--text3)' }} />}
-            <span style={{ fontSize:14, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>
+            <span style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-regular)', color:'var(--text)' }}>
               {form.catalogVisible ? i('Catalogue public actif', 'Public catalog active', 'Catálogo público activo', 'Catalogo pubblico attivo') : i('Catalogue désactivé', 'Catalog disabled', 'Catálogo desactivado', 'Catalogo disattivato')}
             </span>
           </div>
@@ -128,25 +128,25 @@ export default function SectionCatalog() {
         <div style={{ padding:'14px 16px', borderTop:'1px solid var(--border)', display:'flex', flexDirection:'column', gap:12 }}>
           {/* Slug edit */}
           <div>
-            <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.4px', marginBottom:6 }}>
+            <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.4px', marginBottom:6 }}>
               {i('Personnaliser le lien', 'Customize link', 'Personalizar enlace', 'Personalizza link')}
             </label>
             <div style={{ display:'flex', alignItems:'stretch', gap:0, background:'var(--bg3)', border:`1.5px solid ${slugErr ? 'var(--danger)' : 'var(--border)'}`, borderRadius:8, overflow:'hidden' }}>
-              <span style={{ display:'flex', alignItems:'center', padding:'8px 10px', fontSize:12, color:'var(--text3)', fontFamily:'var(--mono)', background:'var(--bg4)', whiteSpace:'nowrap' }}>
+              <span style={{ display:'flex', alignItems:'center', padding:'8px 10px', fontSize:'var(--fs-label)', color:'var(--text3)', fontFamily:'var(--mono)', background:'var(--bg4)', whiteSpace:'nowrap' }}>
                 {baseUrl.replace(/^https?:\/\//, '')}/c/
               </span>
               <input type="text" value={form.slug}
                 aria-label={i("Identifiant de la boutique (slug du catalogue)", 'Shop identifier (catalog slug)', 'Identificador de la tienda (slug del catálogo)', 'Identificatore del negozio (slug del catalogo)')}
                 onChange={e => { const v = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''); setForm(f => ({ ...f, slug: v })); setSlugErr(validateSlugClient(v)) }}
                 placeholder="ma-boutique"
-                style={{ flex:1, padding:'8px 10px', fontSize:13, background:'transparent', border:'none', color:'var(--text)', fontFamily:'var(--mono)', outline:'none' }} />
-              <button onClick={saveSlug} disabled={saving || !!slugErr || form.slug === tenant.slug} style={{ padding:'8px 14px', background: (saving || !!slugErr || form.slug === tenant.slug) ? 'var(--bg4)' : 'var(--p)', color:'#fff', border:'none', cursor: (saving || !!slugErr || form.slug === tenant.slug) ? 'not-allowed' : 'pointer', fontSize:12, fontWeight:'var(--fw-semibold)', fontFamily:'inherit' }}>
+                style={{ flex:1, padding:'8px 10px', fontSize:'var(--fs-sm)', background:'transparent', border:'none', color:'var(--text)', fontFamily:'var(--mono)', outline:'none' }} />
+              <button onClick={saveSlug} disabled={saving || !!slugErr || form.slug === tenant.slug} style={{ padding:'8px 14px', background: (saving || !!slugErr || form.slug === tenant.slug) ? 'var(--bg4)' : 'var(--p)', color:'#fff', border:'none', cursor: (saving || !!slugErr || form.slug === tenant.slug) ? 'not-allowed' : 'pointer', fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', fontFamily:'inherit' }}>
                 {i('Enregistrer', 'Save', 'Guardar', 'Salva')}
               </button>
             </div>
-            {slugErr && <div style={{ marginTop:6, fontSize:11, color:'var(--danger)' }}>⚠️ {slugErr}</div>}
+            {slugErr && <div style={{ marginTop:6, fontSize:'var(--fs-caption)', color:'var(--danger)' }}>⚠️ {slugErr}</div>}
             {!slugErr && tenant.slug && tenant.slug !== form.slug && (
-              <div style={{ marginTop:6, padding:'6px 10px', borderRadius:6, background:'rgba(245,158,11,.1)', border:'1px solid rgba(245,158,11,.25)', fontSize:11, color:'var(--warn)', display:'flex', alignItems:'flex-start', gap:6 }}>
+              <div style={{ marginTop:6, padding:'6px 10px', borderRadius:6, background:'rgba(245,158,11,.1)', border:'1px solid rgba(245,158,11,.25)', fontSize:'var(--fs-caption)', color:'var(--warn)', display:'flex', alignItems:'flex-start', gap:6 }}>
                 <AlertTriangle size={11} style={{ marginTop:1, flexShrink:0 }} />
                 <span>{i('Modifier le lien invalidera vos anciens liens partagés', 'Changing the link will invalidate previously shared links', 'Cambiar el enlace invalidará los enlaces compartidos anteriormente', 'Cambiare il link invaliderà i link condivisi in precedenza')}</span>
               </div>
@@ -157,7 +157,7 @@ export default function SectionCatalog() {
           {fullUrl && (
             <>
               <div style={{ padding:'10px 12px', borderRadius:8, background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, overflow:'hidden' }}>
-                <span style={{ flex:1, fontSize:12, fontFamily:'var(--mono)', color:'var(--p2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{fullUrl}</span>
+                <span style={{ flex:1, fontSize:'var(--fs-label)', fontFamily:'var(--mono)', color:'var(--p2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{fullUrl}</span>
               </div>
               <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                 <button onClick={copyLink} className="topbar-btn" style={{ flex:1, minWidth:140, justifyContent:'center' }}>
@@ -191,8 +191,8 @@ export default function SectionCatalog() {
             placeholder={i('Ex : Supérette Yoff — fruits & légumes frais du marché', 'E.g.: Yoff Supermarket — fresh fruits & vegetables from the market', 'Ej: Supermercado Yoff — frutas y verduras frescas del mercado', 'Es: Supermercato Yoff — frutta e verdura fresca del mercato')}
             maxLength={200}
             rows={2}
-            style={{ width:'100%', padding:'10px 12px', fontSize:13, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text)', fontFamily:'inherit', resize:'vertical', minHeight:60 }} />
-          <div style={{ marginTop:4, textAlign:'right', fontSize:11, color:'var(--text3)', fontFamily:'var(--mono)' }}>{form.description.length} / 200</div>
+            style={{ width:'100%', padding:'10px 12px', fontSize:'var(--fs-sm)', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text)', fontFamily:'inherit', resize:'vertical', minHeight:60 }} />
+          <div style={{ marginTop:4, textAlign:'right', fontSize:'var(--fs-caption)', color:'var(--text3)', fontFamily:'var(--mono)' }}>{form.description.length} / 200</div>
         </div>
       </div>
 
@@ -205,8 +205,8 @@ export default function SectionCatalog() {
             onChange={e => setForm(f => ({ ...f, whatsappPhone: e.target.value }))}
             onBlur={() => { if (form.whatsappPhone !== (tenant.whatsappPhone ?? '')) saveOther({ whatsappPhone: form.whatsappPhone }) }}
             placeholder="+221 77 123 45 67"
-            style={{ width:'100%', padding:'10px 12px', fontSize:14, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text)', fontFamily:'var(--mono)' }} />
-          <div style={{ marginTop:6, fontSize:11, color:'var(--text3)' }}>
+            style={{ width:'100%', padding:'10px 12px', fontSize:'var(--fs-body)', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text)', fontFamily:'var(--mono)' }} />
+          <div style={{ marginTop:6, fontSize:'var(--fs-caption)', color:'var(--text3)' }}>
             <MessageCircle size={11} style={{ verticalAlign:'middle', marginRight:4 }} />
             {!form.whatsappPhone && tenant.phone
               ? i(`Vide → fallback sur votre téléphone principal : ${tenant.phone}`, `Empty → fallback to your main phone: ${tenant.phone}`, `Vacío → respaldo a su teléfono principal: ${tenant.phone}`, `Vuoto → fallback al telefono principale: ${tenant.phone}`)
