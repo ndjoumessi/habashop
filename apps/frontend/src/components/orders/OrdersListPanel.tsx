@@ -156,8 +156,8 @@ export default function OrdersListPanel({
                   </td>
                   <td>
                     {o.type === 'supplier'
-                      ? <span className="badge badge-amber" style={{ fontSize: 11, display:'inline-flex', alignItems:'center', gap:3 }}><Truck size={9}/> {i('BC', 'PO', 'OC', 'OA')}</span>
-                      : <span className="badge badge-blue" style={{ fontSize: 11, display:'inline-flex', alignItems:'center', gap:3 }}><Users size={9}/> {i('Vente', 'Sale', 'Venta', 'Vendita')}</span>
+                      ? <span className="badge badge-amber" style={{ fontSize: 'var(--fs-caption)', display:'inline-flex', alignItems:'center', gap:3 }}><Truck size={9}/> {i('BC', 'PO', 'OC', 'OA')}</span>
+                      : <span className="badge badge-blue" style={{ fontSize: 'var(--fs-caption)', display:'inline-flex', alignItems:'center', gap:3 }}><Users size={9}/> {i('Vente', 'Sale', 'Venta', 'Vendita')}</span>
                     }
                   </td>
                   <td className="td-bold">{o.supplier}</td>
@@ -178,25 +178,25 @@ export default function OrdersListPanel({
                         <Eye size={12} />
                       </button>
                       {o.status === 'BROUILLON' && (
-                        <button className="btn btn-sm" style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit', display:'inline-flex', alignItems:'center', gap:4 }}
+                        <button className="btn btn-sm" style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 'var(--fs-caption)', fontFamily: 'inherit', display:'inline-flex', alignItems:'center', gap:4 }}
                           onClick={() => changeStatus(o.id, 'ENVOYÉE')}>
                           <Send size={11}/> {t('btn_send')}
                         </button>
                       )}
                       {o.status === 'ENVOYÉE' && (
-                        <button className="btn btn-sm" style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--p3)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit', display:'inline-flex', alignItems:'center', gap:4 }}
+                        <button className="btn btn-sm" style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--p3)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 'var(--fs-caption)', fontFamily: 'inherit', display:'inline-flex', alignItems:'center', gap:4 }}
                           onClick={() => changeStatus(o.id, 'CONFIRMÉE')}>
                           <CheckCircle size={11}/> {t('btn_confirm')}
                         </button>
                       )}
                       {o.status === 'CONFIRMÉE' && (
-                        <button className="btn btn-sm" style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--acc)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit', display:'inline-flex', alignItems:'center', gap:4 }}
+                        <button className="btn btn-sm" style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--acc)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 'var(--fs-caption)', fontFamily: 'inherit', display:'inline-flex', alignItems:'center', gap:4 }}
                           onClick={() => changeStatus(o.id, 'EN TRANSIT')}>
                           <Truck size={11}/> {t('status_transit')}
                         </button>
                       )}
                       {o.status === 'EN TRANSIT' && (
-                        <button className="btn btn-sm" style={{ background: 'rgba(16,185,129,0.15)', color: 'var(--acc2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit', display:'inline-flex', alignItems:'center', gap:4 }}
+                        <button className="btn btn-sm" style={{ background: 'rgba(16,185,129,0.15)', color: 'var(--acc2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 'var(--fs-caption)', fontFamily: 'inherit', display:'inline-flex', alignItems:'center', gap:4 }}
                           onClick={() => changeStatus(o.id, 'REÇUE')}>
                           <Inbox size={11}/> {t('status_received')}
                         </button>

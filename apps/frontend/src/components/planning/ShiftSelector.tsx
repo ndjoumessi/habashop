@@ -19,7 +19,7 @@ export default function ShiftSelector({ lang, activeShift, setActiveShift }: Pro
       borderRadius:12,
     }}>
       <div style={{
-        fontSize:11, fontWeight:'var(--fw-bold)',
+        fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)',
         textTransform:'uppercase', letterSpacing:'.6px',
         color:'var(--text3)', alignSelf:'center',
         marginRight:6, flexShrink:0,
@@ -40,7 +40,7 @@ export default function ShiftSelector({ lang, activeShift, setActiveShift }: Pro
             background: activeShift===key
               ? (key==='rest' ? 'var(--bg3)' : s.bg) : 'transparent',
             cursor:'pointer', fontFamily:'var(--font)',
-            fontSize:11, fontWeight:'var(--fw-semibold)',
+            fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)',
             color: activeShift===key ? s.color : 'var(--text3)',
             transition:'all .12s',
             boxShadow: activeShift===key
@@ -51,7 +51,7 @@ export default function ShiftSelector({ lang, activeShift, setActiveShift }: Pro
           <span>{shiftLabel(key, lang)}</span>
           {s.hours && (
             <span style={{
-              fontSize:11, fontFamily:'var(--mono)', opacity:.7,
+              fontSize:'var(--fs-caption)', fontFamily:'var(--mono)', opacity:.7,
             }}>{s.hours}</span>
           )}
           {activeShift===key && (

@@ -22,7 +22,7 @@ export default function EditBudgetsModal({ editBudgets, setEditBudgets, onClose,
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={tr('Modifier les budgets','Edit budgets','Editar presupuestos','Modifica budget')} onClick={onClose}>
       <div ref={boxRef} className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:440 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-          <span style={{ fontWeight:'var(--fw-bold)', fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}><Settings size={16}/> {tr('Modifier les budgets','Edit budgets','Editar presupuestos','Modifica budget')}</span>
+          <span style={{ fontWeight:'var(--fw-bold)', fontSize:'var(--fs-md)', color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}><Settings size={16}/> {tr('Modifier les budgets','Edit budgets','Editar presupuestos','Modifica budget')}</span>
           <IconButton label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} icon={<X size={15} />} onClick={onClose} variant="surface" />
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
@@ -30,8 +30,8 @@ export default function EditBudgetsModal({ editBudgets, setEditBudgets, onClose,
             const s = CATEGORY_STYLE[cat]
             return (
               <div key={cat} style={{ display:'flex', alignItems:'center', gap:12 }}>
-                <span style={{ fontSize:16 }}>{s.icon}</span>
-                <span style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)', width:110, flexShrink:0 }}>{cl(cat)}</span>
+                <span style={{ fontSize:'var(--fs-md)' }}>{s.icon}</span>
+                <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', color:'var(--text)', width:110, flexShrink:0 }}>{cl(cat)}</span>
                 <input className="input" type="number" value={editBudgets[cat]}
                   onChange={e => setEditBudgets(b => ({ ...b, [cat]: +e.target.value }))}
                   style={{ flex:1, boxSizing:'border-box' }} />

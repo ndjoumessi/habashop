@@ -59,7 +59,7 @@ export default function PlanningGrid(props: Props) {
             }}>
               <th scope="col" style={{
                 padding:'12px 16px', textAlign:'left',
-                width:160, fontSize:11, fontWeight:'var(--fw-bold)',
+                width:160, fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)',
                 textTransform:'uppercase', letterSpacing:'.6px',
                 color:'var(--text3)',
                 position:'sticky', left:0, zIndex:2,
@@ -86,14 +86,14 @@ export default function PlanningGrid(props: Props) {
                       }}/>
                     )}
                     <div style={{
-                      fontSize:11, fontWeight:'var(--fw-semibold)',
+                      fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)',
                       color: isWeekend ? 'var(--text4)' : 'var(--text3)',
                       textTransform:'uppercase', letterSpacing:'.4px',
                     }}>
                       {DAY_LABELS[di]}
                     </div>
                     <div style={{
-                      fontSize:18, fontWeight:'var(--fw-bold)', marginTop:2,
+                      fontSize:'var(--fs-lg)', fontWeight:'var(--fw-bold)', marginTop:2,
                       color: isToday ? 'var(--p2)'
                         : isWeekend ? 'var(--text3)'
                         : 'var(--text)',
@@ -120,7 +120,7 @@ export default function PlanningGrid(props: Props) {
               <tr>
                 <td colSpan={8} style={{
                   textAlign:'center', padding:'48px',
-                  color:'var(--text3)', fontSize:14,
+                  color:'var(--text3)', fontSize:'var(--fs-body)',
                 }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}><Users size={16}/> {T.noEmp}</div>
                 </td>
@@ -145,7 +145,7 @@ export default function PlanningGrid(props: Props) {
                         ${emp.color},${emp.color}66)`,
                       display:'flex', alignItems:'center',
                       justifyContent:'center',
-                      fontSize:11, fontWeight:'var(--fw-bold)', color:'#fff',
+                      fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', color:'#fff',
                       flexShrink:0,
                       boxShadow:`0 2px 8px ${emp.color}35`,
                     }}>
@@ -153,13 +153,13 @@ export default function PlanningGrid(props: Props) {
                     </div>
                     <div>
                       <div style={{
-                        fontSize:12, fontWeight:'var(--fw-semibold)',
+                        fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
                         color:'var(--text)', whiteSpace:'nowrap',
                       }}>
                         {emp.name.split(' ')[0]}
                       </div>
                       <div style={{
-                        fontSize:11, color:'var(--text3)',
+                        fontSize:'var(--fs-caption)', color:'var(--text3)',
                         whiteSpace:'nowrap',
                       }}>{deptLabel(emp.dept, lang)}</div>
                     </div>
@@ -308,7 +308,7 @@ export default function PlanningGrid(props: Props) {
                                   <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>
                                   {s.hours && (
                                     <span style={{
-                                      fontSize:11, fontWeight:'var(--fw-bold)',
+                                      fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)',
                                       /* heures assombries/éclaircies vers le texte : contraste AA en Mode Soleil sans toucher la palette shifts */
                                       color:`color-mix(in srgb, ${s.color} 72%, var(--text))`,
                                       fontFamily:'var(--mono)',
@@ -347,7 +347,7 @@ export default function PlanningGrid(props: Props) {
                           </div>
                         ) : (
                           <span style={{
-                            fontSize:20, color:'var(--text4)',
+                            fontSize:'var(--fs-xl)', color:'var(--text4)',
                             opacity:.3, fontWeight:'var(--fw-regular)',
                           }}>+</span>
                         )}
@@ -372,16 +372,16 @@ export default function PlanningGrid(props: Props) {
         {(Object.entries(SHIFT_TYPES) as [ShiftType,any][]).map(([key,s])=>(
           <div key={key} style={{
             display:'flex', alignItems:'center', gap:4,
-            fontSize:11,
+            fontSize:'var(--fs-caption)',
           }}>
             <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>
             <span style={{color:s.color,fontWeight:'var(--fw-semibold)'}}>{shiftLabel(key, lang)}</span>
             {s.hours&&<span style={{
-              color:'var(--text3)',fontFamily:'var(--mono)',fontSize:11,
+              color:'var(--text3)',fontFamily:'var(--mono)',fontSize:'var(--fs-caption)',
             }}>{s.hours}</span>}
           </div>
         ))}
-        <div style={{marginLeft:'auto',fontSize:11,color:'var(--text3)', display:'flex', alignItems:'center', gap:4}}>
+        <div style={{marginLeft:'auto',fontSize:'var(--fs-caption)',color:'var(--text3)', display:'flex', alignItems:'center', gap:4}}>
           <MousePointer2 size={9}/> {T.clearTip}
         </div>
       </div>

@@ -43,7 +43,7 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
       {loading ? (
         <div style={{ padding:14 }}><Skeleton height={60} count={6} radius={8} /></div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign:'center', padding:48, color:'var(--text3)', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+        <div style={{ textAlign:'center', padding:48, color:'var(--text3)', fontSize:'var(--fs-body)', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
           <Users size={16}/> {lang==='en'?'No employees':lang==='es'?'Sin empleados':lang==='it'?'Nessun dipendente':'Aucun employé'}
         </div>
       ) : (
@@ -51,7 +51,7 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
           {/* En-têtes jours */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:'1px solid var(--border)', background:'var(--bg2)' }}>
             {DAY_LABELS.map((d,i)=>(
-              <div key={i} style={{ padding:'8px 6px', textAlign:'center', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', color: (i>=5)?'var(--text4)':'var(--text3)' }}>{d}</div>
+              <div key={i} style={{ padding:'8px 6px', textAlign:'center', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', color: (i>=5)?'var(--text4)':'var(--text3)' }}>{d}</div>
             ))}
           </div>
           {/* Grille 6×7 */}
@@ -91,7 +91,7 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
                   onMouseLeave={e=>{ (e.currentTarget as HTMLElement).style.background = isToday?'color-mix(in srgb, var(--p) 8%, transparent)':(isWeekend&&inMonth)?'var(--bg3)':'transparent' }}
                 >
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
-                    <span style={{ fontSize:13, fontWeight: isToday?'var(--fw-bold)':'var(--fw-semibold)', color: isToday?'var(--p2)':inMonth?'var(--text)':'var(--text3)', fontFamily:'var(--mono)' }}>{day.getDate()}</span>
+                    <span style={{ fontSize:'var(--fs-sm)', fontWeight: isToday?'var(--fw-bold)':'var(--fw-semibold)', color: isToday?'var(--p2)':inMonth?'var(--text)':'var(--text3)', fontFamily:'var(--mono)' }}>{day.getDate()}</span>
                     {isToday && <span style={{ width:5, height:5, borderRadius:'50%', background:'var(--p)', boxShadow:'0 0 6px var(--p2)' }}/>}
                   </div>
                   {/* mini-pills teintées par type présent (dot + compteur) — plus lisibles que les dots nus */}
@@ -108,13 +108,13 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
                             border:`1px solid color-mix(in srgb, ${s.color} 35%, transparent)`,
                           }}>
                             <span style={{ width:6, height:6, borderRadius:'50%', background:s.color, flexShrink:0 }}/>
-                            <span style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color:`color-mix(in srgb, ${s.color} 72%, var(--text))`, fontFamily:'var(--mono)', lineHeight:1.3 }}>{c}</span>
+                            <span style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', color:`color-mix(in srgb, ${s.color} 72%, var(--text))`, fontFamily:'var(--mono)', lineHeight:1.3 }}>{c}</span>
                           </div>
                         )
                       })}
                     </div>
                   ) : leaveCount>0 ? null : (
-                    inMonth && <span style={{ fontSize:11, color:'var(--text4)', opacity:.4 }}>—</span>
+                    inMonth && <span style={{ fontSize:'var(--fs-caption)', color:'var(--text4)', opacity:.4 }}>—</span>
                   )}
                 </div>
               )
@@ -123,7 +123,7 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
           {/* Légende */}
           <div style={{ padding:'10px 16px', borderTop:'1px solid var(--border)', background:'var(--bg3)', display:'flex', gap:14, flexWrap:'wrap', alignItems:'center' }}>
             {(Object.entries(SHIFT_TYPES) as [ShiftType,any][]).map(([key,s])=>(
-              <div key={key} style={{ display:'flex', alignItems:'center', gap:4, fontSize:11 }}>
+              <div key={key} style={{ display:'flex', alignItems:'center', gap:4, fontSize:'var(--fs-caption)' }}>
                 <span style={{ width:8, height:8, borderRadius:'50%', background:s.color }}/>
                 <span style={{ color:s.color, fontWeight:'var(--fw-semibold)' }}>{shiftLabel(key, lang)}</span>
               </div>

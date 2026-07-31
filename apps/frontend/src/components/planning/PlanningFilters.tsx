@@ -22,7 +22,7 @@ export default function PlanningFilters({ lang, filterDept, setFilterDept, filte
     }}>
       <select className="input"
         aria-label={T.filterDeptAria}
-        style={{width:'auto',minWidth:180,height:36,fontSize:12}}
+        style={{width:'auto',minWidth:180,height:36,fontSize:'var(--fs-label)'}}
         value={filterDept}
         onChange={e=>setFilterDept(e.target.value)}>
         <option value="all">{T.allDepts}</option>
@@ -30,7 +30,7 @@ export default function PlanningFilters({ lang, filterDept, setFilterDept, filte
       </select>
       <select className="input"
         aria-label={T.filterStatusAria}
-        style={{width:'auto',minWidth:180,height:36,fontSize:12}}
+        style={{width:'auto',minWidth:180,height:36,fontSize:'var(--fs-label)'}}
         value={filterStatus}
         onChange={e=>setFilterStatus(e.target.value as any)}>
         <option value="all">{T.allStatus}</option>
@@ -39,7 +39,7 @@ export default function PlanningFilters({ lang, filterDept, setFilterDept, filte
         ))}
       </select>
       <div style={{
-        marginLeft:'auto', fontSize:11,
+        marginLeft:'auto', fontSize:'var(--fs-caption)',
         color:'var(--text3)', fontStyle:'italic',
       }}>
         <Info size={11}/> {T.assignTip} · {T.clearTip}

@@ -38,7 +38,7 @@ export default function InviteUserModal({ form, setForm, showPwd, setShowPwd, on
           {/* Ligne 1 : Nom complet + Rôle */}
           <ResponsiveGrid min={160} gap={12}>
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+              <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
                 {i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')}
               </label>
               <input
@@ -49,7 +49,7 @@ export default function InviteUserModal({ form, setForm, showPwd, setShowPwd, on
                 onChange={e => setForm(f => ({...f, name:e.target.value}))} />
             </div>
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+              <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
                 {i('Rôle', 'Role', 'Rol', 'Ruolo')}
               </label>
               <select
@@ -66,7 +66,7 @@ export default function InviteUserModal({ form, setForm, showPwd, setShowPwd, on
 
           {/* Ligne 2 : Email (pleine largeur, icône Mail intégrée) */}
           <div>
-            <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+            <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
               Email
             </label>
             <div style={{ position:'relative' }}>
@@ -85,7 +85,7 @@ export default function InviteUserModal({ form, setForm, showPwd, setShowPwd, on
           {/* Ligne 3 : Mot de passe + Confirmer (icônes Lock/Eye intégrées) */}
           <ResponsiveGrid min={160} gap={12}>
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+              <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
                 {i('Mot de passe', 'Password', 'Contraseña', 'Password')}
               </label>
               <div style={{ position:'relative' }}>
@@ -111,7 +111,7 @@ export default function InviteUserModal({ form, setForm, showPwd, setShowPwd, on
               </div>
             </div>
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+              <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
                 {i('Confirmer', 'Confirm', 'Confirmar', 'Conferma')}
               </label>
               <div style={{ position:'relative' }}>
@@ -135,11 +135,11 @@ export default function InviteUserModal({ form, setForm, showPwd, setShowPwd, on
               background:`${ROLE_CONFIG[form.role].color}10`,
               border:`1px solid ${ROLE_CONFIG[form.role].color}25`,
             }}>
-              <p style={{ fontSize:11, fontWeight:'var(--fw-semibold)', marginBottom:6, color:ROLE_CONFIG[form.role].color }}>
+              <p style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', marginBottom:6, color:ROLE_CONFIG[form.role].color }}>
                 {t('users_permissions')} — {ROLE_LABELS[form.role]}
               </p>
               <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
-                {PERMISSIONS[form.role].map(p => <span key={p} className="badge badge-teal" style={{ fontSize:11 }}>{moduleLabel(p, lang)}</span>)}
+                {PERMISSIONS[form.role].map(p => <span key={p} className="badge badge-teal" style={{ fontSize:'var(--fs-caption)' }}>{moduleLabel(p, lang)}</span>)}
               </div>
             </div>
           )}

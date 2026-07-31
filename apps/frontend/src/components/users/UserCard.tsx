@@ -63,7 +63,7 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
               width:48, height:48, borderRadius:14,
               background:avatarColor,
               display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:14, fontWeight:'var(--fw-semibold)', color:'#fff',
+              fontSize:'var(--fs-body)', fontWeight:'var(--fw-semibold)', color:'#fff',
               boxShadow:`0 6px 18px ${avatarColor}44`,
             }}>
               {initials(user.name)}
@@ -80,19 +80,19 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
 
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{
-              fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--text)',
+              fontSize:'var(--fs-sm)', fontWeight:'var(--fw-bold)', color:'var(--text)',
               marginBottom:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
             }}>
               {user.name}
             </div>
             <div style={{
-              fontSize:11, color:'var(--text3)', marginBottom:6,
+              fontSize:'var(--fs-caption)', color:'var(--text3)', marginBottom:6,
               overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
             }}>
               {user.email}
             </div>
             <span style={{
-              fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.5px',
+              fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.5px',
               padding:'3px 9px', borderRadius:99,
               background:`${cfg.color}15`, color:cfg.color,
               border:`1px solid ${cfg.color}33`,
@@ -109,7 +109,7 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
               onClick={onToggle2FA}
               style={{
                 padding:'4px 8px', borderRadius:8, border:'none', cursor:'pointer',
-                fontFamily:'var(--font)', fontSize:11, fontWeight:'var(--fw-bold)',
+                fontFamily:'var(--font)', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)',
                 background: user.twoFA ? 'rgba(16,185,129,.12)' : 'var(--bg3)',
                 color: user.twoFA ? 'var(--acc2)' : 'var(--text3)',
                 flexShrink:0,
@@ -122,7 +122,7 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
           ) : (
             <span style={{
               padding:'4px 8px', borderRadius:8,
-              fontFamily:'var(--font)', fontSize:11, fontWeight:'var(--fw-bold)',
+              fontFamily:'var(--font)', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)',
               background: user.twoFA ? 'rgba(16,185,129,.12)' : 'var(--bg3)',
               color: user.twoFA ? 'var(--acc2)' : 'var(--text3)',
               flexShrink:0,
@@ -138,10 +138,10 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
             background:'var(--bg3)', border:'1px solid var(--border)',
             borderRadius:10, padding:'8px 10px',
           }}>
-            <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>
+            <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>
               {lang === 'en' ? 'Last login' : lang === 'es' ? 'Último acceso' : lang === 'it' ? 'Ultimo accesso' : 'Connexion'}
             </div>
-            <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color: online ? 'var(--acc2)' : 'var(--text2)' }}>
+            <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', color: online ? 'var(--acc2)' : 'var(--text2)' }}>
               {online
                 ? (lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne')
                 : (user.lastLogin ? fmtDate(user.lastLogin) : i('Jamais', 'Never', 'Nunca', 'Mai'))}
@@ -151,10 +151,10 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
             background:'var(--bg3)', border:'1px solid var(--border)',
             borderRadius:10, padding:'8px 10px',
           }}>
-            <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>
+            <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>
               {lang === 'en' ? 'Member since' : lang === 'es' ? 'Miembro desde' : lang === 'it' ? 'Membro dal' : 'Membre depuis'}
             </div>
-            <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text2)' }}>
+            <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', color:'var(--text2)' }}>
               {fmtDate(user.createdAt) || '—'}
             </div>
           </div>
@@ -172,7 +172,7 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
               style={{
                 flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5,
                 padding:'6px', borderRadius:9, border:'none', cursor:'pointer',
-                fontFamily:'var(--font)', fontSize:11, fontWeight:'var(--fw-semibold)',
+                fontFamily:'var(--font)', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)',
                 background: user.active ? 'rgba(239,68,68,.1)' : 'rgba(16,185,129,.1)',
                 color: user.active ? 'var(--danger)' : 'var(--acc2)',
               }}

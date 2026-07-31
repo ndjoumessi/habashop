@@ -46,7 +46,7 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
                   <span className="badge badge-red">{tr('Dépassé !','Over budget!','¡Excedido!','Superato!')}</span>
                 )}
               </div>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8, fontSize:12 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8, fontSize:'var(--fs-label)' }}>
                 <span style={{ color:'var(--text3)' }}>{tr('Budget','Budget','Presupuesto','Budget')} : <strong style={{ color:'var(--text2)' }}>{fmt(budget)}</strong></span>
                 <span style={{ color:'var(--text3)' }}>{tr('Réel','Actual','Real','Reale')} : <strong style={{ color: over ? 'var(--danger)' : 'var(--text)' }}>{fmt(spent)}</strong></span>
               </div>
@@ -57,7 +57,7 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
                   borderRadius:99, transition:'width .4s',
                 }} />
               </div>
-              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:'var(--fs-label)' }}>
                 <span style={{ fontWeight:'var(--fw-semibold)', color: barColor, fontFamily:'var(--mono)' }}>{pct} %</span>
                 <span style={{ color: over ? 'var(--danger)' : 'var(--acc2)', fontWeight:'var(--fw-regular)' }}>
                   {over ? `${tr('Dépassé de','Over by','Excedido en','Superato di')} ${fmt(spent - budget)}` : `${tr('Restant','Remaining','Restante','Rimanente')} : ${fmt(budget - spent)}`}
@@ -82,10 +82,10 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
           padding:'12px 14px', marginBottom:12,
           background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:8,
         }}>
-          <span style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>
+          <span style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-bold)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>
             {tr('Total dépensé','Total spent','Total gastado','Totale speso')}
           </span>
-          <span style={{ fontSize:24, fontWeight:'var(--fw-bold)', color:'var(--text)', fontFamily:'var(--mono)', letterSpacing:'-.5px' }}>
+          <span style={{ fontSize:'var(--fs-display)', fontWeight:'var(--fw-bold)', color:'var(--text)', fontFamily:'var(--mono)', letterSpacing:'-.5px' }}>
             {fmt(Object.values(catSpent).reduce((s,v) => s+v, 0))}
           </span>
         </div>
@@ -95,8 +95,8 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
           { label:tr("Taux d'utilisation",'Usage rate','Tasa de uso','Tasso di utilizzo'),    value:`${Math.round(Object.values(catSpent).reduce((s,v)=>s+v,0)/totalBudget*100)} %`, color: 'var(--p2)' },
         ].map(r => (
           <div key={r.label} style={{ display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
-            <span style={{ fontSize:13, color:'var(--text3)' }}>{r.label}</span>
-            <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:r.color, fontFamily:'var(--mono)' }}>
+            <span style={{ fontSize:'var(--fs-sm)', color:'var(--text3)' }}>{r.label}</span>
+            <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:r.color, fontFamily:'var(--mono)' }}>
               {(r as { prefix?: string }).prefix ?? ''}{r.value}
             </span>
           </div>

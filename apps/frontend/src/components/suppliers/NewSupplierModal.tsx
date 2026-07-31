@@ -85,7 +85,7 @@ export default function NewSupplierModal({ form, setForm, onClose, onCreate }: P
                 const color = STATUS_COLOR[s]
                 return (
                   <button key={s} type="button" onClick={() => setForm(p => ({ ...p, status: s }))}
-                    style={{ flex: 1, padding: '8px 6px', borderRadius: 10, border: `1px solid ${active ? color + '55' : 'var(--border)'}`, background: active ? color + '18' : 'transparent', color: active ? color : 'var(--text3)', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 12, fontWeight: 'var(--fw-semibold)', transition: 'all .15s' }}>
+                    style={{ flex: 1, padding: '8px 6px', borderRadius: 10, border: `1px solid ${active ? color + '55' : 'var(--border)'}`, background: active ? color + '18' : 'transparent', color: active ? color : 'var(--text3)', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', transition: 'all .15s' }}>
                     {statusLabel(s, lang)}
                   </button>
                 )

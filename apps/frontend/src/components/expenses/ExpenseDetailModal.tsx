@@ -32,10 +32,10 @@ export default function ExpenseDetailModal(props: Props) {
 
   const vf = (label: string, value: string | number, mono = false) => (
     <div>
-      <label style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', display:'block', marginBottom:5 }}>{label}</label>
+      <label style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', display:'block', marginBottom:5 }}>{label}</label>
       {expEditMode ? null : (
-        <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text2)', minHeight:40, display:'flex', alignItems:'center', fontFamily: mono ? 'var(--mono)' : 'var(--font)' }}>
-          {value || <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{lang === 'en' ? 'Not set' : lang === 'es' ? 'No indicado' : lang === 'it' ? 'Non indicato' : 'Non renseigné'}</span>}
+        <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', color:'var(--text2)', minHeight:40, display:'flex', alignItems:'center', fontFamily: mono ? 'var(--mono)' : 'var(--font)' }}>
+          {value || <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:'var(--fs-label)' }}>{lang === 'en' ? 'Not set' : lang === 'es' ? 'No indicado' : lang === 'it' ? 'Non indicato' : 'Non renseigné'}</span>}
         </div>
       )}
     </div>
@@ -49,7 +49,7 @@ export default function ExpenseDetailModal(props: Props) {
       onClick={e => e.target===e.currentTarget && onClose()}>
       <div ref={boxRef} className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:500 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-          <span style={{ fontWeight:'var(--fw-bold)', fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}>
+          <span style={{ fontWeight:'var(--fw-bold)', fontSize:'var(--fs-md)', color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}>
             {expEditMode ? <><Pencil size={15}/> {lang === 'en' ? 'Edit expense' : lang === 'es' ? 'Editar el gasto' : lang === 'it' ? 'Modifica la spesa' : 'Modifier la dépense'}</> : <><FileText size={15}/> {lang === 'en' ? 'Expense detail' : lang === 'es' ? 'Detalle del gasto' : lang === 'it' ? 'Dettaglio spesa' : 'Détail dépense'}</>}
           </span>
           <IconButton label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} icon={<X size={15} />} onClick={onClose} variant="surface" />
@@ -79,8 +79,8 @@ export default function ExpenseDetailModal(props: Props) {
               {expEditMode && <select className="input" value={editExpForm.vat} onChange={e => setEditExpForm(f => ({...f, vat:+e.target.value}))} style={{ width:'100%', boxSizing:'border-box' }}>{VAT_RATES.map(v => <option key={v} value={v}>{v} %</option>)}</select>}
             </div>
             <div>
-              <label style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', display:'block', marginBottom:5 }}>TTC</label>
-              <div style={{ padding:'9px 13px', border:'1px solid var(--border)', borderRadius:10, fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--acc2)', fontFamily:'var(--mono)', minHeight:40, display:'flex', alignItems:'center' }}>{fmt(editExpTTC)}</div>
+              <label style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', display:'block', marginBottom:5 }}>TTC</label>
+              <div style={{ padding:'9px 13px', border:'1px solid var(--border)', borderRadius:10, fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--acc2)', fontFamily:'var(--mono)', minHeight:40, display:'flex', alignItems:'center' }}>{fmt(editExpTTC)}</div>
             </div>
           </div>
           <ResponsiveGrid min={160} gap={10}>
@@ -91,8 +91,8 @@ export default function ExpenseDetailModal(props: Props) {
             <div style={{ display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
               {!expEditMode ? (
                 <div>
-                  <label style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', display:'block', marginBottom:5 }}>{lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}</label>
-                  <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:13, fontWeight:'var(--fw-regular)', color: editExpForm.recurrent ? 'var(--acc2)' : 'var(--text3)', minHeight:40, display:'flex', alignItems:'center' }}>
+                  <label style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', display:'block', marginBottom:5 }}>{lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}</label>
+                  <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', color: editExpForm.recurrent ? 'var(--acc2)' : 'var(--text3)', minHeight:40, display:'flex', alignItems:'center' }}>
                     {editExpForm.recurrent ? `✅ ${lang === 'en' ? 'Yes' : lang === 'es' ? 'Sí' : lang === 'it' ? 'Sì' : 'Oui'}` : `— ${lang === 'en' ? 'No' : lang === 'es' ? 'No' : lang === 'it' ? 'No' : 'Non'}`}
                   </div>
                 </div>
@@ -105,7 +105,7 @@ export default function ExpenseDetailModal(props: Props) {
                     {/* Pattern POSModals : piste var(--bg5) OFF / couleur ON ; knob #fff + bordure (visible sur piste claire en thème Soleil) */}
                     <div style={{ position:'absolute', top:1, left: editExpForm.recurrent ? 21 : 1, width:20, height:20, borderRadius:'50%', background:'#fff', border:'1px solid var(--border)', boxSizing:'border-box', transition:'left .2s', boxShadow:'0 2px 4px rgba(0,0,0,.2)' }} />
                   </button>
-                  <span style={{ fontSize:13, color:'var(--text2)' }}>{lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}</span>
+                  <span style={{ fontSize:'var(--fs-sm)', color:'var(--text2)' }}>{lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}</span>
                 </label>
               )}
             </div>

@@ -37,7 +37,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
           {/* Ligne 1 : Nom complet + Rôle */}
           <ResponsiveGrid min={160} gap={12}>
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+              <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
                 {i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')}
               </label>
               <input
@@ -47,7 +47,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
                 onChange={e => setEditForm(f => ({...f, name:e.target.value}))} />
             </div>
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+              <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
                 {i('Rôle', 'Role', 'Rol', 'Ruolo')}
               </label>
               <select
@@ -64,7 +64,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
 
           {/* Ligne 2 : Email (icône Mail intégrée) */}
           <div>
-            <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+            <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
               Email
             </label>
             <div style={{ position:'relative' }}>
@@ -91,10 +91,10 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
               cursor:'pointer', transition:'background .15s',
             }}>
             <div>
-              <div style={{ fontWeight:'var(--fw-regular)', fontSize:13, color:'var(--text)' }}>
+              <div style={{ fontWeight:'var(--fw-regular)', fontSize:'var(--fs-sm)', color:'var(--text)' }}>
                 {i('Compte actif', 'Active account', 'Cuenta activa', 'Account attivo')}
               </div>
-              <div style={{ fontSize:11, color:'var(--text2)' }}>
+              <div style={{ fontSize:'var(--fs-caption)', color:'var(--text2)' }}>
                 {i("L'utilisateur peut se connecter", 'The user can sign in', 'El usuario puede iniciar sesión', "L'utente può accedere")}
               </div>
             </div>
@@ -123,10 +123,10 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
               cursor:'pointer', transition:'background .15s',
             }}>
             <div>
-              <div style={{ fontWeight:'var(--fw-regular)', fontSize:13, color:'var(--text)' }}>
+              <div style={{ fontWeight:'var(--fw-regular)', fontSize:'var(--fs-sm)', color:'var(--text)' }}>
                 {i('Authentification 2FA', 'Two-factor authentication', 'Autenticación 2FA', 'Autenticazione 2FA')}
               </div>
-              <div style={{ fontSize:11, color:'var(--text2)' }}>
+              <div style={{ fontSize:'var(--fs-caption)', color:'var(--text2)' }}>
                 {i('Sécurité renforcée à la connexion', 'Stronger sign-in security', 'Seguridad reforzada al iniciar sesión', 'Sicurezza rafforzata al login')}
               </div>
             </div>
@@ -154,11 +154,11 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
               background:`${ROLE_CONFIG[editForm.role].color}10`,
               border:`1px solid ${ROLE_CONFIG[editForm.role].color}25`,
             }}>
-              <p style={{ fontSize:11, fontWeight:'var(--fw-semibold)', marginBottom:6, color:ROLE_CONFIG[editForm.role].color }}>
+              <p style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', marginBottom:6, color:ROLE_CONFIG[editForm.role].color }}>
                 {t('users_permissions')} — {ROLE_LABELS[editForm.role]}
               </p>
               <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
-                {PERMISSIONS[editForm.role].map(p => <span key={p} className="badge badge-teal" style={{ fontSize:11 }}>{moduleLabel(p, lang)}</span>)}
+                {PERMISSIONS[editForm.role].map(p => <span key={p} className="badge badge-teal" style={{ fontSize:'var(--fs-caption)' }}>{moduleLabel(p, lang)}</span>)}
               </div>
             </div>
           )}

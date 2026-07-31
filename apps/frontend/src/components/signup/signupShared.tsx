@@ -238,7 +238,7 @@ export const inputBase: React.CSSProperties = {
     background: 'rgba(255,255,255,.03)',
     border: `1.5px solid rgba(139,92,246,.2)`,
     borderRadius: 12,
-    fontSize: 14,
+    fontSize: 'var(--fs-body)',
     fontFamily: FONT,
     color: D.text,
     outline: 'none',

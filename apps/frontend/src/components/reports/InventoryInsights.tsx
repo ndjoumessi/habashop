@@ -44,16 +44,16 @@ export default function InventoryInsights({ fmt, lang }: Props) {
   )
 
   if (loading) {
-    return <div className="panel" style={{ color: 'var(--text3)', fontSize: 13 }}>{i('Chargement des rapports…', 'Loading reports…', 'Cargando informes…', 'Caricamento report…')}</div>
+    return <div className="panel" style={{ color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>{i('Chargement des rapports…', 'Loading reports…', 'Cargando informes…', 'Caricamento report…')}</div>
   }
   if (error || !data) {
-    return <div className="panel" style={{ color: 'var(--danger)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+    return <div className="panel" style={{ color: 'var(--danger)', fontSize: 'var(--fs-sm)', display: 'flex', alignItems: 'center', gap: 8 }}>
       <AlertTriangle size={15} /> {i('Impossible de charger les rapports.', 'Could not load reports.', 'No se pudieron cargar los informes.', 'Impossibile caricare i report.')}
     </div>
   }
 
   const emptyRow = (msg: string) => (
-    <div style={{ textAlign: 'center', padding: '28px 12px', color: 'var(--text3)', fontSize: 13 }}>{msg}</div>
+    <div style={{ textAlign: 'center', padding: '28px 12px', color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>{msg}</div>
   )
 
   return (
@@ -80,12 +80,12 @@ export default function InventoryInsights({ fmt, lang }: Props) {
                     <tr key={r.id}>
                       <td className="td-bold">
                         {r.name}
-                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{stockCatLabel(r.category, lang)}</div>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{stockCatLabel(r.category, lang)}</div>
                       </td>
                       <td className="td-num">
                         <span style={{
                           display: 'inline-flex', alignItems: 'center', padding: '3px 9px',
-                          borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
+                          borderRadius: 'var(--r-full)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)',
                           fontFamily: 'var(--mono)',
                           background: r.stock === 0 ? 'var(--c-red-bg)' : 'var(--c-orange-bg)',
                           border: r.stock === 0 ? '1px solid var(--c-red-border)' : '1px solid var(--c-orange-border)',
@@ -106,7 +106,7 @@ export default function InventoryInsights({ fmt, lang }: Props) {
                   ))}
                 </tbody>
               </table>
-              <div style={{ fontSize: 11, color: 'var(--text4)', marginTop: 8, fontStyle: 'italic' }}>
+              <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', marginTop: 8, fontStyle: 'italic' }}>
                 {i('« ≈ » = quantité indicative pour couvrir 30 jours à la vélocité actuelle.', '“≈” = indicative quantity to cover 30 days at current velocity.', '«≈» = cantidad indicativa para cubrir 30 días a la velocidad actual.', '«≈» = quantità indicativa per coprire 30 giorni alla velocità attuale.')}
               </div>
             </div>
@@ -134,9 +134,9 @@ export default function InventoryInsights({ fmt, lang }: Props) {
                     <tr key={d.id}>
                       <td className="td-bold">
                         {d.name}
-                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{stockCatLabel(d.category, lang)}</div>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{stockCatLabel(d.category, lang)}</div>
                       </td>
-                      <td style={{ color: 'var(--text3)', fontSize: 12 }}>
+                      <td style={{ color: 'var(--text3)', fontSize: 'var(--fs-label)' }}>
                         {d.lastSale
                           ? <>{new Date(d.lastSale).toLocaleDateString(dloc, { day: '2-digit', month: 'short', year: 'numeric' })}{d.daysSinceSale != null && <span style={{ color: 'var(--text4)' }}> · {i('il y a', '', 'hace', 'da')} {d.daysSinceSale} {i('j', 'd ago', 'd', 'g')}</span>}</>
                           : <span style={{ fontStyle: 'italic', color: 'var(--text4)' }}>{i('Jamais vendu', 'Never sold', 'Nunca vendido', 'Mai venduto')}</span>}
@@ -144,7 +144,7 @@ export default function InventoryInsights({ fmt, lang }: Props) {
                       <td className="td-num">
                         <span style={{
                           display: 'inline-flex', alignItems: 'center', padding: '3px 9px',
-                          borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
+                          borderRadius: 'var(--r-full)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)',
                           fontFamily: 'var(--mono)',
                           background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)',
                         }}>{d.stock}</span>
@@ -154,7 +154,7 @@ export default function InventoryInsights({ fmt, lang }: Props) {
                   ))}
                 </tbody>
               </table>
-              <div style={{ fontSize: 11, color: 'var(--text4)', marginTop: 8, fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', marginTop: 8, fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 5 }}>
                 <Boxes size={12} /> {i(`Aucune vente depuis ${data.dormantDays} jours · valeur = stock × coût d'achat.`, `No sale in ${data.dormantDays} days · value = stock × purchase cost.`, `Sin ventas desde hace ${data.dormantDays} días · valor = stock × costo de compra.`, `Nessuna vendita da ${data.dormantDays} giorni · valore = scorta × costo d'acquisto.`)}
               </div>
             </div>

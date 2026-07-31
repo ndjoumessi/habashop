@@ -42,15 +42,15 @@ export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd,
                   <Check size={14} strokeWidth={3}/>
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: D.acc, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 800, color: D.acc, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {form.shopName}
                   </div>
-                  <div style={{ fontSize: 11, color: D.text3, fontFamily: MONO, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: D.text3, fontFamily: MONO, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {form.email} · {form.phone}
                   </div>
                 </div>
                 <button type="button" onClick={onBack}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: D.text3, fontSize: 11, fontWeight: 700, fontFamily: FONT, flexShrink: 0 }}>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: D.text3, fontSize: 'var(--fs-caption)', fontWeight: 700, fontFamily: FONT, flexShrink: 0 }}>
                   {tx.back}
                 </button>
               </div>
@@ -140,7 +140,7 @@ export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd,
                 <input type="checkbox" checked={form.acceptTerms}
                   onChange={e => setForm(f => ({ ...f, acceptTerms: e.target.checked }))}
                   style={{ display: 'none' }}/>
-                <span style={{ fontSize: 12, color: D.text2, lineHeight: 1.5 }}>
+                <span style={{ fontSize: 'var(--fs-label)', color: D.text2, lineHeight: 1.5 }}>
                   {tx.terms_pre}
                   <a href="#" style={{ color: D.p3, textDecoration: 'underline' }}>{tx.terms_a}</a>
                   {tx.terms_and}
@@ -150,7 +150,7 @@ export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd,
 
               {/* Error */}
               {error && (
-                <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(255,59,92,.1)', border: '1px solid rgba(255,59,92,.25)', color: D.danger, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(255,59,92,.1)', border: '1px solid rgba(255,59,92,.25)', color: D.danger, fontSize: 'var(--fs-sm)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <AlertCircle size={14}/>{error}
                 </div>
               )}
@@ -163,7 +163,7 @@ export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd,
                   background: step2Valid && !loading ? `linear-gradient(135deg,${D.p},${D.p2})` : 'rgba(255,255,255,.05)',
                   border: 'none', borderRadius: 12,
                   color: step2Valid && !loading ? '#fff' : D.text4,
-                  fontSize: 14, fontWeight: 800,
+                  fontSize: 'var(--fs-body)', fontWeight: 800,
                   cursor: step2Valid && !loading ? 'pointer' : 'not-allowed',
                   fontFamily: FONT,
                   boxShadow: step2Valid && !loading ? '0 6px 20px rgba(124,58,237,.4)' : 'none',
@@ -182,7 +182,7 @@ export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd,
                 style={{
                   width: '100%', padding: '10px',
                   background: 'transparent', border: 'none',
-                  color: D.text3, fontSize: 13, fontWeight: 700,
+                  color: D.text3, fontSize: 'var(--fs-sm)', fontWeight: 700,
                   cursor: 'pointer', fontFamily: FONT,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}>

@@ -50,7 +50,7 @@ export function CatPill({ cat, lang }: { cat: Category; lang: string }) {
   return (
     <span style={{
       display:'inline-flex', alignItems:'center', gap:4, padding:'3px 9px',
-      borderRadius:'var(--r-full)', fontSize:12, fontWeight:'var(--fw-semibold)',
+      borderRadius:'var(--r-full)', fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
       background:s.bg, color:s.color,
     }}>{s.icon} {catLabel(cat, lang)}</span>
   )

@@ -40,7 +40,7 @@ export const STATUS_PILL: Record<OrderStatus, { bg: string; border: string; text
 }
 export const PILL_BASE: CSSProperties = {
   display: 'inline-flex', alignItems: 'center', gap: 5, width: 'fit-content',
-  padding: '3px 9px', borderRadius: 'var(--r-full)', fontSize: 12,
+  padding: '3px 9px', borderRadius: 'var(--r-full)', fontSize: 'var(--fs-label)',
   fontWeight: 'var(--fw-semibold)' as any, lineHeight: 1.5, whiteSpace: 'nowrap',
 }
 export function OrderStatusPill({ status, lang }: { status: OrderStatus; lang: string }) {

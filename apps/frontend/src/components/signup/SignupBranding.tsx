@@ -51,7 +51,7 @@ export default function SignupBranding({ tx, i, navigate }: Props) {
             {tx.brand_title.split(' ').slice(0, -1).join(' ')}{' '}
             <span className="gold-text">HabaShop</span>
           </h1>
-          <p style={{ fontSize: 14, color: D.text2, lineHeight: 1.7, marginBottom: 28 }}>
+          <p style={{ fontSize: 'var(--fs-body)', color: D.text2, lineHeight: 1.7, marginBottom: 28 }}>
             {tx.brand_sub}
           </p>
 
@@ -63,7 +63,7 @@ export default function SignupBranding({ tx, i, navigate }: Props) {
             ].map(s => (
               <div key={s.label} style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, marginBottom: 6 }} className="gold-text">{s.value}</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: D.text2 }}>{s.label}</div>
+                <div style={{ fontSize: 'var(--fs-label)', fontWeight: 600, color: D.text2 }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -104,7 +104,7 @@ export default function SignupBranding({ tx, i, navigate }: Props) {
           }}>
             <div style={{ display: 'flex', gap: 2, marginBottom: 10, color: D.gold }}>
               {[0, 1, 2, 3, 4].map(i => (
-                <span key={i} style={{ fontSize: 14, lineHeight: 1 }}>★</span>
+                <span key={i} style={{ fontSize: 'var(--fs-body)', lineHeight: 1 }}>★</span>
               ))}
             </div>
             <p style={{ fontSize: 13.5, color: D.text, lineHeight: 1.6, marginBottom: 14, fontStyle: 'italic' }}>
@@ -114,11 +114,11 @@ export default function SignupBranding({ tx, i, navigate }: Props) {
               <span style={{
                 width: 38, height: 38, borderRadius: '50%',
                 background: `linear-gradient(135deg,${D.p},${D.p2})`,
-                color: '#fff', fontSize: 13, fontWeight: 800,
+                color: '#fff', fontSize: 'var(--fs-sm)', fontWeight: 800,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}>AK</span>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: D.text }}>Aminata Koné</div>
+                <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 800, color: D.text }}>Aminata Koné</div>
                 <div style={{ fontSize: 11.5, color: D.text2 }}>Superette Dakar</div>
               </div>
             </div>

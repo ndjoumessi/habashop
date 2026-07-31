@@ -69,14 +69,14 @@ export default function SecurityEvents() {
 
       <div style={{ padding: 16 }}>
         {loading ? (
-          <p style={{ color: 'var(--text3)', fontSize: 13 }}>
+          <p style={{ color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>
             {i('Chargement…', 'Loading…', 'Cargando…', 'Caricamento…')}
           </p>
         ) : failed ? (
           // ── ÉCHEC : dit qu'on ne sait pas. Ne JAMAIS rendre une liste vide ici. ──
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: 12, borderRadius: 'var(--r-md)', background: 'color-mix(in srgb, var(--warn) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--warn) 30%, transparent)' }}>
             <AlertTriangle size={16} style={{ color: 'var(--warn)', flexShrink: 0, marginTop: 2 }} />
-            <div style={{ fontSize: 13 }}>
+            <div style={{ fontSize: 'var(--fs-sm)' }}>
               <div style={{ fontWeight: 'var(--fw-semibold)' }}>
                 {i('Lecture impossible', 'Cannot read', 'Lectura imposible', 'Lettura impossibile')}
               </div>
@@ -92,7 +92,7 @@ export default function SecurityEvents() {
           </div>
         ) : (events?.length ?? 0) === 0 ? (
           // ── VIDE RÉEL : état de succès nommé, la section ne disparaît jamais. ──
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--text3)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 'var(--fs-sm)', color: 'var(--text3)' }}>
             <ShieldCheck size={16} style={{ color: 'var(--acc2)', flexShrink: 0 }} />
             {i(
               'Aucun événement de sécurité enregistré.',
@@ -106,12 +106,12 @@ export default function SecurityEvents() {
             {events!.map(e => (
               <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)' }}>{actionLabel(e.action, lang)}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)' }}>{actionLabel(e.action, lang)}</div>
+                  <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {e.userNameSnapshot} · {e.userEmailSnapshot}
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text3)', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', whiteSpace: 'nowrap', textAlign: 'right' }}>
                   {new Date(e.createdAt).toLocaleString(lang)}
                   {e.ip ? <div style={{ fontFamily: 'var(--font-mono)' }}>{e.ip}</div> : null}
                 </div>

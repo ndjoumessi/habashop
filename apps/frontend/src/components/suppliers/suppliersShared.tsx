@@ -84,7 +84,7 @@ export const STATUS_CFG: Record<SupplierStatus, { cls: string }> = {
 /* ── Pills sémantiques (langage visuel POS/Stock) — la valeur FR reste la clé ── */
 export const PILL_BASE: CSSProperties = {
   display: 'inline-flex', alignItems: 'center', gap: 5, width: 'fit-content',
-  padding: '3px 9px', borderRadius: 'var(--r-full)', fontSize: 12,
+  padding: '3px 9px', borderRadius: 'var(--r-full)', fontSize: 'var(--fs-label)',
   fontWeight: 'var(--fw-semibold)' as any, lineHeight: 1.5, whiteSpace: 'nowrap',
 }
 export const STATUS_PILL: Record<SupplierStatus, { bg: string; border: string; text: string }> = {
