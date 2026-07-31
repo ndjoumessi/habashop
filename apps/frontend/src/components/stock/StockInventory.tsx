@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState, type Dispatch, type SetStateAction } from 'react'
 import { Search, Download, Plus, Tag, Package, Eye, Trash2, LayoutGrid, AlignJustify, Camera, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { t, useAppStore, convertFromXOF } from '@/stores/appStore'
+import { t, useAppStore, convertFromXOF, isThemeLight } from '@/stores/appStore'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
 import { hydratePricesFromApi } from '@/lib/productCurrency'
 import { normalizeBarcode } from '@/lib/barcode'
@@ -9,7 +9,7 @@ import Pagination from '@/components/ui/Pagination'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import FilterSelect, { type FilterOption } from '@/components/ui/FilterSelect'
 import { normCat } from '@/utils/normCat'
-import { type ProductItem, type StockForm, statusOf, stockCatLabel, isActivePromo } from '@/components/stock/stockShared'
+import { type ProductItem, type StockForm, statusOf, stockCatLabel, isActivePromo, productMargin } from '@/components/stock/stockShared'
 // Chargé à la demande (@zxing) — uniquement à l'ouverture du scanner de recherche.
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 
@@ -49,6 +49,14 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const currency = useAppStore(s => s.currency)
+  // Couleur sémantique de la marge : SOMBRE seulement. MESURÉ sur fond de carte — en thème
+  // CLAIR, --warn rend 1,58:1, --danger 2,99:1 et --acc2 3,77:1, tous sous AA, sur un chiffre
+  // d'ARGENT. Aucune teinte de la palette ne passe sur blanc et un color-mix vers --text
+  // plafonne à 4,19:1 avant de dénaturer la teinte (mesuré) : la cause est l'absence de
+  // variantes claires (#193 point 2). En clair on retombe donc sur --text, lisible partout ;
+  // le % chiffré porte l'information, la couleur ne fait que la renforcer (WCAG 1.4.1).
+  // Quand #193 aura donné leurs variantes claires aux tokens, retirer la garde suffira.
+  const themeIsLight = isThemeLight(useAppStore(s => s.theme))
   // Scan pour la recherche : remplit la barre avec le code canonicalisé (filtre
   // seulement, pas d'ouverture de fiche — geste d'inventaire en série).
   const [showSearchScanner, setShowSearchScanner] = useState(false)
@@ -338,7 +346,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                     />
                   </th>
                   <th scope="col">{t('col_product')}</th><th scope="col">{t('col_category')}</th>
-                  <th scope="col">{t('col_buy_price')}</th><th scope="col">{t('col_sell_price')}</th>
+                  <th scope="col">{t('col_buy_price')}</th><th scope="col">{t('col_sell_price')}</th><th scope="col">{i('Marge', 'Margin', 'Margen', 'Margine')}</th>
                   <th scope="col">{t('col_stock')}</th><th scope="col">{t('col_threshold')}</th><th scope="col">{t('col_supplier')}</th>
                   <th scope="col">{t('col_status')}</th><th scope="col">{t('col_actions')}</th>
                 </tr>
@@ -346,6 +354,10 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
               <tbody>
                 {pg.paginated.map((p: ProductItem) => {
                   const st = statusOf(p.stock, p.threshold)
+                  const mg = productMargin(p.buy, p.sell)
+                  const mgColor = mg.pct === null ? 'var(--text4)'
+                    : themeIsLight ? 'var(--text)'
+                    : mg.pct < 0 ? 'var(--danger)' : mg.pct < 15 ? 'var(--warn)' : 'var(--acc2)'
                   const isSelected = selectedSkus.has(p.sku)
                   return (
                     <tr key={p.sku} style={isSelected ? { background: 'rgba(91,78,232,0.06)' } : undefined}>
@@ -379,6 +391,10 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       <td><span className="badge badge-teal">{stockCatLabel(p.category, lang)}</span></td>
                       <td className="td-num">{fmt(p.buy)}</td>
                       <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(p.sell)}</td>
+                      <td className="td-num" style={{ color: mgColor }}>
+                        {mg.pct === null ? '—' : `${mg.pct}%`}
+                        {mg.pct !== null && <span style={{ display: 'block', fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(mg.profitXof)}</span>}
+                      </td>
                       <td>
                         <span style={{
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',

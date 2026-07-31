@@ -86,3 +86,15 @@ export function statusOf(stock: number, threshold: number) {
   if (stock <= threshold) return { label: t('status_low'), cls: 'badge-amber' }
   return                         { label: 'OK',             cls: 'badge-green' }
 }
+
+/**
+ * Marge commerciale d'un produit. `pct` = (vente − achat) / vente × 100, arrondi entier —
+ * grandeur SANS unité, donc aucune conversion devise (contrairement à un montant). `profitXof`
+ * = vente − achat en XOF brut, converti UNE seule fois à l'affichage par `fmt`. `pct = null`
+ * si la vente est nulle (ni marge ni division par zéro). `profitXof` peut être négatif (vente à perte).
+ */
+export function productMargin(buyXof: number, sellXof: number): { pct: number | null; profitXof: number } {
+  const profitXof = sellXof - buyXof
+  const pct = sellXof > 0 ? Math.round((profitXof / sellXof) * 100) : null
+  return { pct, profitXof }
+}
