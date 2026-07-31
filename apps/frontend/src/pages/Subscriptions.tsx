@@ -12,6 +12,7 @@ import { useAppStore } from '@/stores/appStore'
 import { subscriptionsApi } from '@/lib/api'
 import { useFormatAmount } from '@/stores/appStore'
 import { announce } from '@/lib/announce'
+import { confirm } from '@/lib/confirm'
 import SubscriptionModal from '@/components/subscriptions/SubscriptionModal'
 import {
   DAY_LABELS, tx, subscriptionTotal, type Sub,
@@ -212,7 +213,7 @@ export default function Subscriptions() {
   }
 
   const deleteSub = async (sub: Sub) => {
-    if (!confirm(tx('confirm_del', lang))) return
+    if (!(await confirm({ title: tx('delete', lang), message: tx('confirm_del', lang), danger: true }))) return
     try {
       await subscriptionsApi.delete(sub.id)
       toast.success(tx('deleted', lang)); announce(tx('deleted', lang))

@@ -495,7 +495,10 @@ export default function Marketing() {
               {filtered.map(c => {
                 const isSelected = selected.has(c.id)
                 return (
-                  <div key={c.id} onClick={() => toggleSelect(c.id)} style={{
+                  <div key={c.id} role="checkbox" aria-checked={isSelected} tabIndex={0}
+                    onClick={() => toggleSelect(c.id)}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSelect(c.id) } }}
+                    style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '10px 16px', cursor: 'pointer',
                     borderBottom: '1px solid var(--border)',
