@@ -136,7 +136,9 @@ export default function APIDocs() {
             desc: lang === 'en' ? 'All endpoints with examples' : lang === 'es' ? 'Todos los endpoints con ejemplos' : lang === 'it' ? 'Tutti gli endpoint con esempi' : 'Tous les endpoints avec exemples',
             url: 'https://habashop-production.up.railway.app/api/docs/html',
             btn: lang === 'en' ? 'Open docs' : lang === 'es' ? 'Abrir la doc' : lang === 'it' ? 'Apri la doc' : 'Ouvrir la doc',
-            color: 'var(--p2)',
+            // color = HEX LITTÉRAL : concaténé avec une alpha (`${link.color}1F`/`3F`/`22`) pour
+            // fond + bord d'icône et fond de bouton. Un var(--x) s'y casse en silence. NE PAS re-tokeniser.
+            color: '#8B6FFF',
           },
           {
             Icon: Plug,
@@ -144,7 +146,7 @@ export default function APIDocs() {
             desc: lang === 'en' ? 'API JSON format' : lang === 'es' ? 'Formato JSON de la API' : lang === 'it' ? 'Formato JSON dell\'API' : "Format JSON de l'API",
             url: 'https://habashop-production.up.railway.app/api/docs',
             btn: lang === 'en' ? 'View JSON' : lang === 'es' ? 'Ver el JSON' : lang === 'it' ? 'Vedi il JSON' : 'Voir le JSON',
-            color: 'var(--acc2)',
+            color: '#22C77A',
           },
           {
             Icon: HeartPulse,
@@ -152,7 +154,7 @@ export default function APIDocs() {
             desc: lang === 'en' ? 'Real-time server status' : lang === 'es' ? 'Estado del servidor en tiempo real' : lang === 'it' ? 'Stato del server in tempo reale' : 'Statut du serveur en temps réel',
             url: 'https://habashop-production.up.railway.app/health',
             btn: lang === 'en' ? 'Check' : lang === 'es' ? 'Verificar' : lang === 'it' ? 'Verifica' : 'Vérifier',
-            color: 'var(--acc)',
+            color: '#FFB020',
           },
         ].map(link => (
           <div key={link.title} style={{
