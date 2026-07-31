@@ -152,8 +152,6 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
         .sub-remove-btn:hover  { color: var(--danger) }
         .sub-dd-item:hover     { background: var(--bg3) }
         .sub-day-pill:hover:not([aria-pressed="true"]) { border-color: var(--p); color: var(--p) }
-        .sub-modal .form-input { background: var(--bg2); border: 1.5px solid var(--border) }
-        .sub-modal .form-input:focus { border-color: var(--p); background: var(--bg2) }
         .sub-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
         @media (max-width: 640px) { .sub-grid2 { grid-template-columns: 1fr } }
 
@@ -260,7 +258,7 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                   <>
                     <input
                       id="sub-customer"
-                      className="form-input"
+                      className="input"
                       aria-label={tx('search_cust', lang)}
                       value={custSearch}
                       onChange={e => { setCustSearch(e.target.value); setShowCust(true) }}
@@ -308,7 +306,7 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                 <SLabel icon={<Tag size={13} color="var(--p2)" />} label={tx('name_label', lang)} required />
                 <input
                   id="sub-name"
-                  className="form-input"
+                  className="input"
                   aria-label={tx('name_label', lang)}
                   value={name}
                   onChange={e => setName(e.target.value)}
@@ -337,7 +335,7 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                 <div style={{ position: 'relative' }}>
                   <input
                     id="sub-product-search"
-                    className="form-input"
+                    className="input"
                     aria-label={tx('cart_search', lang)}
                     value={prodSearch}
                     onChange={e => { setProdSearch(e.target.value); setShowProd(true) }}
@@ -541,7 +539,7 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
               <input
                 id="sub-start-date"
                 type="date"
-                className="form-input"
+                className="input"
                 aria-label={tx('start_date', lang)}
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
@@ -566,7 +564,7 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
               />
               <textarea
                 id="sub-note"
-                className="form-input"
+                className="input"
                 aria-label={tx('note_label', lang)}
                 rows={2}
                 value={note}

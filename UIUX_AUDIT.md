@@ -76,6 +76,7 @@ Preuve chiffrée (mesurée à l'**AST**, après que 3 détecteurs regex aient me
 - **40 hex bruts résiduels** (sur 5 561 `var(--)`, soit 99,3 % tokenisé — excellent). Concentrés dans `Integrations.tsx` (15). Passer au script de tokenisation.
 - **28 `<div onClick>`** (6 pages + 22 composants) : distinguer backdrops de modale (OK) des contrôles feuilles (→ `<button>`).
 - **1 monolithe :** `POS.tsx` (1 396 lignes). À découper (modales, grille, barre KPI).
+- **Date pickers natifs.** 18 champs `<input type="date/time/month">`. Le `color-scheme` est déjà piloté par le thème → le popup s'affiche en mode sombre ; mais le calendrier reste **rendu par le navigateur** (police + accent système, coins non arrondis) — non thématisable. Les *champs* sont désormais alignés sur `.input` (SubscriptionModal utilisait une classe locale `.form-input` sans rayon ni padding — corrigé). Un popup **pleinement** thémé (violet, arrondi) exigerait un composant date-picker maison sur les 18 champs : chantier visuel différé, à faire à l'œil.
 
 ---
 
