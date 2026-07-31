@@ -10,9 +10,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { File, Paths } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import * as Haptics from 'expo-haptics'
-import { salesApi, analyticsApi, apiErrorMessage } from '@/services/api'
-import { salesByWeekday, bestCalendarDay, formatDayLabel, bubbleLeftPx } from '@/lib/reportsAggregate'
-import type { SaleRecord, DashboardTopProduct } from '@/types'
+import { salesApi, apiErrorMessage } from '@/services/api'
+import { salesByWeekday, bestCalendarDay, formatDayLabel, bubbleLeftPx, topProductsInPeriod } from '@/lib/reportsAggregate'
+import type { SaleRecord } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { Spacing, BorderRadius, FontSize, Shadow, ThemeColors } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
@@ -48,11 +48,6 @@ export default function ReportsScreen() {
     queryFn: () => salesApi.list({ limit: 500 }),
     staleTime: 2 * 60 * 1000,
   })
-  const { data: dash } = useQuery({
-    queryKey: ['dashboard'], queryFn: analyticsApi.dashboard, staleTime: 5 * 60 * 1000,
-  })
-  const topProds: DashboardTopProduct[] = dash?.topProducts ?? []
-
   const periodDays = PERIODS.find(p => p.key === period)!.days
   const since = useMemo(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (periodDays - 1)); return d
@@ -62,6 +57,10 @@ export default function ReportsScreen() {
     () => sales.filter(s => { const t = new Date(s.createdAt); return !isNaN(+t) && t >= since }),
     [sales, since],
   )
+
+  // Top produits SUR LA PÉRIODE — depuis le MÊME `filtered` que les KPI, plus `dash.topProducts`
+  // (qui était calculé côté backend sur le mois calendaire, immobile en 7 j / 30 j / 90 j).
+  const topProds = useMemo(() => topProductsInPeriod(filtered, 5, lang), [filtered, lang])
 
   // KPIs
   const ca  = filtered.reduce((sum, s) => sum + (s.total ?? 0), 0)
