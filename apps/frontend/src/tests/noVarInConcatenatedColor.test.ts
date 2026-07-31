@@ -21,6 +21,15 @@ import ts from 'typescript'
 //
 // ⚠️ COUVERTURE — on ASSERTE que le scan a vu des fichiers ET des sites de concaténation, sinon un
 // dossier renommé rendrait un scan vide resté vert en ne vérifiant rien.
+//
+// ⚠️ LIMITE CONNUE (assumée) — ce guard ne suit QUE les champs d'objets littéraux parcourus par
+// .map/.forEach/.flatMap — le motif où vivaient les 5 bugs (Stock, RH, CustomersModals,
+// ResendMonitor, APIDocs). Une couleur concaténée depuis une variable simple, un paramètre de
+// fonction, ou un objet importé d'un autre module passe AU TRAVERS. Les ~8 sites alimentés par un
+// vrai #hex hors-.map sont corrects aujourd'hui mais NON gardés ; les fermer exigerait un suivi
+// d'alias inter-fichiers (coût élevé, risque de faux positifs — et un guard qui crie au loup finit
+// désactivé). Choix : couvrir sans bruit le motif réel plutôt que tout, mal. Le seul chemin qui
+// casserait ces 8 sites est une re-tokenisation hex, déjà écartée.
 
 const SRC = join(__dirname, '..')
 
