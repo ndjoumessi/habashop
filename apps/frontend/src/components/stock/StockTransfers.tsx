@@ -97,7 +97,7 @@ export default function StockTransfers() {
           {FILTERS.map(f => (
             <button key={f.key} type="button" onClick={() => setFilter(f.key)}
               style={{
-                padding: '6px 12px', borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
+                padding: '6px 12px', borderRadius: 'var(--r-full)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)',
                 border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font)',
                 background: filter === f.key ? 'var(--p)' : 'transparent',
                 color: filter === f.key ? '#fff' : 'var(--text2)',
@@ -106,7 +106,7 @@ export default function StockTransfers() {
         </div>
         {isManager && (
           <button type="button" onClick={() => setShowModal(true)}
-            style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: 'none', background: 'var(--p)', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 13, fontWeight: 700 }}>
+            style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: 'none', background: 'var(--p)', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)', fontWeight: 700 }}>
             <Plus size={14} /> {i('Nouveau transfert', 'New transfer', 'Nueva transferencia', 'Nuovo trasferimento')}
           </button>
         )}
@@ -118,15 +118,15 @@ export default function StockTransfers() {
       ) : filtered.length === 0 ? (
         <div style={{ padding: 48, textAlign: 'center', color: 'var(--text3)' }}>
           <ArrowLeftRight size={36} strokeWidth={1.5} style={{ marginBottom: 10, opacity: 0.5 }} />
-          <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)' }}>{i('Aucun transfert', 'No transfers', 'Sin transferencias', 'Nessun trasferimento')}</div>
+          <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)' }}>{i('Aucun transfert', 'No transfers', 'Sin transferencias', 'Nessun trasferimento')}</div>
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-sm)' }}>
             <thead>
               <tr style={{ textAlign: 'left', color: 'var(--text3)' }}>
                 {[i('De', 'From', 'De', 'Da'), i('Vers', 'To', 'A', 'A'), i('Produit', 'Product', 'Producto', 'Prodotto'), i('Qté', 'Qty', 'Cant.', 'Qtà'), i('Statut', 'Status', 'Estado', 'Stato'), i('Date', 'Date', 'Fecha', 'Data'), ''].map((h, idx) => (
-                  <th key={idx} style={{ padding: '10px 16px', fontWeight: 'var(--fw-semibold)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.4px', textAlign: idx === 3 ? 'right' : 'left' }}>{h}</th>
+                  <th key={idx} style={{ padding: '10px 16px', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-caption)', textTransform: 'uppercase', letterSpacing: '.4px', textAlign: idx === 3 ? 'right' : 'left' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -151,7 +151,7 @@ export default function StockTransfers() {
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{t.quantity}</td>
                     <td style={{ padding: '12px 16px' }}>
-                      <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-semibold)', background: meta?.bg, border: `1px solid ${meta?.border}`, color: 'var(--text)' }}>{statusLabel(t.status)}</span>
+                      <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 'var(--r-full)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', background: meta?.bg, border: `1px solid ${meta?.border}`, color: 'var(--text)' }}>{statusLabel(t.status)}</span>
                     </td>
                     <td style={{ padding: '12px 16px', color: 'var(--text3)', whiteSpace: 'nowrap' }}>{new Date(t.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR')}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -159,13 +159,13 @@ export default function StockTransfers() {
                         <div style={{ display: 'inline-flex', gap: 6 }}>
                           {isReceiver && (
                             <button type="button" disabled={acting} onClick={() => doConfirm(t)} title={i('Confirmer la réception', 'Confirm reception', 'Confirmar recepción', 'Conferma ricezione')}
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--c-green-border)', background: 'var(--c-green-bg)', color: 'var(--text)', cursor: acting ? 'default' : 'pointer', fontFamily: 'var(--font)', fontSize: 12, fontWeight: 700 }}>
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--c-green-border)', background: 'var(--c-green-bg)', color: 'var(--text)', cursor: acting ? 'default' : 'pointer', fontFamily: 'var(--font)', fontSize: 'var(--fs-label)', fontWeight: 700 }}>
                               {acting ? <Loader2 size={12} style={{ animation: 'spin .6s linear infinite' }} /> : <Check size={12} />} {i('Confirmer', 'Confirm', 'Confirmar', 'Conferma')}
                             </button>
                           )}
                           {(isReceiver || isSender) && (
                             <button type="button" disabled={acting} onClick={() => doCancel(t, isReceiver)} title={isReceiver ? i('Refuser', 'Refuse', 'Rechazar', 'Rifiuta') : i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--c-red-border)', background: 'var(--c-red-bg)', color: 'var(--text)', cursor: acting ? 'default' : 'pointer', fontFamily: 'var(--font)', fontSize: 12, fontWeight: 700 }}>
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--c-red-border)', background: 'var(--c-red-bg)', color: 'var(--text)', cursor: acting ? 'default' : 'pointer', fontFamily: 'var(--font)', fontSize: 'var(--fs-label)', fontWeight: 700 }}>
                               <X size={12} /> {isReceiver ? i('Refuser', 'Refuse', 'Rechazar', 'Rifiuta') : i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}
                             </button>
                           )}
@@ -232,7 +232,7 @@ function NewTransferModal({ tenants, onClose, onCreated }: { tenants: { id: stri
         style={{ width: '90%', maxWidth: 480, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
           <ArrowLeftRight size={16} style={{ color: 'var(--p2)' }} />
-          <span style={{ flex: 1, fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{i('Nouveau transfert', 'New transfer', 'Nueva transferencia', 'Nuovo trasferimento')}</span>
+          <span style={{ flex: 1, fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{i('Nouveau transfert', 'New transfer', 'Nueva transferencia', 'Nuovo trasferimento')}</span>
           <button onClick={onClose} aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={16} /></button>
         </div>
 
@@ -251,8 +251,8 @@ function NewTransferModal({ tenants, onClose, onCreated }: { tenants: { id: stri
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: '1px solid var(--p3)', background: 'var(--bg3)' }}>
                 <span>{selected.emoji ?? '📦'}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{selected.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Stock', 'Stock', 'Stock', 'Stock')}: {selected.stockQty}</div>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{selected.name}</div>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{i('Stock', 'Stock', 'Stock', 'Stock')}: {selected.stockQty}</div>
                 </div>
                 <button type="button" onClick={() => { setProductId(''); setSearch('') }} aria-label={i('Effacer', 'Clear', 'Borrar', 'Cancella')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}><X size={14} /></button>
               </div>
@@ -265,13 +265,13 @@ function NewTransferModal({ tenants, onClose, onCreated }: { tenants: { id: stri
                 {search && (
                   <div style={{ marginTop: 6, border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', maxHeight: 200, overflowY: 'auto' }}>
                     {matches.length === 0 ? (
-                      <div style={{ padding: 12, fontSize: 12, color: 'var(--text3)', textAlign: 'center' }}>{i('Aucun produit en stock', 'No product in stock', 'Sin productos en stock', 'Nessun prodotto in stock')}</div>
+                      <div style={{ padding: 12, fontSize: 'var(--fs-label)', color: 'var(--text3)', textAlign: 'center' }}>{i('Aucun produit en stock', 'No product in stock', 'Sin productos en stock', 'Nessun prodotto in stock')}</div>
                     ) : matches.map(p => (
                       <button key={p.id} type="button" onClick={() => { setProductId(p.id); setQuantity(1) }}
                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 12px', border: 'none', borderBottom: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font)', textAlign: 'left' }}>
                         <span>{p.emoji ?? '📦'}</span>
-                        <span style={{ flex: 1, fontSize: 13, color: 'var(--text)' }}>{p.name}</span>
-                        <span style={{ fontSize: 11, color: 'var(--text3)' }}>{p.stockQty}</span>
+                        <span style={{ flex: 1, fontSize: 'var(--fs-sm)', color: 'var(--text)' }}>{p.name}</span>
+                        <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{p.stockQty}</span>
                       </button>
                     ))}
                   </div>
@@ -284,7 +284,7 @@ function NewTransferModal({ tenants, onClose, onCreated }: { tenants: { id: stri
             <div>
               <label style={lbl}>{i('Quantité', 'Quantity', 'Cantidad', 'Quantità')} * <span style={{ color: 'var(--text3)', fontWeight: 400 }}>(max {maxQty})</span></label>
               <input className="input" type="number" min={1} max={maxQty} value={quantity} onChange={e => setQuantity(Math.max(1, Math.min(maxQty, Number(e.target.value))))} />
-              <div style={{ marginTop: 6, fontSize: 12, color: 'var(--text3)' }}>
+              <div style={{ marginTop: 6, fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>
                 {i('Stock source', 'Source stock', 'Stock origen', 'Stock origine')}: {maxQty} → <span style={{ fontWeight: 'var(--fw-semibold)', color: quantity > 0 ? 'var(--warn)' : 'var(--text2)' }}>{maxQty - quantity}</span>
               </div>
             </div>
