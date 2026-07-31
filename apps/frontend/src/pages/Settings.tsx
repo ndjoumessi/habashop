@@ -64,7 +64,7 @@ export default function Settings() {
           borderBottom: '1px solid var(--border)',
         }}>
           <div style={{
-            fontSize: 11, fontWeight: 'var(--fw-semibold)', letterSpacing: 1,
+            fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', letterSpacing: 1,
             color: 'var(--text3)', textTransform: 'uppercase',
             marginBottom: 4,
           }}>
@@ -98,9 +98,9 @@ export default function Settings() {
                 onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
                 <SectionIcon size={16} style={{ flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)' }}>{pick(lang, s.label)}</div>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)' }}>{pick(lang, s.label)}</div>
                   <div style={{
-                    fontSize: 11,
+                    fontSize: 'var(--fs-caption)',
                     color: isActive ? s.color : 'var(--text3)',
                     opacity: isActive ? 0.75 : 1,
                     marginTop: 1,
@@ -114,7 +114,7 @@ export default function Settings() {
         {/* Footer version discret */}
         <div style={{
           padding: '12px 16px',
-          fontSize: 11, color: 'var(--text3)',
+          fontSize: 'var(--fs-caption)', color: 'var(--text3)',
           borderTop: '1px solid var(--border)',
         }}>
           {__BUILD_ID__}
@@ -146,11 +146,11 @@ export default function Settings() {
             </div>
             <div style={{ minWidth: 0 }}>
               <h2 style={{
-                fontSize: 20, fontWeight: 'var(--fw-bold)',
+                fontSize: 'var(--fs-xl)', fontWeight: 'var(--fw-bold)',
                 color: 'var(--text)', margin: 0, lineHeight: 1.2,
               }}>{pick(lang, active.label)}</h2>
               <p style={{
-                fontSize: 13, color: 'var(--text2)',
+                fontSize: 'var(--fs-sm)', color: 'var(--text2)',
                 margin: 0, marginTop: 2,
               }}>{pick(lang, active.desc)}</p>
             </div>

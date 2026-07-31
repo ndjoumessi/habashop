@@ -99,10 +99,10 @@ export default function Onboarding() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
           <LogoMark size={34} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: 'var(--text)', fontSize: 15, fontWeight: 'var(--fw-semibold)' }}>{i('Bienvenue sur HabaShop', 'Welcome to HabaShop', 'Bienvenido a HabaShop', 'Benvenuto su HabaShop')}</div>
-            <div style={{ color: 'var(--text3)', fontSize: 12 }}>{i('Configurons votre boutique en 5 minutes', "Let's set up your shop in 5 minutes", 'Configuremos tu tienda en 5 minutos', 'Configuriamo il tuo negozio in 5 minuti')}</div>
+            <div style={{ color: 'var(--text)', fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-semibold)' }}>{i('Bienvenue sur HabaShop', 'Welcome to HabaShop', 'Bienvenido a HabaShop', 'Benvenuto su HabaShop')}</div>
+            <div style={{ color: 'var(--text3)', fontSize: 'var(--fs-label)' }}>{i('Configurons votre boutique en 5 minutes', "Let's set up your shop in 5 minutes", 'Configuremos tu tienda en 5 minutos', 'Configuriamo il tuo negozio in 5 minuti')}</div>
           </div>
-          <span style={{ color: 'var(--text3)', fontSize: 12, flexShrink: 0 }}>{Math.min(step, 5)} / 5</span>
+          <span style={{ color: 'var(--text3)', fontSize: 'var(--fs-label)', flexShrink: 0 }}>{Math.min(step, 5)} / 5</span>
         </div>
 
         {/* ── Fil d'étapes (icônes) : courante --p · faites check · à venir card2 ── */}
@@ -132,8 +132,8 @@ export default function Onboarding() {
         {/* ══ Étape 1 — Boutique ══ */}
         {step === 1 && (
           <>
-            <div style={{ color: 'var(--text)', fontSize: 18, fontWeight: 'var(--fw-semibold)', marginBottom: 4 }}>{i('Votre boutique', 'Your shop', 'Tu tienda', 'Il tuo negozio')}</div>
-            <div style={{ color: 'var(--text2)', fontSize: 13, marginBottom: 18 }}>{i('Ces infos apparaîtront sur vos tickets et factures.', 'This info will appear on your receipts and invoices.', 'Esta información aparecerá en tus tickets y facturas.', 'Queste informazioni appariranno su scontrini e fatture.')}</div>
+            <div style={{ color: 'var(--text)', fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-semibold)', marginBottom: 4 }}>{i('Votre boutique', 'Your shop', 'Tu tienda', 'Il tuo negozio')}</div>
+            <div style={{ color: 'var(--text2)', fontSize: 'var(--fs-sm)', marginBottom: 18 }}>{i('Ces infos apparaîtront sur vos tickets et factures.', 'This info will appear on your receipts and invoices.', 'Esta información aparecerá en tus tickets y facturas.', 'Queste informazioni appariranno su scontrini e fatture.')}</div>
 
             <label style={lbl} htmlFor="ob-shop-name">{i('Nom de la boutique', 'Shop name', 'Nombre de la tienda', 'Nome del negozio')}</label>
             <input id="ob-shop-name" className="input" style={inputStyle} autoFocus
@@ -179,8 +179,8 @@ export default function Onboarding() {
         {/* ══ Étape 2 — Devise & langue ══ */}
         {step === 2 && (
           <>
-            <div style={{ color: 'var(--text)', fontSize: 18, fontWeight: 'var(--fw-semibold)', marginBottom: 4 }}>{i('Devise & langue', 'Currency & language', 'Divisa e idioma', 'Valuta e lingua')}</div>
-            <div style={{ color: 'var(--text2)', fontSize: 13, marginBottom: 18 }}>{i('Modifiable à tout moment dans les réglages.', 'Can be changed anytime in settings.', 'Modificable en cualquier momento en ajustes.', 'Modificabile in qualsiasi momento nelle impostazioni.')}</div>
+            <div style={{ color: 'var(--text)', fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-semibold)', marginBottom: 4 }}>{i('Devise & langue', 'Currency & language', 'Divisa e idioma', 'Valuta e lingua')}</div>
+            <div style={{ color: 'var(--text2)', fontSize: 'var(--fs-sm)', marginBottom: 18 }}>{i('Modifiable à tout moment dans les réglages.', 'Can be changed anytime in settings.', 'Modificable en cualquier momento en ajustes.', 'Modificabile in qualsiasi momento nelle impostazioni.')}</div>
 
             <label style={lbl}>{i('Devise', 'Currency', 'Divisa', 'Valuta')}</label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '8px 0 14px' }}>
@@ -214,8 +214,8 @@ export default function Onboarding() {
         {/* ══ Étape 3 — Équipe (informationnelle : l'invitation vit dans Réglages) ══ */}
         {step === 3 && (
           <>
-            <div style={{ color: 'var(--text)', fontSize: 18, fontWeight: 'var(--fw-semibold)', marginBottom: 4 }}>{i('Votre équipe', 'Your team', 'Tu equipo', 'La tua squadra')}</div>
-            <div style={{ color: 'var(--text2)', fontSize: 13, marginBottom: 18 }}>{i('Caissiers, gérants, comptables — chacun son rôle et ses accès.', 'Cashiers, managers, accountants — each with their own role and access.', 'Cajeros, gerentes, contables — cada uno con su rol y accesos.', 'Cassieri, gestori, contabili — ognuno con il proprio ruolo e accessi.')}</div>
+            <div style={{ color: 'var(--text)', fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-semibold)', marginBottom: 4 }}>{i('Votre équipe', 'Your team', 'Tu equipo', 'La tua squadra')}</div>
+            <div style={{ color: 'var(--text2)', fontSize: 'var(--fs-sm)', marginBottom: 18 }}>{i('Caissiers, gérants, comptables — chacun son rôle et ses accès.', 'Cashiers, managers, accountants — each with their own role and access.', 'Cajeros, gerentes, contables — cada uno con su rol y accesos.', 'Cassieri, gestori, contabili — ognuno con il proprio ruolo e accessi.')}</div>
 
             <label style={lbl} htmlFor="ob-owner">{i('Votre nom (propriétaire)', 'Your name (owner)', 'Tu nombre (propietario)', 'Il tuo nome (proprietario)')}</label>
             <input id="ob-owner" className="input" style={inputStyle}
@@ -229,7 +229,7 @@ export default function Onboarding() {
 
             <div style={{ background: 'var(--card)', border: '1px solid var(--border2)', borderRadius: 11, padding: '12px 14px', marginBottom: 8, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <Users size={15} style={{ color: 'var(--p2)', flexShrink: 0, marginTop: 2 }} />
-              <span style={{ color: 'var(--text2)', fontSize: 12, lineHeight: 1.5 }}>
+              <span style={{ color: 'var(--text2)', fontSize: 'var(--fs-label)', lineHeight: 1.5 }}>
                 {i('Vous pourrez inviter votre équipe à tout moment dans Réglages → Utilisateurs (rôle par personne : caissier, gérant, RH…).',
                   'You can invite your team anytime in Settings → Users (one role per person: cashier, manager, HR…).',
                   'Podrás invitar a tu equipo en Ajustes → Usuarios (un rol por persona).',
@@ -242,8 +242,8 @@ export default function Onboarding() {
         {/* ══ Étape 4 — Produits ══ */}
         {step === 4 && (
           <>
-            <div style={{ color: 'var(--text)', fontSize: 18, fontWeight: 'var(--fw-semibold)', marginBottom: 4 }}>{i('Votre premier produit', 'Your first product', 'Tu primer producto', 'Il tuo primo prodotto')}</div>
-            <div style={{ color: 'var(--text2)', fontSize: 13, marginBottom: 18 }}>{i('Optionnel — vous pourrez en ajouter autant que vous voulez ensuite.', 'Optional — you can add as many as you want later.', 'Opcional — podrás añadir más después.', 'Opzionale — potrai aggiungerne altri dopo.')}</div>
+            <div style={{ color: 'var(--text)', fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-semibold)', marginBottom: 4 }}>{i('Votre premier produit', 'Your first product', 'Tu primer producto', 'Il tuo primo prodotto')}</div>
+            <div style={{ color: 'var(--text2)', fontSize: 'var(--fs-sm)', marginBottom: 18 }}>{i('Optionnel — vous pourrez en ajouter autant que vous voulez ensuite.', 'Optional — you can add as many as you want later.', 'Opcional — podrás añadir más después.', 'Opzionale — potrai aggiungerne altri dopo.')}</div>
 
             <label style={lbl} htmlFor="ob-product">{i('Nom du produit', 'Product name', 'Nombre del producto', 'Nome prodotto')}</label>
             <input id="ob-product" className="input" style={inputStyle}
@@ -270,17 +270,17 @@ export default function Onboarding() {
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'color-mix(in srgb, var(--acc2) 15%, transparent)', border: '1px solid color-mix(in srgb, var(--acc2) 35%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
               <Rocket size={26} style={{ color: 'var(--acc2)' }} />
             </div>
-            <div style={{ color: 'var(--text)', fontSize: 20, fontWeight: 'var(--fw-semibold)', marginBottom: 8 }}>{i('Votre boutique est prête !', 'Your shop is ready!', '¡Tu tienda está lista!', 'Il tuo negozio è pronto!')}</div>
-            <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.6, maxWidth: 340, margin: '0 auto 22px' }}>
+            <div style={{ color: 'var(--text)', fontSize: 'var(--fs-xl)', fontWeight: 'var(--fw-semibold)', marginBottom: 8 }}>{i('Votre boutique est prête !', 'Your shop is ready!', '¡Tu tienda está lista!', 'Il tuo negozio è pronto!')}</div>
+            <p style={{ color: 'var(--text2)', fontSize: 'var(--fs-sm)', lineHeight: 1.6, maxWidth: 340, margin: '0 auto 22px' }}>
               {form.shopName.trim()
                 ? i(`${form.shopName} est configurée. Commencez à vendre !`, `${form.shopName} is configured. Start selling!`, `${form.shopName} está configurada. ¡Empieza a vender!`, `${form.shopName} è configurato. Inizia a vendere!`)
                 : i('Configuration enregistrée. Commencez à vendre !', 'Setup saved. Start selling!', 'Configuración guardada. ¡Empieza a vender!', 'Configurazione salvata. Inizia a vendere!')}
             </p>
             <button type="button" onClick={() => navigate('/app/dashboard')}
-              style={{ width: '100%', background: 'var(--grad-p)', color: '#fff', border: 'none', borderRadius: 11, padding: '13px 22px', minHeight: 48, fontSize: 14, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              style={{ width: '100%', background: 'var(--grad-p)', color: '#fff', border: 'none', borderRadius: 11, padding: '13px 22px', minHeight: 48, fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               {i('Accéder au tableau de bord', 'Go to dashboard', 'Ir al panel', 'Vai alla dashboard')} <ArrowRight size={15} />
             </button>
-            <div style={{ marginTop: 14, fontSize: 11, color: 'var(--text3)' }}>{i("14 jours d'essai gratuit — aucune carte requise", '14-day free trial — no card required', '14 días de prueba gratis — sin tarjeta', '14 giorni di prova gratuita — nessuna carta')}</div>
+            <div style={{ marginTop: 14, fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{i("14 jours d'essai gratuit — aucune carte requise", '14-day free trial — no card required', '14 días de prueba gratis — sin tarjeta', '14 giorni di prova gratuita — nessuna carta')}</div>
           </div>
         )}
 
@@ -288,11 +288,11 @@ export default function Onboarding() {
         {step < 5 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 22, gap: 10 }}>
             <button type="button" onClick={skip} disabled={loading}
-              style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)', padding: '10px 0', minHeight: 44 }}>
+              style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 'var(--fs-sm)', cursor: 'pointer', fontFamily: 'var(--font)', padding: '10px 0', minHeight: 44 }}>
               {i("Passer pour l'instant", 'Skip for now', 'Omitir por ahora', 'Salta per ora')}
             </button>
             <button type="button" onClick={next} disabled={loading}
-              style={{ background: 'var(--grad-p)', color: '#fff', border: 'none', borderRadius: 11, padding: '12px 22px', minHeight: 48, fontSize: 14, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: loading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, opacity: loading ? 0.7 : 1 }}>
+              style={{ background: 'var(--grad-p)', color: '#fff', border: 'none', borderRadius: 11, padding: '12px 22px', minHeight: 48, fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', cursor: loading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, opacity: loading ? 0.7 : 1 }}>
               {loading
                 ? i('Enregistrement…', 'Saving…', 'Guardando…', 'Salvataggio…')
                 : step === 4 ? i('Terminer', 'Finish', 'Terminar', 'Termina') : i('Continuer', 'Continue', 'Continuar', 'Continua')}

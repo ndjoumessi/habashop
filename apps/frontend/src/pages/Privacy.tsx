@@ -19,7 +19,7 @@ export default function Privacy() {
         <a href="/" style={{
           color: '#6C47FF',
           textDecoration: 'none',
-          fontSize: 14,
+          fontSize: 'var(--fs-body)',
         }}>
           ← Retour à HabaShop
         </a>
@@ -238,7 +238,7 @@ export default function Privacy() {
         borderTop: '1px solid #eee',
         margin: '40px 0'
       }}/>
-      <p style={{ color: '#999', fontSize: 13 }}>
+      <p style={{ color: '#999', fontSize: 'var(--fs-sm)' }}>
         © 2026 HabaShop. Tous droits réservés.
       </p>
     </div>

@@ -485,7 +485,7 @@ export default function HR() {
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               {lang === 'en' ? 'Leaves' : lang === 'es' ? 'Permisos' : lang === 'it' ? 'Ferie' : 'Congés'}
               {pendingLeaves > 0 && (
-                <span style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', background: 'var(--acc)', color: '#000', borderRadius: 20, padding: '1px 6px', lineHeight: 1.5 }}>{pendingLeaves}</span>
+                <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', background: 'var(--acc)', color: '#000', borderRadius: 20, padding: '1px 6px', lineHeight: 1.5 }}>{pendingLeaves}</span>
               )}
             </span>
           ) },

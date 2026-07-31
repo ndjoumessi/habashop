@@ -299,7 +299,7 @@ export default function Customers() {
             <div style={{ width:36, height:36, borderRadius:10, flexShrink:0, color:k.hex, background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center' }}>{k.icon}</div>
             <div style={{ minWidth:0 }}>
               <div className="kpi-label" style={{ marginBottom:2 }}>{k.label}</div>
-              <div className="kpi-value" style={{ color:k.hex, fontSize:20, fontWeight:'var(--fw-bold)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{k.value}</div>
+              <div className="kpi-value" style={{ color:k.hex, fontSize:'var(--fs-xl)', fontWeight:'var(--fw-bold)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{k.value}</div>
             </div>
           </div>
         ))}
@@ -322,7 +322,7 @@ export default function Customers() {
             aria-pressed={customersTab === tab.id}
             style={{
               padding: '7px 16px', minHeight: 36, borderRadius: 'var(--r-full)',
-              fontSize: 12, fontWeight: 'var(--fw-semibold)',
+              fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)',
               cursor: 'pointer', fontFamily: 'var(--font)',
               display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
               background: customersTab === tab.id ? 'var(--p)' : 'transparent',
@@ -365,11 +365,11 @@ export default function Customers() {
         <div className="animate-in">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
             <div>
-              <h2 style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h2 style={{ fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <MapPin size={16} style={{ color: 'var(--p2)' }} />
                 {i('Carte des clients', 'Customer map', 'Mapa de clientes', 'Mappa clienti')}
               </h2>
-              <p style={{ fontSize: 12, color: 'var(--text3)' }}>
+              <p style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>
                 {Object.keys(geoPositions).length}{' '}
                 {Object.keys(geoPositions).length === 1
                   ? i('client localisé sur', 'customer located out of', 'cliente localizado de', 'cliente localizzato su')
@@ -381,7 +381,7 @@ export default function Customers() {
               disabled={geocoding || !mapsLoaded}
               style={{
                 padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border)',
-                background: 'var(--bg3)', color: 'var(--text2)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
+                background: 'var(--bg3)', color: 'var(--text2)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)',
                 cursor: geocoding || !mapsLoaded ? 'not-allowed' : 'pointer',
                 fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 6,
                 opacity: geocoding || !mapsLoaded ? .6 : 1, transition: 'opacity .15s',
@@ -404,12 +404,12 @@ export default function Customers() {
 
           {customers.filter(c => !geoPositions[c.id]).length > 0 && (
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                 <AlertTriangle size={13} style={{flexShrink:0}} /> {i('Clients sans adresse', 'Customers without address', 'Clientes sin dirección', 'Clienti senza indirizzo')} ({customers.filter(c => !geoPositions[c.id]).length}) — {i('non affichés sur la carte', 'not shown on the map', 'no mostrados en el mapa', 'non mostrati sulla mappa')}
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {customers.filter(c => !geoPositions[c.id]).map(c => (
-                  <span key={c.id} style={{ fontSize: 11, fontWeight: 'var(--fw-regular)', padding: '4px 10px', borderRadius: 99, background: 'rgba(255,184,0,.08)', border: '1px solid rgba(255,184,0,.2)', color: 'var(--warn)' }}>
+                  <span key={c.id} style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', padding: '4px 10px', borderRadius: 99, background: 'rgba(255,184,0,.08)', border: '1px solid rgba(255,184,0,.2)', color: 'var(--warn)' }}>
                     {c.name}
                   </span>
                 ))}

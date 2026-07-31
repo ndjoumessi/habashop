@@ -206,18 +206,18 @@ export default function LoginPage() {
                 padding: '7px 0', borderBottom: idx < 2 ? '1px dashed var(--border)' : 'none',
               }}>
                 <span>
-                  <span style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{l.n}</span>
+                  <span style={{ display: 'block', fontSize: 'var(--fs-sm)', fontWeight: 500, color: 'var(--text)' }}>{l.n}</span>
                   <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text3)' }}>{l.q}</span>
                 </span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', alignSelf: 'center', fontVariantNumeric: 'tabular-nums' }}>{l.a}</span>
+                <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text)', alignSelf: 'center', fontVariantNumeric: 'tabular-nums' }}>{l.a}</span>
               </div>
             ))}
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginTop: 11, paddingTop: 11, borderTop: '1px solid var(--border2)' }}>
-              <span style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text3)', fontWeight: 700 }}>
+              <span style={{ fontSize: 'var(--fs-label)', textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text3)', fontWeight: 700 }}>
                 {i('Total à payer','Total due','Total a pagar','Totale da pagare')}
               </span>
-              <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--acc)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-.02em' }}>
-                14 350<small style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', marginLeft: 4 }}>F CFA</small>
+              <span style={{ fontSize: 'var(--fs-2xl)', fontWeight: 700, color: 'var(--acc)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-.02em' }}>
+                14 350<small style={{ fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--text3)', marginLeft: 4 }}>F CFA</small>
               </span>
             </div>
             <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
@@ -260,7 +260,7 @@ export default function LoginPage() {
       }}>
         <Link to="/" className="login-back-link" style={{
           display: 'inline-flex', alignItems: 'center', gap: 7, width: 'fit-content',
-          fontSize: 13, fontWeight: 600, color: 'var(--text3)',
+          fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text3)',
           textDecoration: 'none', padding: '6px 10px 6px 4px', borderRadius: 8,
           transition: 'color .15s',
         }}>
@@ -274,13 +274,13 @@ export default function LoginPage() {
             display: 'none', alignItems: 'center', gap: 10, marginBottom: 20, textDecoration: 'none', width: 'fit-content',
           }}>
             <span style={{ width: 34, height: 34, borderRadius: 10, overflow: 'hidden', display: 'flex' }}><LogoMark /></span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', letterSpacing: '-.02em' }}>HabaShop</span>
+            <span style={{ fontSize: 'var(--fs-title)', fontWeight: 700, color: 'var(--text)', letterSpacing: '-.02em' }}>HabaShop</span>
           </Link>
 
           <h2 style={{ fontSize: 27, fontWeight: 700, letterSpacing: '-.025em', color: 'var(--text)', margin: '0 0 6px' }}>
             {i('Bon retour','Welcome back','Bienvenido de nuevo','Bentornato')}
           </h2>
-          <p style={{ fontSize: 14, color: 'var(--text2)', margin: '0 0 26px' }}>
+          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text2)', margin: '0 0 26px' }}>
             {i('Connectez-vous à votre espace HabaShop.','Sign in to your HabaShop workspace.','Inicia sesión en tu espacio HabaShop.','Accedi al tuo spazio HabaShop.')}
           </p>
 
@@ -343,7 +343,7 @@ export default function LoginPage() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 18 }}>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', cursor: 'pointer', userSelect: 'none' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-sm)', color: 'var(--text2)', cursor: 'pointer', userSelect: 'none' }}>
                 <input
                   type="checkbox"
                   checked={remember}
@@ -365,7 +365,7 @@ export default function LoginPage() {
                   padding: '10px 13px', borderRadius: 10, marginBottom: 15,
                   color: 'var(--danger)', background: 'var(--c-red-bg)',
                   border: '1px solid var(--c-red-border)',
-                  fontSize: 13, lineHeight: 1.45,
+                  fontSize: 'var(--fs-sm)', lineHeight: 1.45,
                 }}>
                   <AlertCircle size={15} strokeWidth={2.4} style={{ flexShrink: 0, marginTop: 1 }} />
                   <span>{error}</span>

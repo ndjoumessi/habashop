@@ -322,7 +322,7 @@ export default function Stock() {
             <button key={tab.key} role="tab" aria-selected={activeTab === tab.key} type="button" onClick={() => setActiveTab(tab.key)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 7, padding: '10px 16px', border: 'none', background: 'none',
-                cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 14, fontWeight: 'var(--fw-semibold)',
+                cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)',
                 color: activeTab === tab.key ? 'var(--p2)' : 'var(--text3)',
                 borderBottom: `2px solid ${activeTab === tab.key ? 'var(--p)' : 'transparent'}`, marginBottom: -1,
               }}>
@@ -441,7 +441,7 @@ export default function Stock() {
             animation: 'habashop-slide-up .18s ease-out',
             maxWidth: 'calc(100% - 40px)',
           }}>
-          <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
+          <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
             {selectedSkus.size} {lang === 'en' ? `product${selectedSkus.size > 1 ? 's' : ''} selected` : lang === 'es' ? `producto${selectedSkus.size > 1 ? 's' : ''} seleccionado${selectedSkus.size > 1 ? 's' : ''}` : lang === 'it' ? `prodott${selectedSkus.size > 1 ? 'i' : 'o'} selezionat${selectedSkus.size > 1 ? 'i' : 'o'}` : `produit${selectedSkus.size > 1 ? 's' : ''} sélectionné${selectedSkus.size > 1 ? 's' : ''}`}
           </span>
           <button
@@ -454,7 +454,7 @@ export default function Stock() {
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '8px 16px', borderRadius: 8,
               background: 'linear-gradient(135deg, var(--p), var(--p2))',
-              border: 'none', color: '#fff', fontSize: 13, fontWeight: 'var(--fw-semibold)',
+              border: 'none', color: '#fff', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)',
               cursor: 'pointer', fontFamily: 'inherit',
               boxShadow: '0 4px 12px rgba(91,78,232,.4)',
             }}>
@@ -465,7 +465,7 @@ export default function Stock() {
             style={{
               padding: '6px 12px', borderRadius: 8,
               background: 'transparent', border: 'none',
-              color: 'var(--text3)', fontSize: 12, fontWeight: 'var(--fw-regular)',
+              color: 'var(--text3)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-regular)',
               cursor: 'pointer', fontFamily: 'inherit',
               textDecoration: 'underline', textUnderlineOffset: 3,
             }}>
@@ -495,10 +495,10 @@ export default function Stock() {
             >
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <div style={{ width:36, height:36, borderRadius:10, background:`${cat.color}22`, border:`1px solid ${cat.color}44`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{cat.icon}</div>
+                  <div style={{ width:36, height:36, borderRadius:10, background:`${cat.color}22`, border:`1px solid ${cat.color}44`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-lg)' }}>{cat.icon}</div>
                   <div>
-                    <div style={{ fontSize:14, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{stockCatLabel(cat.name, lang)}</div>
-                    <div style={{ fontSize:11, color:'var(--text3)' }}>{cat.productsCount} {lang === 'en' ? 'products' : lang === 'es' ? 'productos' : lang === 'it' ? 'prodotti' : 'produits'}</div>
+                    <div style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{stockCatLabel(cat.name, lang)}</div>
+                    <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{cat.productsCount} {lang === 'en' ? 'products' : lang === 'es' ? 'productos' : lang === 'it' ? 'prodotti' : 'produits'}</div>
                   </div>
                 </div>
                 <div style={{ display:'flex', gap:4 }}>
@@ -519,7 +519,7 @@ export default function Stock() {
                   />
                 </div>
               </div>
-              <div style={{ fontSize:12, color:'var(--text2)' }}>{stockCatDesc(cat.description, lang)}</div>
+              <div style={{ fontSize:'var(--fs-label)', color:'var(--text2)' }}>{stockCatDesc(cat.description, lang)}</div>
               <div style={{ height:4, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
                 <div style={{ height:'100%', borderRadius:99, width:`${Math.min(100,(cat.productsCount/10)*100)}%`, background:cat.color, transition:'width .3s' }} />
               </div>

@@ -256,16 +256,16 @@ export default function Activity() {
         <div style={{ padding:'14px 20px', display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
           <div style={{ position:'relative', flex:1, minWidth:220 }}>
             <Search size={14} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none' }} />
-            <input className="input" style={{ paddingLeft:34, fontSize:13 }}
+            <input className="input" style={{ paddingLeft:34, fontSize:'var(--fs-sm)' }}
               aria-label="Rechercher" placeholder={lang === 'en' ? 'Search user, action, description...' : lang === 'es' ? 'Buscar usuario, acción, descripción...' : lang === 'it' ? 'Cerca utente, azione, descrizione...' : 'Rechercher utilisateur, action, description...'}
               value={search} onChange={e => { setSearch(e.target.value); resetPage() }} />
           </div>
-          <select className="input" style={{ width:'auto', fontSize:13 }}
+          <select className="input" style={{ width:'auto', fontSize:'var(--fs-sm)' }}
             value={moduleFilter} onChange={e => { setModuleFilter(e.target.value); resetPage() }}>
             <option value="">{t('activity_filter_module')}</option>
             {Object.keys(MODULE_CONFIG).map(m => <option key={m} value={m}>{moduleLabel(m, lang)}</option>)}
           </select>
-          <select className="input" style={{ width:'auto', fontSize:13 }}
+          <select className="input" style={{ width:'auto', fontSize:'var(--fs-sm)' }}
             value={severityFilter} onChange={e => { setSeverityFilter(e.target.value); resetPage() }}>
             <option value="">{i('Toutes', 'All', 'Todas', 'Tutte')}</option>
             <option value="success">{i('Succès', 'Success', 'Éxito', 'Successo')}</option>
@@ -273,7 +273,7 @@ export default function Activity() {
             <option value="warning">{i('Alerte', 'Warning', 'Alerta', 'Avviso')}</option>
             <option value="danger">{i('Danger', 'Danger', 'Peligro', 'Pericolo')}</option>
           </select>
-          <select className="input" style={{ width:'auto', fontSize:13 }}
+          <select className="input" style={{ width:'auto', fontSize:'var(--fs-sm)' }}
             value={dateFilter} onChange={e => { setDateFilter(e.target.value); resetPage() }}>
             <option value="all">{lang === 'en' ? 'All dates' : lang === 'es' ? 'Todas las fechas' : lang === 'it' ? 'Tutte le date' : 'Toutes dates'}</option>
             <option value="today">{lang === 'en' ? 'Today' : lang === 'es' ? 'Hoy' : lang === 'it' ? 'Oggi' : "Aujourd'hui"}</option>
@@ -289,7 +289,7 @@ export default function Activity() {
         {/* ── Timeline ── */}
         <div style={{ padding:'8px 20px 20px', borderTop:'1px solid var(--border)', minHeight:200 }}>
           {paginated.length === 0 ? (
-            <div style={{ textAlign:'center', padding:'60px 0', color:'var(--text3)', fontSize:14 }}>
+            <div style={{ textAlign:'center', padding:'60px 0', color:'var(--text3)', fontSize:'var(--fs-body)' }}>
               {lang === 'en' ? 'No events found' : lang === 'es' ? 'Sin eventos encontrados' : lang === 'it' ? 'Nessun evento trovato' : 'Aucun événement trouvé'}
             </div>
           ) : (
@@ -353,11 +353,11 @@ export default function Activity() {
                     <div style={{ flex:1, minWidth:0 }}>
                       {/* Ligne 1 : action lisible + badge sévérité */}
                       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
-                        <span style={{ fontWeight:'var(--fw-semibold)', fontSize:14, color:'var(--text)' }}>
+                        <span style={{ fontWeight:'var(--fw-semibold)', fontSize:'var(--fs-body)', color:'var(--text)' }}>
                           {labelHuman}
                         </span>
                         <span style={{
-                          fontSize:11, fontWeight:'var(--fw-semibold)', padding:'2px 7px', borderRadius:99,
+                          fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', padding:'2px 7px', borderRadius:99,
                           background: sev.bg, color: sev.color,
                           textTransform:'uppercase', letterSpacing:'.4px',
                         }}>
@@ -366,7 +366,7 @@ export default function Activity() {
                       </div>
 
                       {/* Ligne 2 : auteur · module */}
-                      <div style={{ fontSize:12, color:'var(--text2)', marginBottom: detail ? 4 : 0 }}>
+                      <div style={{ fontSize:'var(--fs-label)', color:'var(--text2)', marginBottom: detail ? 4 : 0 }}>
                         <span style={{ fontWeight:'var(--fw-regular)' }}>{log.user}</span>
                         <span style={{ opacity: 0.5 }}> · </span>
                         <span>{moduleLabel(log.module, lang)}</span>
@@ -375,7 +375,7 @@ export default function Activity() {
                       {/* Ligne 3 : détail parsé (nom, email…) si dispo */}
                       {detail && (
                         <div style={{
-                          fontSize:12, color:'var(--text3)', fontStyle:'italic',
+                          fontSize:'var(--fs-label)', color:'var(--text3)', fontStyle:'italic',
                           overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                         }}>
                           {detail}
@@ -385,7 +385,7 @@ export default function Activity() {
 
                     {/* Date à droite */}
                     <div style={{
-                      fontSize:11, color:'var(--text3)',
+                      fontSize:'var(--fs-caption)', color:'var(--text3)',
                       flexShrink:0, textAlign:'right',
                       display:'flex', flexDirection:'column', alignItems:'flex-end', gap:2,
                     }}>
@@ -404,7 +404,7 @@ export default function Activity() {
           display:'flex', alignItems:'center', justifyContent:'space-between',
           padding:'12px 20px', borderTop:'1px solid var(--border)', background:'var(--bg3)',
         }}>
-          <span style={{ fontSize:12, color:'var(--text3)' }}>
+          <span style={{ fontSize:'var(--fs-label)', color:'var(--text3)' }}>
             {filtered.length} événement{filtered.length !== 1 ? 's' : ''} · Page {currentPage}/{totalPages}
           </span>
           <div style={{ display:'flex', gap:6 }}>
@@ -417,7 +417,7 @@ export default function Activity() {
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               <button key={page} onClick={() => setCurrentPage(page)} style={{
                 width:30, height:30, borderRadius:8, border:'none', cursor:'pointer',
-                fontFamily:'var(--font)', fontSize:12, fontWeight:'var(--fw-semibold)',
+                fontFamily:'var(--font)', fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
                 background: currentPage === page ? 'var(--p)' : 'var(--bg4)',
                 color:      currentPage === page ? '#fff'     : 'var(--text2)',
               }}>{page}</button>

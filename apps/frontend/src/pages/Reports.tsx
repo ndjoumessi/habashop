@@ -240,15 +240,15 @@ export default function Reports() {
         })}
         {/* Plage de dates personnalisée */}
         <div className="flex items-center gap-1.5" style={{ padding: '4px 10px', borderRadius: 12, border: `1px solid ${range.custom ? 'var(--p)' : 'var(--border)'}`, background: 'var(--card)' }}>
-          <span style={{ fontSize: 12, color: 'var(--text3)' }}>{i('Du', 'From', 'Desde', 'Dal')}</span>
+          <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>{i('Du', 'From', 'Desde', 'Dal')}</span>
           <input type="date" value={customFrom} max={customTo || undefined} onChange={e => setCustomFrom(e.target.value)}
-            className="input" style={{ height: 32, width: 'auto', fontSize: 12, padding: '2px 8px' }} aria-label={i('Date de début', 'Start date', 'Fecha de inicio', 'Data inizio')} />
-          <span style={{ fontSize: 12, color: 'var(--text3)' }}>{i('au', 'to', 'hasta', 'al')}</span>
+            className="input" style={{ height: 32, width: 'auto', fontSize: 'var(--fs-label)', padding: '2px 8px' }} aria-label={i('Date de début', 'Start date', 'Fecha de inicio', 'Data inizio')} />
+          <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>{i('au', 'to', 'hasta', 'al')}</span>
           <input type="date" value={customTo} min={customFrom || undefined} onChange={e => setCustomTo(e.target.value)}
-            className="input" style={{ height: 32, width: 'auto', fontSize: 12, padding: '2px 8px' }} aria-label={i('Date de fin', 'End date', 'Fecha de fin', 'Data fine')} />
+            className="input" style={{ height: 32, width: 'auto', fontSize: 'var(--fs-label)', padding: '2px 8px' }} aria-label={i('Date de fin', 'End date', 'Fecha de fin', 'Data fine')} />
           {range.custom && (
             <button onClick={() => { setCustomFrom(''); setCustomTo('') }} title={i('Effacer', 'Clear', 'Borrar', 'Cancella')}
-              style={{ border: 'none', background: 'transparent', color: 'var(--text3)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px' }}>×</button>
+              style={{ border: 'none', background: 'transparent', color: 'var(--text3)', cursor: 'pointer', fontSize: 'var(--fs-md)', lineHeight: 1, padding: '0 2px' }}>×</button>
           )}
         </div>
         {/* Dropdown « Exporter ▾ » — un seul déclencheur, aligné à droite ; 3 options au clic */}
@@ -314,7 +314,7 @@ export default function Reports() {
 
       {/* Filtre catégorie produit ; portée : Top produits + feuilles Ventes/Stock de l'export */}
       <div className="flex flex-wrap gap-2 items-center">
-        <select className="input" style={{ width: 'auto', minWidth: 170, height: 36, fontSize: 12 }}
+        <select className="input" style={{ width: 'auto', minWidth: 170, height: 36, fontSize: 'var(--fs-label)' }}
           value={filterCat} onChange={e => setFilterCat(e.target.value)} aria-label={i('Filtre catégorie', 'Category filter', 'Filtro categoría', 'Filtro categoria')}>
           <option value="">{i('Toutes les catégories', 'All categories', 'Todas las categorías', 'Tutte le categorie')}</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}

@@ -186,7 +186,7 @@ export default function Users() {
         {filtered.length === 0 && (
           <div style={{
             gridColumn:'1/-1', textAlign:'center', padding:'60px 0',
-            color:'var(--text3)', fontSize:14,
+            color:'var(--text3)', fontSize:'var(--fs-body)',
           }}>
             {lang === 'en' ? 'No users found' : lang === 'es' ? 'Sin usuarios encontrados' : lang === 'it' ? 'Nessun utente trovato' : 'Aucun utilisateur trouvé'}
           </div>

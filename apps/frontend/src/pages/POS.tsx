@@ -991,7 +991,7 @@ export default function POS() {
     return (
       <div role="status" style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'calc(100vh - 54px)', gap:10, color:'var(--text3)' }}>
         <Loader2 size={24} style={{ animation:'spin 1s linear infinite', color:'var(--p)', flexShrink:0 }} />
-        <span style={{ fontSize:14 }}>{lang==='en' ? 'Loading…' : lang==='es' ? 'Cargando…' : lang==='it' ? 'Caricamento…' : 'Chargement…'}</span>
+        <span style={{ fontSize:'var(--fs-body)' }}>{lang==='en' ? 'Loading…' : lang==='es' ? 'Cargando…' : lang==='it' ? 'Caricamento…' : 'Chargement…'}</span>
       </div>
     )
   }
@@ -1047,7 +1047,7 @@ export default function POS() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
             <Store size={17} style={{ color: 'var(--p2)', flexShrink: 0 }} aria-hidden="true" />
             <span style={{
-              color: 'var(--text)', fontSize: 14, fontWeight: 'var(--fw-semibold)',
+              color: 'var(--text)', fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180,
             }}>{user?.shopName ?? ''}</span>
           </div>
@@ -1061,7 +1061,7 @@ export default function POS() {
               display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
               padding: '4px 10px', borderRadius: 'var(--r-full)',
               background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)',
-              color: 'var(--acc2)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
+              color: 'var(--acc2)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)',
               cursor: 'pointer', fontFamily: 'var(--font)',
             }}>
             <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--acc2)' }} />
@@ -1077,7 +1077,7 @@ export default function POS() {
               }} />
               <input
                 className="input"
-                style={{ paddingLeft: 36, paddingRight: posEnableScanner ? 46 : 12, width: '100%', fontSize: 13, minHeight: 40, boxSizing: 'border-box' }}
+                style={{ paddingLeft: 36, paddingRight: posEnableScanner ? 46 : 12, width: '100%', fontSize: 'var(--fs-sm)', minHeight: 40, boxSizing: 'border-box' }}
                 aria-label={t('pos_search')}
                 // Placeholder honnête : ne promet « …ou scanner » QUE si le scan est activé
                 // pour le tenant (Réglages → POS). Sinon l'affordance n'existe pas → « Rechercher… ».
@@ -1145,7 +1145,7 @@ export default function POS() {
               )}
             </div>
           ) : (
-            <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 7 }}>
               <History size={15} style={{ color: 'var(--text3)' }} aria-hidden="true" />
               {lang === 'en' ? 'Sales history' : lang === 'es' ? 'Historial de ventas' : lang === 'it' ? 'Storico vendite' : 'Historique des ventes'}
             </span>
@@ -1179,7 +1179,7 @@ export default function POS() {
           {!isOnline && (
             <span data-testid="pos-network" role="status" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
-              padding: '4px 10px', borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-bold)',
+              padding: '4px 10px', borderRadius: 'var(--r-full)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-bold)',
               background: 'var(--warn)',
               border: '1px solid var(--warn)',
               color: '#1A1A2E',
@@ -1209,7 +1209,7 @@ export default function POS() {
                   borderBottom: mobileView === view ? '3px solid var(--p)' : '3px solid transparent',
                   color: mobileView === view ? 'var(--p)' : 'var(--text3)',
                   fontWeight: mobileView === view ? 800 : 500,
-                  fontSize: 14,
+                  fontSize: 'var(--fs-body)',
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                   display:'flex', alignItems:'center', justifyContent:'center', gap:6,
@@ -1383,7 +1383,7 @@ export default function POS() {
             border: 'none',
             borderRadius: 99,
             padding: '14px 22px',
-            fontSize: 15,
+            fontSize: 'var(--fs-title)',
             fontWeight: 'var(--fw-bold)',
             cursor: 'pointer',
             boxShadow: '0 8px 24px rgba(91,78,232,.5)',
