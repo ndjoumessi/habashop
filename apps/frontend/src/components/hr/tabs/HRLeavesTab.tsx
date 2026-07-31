@@ -44,7 +44,7 @@ export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, le
             const displayName = emp?.name ?? leave.empName ?? '—'
             const statusCfg = LEAVE_STATUS_CFG[leave.status]
             return (
-              <div key={leave.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', background: 'var(--bg2)', border: '0.5px solid var(--border)', borderRadius: 12, flexWrap: 'wrap', transition: 'box-shadow .15s ease' }}>
+              <div key={leave.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 12, flexWrap: 'wrap', transition: 'box-shadow .15s ease' }}>
                 {emp && <EmpAvatar emp={emp} size={38} />}
                 {!emp && (
                   <div style={{ width:38, height:38, borderRadius:'50%', background:'#6C47FF22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-sm)', fontWeight:'var(--fw-bold)', color:'var(--p)', flexShrink:0 }}>

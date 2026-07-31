@@ -34,7 +34,7 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
           const barColor = pct < 70 ? 'var(--acc2)' : pct < 90 ? 'var(--acc)' : 'var(--danger)'
           return (
             <div key={cat} style={{
-              background:'var(--bg2)', border:'0.5px solid var(--border)',
+              background:'var(--bg2)', border:'1px solid var(--border2)',
               borderRadius:12, padding:16, transition:'all .15s ease',
             }}
               onMouseEnter={ev => { const el = ev.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = 'var(--sh-sm)' }}

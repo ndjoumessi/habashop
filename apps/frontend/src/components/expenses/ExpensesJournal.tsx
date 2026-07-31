@@ -1,6 +1,7 @@
 import Skeleton from '@/components/ui/skeleton'
 import EmptyState from '@/components/ui/EmptyState'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
+import { fmtDate } from '@/lib/formatDate'
 import { Plus, Search, BarChart2, Download, RefreshCw, Check, Clock, Pencil, Trash2 } from 'lucide-react'
 import { CATEGORIES, CATEGORY_STYLE, CatPill, catLabel, ttcAmount } from './expensesShared'
 import type { Category, Expense, ExpStatus } from './expensesShared'
@@ -100,7 +101,7 @@ export default function ExpensesJournal(props: Props) {
               const catStyle = CATEGORY_STYLE[e.category]
               return (
                 <tr key={e.id} style={{ borderLeft:`3px solid ${catStyle.color}40` }}>
-                  <td className="td-mono text-xs">{e.date}</td>
+                  <td className="td-mono text-xs">{fmtDate(e.date)}</td>
                   <td>
                     <div className="td-bold text-xs">{e.label}</div>
                     {e.recurrent && <div style={{ fontSize:'var(--fs-caption)', color:'var(--p2)', marginTop:2, display:'flex', alignItems:'center', gap:3 }}><RefreshCw size={9}/> {tr('Récurrent','Recurring','Recurrente','Ricorrente')}</div>}

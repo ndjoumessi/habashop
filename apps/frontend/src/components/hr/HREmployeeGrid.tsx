@@ -82,7 +82,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
             <ResponsiveGrid min={240} gap={12}>
               {loadingEmployees ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} style={{ background:'var(--bg2)', border:'0.5px solid var(--border)', borderRadius:12, padding:16, display:'flex', flexDirection:'column', gap:12 }}>
+                  <div key={i} style={{ background:'var(--bg2)', border:'1px solid var(--border2)', borderRadius:12, padding:16, display:'flex', flexDirection:'column', gap:12 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                       <div className="skeleton" style={{ width:40, height:40, borderRadius:'50%', flexShrink:0 }} />
                       <div style={{ flex:1 }}>
@@ -99,7 +99,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                 return (
                   <div key={emp.id} style={{
                     background:'var(--bg2)',
-                    border:'0.5px solid var(--border)',
+                    border:'1px solid var(--border2)',
                     borderRadius:12, padding:0,
                     overflow:'hidden', cursor:'pointer',
                     transition:'all .15s ease',

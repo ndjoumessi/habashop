@@ -18,7 +18,7 @@ export default function PlanningStats({ lang, stats }: Props) {
           // cards stats sur surface neutre (bg2 + border fine) — la couleur reste portée par l'icône et le compteur
           <div key={key} style={{
             background:'var(--bg2)',
-            border:'0.5px solid var(--border)',
+            border:'1px solid var(--border2)',
             borderRadius:12, padding:'12px 14px',
             display:'flex', alignItems:'center', gap:8,
           }}>

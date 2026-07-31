@@ -359,7 +359,7 @@ export default function Dashboard() {
           return (
             <div key={k.label} className="kpi-card kpi-animate" style={{
               background: 'var(--bg2)',
-              border: k.hero ? '1px solid var(--border3)' : '0.5px solid var(--border)',
+              border: k.hero ? '1px solid var(--border3)' : '1px solid var(--border2)',
               borderRadius: 12, padding: 16,
               position: 'relative', overflow: 'hidden',
               transition: 'all .15s ease',
@@ -404,7 +404,7 @@ export default function Dashboard() {
             onClick={() => navigate(a.path)}
             aria-label={a.label}
             style={{
-              background: 'var(--bg2)', border: '0.5px solid var(--border)', borderRadius: 12,
+              background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 12,
               padding: '12px 8px', cursor: 'pointer', textAlign: 'center', transition: 'all .15s ease',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
               fontFamily: 'var(--font)',

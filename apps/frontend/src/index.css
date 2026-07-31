@@ -265,7 +265,7 @@ textarea.input { resize:vertical; min-height:80px; line-height:1.6 }
 .surface-raised { background:var(--card2); border:1px solid var(--border2); border-radius:var(--r-lg); box-shadow:var(--sh-md) }
 
 /* ── KPI cards ── */
-.kpi-card { background:var(--grad-card); border:0.5px solid var(--border); border-radius:var(--r-lg); padding:18px 20px; box-shadow:var(--sh-sm); transition:all .2s var(--ease); position:relative; overflow:hidden }
+.kpi-card { background:var(--grad-card); border:1px solid var(--border2); border-radius:var(--r-lg); padding:18px 20px; box-shadow:var(--sh-sm); transition:all .2s var(--ease); position:relative; overflow:hidden }
 .kpi-card:hover { border-color:var(--border2); transform:translateY(-2px); box-shadow:var(--sh-sm) }
 .kpi-icon-w { width:44px; height:44px; border-radius:var(--r-md); display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.06); border:1px solid var(--border); margin-bottom:12px }
 .kpi-icon { position:absolute; top:15px; right:15px; font-size:20px; opacity:.35 }
