@@ -25,7 +25,7 @@ export default function ExpensesKpis({ totalThisMonth, totalPending, pendingCoun
         { label:tr('Dépenses récurrentes','Recurring expenses','Gastos recurrentes','Spese ricorrenti'), value:recurrentCount, sub:tr('Mensuelles / abonnements','Monthly / subscriptions','Mensuales / suscripciones','Mensili / abbonamenti'), color:'var(--p2)', icon:<RefreshCw size={18} /> },
         { label:tr('Budget restant','Remaining budget','Presupuesto restante','Budget rimanente'), value:fmt(Math.max(0, budgetLeft)), sub:tr('Sur budget mensuel','Of monthly budget','Del presupuesto mensual','Del budget mensile'), color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', icon:<BarChart2 size={18} /> },
       ].map(k => (
-        <div key={k.label} className="kpi-card" style={{ border:'0.5px solid var(--border)', boxShadow:'var(--sh-sm)', overflow:'hidden' }}>
+        <div key={k.label} className="kpi-card" style={{ border:'1px solid var(--border2)', boxShadow:'var(--sh-sm)', overflow:'hidden' }}>
           <div className="kpi-icon-w" style={{ color:k.color, background:`color-mix(in srgb, ${k.color} 12%, transparent)` }}>{k.icon}</div>
           <div className="kpi-label">{k.label}</div>
           <div className="kpi-value" style={{ color:k.color, fontSize: typeof k.value === 'number' ? 28 : 18 }}>

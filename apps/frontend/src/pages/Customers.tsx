@@ -295,7 +295,7 @@ export default function Customers() {
           { label: t('customers_retention'), value: hasSales ? `${retentionRate}%` : '—',        hex: 'var(--acc3)', icon: <TrendingUp size={18} /> },
         ].map(k => (
           /* KPI compact (icône + label + valeur sur une ligne) — densité dashboard NKONI, sans espace mort */
-          <div key={k.label} className="kpi-card" style={{ display:'flex', alignItems:'center', gap:12, background:'var(--bg2)', border:'0.5px solid var(--border)', borderRadius:12, padding:'12px 14px', cursor:'default' }}>
+          <div key={k.label} className="kpi-card" style={{ display:'flex', alignItems:'center', gap:12, background:'var(--bg2)', border:'1px solid var(--border2)', borderRadius:12, padding:'12px 14px', cursor:'default' }}>
             <div style={{ width:36, height:36, borderRadius:10, flexShrink:0, color:k.hex, background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center' }}>{k.icon}</div>
             <div style={{ minWidth:0 }}>
               <div className="kpi-label" style={{ marginBottom:2 }}>{k.label}</div>

@@ -39,7 +39,7 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
   const SHIFT_ORDER = Object.keys(SHIFT_TYPES) as ShiftType[]
 
   return (
-    <div style={{ background:'var(--bg2)', border:'0.5px solid var(--border)', borderRadius:12, overflow:'hidden' }}>
+    <div style={{ background:'var(--bg2)', border:'1px solid var(--border2)', borderRadius:12, overflow:'hidden' }}>
       {loading ? (
         <div style={{ padding:14 }}><Skeleton height={60} count={6} radius={8} /></div>
       ) : filtered.length === 0 ? (

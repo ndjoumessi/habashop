@@ -15,7 +15,7 @@ export default function ShiftSelector({ lang, activeShift, setActiveShift }: Pro
       display:'flex', gap:6, flexWrap:'wrap',
       padding:'12px 16px',
       background:'var(--bg2)',
-      border:'0.5px solid var(--border)',
+      border:'1px solid var(--border2)',
       borderRadius:12,
     }}>
       <div style={{

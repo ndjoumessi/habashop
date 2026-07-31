@@ -107,11 +107,13 @@ export default function ResendMonitor({
 
   // Config des événements webhook
   const EVENT_CONFIG: Record<ResendEventType, { icon: string; label: string; color: string }> = {
-    delivered:  { icon: '✅', label: lang === 'en' ? 'Delivered' : lang === 'es' ? 'Entregado' : lang === 'it' ? 'Consegnato' : 'Livré', color: 'var(--acc2)' },
-    bounced:    { icon: '⚠️', label: lang === 'en' ? 'Bounced' : lang === 'es' ? 'Rebote' : lang === 'it' ? 'Rimbalzo' : 'Rebond',   color: 'var(--danger)' },
+    // color = HEX LITTÉRAL : concaténé avec une alpha (`${cfg.color}15`) pour le fond d'icône —
+    // un var(--x) s'y casse en silence (fond transparent). `complained` était déjà en hex.
+    delivered:  { icon: '✅', label: lang === 'en' ? 'Delivered' : lang === 'es' ? 'Entregado' : lang === 'it' ? 'Consegnato' : 'Livré', color: '#22C77A' },
+    bounced:    { icon: '⚠️', label: lang === 'en' ? 'Bounced' : lang === 'es' ? 'Rebote' : lang === 'it' ? 'Rimbalzo' : 'Rebond',   color: '#FF5C72' },
     complained: { icon: '🚫', label: lang === 'en' ? 'Spam' : lang === 'es' ? 'Spam' : lang === 'it' ? 'Spam' : 'Spam',      color: '#FF3B5C' },
-    opened:     { icon: '👁',  label: lang === 'en' ? 'Opened' : lang === 'es' ? 'Abierto' : lang === 'it' ? 'Aperto' : 'Ouvert',    color: 'var(--acc3)' },
-    clicked:    { icon: '🖱️', label: lang === 'en' ? 'Clicked' : lang === 'es' ? 'Clicado' : lang === 'it' ? 'Cliccato' : 'Cliqué',   color: 'var(--p3)' },
+    opened:     { icon: '👁',  label: lang === 'en' ? 'Opened' : lang === 'es' ? 'Abierto' : lang === 'it' ? 'Aperto' : 'Ouvert',    color: '#4F86F0' },
+    clicked:    { icon: '🖱️', label: lang === 'en' ? 'Clicked' : lang === 'es' ? 'Clicado' : lang === 'it' ? 'Cliccato' : 'Cliqué',   color: '#A991FF' },
   }
 
   // Calculs

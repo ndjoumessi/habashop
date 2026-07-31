@@ -359,10 +359,14 @@ export default function Stock() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('stock_total'),      value: products.length.toString(),         color: 'var(--p2)',    hex: 'var(--p)', icon: <List          size={18} /> },
-          { label: t('stock_value'),      value: fmt(totalValue),                    color: 'var(--acc2)', hex: 'var(--acc2)', icon: <Gem           size={18} /> },
-          { label: t('stock_ruptures'),   value: ruptures.length.toString(),         color: 'var(--danger)',hex: 'var(--danger)', icon: <AlertTriangle size={18} /> },
-          { label: t('stock_categories'), value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', hex: 'var(--acc)', icon: <FolderOpen size={18} /> },
+          // `hex` = HEX LITTÉRAL obligatoire : il est concaténé avec une alpha (`${k.hex}28`,
+          // `${k.hex}18`…) pour teinter bord/dégradé/halo. Un `var(--x)` s'y casse en silence
+          // (`var(--p)28` = couleur invalide → border-style:none, dégradé absent — invisible à
+          // tsc et aux tests). NE PAS re-tokeniser. `color` reste un token (usage direct, valide).
+          { label: t('stock_total'),      value: products.length.toString(),         color: 'var(--p2)',    hex: '#6C47FF', icon: <List          size={18} /> },
+          { label: t('stock_value'),      value: fmt(totalValue),                    color: 'var(--acc2)', hex: '#22C77A', icon: <Gem           size={18} /> },
+          { label: t('stock_ruptures'),   value: ruptures.length.toString(),         color: 'var(--danger)',hex: '#FF5C72', icon: <AlertTriangle size={18} /> },
+          { label: t('stock_categories'), value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', hex: '#FFB020', icon: <FolderOpen size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card" style={{
             background: `linear-gradient(135deg,${k.hex}18,${k.hex}06)`,

@@ -40,7 +40,7 @@ export default function PlanningGrid(props: Props) {
   return (
     <div style={{
       background:'var(--bg2)',
-      border:'0.5px solid var(--border)',
+      border:'1px solid var(--border2)',
       borderRadius:12, overflow:'hidden',
     }}>
       {/* Annonce lecteur d'écran (mode déplacement / dépôt / annulation) — visuellement masquée */}
