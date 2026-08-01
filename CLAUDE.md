@@ -303,7 +303,9 @@ les règles **transverses** : celles qu'on enfreint sans même travailler sur le
 - **`transform` sur ancêtre** → casse `position:fixed`. Animer opacité seule.
 - **`applyAccentColor()`** écrase `--p/--p2/--p3` via `ACCENT_PAIRS` (plus de verrouillage `body.className` depuis le retrait de `gold`/`soleil`). Détection clair = **`isThemeLight(theme)`** d'appStore (résout `system`), jamais une comparaison littérale à `'light'`/`'soleil'`.
 - **Date « now »** : param injectable défaut `new Date()` — jamais de littéral `new Date('...')`.
+- **Dates AFFICHÉES** : `fmtDate()` de `lib/formatDate.ts` (jj/mm/aaaa, convention fr). Parse par **découpage de chaîne**, jamais `new Date(iso).toLocaleDateString()` qui décale le jour d'un cran en fuseau négatif (le 05 s'affiche « 04 »). Jamais l'ISO brut `{e.date}`.
 - **SVG + `var()`** : `fill="var(--…)"` ne résout pas → `style={{color}}` + `fill="currentColor"`.
+- **`var(--)` + alpha concaténée = MORT ⚠️** : `` `${x.hex}28` `` avec `x.hex='var(--p)'` rend `var(--p)28` = couleur INVALIDE → la propriété retombe à sa valeur initiale (`border:none`, fond transparent), **invisible à tsc ET aux tests**. Un champ couleur concaténé avec une alpha reste un **`#hex` littéral** (8-chiffres, PAS `color-mix` — compat WebView Android), jamais tokenisé en `var(--…)`. Verrou AST : `noVarInConcatenatedColor.test.ts` (résout `${obj.champ}NN` → tableau `.map` → échoue si `champ` y vaut une chaîne `var(--`). Bug trouvé à l'écran, pas par les gates (2026-08-01, #211/#212).
 - **Polling** : closure stale → `useRef` pour valeur courante. Logique succès dans `useEffect([status])` séparé.
 - **Google Maps** : re-init via compteur `mapVersion` (state) + `key={mapVersion}` sur div.
 - **IDs employés** : cuid string — jamais `Number(id)`.
