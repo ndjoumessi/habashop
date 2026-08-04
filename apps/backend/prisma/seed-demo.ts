@@ -129,7 +129,26 @@ async function seedDemo() {
     await prisma.sale.deleteMany({ where: { tenantId } })
   }
   const payModes = ['cash', 'wave', 'orange', 'card', 'cash', 'cash']
-  let totalSales = 0
+
+  // ── Rattachement client (#215) ────────────────────────────────────────────────
+  // Le seed ne posait AUCUN `customerId` : les 3 mois de ventes étaient tous anonymes.
+  // Conséquence — l'historique d'achats d'une fiche client (#214) et les KPI CRM ne
+  // pouvaient RIEN montrer en démo, alors même que le code est correct. Une démo qui
+  // affiche « aucun achat » à un client qui a 1,25 M de CA affiché juste au-dessus se
+  // contredit à l'écran.
+  //
+  // Le taux dépend du PALIER, parce que c'est ainsi qu'un commerce fonctionne : on connaît
+  // (et on facture) ses grossistes, un peu moins le semi-gros, et le détail est surtout du
+  // passage anonyme. Ni 0 % (le défaut d'avant) ni 100 % (qui ferait disparaître le client
+  // de passage, pourtant le cas dominant) ne seraient réalistes.
+  const custByTier: Record<'large' | 'medium' | 'small', string[]> = {
+    large:  customers.filter(c => c.type === 'Grossiste').map(c => c.id),
+    medium: customers.filter(c => c.type === 'Semi-gros').map(c => c.id),
+    small:  customers.filter(c => c.type === 'Détail').map(c => c.id),
+  }
+  const LINK_RATE = { large: 0.9, medium: 0.6, small: 0.12 } as const
+
+  let totalSales = 0, linkedSales = 0
   for (let mi = 0; mi < DEMO_MONTHS.length; mi++) {
     const m = DEMO_MONTHS[mi]
     const rand = rng(2000 + mi)
@@ -138,6 +157,9 @@ async function seedDemo() {
     while (monthCA < m.target && n <= 2000) {
       const roll = rand()
       const tier = roll < 0.78 ? 'small' : roll < 0.96 ? 'medium' : 'large' // épicerie → surtout du détail
+      // Client rattaché (ou vente anonyme). Tiré du MÊME rng seedé → reste déterministe.
+      const pool = custByTier[tier]
+      const customerId = pool.length > 0 && rand() < LINK_RATE[tier] ? pick(pool) : null
       const nLines = tier === 'large' ? 2 + Math.floor(rand() * 2) : 1
       const items: { productId: string; qty: number; unitPrice: number; total: number }[] = []
       let saleTotal = 0
@@ -154,19 +176,22 @@ async function seedDemo() {
       if (saleTotal === 0) break
       await prisma.sale.create({
         data: {
-          tenantId, cashierId, total: saleTotal,
+          tenantId, cashierId, total: saleTotal, customerId,
           paymentMode: pick(payModes),
           clientType: tier === 'large' ? 'wholesale' : tier === 'medium' ? 'semi' : 'retail',
           createdAt: new Date(Date.UTC(m.year, m.month, 1 + Math.floor(rand() * 27), 8 + Math.floor(rand() * 11), Math.floor(rand() * 60))),
           items: { create: items },
         },
       }).catch(e => console.warn('sale', e.message))
-      monthCA += saleTotal; n++
+      monthCA += saleTotal; n++; if (customerId) linkedSales++
     }
     totalSales += n
     console.log(`   ${m.ym}: ${n} ventes, CA ${monthCA.toLocaleString('fr-FR')} XOF`)
   }
-  console.log('✅ Ventes recréées:', totalSales)
+  // Le compte RATTACHÉ est loggé, pas seulement le total : c'est la propriété qu'on vient
+  // de corriger (#215). Un « ✅ Ventes recréées » seul resterait vert même si le
+  // rattachement retombait à 0 — exactement le vert muet qu'on ne veut plus.
+  console.log(`✅ Ventes recréées: ${totalSales} (dont ${linkedSales} rattachées à un client, ${totalSales > 0 ? Math.round((linkedSales / totalSales) * 100) : 0} %)`)
 
   // ── Dépenses : delete + recreate cohérent sur les 3 mois (ids stables, idempotent) ──
   await prisma.expense.deleteMany({ where: { tenantId } })
