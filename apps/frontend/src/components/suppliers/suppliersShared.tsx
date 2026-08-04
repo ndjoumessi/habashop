@@ -1,10 +1,68 @@
 import type { CSSProperties } from 'react'
+import { useEffect, useState } from 'react'
 import { Star } from 'lucide-react'
+import { suppliersApi } from '@/lib/api'
+import { API_TO_LOCAL_STATUS } from '@/components/orders/ordersShared'
 
 export type SupplierStatus = 'Actif' | 'Pause' | 'Inactif'
 export type L4 = 'fr' | 'en' | 'es' | 'it'
 
-export interface SupplierOrder { ref: string; date: string; total: number; status: string }
+export interface SupplierOrder { ref: string; date: string; total: number; status: string; items: number }
+
+/**
+ * ⚠️ Type de FRONTIÈRE (`ApiSupplierOrder`), pas le domaine `SupplierOrder` : sur le fil,
+ * une commande porte `createdAt`/`_count` ; l'écran veut une `ref`, une date et un nombre
+ * de lignes. `mapApiSupplierOrder` traverse. Miroir de `ApiCustomerSale` (#214).
+ */
+export interface ApiSupplierOrder {
+  id: string
+  ref: string
+  total: number
+  status: string              // 'DRAFT' | 'SENT' | 'RECEIVED' | …
+  createdAt: string
+  expectedAt: string | null
+  items: number               // nombre de LIGNES de la commande
+}
+
+export function mapApiSupplierOrder(o: ApiSupplierOrder): SupplierOrder {
+  return {
+    ref: o.ref || `C-${String(o.id ?? '').slice(-6).toUpperCase()}`,
+    date: o.createdAt,
+    total: o.total ?? 0,
+    // ⚠️ Le fil porte 'DRAFT'/'SENT'/… ; l'écran (badge coloré) attend 'BROUILLON'/'ENVOYÉE'.
+    // On réutilise la table de l'app (API_TO_LOCAL_STATUS) plutôt que d'en écrire une 2ᵉ :
+    // deux traductions du même statut divergeraient au premier statut ajouté.
+    status: API_TO_LOCAL_STATUS[o.status] ?? o.status ?? '',
+    items: o.items ?? 0,
+  }
+}
+
+/** État de l'historique de commandes d'une fiche fournisseur ouverte. */
+export type OrderHistory = { rows: SupplierOrder[]; loading: boolean; failed: boolean }
+
+/**
+ * Miroir de `usePurchaseHistory` (#214) — mêmes garanties, mêmes raisons :
+ *
+ * ⚠️ TROIS états DISTINCTS : « en cours », « échec » et « zéro commande » ne disent pas
+ * la même chose. Les confondre est le défaut qu'on ferme — un tableau vide qui affirme
+ * « aucune commande » alors qu'on n'a pas su demander.
+ *
+ * ⚠️ Le garde `alive` : sans lui, ouvrir SONACO puis un autre fournisseur pendant que la
+ * 1ʳᵉ requête vole afficherait les commandes de SONACO sur l'autre fiche.
+ */
+export function useOrderHistory(supplierId: string | null): OrderHistory {
+  const [state, setState] = useState<OrderHistory>({ rows: [], loading: false, failed: false })
+  useEffect(() => {
+    if (!supplierId) { setState({ rows: [], loading: false, failed: false }); return }
+    let alive = true
+    setState({ rows: [], loading: true, failed: false })
+    suppliersApi.orders(supplierId)
+      .then(list => { if (alive) setState({ rows: (list ?? []).map(mapApiSupplierOrder), loading: false, failed: false }) })
+      .catch(() => { if (alive) setState({ rows: [], loading: false, failed: true }) })
+    return () => { alive = false }
+  }, [supplierId])
+  return state
+}
 
 /**
  * ⚠️ TYPES DE FRONTIÈRE — dérivés du BACKEND MESURÉ, jamais d'une supposition.
@@ -68,11 +126,19 @@ export interface SupplierWrite {
 /** Miroir du zod `SUPPLIER_CREATE` : identique, `name` requis (`z.string().min(1)`). */
 export type SupplierCreate = SupplierWrite & { name: string }
 
+/**
+ * ⚠️ `Supplier` NE PORTE PLUS de champ `orders`. Il en avait un, initialisé `[]` et jamais
+ * rempli : la table « Historique commandes » affichait donc « aucune commande » à des
+ * fournisseurs qui en avaient (#214). Un champ qui a la forme d'une donnée sans jamais en
+ * être une est pire qu'un champ absent — le compilateur le valide et l'écran ment.
+ * L'historique se DEMANDE à l'ouverture de la fiche (`useOrderHistory`), il ne se
+ * transporte pas dans la liste.
+ */
 export interface Supplier {
   id: string; name: string; categories: string[]; phone: string
   email: string; address: string; contact: string
   leadTime: number; rating: number; status: SupplierStatus
-  orders: SupplierOrder[]; notes: string
+  notes: string
 }
 
 export const STATUS_CFG: Record<SupplierStatus, { cls: string }> = {
@@ -137,7 +203,6 @@ export function mapApiSupplier(s: ApiSupplier): Supplier {
     leadTime: s.leadTime ?? 3,
     rating: s.rating ?? 3,
     status: (s.status || 'Actif') as SupplierStatus,
-    orders: [],
     notes: s.notes || '',
   }
 }

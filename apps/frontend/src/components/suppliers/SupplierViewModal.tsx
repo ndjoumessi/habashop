@@ -3,8 +3,9 @@ import IconButton from '@/components/ui/IconButton'
 import { useI18n } from '@/hooks/useI18n'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { Factory, X, Package, FileText } from 'lucide-react'
-import { STATUS_CFG, statusLabel, StarRating } from './suppliersShared'
+import { STATUS_CFG, statusLabel, StarRating, useOrderHistory } from './suppliersShared'
 import type { Supplier } from './suppliersShared'
+import { fmtDate } from '@/lib/formatDate'
 
 interface Props {
   supplier: Supplier
@@ -17,6 +18,8 @@ export default function SupplierViewModal({ supplier, onClose, onNewOrder }: Pro
   const fmt = useFormatAmount()
   const { i } = useI18n()
   const boxRef = useModalFocus<HTMLDivElement>()
+  // L'historique se DEMANDE à l'ouverture de la fiche (#214) — il ne voyage plus dans `Supplier`.
+  const history = useOrderHistory(supplier.id)
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={supplier.name} onClick={e => e.target === e.currentTarget && onClose()}>
@@ -58,10 +61,10 @@ export default function SupplierViewModal({ supplier, onClose, onNewOrder }: Pro
             <table aria-label={i('Historique commandes', 'Order history', 'Historial de pedidos', 'Storico ordini')}>
               <thead><tr><th scope="col">{i('Référence', 'Reference', 'Referencia', 'Riferimento')}</th><th scope="col">{i('Date', 'Date', 'Fecha', 'Data')}</th><th scope="col" className="th-num">{i('Montant', 'Amount', 'Importe', 'Importo')}</th><th scope="col">{t('col_status')}</th></tr></thead>
               <tbody>
-                {supplier.orders.map(o => (
+                {history.rows.map(o => (
                   <tr key={o.ref}>
                     <td className="td-mono text-xs">{o.ref}</td>
-                    <td className="td-mono text-xs">{new Date(o.date).toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'en-US')}</td>
+                    <td className="td-mono text-xs">{fmtDate(o.date)}</td>
                     <td className="td-num text-xs" style={{ color: 'var(--acc2)' }}>{fmt(o.total)}</td>
                     <td>
                       <span className={`badge ${
@@ -73,7 +76,16 @@ export default function SupplierViewModal({ supplier, onClose, onNewOrder }: Pro
                     </td>
                   </tr>
                 ))}
-                {supplier.orders.length === 0 && (
+                {/* TROIS états DISTINCTS (#214) : « en cours » ≠ « échec » ≠ « zéro commande ».
+                    Confondre les deux derniers, c'est affirmer « aucune commande » à un
+                    fournisseur qui en a — le défaut exact que ce ticket ferme. */}
+                {history.loading && (
+                  <tr><td colSpan={4} className="text-center py-4" style={{ color: 'var(--text3)' }}>{i('Chargement…', 'Loading…', 'Cargando…', 'Caricamento…')}</td></tr>
+                )}
+                {!history.loading && history.failed && (
+                  <tr><td colSpan={4} className="text-center py-4" style={{ color: 'var(--warn)' }}>{i('Historique indisponible', 'History unavailable', 'Historial no disponible', 'Storico non disponibile')}</td></tr>
+                )}
+                {!history.loading && !history.failed && history.rows.length === 0 && (
                   <tr><td colSpan={4} className="text-center py-4" style={{ color: 'var(--text3)' }}>{i('Aucune commande', 'No orders', 'Sin pedidos', 'Nessun ordine')}</td></tr>
                 )}
               </tbody>

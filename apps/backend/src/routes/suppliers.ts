@@ -115,4 +115,36 @@ export async function supplierRoutes(app: FastifyInstance): Promise<void> {
     }))
     return restored
   })
+
+  // ─── HISTORIQUE DES COMMANDES (#214, miroir de GET /api/customers/:id/sales) ──────
+  app.get('/api/suppliers/:id/orders', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
+    const tenantId = getTenantId(request)
+    const { id } = request.params as { id: string }
+    // Scope tenant STRICT sur le FOURNISSEUR d'abord : sans lui, un id d'un autre tenant
+    // renverrait [] — indiscernable d'« aucune commande », donc un oracle silencieux.
+    const supplier = await prisma.supplier.findFirst({ where: { id, tenantId }, select: { id: true } })
+    if (!supplier) return reply.code(404).send({ error: 'Fournisseur introuvable' })
+    const orders = await prisma.purchaseOrder.findMany({
+      // `tenantId` REDONDANT avec le scope fournisseur ci-dessus, et c'est voulu (defense-in-depth).
+      // ⚠️ `deletedAt: null` — DIFFÉRENCE avec l'historique client : PurchaseOrder est en SOFT
+      // DELETE (cf. routes/orders.ts:28), une commande supprimée ne doit pas ressurgir ici.
+      where: { supplierId: id, tenantId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      take: 50, // même plafond que l'historique client
+      select: {
+        id: true, ref: true, total: true, status: true, createdAt: true, expectedAt: true,
+        // Nombre de LIGNES, cohérent avec la colonne « Articles » du reste de l'app.
+        _count: { select: { items: true } },
+      },
+    })
+    return orders.map(o => ({
+      id: o.id,
+      ref: o.ref,
+      total: o.total,
+      status: o.status,
+      createdAt: o.createdAt,
+      expectedAt: o.expectedAt,
+      items: o._count.items,
+    }))
+  })
 }

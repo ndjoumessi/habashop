@@ -4,7 +4,9 @@ import { Factory, CheckCircle, Truck, Star } from 'lucide-react'
 interface Props {
   total: number
   actifs: number
-  enCours: number
+  // `null` = commandes pas (encore) connues → « — ». Un 0 affirmerait « aucune commande
+  // en cours », ce qui était faux en permanence tant que ce KPI comptait sur un tableau vide (#214).
+  enCours: number | null
   avgRating: string | null
 }
 
@@ -14,7 +16,7 @@ export default function SuppliersKpis({ total, actifs, enCours, avgRating }: Pro
       {[
         { label: t('suppliers_total'),           value: total.toString(),   color: 'var(--p2)',   hex: '#6C47FF', icon: <Factory       size={18} /> },
         { label: t('suppliers_active'),          value: actifs.toString(),  color: 'var(--acc2)', hex: '#00D084', icon: <CheckCircle   size={18} /> },
-        { label: t('suppliers_pending_orders'),  value: enCours.toString(), color: 'var(--acc)',  hex: '#FF9500', icon: <Truck         size={18} /> },
+        { label: t('suppliers_pending_orders'),  value: enCours === null ? '—' : enCours.toString(), color: 'var(--acc)',  hex: '#FF9500', icon: <Truck         size={18} /> },
         { label: t('suppliers_avg_rating'),      value: avgRating ? `${avgRating}/5` : '—', color: 'var(--acc)',  hex: '#FF9500', icon: <Star          size={18} /> },
       ].map(k => (
         <div key={k.label} className="kpi-card" style={{

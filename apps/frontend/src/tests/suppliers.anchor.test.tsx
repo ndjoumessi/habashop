@@ -15,7 +15,12 @@ vi.mock('@/lib/api', () => ({
     create: vi.fn().mockResolvedValue({ id: 's4' }),
     update: vi.fn().mockResolvedValue({}),
     delete: vi.fn().mockResolvedValue({}),
+    // Historique de la fiche fournisseur (#214) : la modale le DEMANDE désormais.
+    orders: vi.fn().mockResolvedValue([]),
   },
+  // Le KPI « commandes en cours » compte de VRAIES commandes depuis #214 — il se
+  // calculait avant sur `supplier.orders`, un tableau toujours vide.
+  ordersApi: { list: vi.fn().mockResolvedValue([]) },
 }))
 vi.mock('@/lib/confirm', () => ({ confirm: vi.fn().mockResolvedValue(true) }))
 vi.mock('@/utils/export', () => ({ exportCSV: vi.fn(), openPDF: vi.fn(), htmlTable: vi.fn(() => '') }))

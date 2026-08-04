@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, t } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
-import { suppliersApi } from '@/lib/api'
+import { suppliersApi, ordersApi } from '@/lib/api'
 import { Plus } from 'lucide-react'
 import { confirm } from '@/lib/confirm'
 import toast from 'react-hot-toast'
@@ -26,12 +26,25 @@ export default function Suppliers() {
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
+  // KPI « commandes en cours » : compté sur les VRAIES commandes (#214). Il se calculait
+  // avant sur `supplier.orders`, un tableau toujours vide → le KPI affichait 0 en
+  // permanence, y compris avec des commandes en transit. `null` = pas encore su (l'écran
+  // montre « — »), jamais un 0 qui affirmerait « aucune commande en cours ».
+  const [pendingOrders, setPendingOrders] = useState<number | null>(null)
 
   useEffect(() => {
     suppliersApi.list()
       .then(data => setSuppliers(data.map(mapApiSupplier)))
       .catch(() => toast.error(i('Impossible de charger les fournisseurs — réessayer', 'Could not load suppliers — please retry', 'No se pudieron cargar los proveedores — reintenta', 'Impossibile caricare i fornitori — riprova')))
       .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    // Statuts du FIL ('SENT'/'CONFIRMED'/'IN_TRANSIT'), pas les libellés d'écran : filtrer
+    // sur 'ENVOYÉE'/'CONFIRMÉE' ici ne matcherait jamais rien.
+    ordersApi.list()
+      .then(list => setPendingOrders((list ?? []).filter(o => ['SENT', 'CONFIRMED', 'IN_TRANSIT'].includes(o.status)).length))
+      .catch(() => setPendingOrders(null))
   }, [])
 
   useEffect(() => {
@@ -67,7 +80,7 @@ export default function Suppliers() {
   useEffect(() => { pg.reset() }, [search, statusFilter, catFilter])
 
   const actifs    = suppliers.filter(s => s.status === 'Actif').length
-  const enCours   = suppliers.flatMap(s => s.orders).filter(o => ['ENVOYÉE', 'CONFIRMÉE', 'EN TRANSIT'].includes(o.status)).length
+  const enCours   = pendingOrders
   const avgRating = suppliers.length > 0
     ? (suppliers.reduce((s, sup) => s + (Number(sup.rating) || 0), 0) / suppliers.length).toFixed(1)
     : null
@@ -109,7 +122,7 @@ export default function Suppliers() {
       categories: form.categories.split(',').map(c => c.trim()).filter(Boolean),
       phone: form.phone, email: form.email, address: form.address,
       contact: form.contact, leadTime: form.leadTime, rating: form.rating,
-      status: form.status, orders: [], notes: form.notes,
+      status: form.status, notes: form.notes,
     }
     try {
       const created = await suppliersApi.create({ name: form.name, categories: form.categories, phone: form.phone, email: form.email, address: form.address, leadTime: form.leadTime, rating: form.rating, status: form.status, notes: form.notes })

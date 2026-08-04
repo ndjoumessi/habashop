@@ -2,6 +2,7 @@ import { logger } from '@/lib/logger'
 import type { ApiSupplier, SupplierCreate, SupplierWrite } from '@/components/suppliers/suppliersShared'
 import type { ApiOrder, OrderWrite } from '@/components/orders/ordersShared'
 import type { ApiCustomerSale } from '@/components/customers/customersShared'
+import type { ApiSupplierOrder } from '@/components/suppliers/suppliersShared'
 
 const BASE_URL: string = (import.meta as any).env?.VITE_API_URL
   ?? 'https://habashop-production.up.railway.app'
@@ -278,6 +279,9 @@ export const suppliersApi = {
   create: (data: SupplierCreate) => api.post<ApiSupplier>('/api/suppliers', data),
   update: (id: string, data: SupplierWrite) => api.put<ApiSupplier>(`/api/suppliers/${id}`, data),
   delete: (id: string) => api.delete<void>(`/api/suppliers/${id}`),
+  // Historique des commandes (#214) — ⚠️ type de FRONTIÈRE `ApiSupplierOrder`, pas
+  // `SupplierOrder` : `mapApiSupplierOrder` traverse. 50 lignes max, plus récentes d'abord.
+  orders: (id: string) => api.get<ApiSupplierOrder[]>(`/api/suppliers/${id}/orders`),
   scanInvoice: async (file: File): Promise<any> => {
     const token = getToken()
     const fd = new FormData()

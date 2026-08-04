@@ -65,7 +65,10 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, Record<L4, string>> = {
 }
 export const orderStatusLabel = (s: OrderStatus, lang: string) => ORDER_STATUS_LABELS[s]?.[lang as L4] ?? s
 
-const API_TO_LOCAL_STATUS: Record<string, OrderStatus> = {
+// Exporté : SOURCE UNIQUE de la traduction statut API → libellé local. L'historique de
+// commandes de la fiche fournisseur (#214) la réutilise — sans elle, il afficherait le
+// littéral 'DRAFT'/'SENT' du fil là où tout le reste de l'app dit 'BROUILLON'/'ENVOYÉE'.
+export const API_TO_LOCAL_STATUS: Record<string, OrderStatus> = {
   DRAFT: 'BROUILLON', SENT: 'ENVOYÉE', CONFIRMED: 'CONFIRMÉE',
   IN_TRANSIT: 'EN TRANSIT', RECEIVED: 'REÇUE', CANCELLED: 'ANNULÉE',
 }
