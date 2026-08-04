@@ -157,6 +157,45 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     return restored
   })
 
+  // ─── HISTORIQUE D'ACHATS ──────────────
+  // La donnée existait (`Sale.customerId`) mais AUCUN endpoint ne la servait : les deux
+  // tables « Historique des achats » du front lisaient un tableau codé `[]`, donc elles
+  // affichaient « aucun achat » à un client qui en avait — cf. #214.
+  //
+  // ⚠️ Les ventes REMBOURSÉES sont RENVOYÉES, avec leur `status`. Les exclure ferait
+  // disparaître un événement réel de l'historique d'un client (« je n'ai jamais rien
+  // rendu ») ; c'est une HISTOIRE, pas un agrégat de CA — les agrégats, eux, continuent
+  // de les exclure. Le front marque la ligne, il ne la compte pas comme un achat.
+  app.get('/api/customers/:id/sales', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
+    const tenantId = getTenantId(request)
+    const { id } = request.params as { id: string }
+    // Scope tenant STRICT sur le CLIENT (comme /loyalty) : sans lui, un id d'un autre
+    // tenant renverrait [] — indiscernable d'« aucun achat », donc un oracle silencieux.
+    const customer = await prisma.customer.findFirst({ where: { id, tenantId }, select: { id: true } })
+    if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
+    const sales = await prisma.sale.findMany({
+      // `tenantId` est REDONDANT avec le scope client ci-dessus, et c'est voulu : la
+      // requête reste correcte même si l'appelant change (defense-in-depth, cf. § Isolation).
+      where: { customerId: id, tenantId },
+      orderBy: { createdAt: 'desc' },
+      take: 50, // même plafond que l'historique fidélité
+      select: {
+        id: true, total: true, createdAt: true, status: true, invoiceNumber: true,
+        // Nombre de LIGNES, pas de quantités cumulées : la colonne « Articles » de
+        // l'écran compte des lignes partout ailleurs (cf. la liste des commandes).
+        _count: { select: { items: true } },
+      },
+    })
+    return sales.map(s => ({
+      id: s.id,
+      total: s.total,
+      createdAt: s.createdAt,
+      status: s.status,
+      invoiceNumber: s.invoiceNumber,
+      items: s._count.items,
+    }))
+  })
+
   // ─── LOYALTY ──────────────────────────
   app.get('/api/customers/:id/loyalty', { preHandler: authenticate }, async (request, reply) => {
     const tenantId = getTenantId(request)

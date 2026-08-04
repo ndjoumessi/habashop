@@ -238,7 +238,6 @@ export default function Customers() {
         loyaltyPoints: 0, maxLoyalty: 200,
         since:        new Date().toISOString().split('T')[0],
         lastPurchase: new Date().toISOString().split('T')[0],
-        purchases: [],
         notes: '',
       }])
       toast.success(i('Client créé (local)', 'Customer created (local)', 'Cliente creado (local)', 'Cliente creato (locale)'))

@@ -306,7 +306,7 @@ export default function CustomerMap({
           const cfg      = getMapCfg(selected.type ?? 'Détail')
           const totalCA  = Number(selected.totalRevenue ?? selected.totalCA ?? 0)
           const loyalty  = Number(selected.loyaltyPoints ?? 0)
-          const orders   = selected.purchasesPerMonth ?? selected.purchases?.length ?? 0
+          const orders   = selected.purchasesPerMonth ?? 0
           const loyaltyPct = Math.min(100, Math.round((loyalty / (selected.maxLoyalty || 1000)) * 100))
           const initials = (selected.name ?? '?').split(' ').map((n: string) => n[0] ?? '').join('').slice(0, 2).toUpperCase()
           return (

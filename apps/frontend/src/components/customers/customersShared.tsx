@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Building2, ShoppingBag, Star, ShoppingCart } from 'lucide-react'
 import { useAppStore, isThemeLight, useCurrencyInfo, useConvertFromXOF } from '@/stores/appStore'
+import { customersApi } from '@/lib/api'
 
 /** Montant avec suffixe devise DISCRET (pattern tuiles POS item 11) : chiffre
  *  proéminent, symbole plus petit et atténué — au lieu du fmt() d'un seul tenant. */
@@ -22,13 +23,82 @@ export type CustomerForm = { name: string; type: ClientType; phone: string; emai
 // Formulaire d'ÉDITION client — comme CustomerForm + notes (modale d'édition).
 export type EditCustomerForm = CustomerForm & { notes: string }
 
-export interface Purchase { ref: string; date: string; total: number; items: number }
+/**
+ * ⚠️ Type de FRONTIÈRE (`ApiCustomerSale`), pas le domaine `Purchase` : sur le fil, une
+ * vente porte `createdAt` (ISO), un `invoiceNumber` NULLABLE et un `status`. L'écran, lui,
+ * veut une `ref` toujours affichable et un booléen. `mapApiCustomerSale` traverse.
+ * Forme de `GET /api/customers/:id/sales`.
+ */
+export interface ApiCustomerSale {
+  id: string
+  total: number
+  createdAt: string
+  status: string              // 'completed' | 'refunded'
+  invoiceNumber: string | null // null tant qu'aucune facture PDF n'a été demandée
+  items: number                // nombre de LIGNES de la vente (pas la somme des quantités)
+}
 
+export interface Purchase { ref: string; date: string; total: number; items: number; refunded: boolean }
+
+/**
+ * ⚠️ `Customer` NE PORTE PLUS de champ `purchases`. Il en avait un, initialisé `[]` et
+ * jamais rempli : les deux tables « Historique des achats » affichaient donc « aucun achat »
+ * à des clients qui en avaient (#214). Un champ qui a la forme d'une donnée sans jamais en
+ * être une est pire qu'un champ absent — le compilateur le valide et l'écran ment.
+ * L'historique se DEMANDE à l'ouverture de la fiche (`customersApi.sales`), il ne se
+ * transporte pas dans la liste.
+ */
 export interface Customer {
   id: string; name: string; type: ClientType; phone: string; email: string
   address: string; purchasesPerMonth: number; totalCA: number
   loyaltyPoints: number; since: string; lastPurchase: string
-  purchases: Purchase[]; notes: string
+  notes: string
+}
+
+/**
+ * Référence affichée : le numéro de FACTURE quand il existe (c'est la vraie référence,
+ * celle que le client a sur son papier), sinon un court identifiant dérivé de l'id — même
+ * convention que le reste de l'app (`V-XXXXXX`, cf. exports et historique POS).
+ */
+export function mapApiCustomerSale(s: ApiCustomerSale): Purchase {
+  return {
+    ref: s.invoiceNumber ?? `V-${String(s.id ?? '').slice(-6).toUpperCase()}`,
+    date: s.createdAt,
+    total: s.total ?? 0,
+    items: s.items ?? 0,
+    refunded: s.status === 'refunded',
+  }
+}
+
+/** État de l'historique d'achats d'une fiche client ouverte. */
+export type PurchaseHistory = { rows: Purchase[]; loading: boolean; failed: boolean }
+
+/**
+ * Charge l'historique à l'OUVERTURE d'une fiche (id non-null), pas au chargement de la
+ * liste : 50 lignes par client × toute la base serait payé par tout le monde pour une
+ * modale que personne n'ouvre.
+ *
+ * ⚠️ TROIS états DISTINCTS, et c'est le cœur du correctif (#214) : « en cours »,
+ * « échec » et « zéro achat » ne disent pas la même chose au commerçant. Les confondre
+ * est exactement le défaut qu'on ferme — un tableau vide qui affirme « aucun achat »
+ * alors qu'on n'a pas su demander.
+ *
+ * ⚠️ Le garde `alive` n'est pas une précaution de style : sans lui, ouvrir Awa puis
+ * Moussa pendant que la 1ʳᵉ requête vole afficherait les achats d'AWA sur la fiche de
+ * MOUSSA — une fuite d'un client vers un autre, à l'écran.
+ */
+export function usePurchaseHistory(customerId: string | null): PurchaseHistory {
+  const [state, setState] = useState<PurchaseHistory>({ rows: [], loading: false, failed: false })
+  useEffect(() => {
+    if (!customerId) { setState({ rows: [], loading: false, failed: false }); return }
+    let alive = true
+    setState({ rows: [], loading: true, failed: false })
+    customersApi.sales(customerId)
+      .then(list => { if (alive) setState({ rows: (list ?? []).map(mapApiCustomerSale), loading: false, failed: false }) })
+      .catch(() => { if (alive) setState({ rows: [], loading: false, failed: true }) })
+    return () => { alive = false }
+  }, [customerId])
+  return state
 }
 
 // Fidélité — paliers CONFIGURABLES par tenant (miroir backend lib/loyalty). STATUT seulement.
@@ -124,7 +194,6 @@ export function mapApiCustomer(c: any): Customer {
     loyaltyPoints: c.loyaltyPoints ?? 0,
     since: c.createdAt?.split('T')[0] ?? new Date().toISOString().split('T')[0],
     lastPurchase: c.updatedAt?.split('T')[0] ?? new Date().toISOString().split('T')[0],
-    purchases: [],
     notes: c.notes || '',
   }
 }

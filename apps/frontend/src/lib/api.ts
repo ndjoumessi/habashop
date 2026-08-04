@@ -1,6 +1,7 @@
 import { logger } from '@/lib/logger'
 import type { ApiSupplier, SupplierCreate, SupplierWrite } from '@/components/suppliers/suppliersShared'
 import type { ApiOrder, OrderWrite } from '@/components/orders/ordersShared'
+import type { ApiCustomerSale } from '@/components/customers/customersShared'
 
 const BASE_URL: string = (import.meta as any).env?.VITE_API_URL
   ?? 'https://habashop-production.up.railway.app'
@@ -259,6 +260,9 @@ export const customersApi = {
   // Recherche (sélecteur POS) : ≥2 chars, max 8 résultats, chaque résultat enrichi de `tier`.
   search: (q: string) => api.get<any[]>(`/api/customers?search=${encodeURIComponent(q)}`),
   get:    (id: string) => api.get<any>(`/api/customers/${id}`),
+  // Historique d'achats (#214) — ⚠️ type de FRONTIÈRE `ApiCustomerSale`, pas `Purchase` :
+  // `mapApiCustomerSale` traverse (ref/date/refunded). 50 lignes max, plus récentes d'abord.
+  sales:  (id: string) => api.get<ApiCustomerSale[]>(`/api/customers/${id}/sales`),
   create: (data: any) => api.post<any>('/api/customers', data),
   update: (id: string, data: any) => api.put<any>(`/api/customers/${id}`, data),
   delete: (id: string) => api.delete<void>(`/api/customers/${id}`),

@@ -10,9 +10,10 @@ import { lazy, Suspense, type Dispatch, type SetStateAction } from 'react'
 // Lazy : LoyaltyCardDigital embarque html2canvas + qrcode (~45 Ko gz) — hors du chunk Customers
 const LoyaltyCardDigital = lazy(() => import('@/components/ui/LoyaltyCardDigital'))
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
-import { type Customer, type ClientType, type CustomerForm, type EditCustomerForm, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyNextThreshold } from '@/components/customers/customersShared'
+import { type Customer, type ClientType, type CustomerForm, type EditCustomerForm, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyNextThreshold, usePurchaseHistory } from '@/components/customers/customersShared'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { announce } from '@/lib/announce'
+import { fmtDate } from '@/lib/formatDate'
 
 interface CustomersModalsProps {
   viewCustomer: Customer | null; setViewCustomer: (c: any) => void
@@ -41,6 +42,17 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
   const editBoxRef   = useModalFocus<HTMLDivElement>(showEditCustModal && !!editCustomer)
   const createBoxRef = useModalFocus<HTMLDivElement>(showCreate)
   const detailBoxRef = useModalFocus<HTMLDivElement>(showDetailModal && !!detailCustomer)
+  // Historique d'achats de la fiche OUVERTE (#214). Les deux modales n'étant jamais
+  // ouvertes ensemble — « Voir fiche complète » ferme l'aperçu — une seule requête suffit,
+  // et passer de l'une à l'autre sur le MÊME client ne refait rien (l'id ne change pas).
+  const openCustomerId = viewCustomer?.id ?? (showDetailModal ? detailCustomer?.id ?? null : null)
+  const purchases = usePurchaseHistory(openCustomerId)
+  // Message d'état : « on n'a pas pu demander » ≠ « il n'a rien acheté ».
+  const purchasesEmptyLabel = purchases.loading
+    ? i('Chargement de l’historique…', 'Loading history…', 'Cargando el historial…', 'Caricamento dello storico…')
+    : purchases.failed
+      ? i('Historique indisponible', 'History unavailable', 'Historial no disponible', 'Storico non disponibile')
+      : null
   return (
     <>
       {viewCustomer && (
@@ -95,16 +107,25 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 <table aria-label={i('Historique achats', 'Purchase history', 'Historial compras', 'Storico acquisti')}>
                   <thead><tr><th scope="col">{i('Référence', 'Reference', 'Referencia', 'Riferimento')}</th><th scope="col">{i('Date', 'Date', 'Fecha', 'Data')}</th><th scope="col">{i('Articles', 'Items', 'Artículos', 'Articoli')}</th><th scope="col" className="th-num">{i('Montant', 'Amount', 'Importe', 'Importo')}</th></tr></thead>
                   <tbody>
-                    {viewCustomer.purchases.map(p => (
+                    {purchases.rows.map(p => (
                       <tr key={p.ref}>
-                        <td className="td-mono text-xs">{p.ref}</td>
-                        <td className="td-mono text-xs">{new Date(p.date).toLocaleDateString(loc)}</td>
+                        <td className="td-mono text-xs">
+                          {p.ref}
+                          {p.refunded && (
+                            <span className="badge badge-red" style={{ marginLeft: 6, fontSize: 'var(--fs-caption)' }}>
+                              {i('Remboursé', 'Refunded', 'Reembolsado', 'Rimborsato')}
+                            </span>
+                          )}
+                        </td>
+                        <td className="td-mono text-xs">{fmtDate(p.date)}</td>
                         <td className="text-xs" style={{ color: 'var(--text2)' }}>{p.items} {i('art.', 'items', 'art.', 'art.')}</td>
-                        <td className="td-num text-xs" style={{ color: 'var(--acc2)' }}>{fmt(p.total)}</td>
+                        <td className="td-num text-xs" style={{ color: p.refunded ? 'var(--text3)' : 'var(--acc2)', textDecoration: p.refunded ? 'line-through' : undefined }}>{fmt(p.total)}</td>
                       </tr>
                     ))}
-                    {viewCustomer.purchases.length === 0 && (
-                      <tr><td colSpan={4} className="text-center py-4" style={{ color: 'var(--text3)' }}>{i('Aucun achat', 'No purchases', 'Sin compras', 'Nessun acquisto')}</td></tr>
+                    {purchases.rows.length === 0 && (
+                      <tr><td colSpan={4} className="text-center py-4" style={{ color: 'var(--text3)' }} role={purchasesEmptyLabel ? 'status' : undefined}>
+                        {purchasesEmptyLabel ?? i('Aucun achat', 'No purchases', 'Sin compras', 'Nessun acquisto')}
+                      </td></tr>
                     )}
                   </tbody>
                 </table>
@@ -538,10 +559,10 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <ShoppingBag size={12} style={{color:'var(--text3)'}} /> {i('HISTORIQUE DES ACHATS', 'PURCHASE HISTORY', 'HISTORIAL DE COMPRAS', 'STORICO ACQUISTI')}
                 </div>
-                {detailCustomer.purchases.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '28px', background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 12, color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>
+                {purchases.rows.length === 0 ? (
+                  <div role={purchasesEmptyLabel ? 'status' : undefined} style={{ textAlign: 'center', padding: '28px', background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 12, color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>
                     <div style={{ display:'flex', justifyContent:'center', marginBottom: 8 }}><ShoppingCart size={28} style={{color:'var(--text4)'}} /></div>
-                    {i('Aucun achat enregistré', 'No purchases recorded', 'Sin compras registradas', 'Nessun acquisto registrato')}
+                    {purchasesEmptyLabel ?? i('Aucun achat enregistré', 'No purchases recorded', 'Sin compras registradas', 'Nessun acquisto registrato')}
                   </div>
                 ) : (
                   <div className="table-wrap">
@@ -556,15 +577,17 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                         </tr>
                       </thead>
                       <tbody>
-                        {detailCustomer.purchases.map(p => (
+                        {purchases.rows.map(p => (
                           <tr key={p.ref}>
                             <td className="td-mono" style={{ fontSize: 'var(--fs-caption)', color: 'var(--p3)' }}>{p.ref}</td>
-                            <td style={{ fontSize: 'var(--fs-caption)', color: 'var(--text2)' }}>
-                              {new Date(p.date).toLocaleDateString(i('fr-FR', 'en-US', 'es-ES', 'it-IT'))}
-                            </td>
+                            <td style={{ fontSize: 'var(--fs-caption)', color: 'var(--text2)' }}>{fmtDate(p.date)}</td>
                             <td style={{ fontSize: 'var(--fs-caption)', color: 'var(--text2)' }}>{p.items} art.</td>
-                            <td className="td-mono" style={{ color: 'var(--acc2)', fontWeight: 'var(--fw-semibold)' }}>{fmt(p.total)}</td>
-                            <td><span className="badge badge-ok">✓ {i('Payé', 'Paid', 'Pagado', 'Pagato')}</span></td>
+                            <td className="td-mono" style={{ color: p.refunded ? 'var(--text3)' : 'var(--acc2)', fontWeight: 'var(--fw-semibold)', textDecoration: p.refunded ? 'line-through' : undefined }}>{fmt(p.total)}</td>
+                            {/* Le statut était le littéral « ✓ Payé » — vrai tant que la table
+                                était vide, faux dès la 1ʳᵉ vente remboursée qui s'y affiche. */}
+                            <td>{p.refunded
+                              ? <span className="badge badge-red">{i('Remboursé', 'Refunded', 'Reembolsado', 'Rimborsato')}</span>
+                              : <span className="badge badge-ok">✓ {i('Payé', 'Paid', 'Pagado', 'Pagato')}</span>}</td>
                           </tr>
                         ))}
                       </tbody>
