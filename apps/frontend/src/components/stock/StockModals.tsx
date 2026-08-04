@@ -11,6 +11,7 @@ import { type ProductItem, type StockForm, type CatForm, type LabelConfig, type 
 import { lookupProductByEan } from '@/lib/productLookup'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { normalizeBarcode, isValidBarcode, barcodeFormat, generateEAN13, quietZonePx } from '@/lib/barcode'
+import { confirm } from '@/lib/confirm'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 
@@ -394,8 +395,12 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     {renderEanWarning()}
                     {/* Second recours : générer un code interne si pas de code fabricant à scanner. */}
                     <button type="button"
-                      onClick={() => {
-                        if (form.barcode && !window.confirm(lang === 'en' ? 'Replace the existing barcode?' : lang === 'es' ? '¿Reemplazar el código de barras existente?' : lang === 'it' ? 'Sostituire il codice a barre esistente?' : 'Remplacer le code-barres existant ?')) return
+                      onClick={async () => {
+                        if (form.barcode && !(await confirm({
+                          title: i('Remplacer le code-barres', 'Replace the barcode', 'Reemplazar el código de barras', 'Sostituire il codice a barre'),
+                          message: i('Remplacer le code-barres existant ?', 'Replace the existing barcode?', '¿Reemplazar el código de barras existente?', 'Sostituire il codice a barre esistente?'),
+                          danger: true,
+                        }))) return
                         setForm(f => ({ ...f, barcode: generateEAN13() }))
                       }}
                       style={{ marginTop:8, display:'inline-flex', alignItems:'center', gap:6, background:'transparent', border:'none', padding:0, color:'var(--text3)', fontSize:'var(--fs-label)', fontFamily:'var(--font)', cursor:'pointer' }}>

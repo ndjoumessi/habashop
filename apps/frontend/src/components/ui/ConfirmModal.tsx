@@ -54,7 +54,7 @@ export default function ConfirmModal({
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-display)',
         }} aria-hidden="true">{danger ? '⚠️' : '❓'}</div>
         <h3 id="confirm-title" style={{ fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 8 }}>{title}</h3>
-        <p id="confirm-message" style={{ fontSize: 'var(--fs-sm)', color: 'var(--text2)', lineHeight: 1.6, marginBottom: 24 }}>{message}</p>
+        <p id="confirm-message" style={{ fontSize: 'var(--fs-sm)', color: 'var(--text2)', lineHeight: 1.6, marginBottom: 24, whiteSpace: 'pre-line' }}>{message}</p>
         <div style={{ display: 'flex', gap: 10 }}>
           <button data-cancel onClick={onCancel} className="mini-btn" style={{ flex: 1, justifyContent: 'center' }}>
             {cancelLabel}

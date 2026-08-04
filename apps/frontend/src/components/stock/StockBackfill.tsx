@@ -2,6 +2,7 @@ import { lazy, Suspense, useState } from 'react'
 import { X, Wand2, Camera, Check, Tag, AlertTriangle } from 'lucide-react'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { normalizeBarcode, isValidBarcode, generateEAN13 } from '@/lib/barcode'
+import { confirm } from '@/lib/confirm'
 import type { ProductItem } from '@/components/stock/stockShared'
 
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
@@ -37,7 +38,7 @@ export default function StockBackfill({ products, lang, onClose, onSave, saving 
 
   // Génération INTERNE réservée au vrac : uniquement les produits cochés, avec
   // confirmation nommant le nombre. N'écrase pas un code déjà saisi/scanné.
-  const genSelectedInternal = () => {
+  const genSelectedInternal = async () => {
     const targets = products.filter(p => selected.has(p.sku) && !drafts[p.sku]?.trim())
     if (targets.length === 0) return
     const msg = i(
@@ -46,7 +47,7 @@ export default function StockBackfill({ products, lang, onClose, onSave, saving 
       `¿Generar un código interno para ${targets.length} producto(s) seleccionado(s)?\n\nRESERVAR para productos a granel sin código del fabricante en el envase.`,
       `Generare un codice interno per ${targets.length} prodotto(i) selezionato(i)?\n\nRISERVARE ai prodotti sfusi senza codice produttore sulla confezione.`,
     )
-    if (!window.confirm(msg)) return
+    if (!(await confirm({ title: i('Générer un code interne', 'Generate an internal code', 'Generar un código interno', 'Genera un codice interno'), message: msg }))) return
     setDrafts(d => {
       const next = { ...d }
       for (const p of targets) next[p.sku] = generateEAN13()
