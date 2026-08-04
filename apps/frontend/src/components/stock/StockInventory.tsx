@@ -347,8 +347,8 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                     />
                   </th>
                   <th scope="col">{t('col_product')}</th><th scope="col">{t('col_category')}</th>
-                  <th scope="col">{t('col_buy_price')}</th><th scope="col">{t('col_sell_price')}</th><th scope="col">{i('Marge', 'Margin', 'Margen', 'Margine')}</th>
-                  <th scope="col">{t('col_stock')}</th><th scope="col">{t('col_threshold')}</th><th scope="col">{t('col_supplier')}</th>
+                  <th scope="col" className="th-num">{t('col_buy_price')}</th><th scope="col" className="th-num">{t('col_sell_price')}</th><th scope="col" className="th-num">{i('Marge', 'Margin', 'Margen', 'Margine')}</th>
+                  <th scope="col">{t('col_stock')}</th><th scope="col" className="th-num">{t('col_threshold')}</th><th scope="col">{t('col_supplier')}</th>
                   <th scope="col">{t('col_status')}</th><th scope="col">{t('col_actions')}</th>
                 </tr>
               </thead>
