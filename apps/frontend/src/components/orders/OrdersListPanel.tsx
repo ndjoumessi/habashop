@@ -135,7 +135,7 @@ export default function OrdersListPanel({
               <th scope="col">{t('orders_date')}</th>
               <th scope="col">{t('orders_expected')}</th>
               <th scope="col">{t('orders_articles')}</th>
-              <th scope="col">{t('col_amount')}</th>
+              <th scope="col" className="th-num">{t('col_amount')}</th>
               <th scope="col">{t('col_status')}</th>
               <th scope="col">{t('col_actions')}</th>
             </tr>

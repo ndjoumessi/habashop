@@ -55,7 +55,7 @@ export default function OrderDetailModal({ order, onClose, changeStatus, printOr
         <div className="table-wrap data-table mb-4">
           <table aria-label={i('Lignes de la commande', 'Order lines', 'Líneas del pedido', "Righe dell'ordine")}>
             <thead>
-              <tr><th scope="col">{i('Produit', 'Product', 'Producto', 'Prodotto')}</th><th scope="col">{i('Qté', 'Qty', 'Cant.', 'Qtà')}</th><th scope="col">{i('Unité', 'Unit', 'Unidad', 'Unità')}</th><th scope="col">{i('PU', 'UP', 'PU', 'PU')}</th><th scope="col">{i('Total', 'Total', 'Total', 'Totale')}</th></tr>
+              <tr><th scope="col">{i('Produit', 'Product', 'Producto', 'Prodotto')}</th><th scope="col" className="th-num">{i('Qté', 'Qty', 'Cant.', 'Qtà')}</th><th scope="col">{i('Unité', 'Unit', 'Unidad', 'Unità')}</th><th scope="col" className="th-num">{i('PU', 'UP', 'PU', 'PU')}</th><th scope="col" className="th-num">{i('Total', 'Total', 'Total', 'Totale')}</th></tr>
             </thead>
             <tbody>
               {order.items.map((item, i) => (

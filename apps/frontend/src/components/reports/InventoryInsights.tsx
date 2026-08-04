@@ -33,7 +33,6 @@ export default function InventoryInsights({ fmt, lang }: Props) {
     return () => { alive = false }
   }, [])
 
-  const th: React.CSSProperties = { textAlign: 'right' }
   const sectionHead = (icon: React.ReactNode, title: string, count: number, color: string) => (
     <div className="panel-head">
       <span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -69,10 +68,10 @@ export default function InventoryInsights({ fmt, lang }: Props) {
                 <thead>
                   <tr>
                     <th scope="col">{i('Produit', 'Product', 'Producto', 'Prodotto')}</th>
-                    <th scope="col" style={th}>{i('Stock', 'Stock', 'Stock', 'Scorta')}</th>
-                    <th scope="col" style={th}>{i('Seuil', 'Threshold', 'Umbral', 'Soglia')}</th>
-                    <th scope="col" style={th}>{i('Vélocité 30j', 'Velocity 30d', 'Velocidad 30d', 'Velocità 30g')}</th>
-                    <th scope="col" style={th}>{i('Réappro suggérée', 'Suggested reorder', 'Reabast. sugerido', 'Riordino suggerito')}</th>
+                    <th scope="col" className="th-num">{i('Stock', 'Stock', 'Stock', 'Scorta')}</th>
+                    <th scope="col" className="th-num">{i('Seuil', 'Threshold', 'Umbral', 'Soglia')}</th>
+                    <th scope="col" className="th-num">{i('Vélocité 30j', 'Velocity 30d', 'Velocidad 30d', 'Velocità 30g')}</th>
+                    <th scope="col" className="th-num">{i('Réappro suggérée', 'Suggested reorder', 'Reabast. sugerido', 'Riordino suggerito')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -125,8 +124,8 @@ export default function InventoryInsights({ fmt, lang }: Props) {
                   <tr>
                     <th scope="col">{i('Produit', 'Product', 'Producto', 'Prodotto')}</th>
                     <th scope="col">{i('Dernière vente', 'Last sale', 'Última venta', 'Ultima vendita')}</th>
-                    <th scope="col" style={th}>{i('Stock', 'Stock', 'Stock', 'Scorta')}</th>
-                    <th scope="col" style={th}>{i('Valeur immobilisée', 'Tied-up value', 'Valor inmovilizado', 'Valore immobilizzato')}</th>
+                    <th scope="col" className="th-num">{i('Stock', 'Stock', 'Stock', 'Scorta')}</th>
+                    <th scope="col" className="th-num">{i('Valeur immobilisée', 'Tied-up value', 'Valor inmovilizado', 'Valore immobilizzato')}</th>
                   </tr>
                 </thead>
                 <tbody>

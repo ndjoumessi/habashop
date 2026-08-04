@@ -286,7 +286,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           <div className="table-wrap data-table">
             <table>
               <thead>
-                <tr><th scope="col">{t('col_ref')}</th><th scope="col">{t('col_client')}</th><th scope="col">Mode</th><th scope="col">{t('col_amount')}</th></tr>
+                <tr><th scope="col">{t('col_ref')}</th><th scope="col">{t('col_client')}</th><th scope="col">Mode</th><th scope="col" className="th-num">{t('col_amount')}</th></tr>
               </thead>
               <tbody>
                 {recentSales.map(s => (

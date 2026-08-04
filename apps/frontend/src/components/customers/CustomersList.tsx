@@ -99,8 +99,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
               <thead>
                 <tr>
                   <th scope="col">{t('col_client')}</th><th scope="col">{t('col_type')}</th><th scope="col">{t('col_phone')}</th>
-                  {/* Colonnes numériques : en-têtes alignés à droite comme les cellules (.td-num) */}
-                  <th scope="col" style={{ textAlign: 'right' }}>{t('customers_purchases')}</th><th scope="col" style={{ textAlign: 'right' }}>{t('customers_total_revenue')}</th><th scope="col">{t('col_loyalty')}</th><th scope="col">{t('col_actions')}</th>
+                  <th scope="col" className="th-num">{t('customers_purchases')}</th><th scope="col" className="th-num">{t('customers_total_revenue')}</th><th scope="col">{t('col_loyalty')}</th><th scope="col">{t('col_actions')}</th>
                 </tr>
               </thead>
               <tbody>

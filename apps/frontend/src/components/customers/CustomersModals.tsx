@@ -93,7 +93,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text3)' }}>{i('Historique achats', 'Purchase history', 'Historial compras', 'Storico acquisti')}</div>
               <div className="table-wrap">
                 <table aria-label={i('Historique achats', 'Purchase history', 'Historial compras', 'Storico acquisti')}>
-                  <thead><tr><th scope="col">{i('Référence', 'Reference', 'Referencia', 'Riferimento')}</th><th scope="col">{i('Date', 'Date', 'Fecha', 'Data')}</th><th scope="col">{i('Articles', 'Items', 'Artículos', 'Articoli')}</th><th scope="col">{i('Montant', 'Amount', 'Importe', 'Importo')}</th></tr></thead>
+                  <thead><tr><th scope="col">{i('Référence', 'Reference', 'Referencia', 'Riferimento')}</th><th scope="col">{i('Date', 'Date', 'Fecha', 'Data')}</th><th scope="col">{i('Articles', 'Items', 'Artículos', 'Articoli')}</th><th scope="col" className="th-num">{i('Montant', 'Amount', 'Importe', 'Importo')}</th></tr></thead>
                   <tbody>
                     {viewCustomer.purchases.map(p => (
                       <tr key={p.ref}>
