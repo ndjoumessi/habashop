@@ -107,6 +107,11 @@ model Tenant {
   subscriptions  Subscription[]
   campaigns      Campaign[]
   userTenants    UserTenant[]
+  // Relations inverses de #183 — exigées par Prisma dès qu'`EmployeeBonus`/`SalaryHistory`
+  // déclarent leur `tenant`. Elles rendent l'intégrité référentielle RÉELLE, là où il n'y
+  // avait qu'une colonne `tenantId` et un index.
+  employeeBonuses  EmployeeBonus[]
+  salaryHistories  SalaryHistory[]
   payrolls       Payroll[]
   transfersFrom  StockTransfer[]      @relation("TransferFrom")
   transfersTo    StockTransfer[]      @relation("TransferTo")
@@ -521,6 +526,9 @@ model Employee {
   @@index([tenantId, deletedAt])
 }
 
+// ⚠️ `tenantId` portait une colonne et un index, mais AUCUNE relation : l'intégrité
+// référentielle n'existait pas (#183). Une ligne pouvait référencer un tenant supprimé —
+// ou inexistant — sans que rien ne s'y oppose.
 model EmployeeBonus {
   id         String   @id @default(cuid())
   tenantId   String
@@ -531,6 +539,11 @@ model EmployeeBonus {
   createdAt  DateTime @default(now())
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  // ⚠️ PAS d'`onDelete` — c'est le DÉFAUT Prisma (Restrict), et c'est la convention MESURÉE
+  // du schéma : 20 des 21 relations vers `Tenant` n'en déclarent aucun ; l'unique exception
+  // est `UserTenant`, une table de jointure. Le `Cascade` ci-dessus est celui de la relation
+  // `employee`, pas de la relation `tenant` — les aligner serait une confusion.
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId])
   @@index([employeeId])
@@ -547,6 +560,8 @@ model SalaryHistory {
   createdAt  DateTime @default(now())
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  // Même convention que `EmployeeBonus` ci-dessus : défaut Prisma, aligné sur 20/21.
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId])
   @@index([employeeId])
