@@ -12,7 +12,7 @@ import { salesWindowStart } from '@/components/dashboard/dashboardShared'
  */
 const cases = JSON.parse(readFileSync(
   join(__dirname, '..', '..', '..', '..', 'docs', 'shared-fixtures', 'sales-window-cases.json'), 'utf-8',
-)) as { cases: Array<Record<string, any>> }
+)) as { cases: Array<{ label: string; period: string; now: string; from: string }> }
 
 /**
  * Jumeau FRONT des cas partagés de fenêtre. Le jumeau BACK vit dans

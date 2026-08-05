@@ -24,8 +24,6 @@ const DashCategoryDonut = lazy(() => import('@/components/charts/DashCategoryDon
 
 const DONUT_COLORS = ['#6C47FF', '#00D084', '#FF9500', '#00B8FF', '#FF3B5C', '#FFB800']
 
-type Lang = 'fr' | 'en' | 'es' | 'it'
-type LangMap = Record<Lang, string>
 
 function ActivityIcon({ type }: { type: 'sale' | 'stock' | 'hr' | 'alert' }) {
   if (type === 'sale')  return <CreditCard size={15} />
