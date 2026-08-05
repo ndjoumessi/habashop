@@ -1,6 +1,21 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { salesWindowStart } from '../utils/salesWindow'
-import cases from '../../../../docs/shared-fixtures/sales-window-cases.json'
+
+/**
+ * ⚠️ Fixture chargée à l'EXÉCUTION (`readFileSync`), JAMAIS par `import`. Ce n'est pas un
+ * détail de style : l'image Docker du backend ne copie que `src`, `prisma`, `package*.json`,
+ * `tsconfig.json` et `scripts` — pas `docs/`. Un `import` du JSON est résolu par tsc à la
+ * COMPILATION, donc `npm run build` échoue dans le conteneur (TS2307) et le déploiement
+ * Railway est rouge, alors que la suite passe en local. Un chemin lu à l'exécution n'est pas
+ * résolu par tsc : le build passe, et le test ne s'exécute jamais dans l'image de prod.
+ * C'est la convention des autres jumeaux (cf. `csvInjection.test.ts`) — elle n'était écrite
+ * nulle part, et l'enfreindre a cassé la prod le 2026-08-05.
+ */
+const cases = JSON.parse(readFileSync(
+  join(__dirname, '..', '..', '..', '..', 'docs', 'shared-fixtures', 'sales-window-cases.json'), 'utf-8',
+)) as { cases: Array<Record<string, any>> }
 
 /**
  * Jumeau BACKEND des cas partagés de fenêtre. Le jumeau FRONT vit dans
