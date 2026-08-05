@@ -23,6 +23,27 @@ export interface ApiSecurityEvent {
 }
 
 /**
+ * `GET /api/admin/security-events` — ⚠️ MÊME TABLE, FORME DIFFÉRENTE.
+ *
+ * La route admin fait `basePrisma.userAuditLog.findMany({ orderBy, take })` — AUCUN `select`,
+ * donc le modèle ENTIER traverse, instantanés d'identité compris. La route du compte, elle,
+ * sélectionne 6 champs et n'expose PAS `userId`/`userEmailSnapshot`/`userNameSnapshot`.
+ *
+ * ⚠️ J'avais d'abord typé les deux routes avec `ApiSecurityEvent` : `tsc` a refusé, parce que
+ * `SecurityEvents.tsx` lit précisément les trois champs que la route du COMPTE ne renvoie pas.
+ * Deux routes sur une même table ne partagent pas forcément un type — c'est le `select` qui
+ * décide, pas le modèle.
+ *
+ * ⚠️ Les instantanés (`…Snapshot`) existent parce que `UserAuditLog` n'a PAS de FK vers `User` :
+ * un audit de sécurité doit survivre à la suppression du compte.
+ */
+export interface ApiAdminSecurityEvent extends ApiSecurityEvent {
+  userId: string
+  userEmailSnapshot: string
+  userNameSnapshot: string
+}
+
+/**
  * `GET /api/audit-logs` — modèle `AuditLog` complet + `include` du NOM de l'utilisateur seul.
  * ⚠️ `user` peut être présent avec un seul champ : l'`include` est `{ user: { select: { name } } }`.
  */
@@ -306,4 +327,85 @@ export interface ApiAiAnalysis {
 /** `POST /api/ai/chat` — le handler rend UNIQUEMENT `{ response }`. */
 export interface ApiAiChat {
   response: string
+}
+
+/* ──────────────────────── Console PLATEFORME (admin) ──────────────────────── */
+
+/**
+ * FRONTIÈRE de la console plateforme (#185).
+ *
+ * ⚠️ RÈGLE DE MONTANTS — `revenue` (CA par boutique) et `PlanRequest.amount` sont en **XOF**
+ * et s'affichent en FCFA, JAMAIS dans la devise d'affichage du super-admin : `useFormatAmount`
+ * y convertirait à des taux externes et rendrait un chiffre qui n'est celui de personne (un
+ * opérateur réglé en EUR lisait « Starter — 15,09 € » au lieu de « 9 900 FCFA »). Ces montants
+ * ne sont PAS en devise-tenant, le convertisseur per-viewer n'a rien à y faire.
+ * Verrous : `adminXof.test.ts` (méta-test) + `adminXof.behaviour.test.tsx` (comportemental).
+ *
+ * ⚠️ NARROWING DÉLIBÉRÉ, et c'est la règle INVERSE de celle d'`ApiSecurityEvent` : la route
+ * fait `return tenants.map(t => ({ ...t, revenue, lastActivityAt }))`, donc le modèle `Tenant`
+ * ENTIER est sur le fil. On ne contracte ici que ce que la console lit. Déclarer MOINS que ce
+ * qui arrive est sûr (aucune lecture d'`undefined`) ; déclarer PLUS est ce qui produit les
+ * bugs de frontière. Les deux règles disent la même chose : ne promettre que du vérifié.
+ */
+export interface ApiAdminTenant {
+  id: string
+  name: string
+  email: string | null
+  plan: string
+  status: string
+  /** Devise de la BOUTIQUE (affichage tenant) — à ne pas confondre avec les montants XOF. */
+  currency: string
+  country: string | null
+  isActive: boolean
+  trialEnds: string | null
+  createdAt: string
+  /** Agrégat AJOUTÉ par le handler — pas une colonne. ⚠️ XOF. */
+  revenue: number
+  /** Dernière vente non remboursée ; `null` = aucune activité. */
+  lastActivityAt: string | null
+  _count: { users: number; products: number; sales: number }
+}
+
+/** `GET /api/admin/stats` — objet littéral d'agrégats. ⚠️ `totalRevenue` en XOF. */
+export interface ApiAdminStats {
+  totalTenants: number
+  totalUsers: number
+  totalSales: number
+  totalRevenue: number
+  totalProducts: number
+}
+
+/** `GET /api/admin/plan-requests` — modèle `PlanRequest` + `include: { tenant: true }`. */
+export interface ApiPlanRequest {
+  id: string
+  tenantId: string
+  plan: string
+  period: string
+  /** ⚠️ XOF (colonne `Int`, commentée « montant en XOF » au schéma). */
+  amount: number
+  currency: string
+  paymentMethod: string
+  paymentRef: string | null
+  status: string
+  notes: string | null
+  adminNotes: string | null
+  createdAt: string
+  updatedAt: string
+  reviewedAt: string | null
+  reviewedBy: string | null
+  /** `include: { tenant: true }` — modèle entier ; seuls `id`/`name` sont lus par la console. */
+  tenant: { id: string; name: string } | null
+}
+
+/** Corps de `POST /api/admin/tenants` — miroir du zod `ADMIN_CREATE_TENANT`. */
+export type AdminCreateTenantWrite = {
+  name: string
+  email?: string
+  plan?: string
+  currency?: string
+  country?: string
+  phone?: string
+  ownerName?: string
+  ownerEmail?: string
+  ownerPassword?: string
 }

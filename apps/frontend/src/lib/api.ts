@@ -7,6 +7,7 @@ import type {
   ApiSecurityEvent, ApiAuditLog, ApiBillingStatus, ApiPendingPlanRequest, PlanRequestWrite,
   ApiSale, ApiSaleWithItems, ApiReportSales, SaleWrite, ApiExpense, ExpenseWrite, ApiGoal, GoalWrite,
   ApiSubscription, ApiSubscriptionWithItems, SubscriptionWrite, ApiAiAnalysis, ApiAiChat,
+  ApiAdminTenant, ApiAdminStats, ApiPlanRequest, AdminCreateTenantWrite, ApiAdminSecurityEvent,
 } from '@/lib/apiTypes'
 import type { ApiDashboardStats } from '@/components/dashboard/dashboardShared'
 import type {
@@ -527,14 +528,18 @@ export const loyaltyApi = {
   }>(`/api/customers/${id}/loyalty-card`),
 }
 
+// ⚠️ Console PLATEFORME — `revenue`, `totalRevenue` et `amount` sont en XOF et s'affichent en
+// FCFA, jamais dans la devise du super-admin. Cf. `apiTypes` et les deux verrous adminXof.
 export const adminApi = {
-  tenants:      () => api.get<any[]>('/api/admin/tenants'),
-  stats:        () => api.get<any>('/api/admin/stats'),
-  createTenant: (data: any) => api.post<any>('/api/admin/tenants', data),
-  planRequests: () => api.get<any[]>('/api/admin/plan-requests'),
+  tenants:      () => api.get<ApiAdminTenant[]>('/api/admin/tenants'),
+  stats:        () => api.get<ApiAdminStats>('/api/admin/stats'),
+  createTenant: (data: AdminCreateTenantWrite) => api.post<ApiAdminTenant>('/api/admin/tenants', data),
+  planRequests: () => api.get<ApiPlanRequest[]>('/api/admin/plan-requests'),
   reviewPlanRequest: (id: string, data: { action: 'approve' | 'reject'; adminNotes?: string }) =>
-    api.patch<any>(`/api/admin/plan-requests/${id}`, data),
-  securityEvents: (limit = 100) => api.get<any[]>(`/api/admin/security-events?limit=${limit}`),
+    api.patch<ApiPlanRequest>(`/api/admin/plan-requests/${id}`, data),
+  // ⚠️ PAS `ApiSecurityEvent` : cette route ne fait aucun `select`, donc elle rend AUSSI les
+  // instantanés d'identité que la route du compte n'expose pas.
+  securityEvents: (limit = 100) => api.get<ApiAdminSecurityEvent[]>(`/api/admin/security-events?limit=${limit}`),
 }
 
 export const accountApi = {

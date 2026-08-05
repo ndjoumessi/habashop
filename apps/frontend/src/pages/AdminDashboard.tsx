@@ -27,9 +27,13 @@ import { Server, Rocket, CheckCircle2 } from 'lucide-react'
 const APP_VERSION = __APP_VERSION__
 
 type Tenant = {
-  id: string; name: string; plan: string; currency: string; country: string
+  id: string; name: string; plan: string; currency: string
+  // ⚠️ NULLABLE — la colonne `Tenant.country` l'est en base, et un tenant créé sans pays
+  // existe réellement (le champ n'est pas obligatoire à l'inscription). Le déclarer `string`
+  // faisait promettre au type ce que la donnée ne garantit pas.
+  country: string | null
   vatRate?: number; createdAt: string; trialEnds?: string | null
-  status?: string; isActive?: boolean; email?: string
+  status?: string; isActive?: boolean; email?: string | null
   revenue?: number; lastActivityAt?: string | null
   _count?: { users: number; products: number; sales: number }
 }
@@ -616,7 +620,7 @@ export default function AdminDashboard() {
               {[
                 ['ID', selected.id],
                 [i('Devise', 'Currency', 'Divisa', 'Valuta'), selected.currency],
-                [i('Pays', 'Country', 'País', 'Paese'), selected.country],
+                [i('Pays', 'Country', 'País', 'Paese'), selected.country ?? '—'],
                 [i('TVA', 'VAT', 'IVA', 'IVA'), `${selected.vatRate ?? 0}%`],
                 [i('Créée le', 'Created', 'Creada', 'Creato'), new Date(selected.createdAt).toLocaleString(lang)],
               ].map(([l, v]) => (
