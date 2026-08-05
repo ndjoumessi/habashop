@@ -1,3 +1,5 @@
+import type { ApiProduct } from '@/components/stock/stockShared'
+
 /**
  * Types de FRONTIÈRE transverses (#185) — pour les surfaces qui n'ont pas de module
  * `*Shared` de domaine : compte, facturation, journal d'audit.
@@ -68,4 +70,240 @@ export type PlanRequestWrite = {
   plan: string
   period?: string
   paymentMethod?: string
+}
+
+/* ─────────────────────────────── Ventes ─────────────────────────────── */
+
+/**
+ * FRONTIÈRE `Sale` — DÉFINIE UNE SEULE FOIS, consommée par `salesApi` ET `dashboardApi.sales`.
+ *
+ * ⚠️ C'est la raison pour laquelle `dashboardApi.sales` était resté `any` au lot 4 : deux
+ * définitions du même retour, c'est le doublon `alertsApi` qu'on venait de supprimer.
+ *
+ * ⚠️ ASYMÉTRIE : `GET /api/sales` fait
+ * `include: { items: { include: { product: true } }, cashier: { select: { name } } }`,
+ * alors que `POST /api/sales` rend la vente NUE (la transaction retourne `newSale`, sans
+ * include). Deux types, donc — et non un seul qui promettrait `items` partout.
+ */
+export interface ApiSale {
+  id: string
+  tenantId: string
+  cashierId: string
+  total: number
+  paymentMode: string
+  discountAmount: number
+  discountType: string | null
+  discountReason: string | null
+  clientType: string
+  customerId: string | null
+  createdAt: string
+  /** completed | refunded */
+  status: string
+  refundedAt: string | null
+  refundedBy: string | null
+  refundReason: string | null
+  /** `null` tant que non remboursée — distinct de `false` (« non remis en stock »). */
+  restocked: boolean | null
+  idempotencyKey: string | null
+  invoiceNumber: string | null
+  loyaltyDiscount: number | null
+  /** Trace d'audit : au moins une ligne a divergé du tarif catalogue. */
+  priceDivergence: boolean | null
+  cashAmount: number | null
+  mobileMoneyAmount: number | null
+  cardAmount: number | null
+  mtnMomoReference: string | null
+  campayReference: string | null
+  paydunyaReference: string | null
+}
+
+/**
+ * Ligne de vente. ⚠️ Les quatre derniers champs sont la TRACE d'audit d'intégrité prix :
+ * `submittedPrice`/`catalogPrice` documentent l'écart, `staleCatalogAt` le qualifie, et
+ * `pricingHonored` dit que l'argent a bougé — c'est le seul des quatre qui exige une
+ * vérification de caisse.
+ */
+export interface ApiSaleItem {
+  id: string
+  saleId: string
+  productId: string
+  qty: number
+  unitPrice: number
+  total: number
+  tierLabel: string | null
+  submittedPrice: number | null
+  catalogPrice: number | null
+  staleCatalogAt: string | null
+  pricingHonored: boolean
+}
+
+/** Forme rendue par la LISTE seule : lignes + produit complet + nom du caissier. */
+export interface ApiSaleWithItems extends ApiSale {
+  items: (ApiSaleItem & { product: ApiProduct })[]
+  cashier: { name: string } | null
+}
+
+/** Réponse de `/api/reports/sales` — total/count/ventilation + les ventes de la fenêtre. */
+export interface ApiReportSales {
+  total: number
+  count: number
+  byPayment: Record<string, number>
+  sales: ApiSaleWithItems[]
+}
+
+/**
+ * Corps de `POST /api/sales`.
+ *
+ * ⚠️ `total` part en BRUT : le serveur applique lui-même la remise fidélité et fait autorité
+ * sur le prix de chaque ligne. Envoyer le NET produirait une double remise (§ Fidélité).
+ * ⚠️ `items[].clientType` porte le TARIF DÉCLARÉ PAR LIGNE — pas par vente : un panier monté
+ * en Détail puis basculé en Grossiste garde légitimement ses prix détail.
+ */
+export type SaleWrite = {
+  /** ⚠️ `price`, PAS `unitPrice` : c'est le zod `SALE_ITEM` qui fait foi, pas le modèle
+   *  `SaleItem` (où la colonne s'appelle `unitPrice`). Une première version avait copié le
+   *  nom de la COLONNE — `tsc` l'a refusé contre `toSaleItemPayload`. Le corps de requête et
+   *  la table ne portent pas les mêmes noms, et c'est le corps qui compte ici. */
+  items: { productId: string; qty: number; price?: number; clientType?: 'retail' | 'semi' | 'wholesale' | null; tierLabel?: string | null }[]
+  paymentMode: string
+  total: number
+  customerId?: string | null
+  discount?: { type: string; amount: number } | null
+  cashAmount?: number
+  mobileMoneyAmount?: number
+  cardAmount?: number
+  idempotencyKey?: string
+  mtnMomoReference?: string | null
+  campayReference?: string | null
+  paydunyaReference?: string | null
+  /** Posé UNIQUEMENT par la file de rejeu mobile (`saleReplay.ts`) — jamais par le POS en ligne. */
+  offlineReplay?: boolean
+}
+
+/* ──────────────────────── Dépenses · objectifs · abonnements ──────────────────────── */
+
+export interface ApiExpense {
+  id: string
+  tenantId: string
+  date: string
+  label: string
+  category: string
+  amountHT: number
+  vat: number
+  amountTTC: number
+  mode: string
+  recurrent: boolean
+  status: string
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** Miroir d'`EXPENSE_FIELDS` — liste blanche STRICTE côté serveur (strip, anti mass-assignment). */
+export type ExpenseWrite = {
+  date?: string
+  label?: string
+  category?: string
+  amountHT?: number
+  vat?: number
+  amountTTC?: number
+  mode?: string
+  recurrent?: boolean
+  status?: string
+  notes?: string | null
+}
+
+export interface ApiGoal {
+  id: string
+  tenantId: string
+  label: string
+  target: number
+  current: number
+  unit: string
+  /** month | week | year */
+  period: string
+  color: string
+  icon: string
+  /** revenue | stock | customers | team */
+  category: string
+  /** salesMonth | transactionsMonth | avgBasket — `null` = objectif saisi à la main. */
+  linkedMetric: string | null
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
+
+export type GoalWrite = Partial<Omit<ApiGoal, 'id' | 'tenantId' | 'createdAt' | 'updatedAt' | 'deletedAt'>>
+
+/**
+ * ⚠️ Un abonnement ne stocke AUCUN total (dérivé de `product.sellPrice` → « au tarif du
+ * jour ») et n'a AUCUNE colonne de fréquence : `dayOfWeek` impose l'hebdomadaire. Ne pas
+ * promettre en UI ce que le modèle ne porte pas.
+ */
+export interface ApiSubscription {
+  id: string
+  tenantId: string
+  customerId: string
+  name: string
+  /** 0 = dimanche … 6 = samedi. */
+  dayOfWeek: number
+  startDate: string | null
+  /** active | paused | cancelled */
+  status: string
+  note: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * Forme rendue par les LISTES : client et produits PARTIELLEMENT sélectionnés côté serveur.
+ * ⚠️ `customer` n'a que 3 champs et `product` que 5 — déclarer le modèle entier ferait lire
+ * `undefined` sur des colonnes qui ne sont pas sur le fil (cf. `ApiSecurityEvent`).
+ */
+export interface ApiSubscriptionWithItems extends ApiSubscription {
+  customer: { id: string; name: string; phone: string | null } | null
+  items: {
+    id: string
+    subscriptionId: string
+    productId: string
+    /** ⚠️ `quantity`, PAS `qty` — le modèle `SubscriptionItem` diffère de `SaleItem` sur ce
+     *  point. Une première version de ce type avait copié `qty` par analogie : `tsc` l'a
+     *  refusé, le front envoyait déjà la bonne clé. Dériver du MODÈLE, jamais du voisin. */
+    quantity: number
+    product: { id: string; name: string; sellPrice: number; emoji: string; stockQty: number } | null
+  }[]
+}
+
+export type SubscriptionWrite = {
+  customerId?: string
+  name?: string
+  dayOfWeek?: number
+  startDate?: string | null
+  status?: string
+  note?: string | null
+  items?: { productId: string; quantity: number }[]
+}
+
+/* ─────────────────────────────── IA ─────────────────────────────── */
+
+/** `POST /api/ai/analyze` — objet littéral du handler. 503 si la clé Anthropic manque. */
+export interface ApiAiAnalysis {
+  success: boolean
+  /** ⚠️ Le handler rend `analysis`. Il n'existe AUCUN champ `response` sur cette route —
+   *  `AIAssistant` lisait `data.analysis ?? data.response`, un repli vers un champ qui
+   *  n'arrive jamais. Repli retiré côté appelant plutôt que promis ici. */
+  analysis: string
+  data: {
+    totalRevenue: number
+    avgDailySales: number
+    totalSales: number
+    margin: number
+    lowStockCount: number
+    topProducts: { name: string; qty: number }[]
+  }
+}
+
+/** `POST /api/ai/chat` — le handler rend UNIQUEMENT `{ response }`. */
+export interface ApiAiChat {
+  response: string
 }

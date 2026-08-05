@@ -3,7 +3,11 @@ import type { ApiSupplier, SupplierCreate, SupplierWrite } from '@/components/su
 import type { ApiOrder, OrderWrite } from '@/components/orders/ordersShared'
 import type { ApiCustomer, ApiCustomerSearchHit, ApiCustomerSale, CustomerWrite } from '@/components/customers/customersShared'
 import type { ApiProduct, ProductWrite } from '@/components/stock/stockShared'
-import type { ApiSecurityEvent, ApiAuditLog, ApiBillingStatus, ApiPendingPlanRequest, PlanRequestWrite } from '@/lib/apiTypes'
+import type {
+  ApiSecurityEvent, ApiAuditLog, ApiBillingStatus, ApiPendingPlanRequest, PlanRequestWrite,
+  ApiSale, ApiSaleWithItems, ApiReportSales, SaleWrite, ApiExpense, ExpenseWrite, ApiGoal, GoalWrite,
+  ApiSubscription, ApiSubscriptionWithItems, SubscriptionWrite, ApiAiAnalysis, ApiAiChat,
+} from '@/lib/apiTypes'
 import type { ApiDashboardStats } from '@/components/dashboard/dashboardShared'
 import type {
   ApiEmployee, EmployeeWrite, ApiEmployeeBonus, BonusWrite, ApiSalaryHistory, SalaryHistoryWrite,
@@ -219,9 +223,10 @@ export const salesApi = {
   // honoré ancien serait introuvable — la trace doit rester retrouvable quel que soit son âge.
   list:   (opts?: { priceDivergence?: boolean; pricingHonored?: boolean }) => {
     const qs = [opts?.priceDivergence && 'priceDivergence=true', opts?.pricingHonored && 'pricingHonored=true'].filter(Boolean).join('&')
-    return api.get<any[]>(`/api/sales${qs ? `?${qs}` : ''}`)
+    return api.get<ApiSaleWithItems[]>(`/api/sales${qs ? `?${qs}` : ''}`)
   },
-  create: (data: any) => api.post<any>('/api/sales', data),
+  // ⚠️ Rend la vente NUE (pas d'`items`) — l'`include` n'existe que sur la LISTE.
+  create: (data: SaleWrite) => api.post<ApiSale>('/api/sales', data),
   refund: (id: string, data: { reason: string; restock: boolean }) =>
     api.post<{ ok: boolean; id: string; status: string; restocked: boolean }>(`/api/sales/${id}/refund`, data),
   openInvoice: (id: string) => openAuthedPdf(`/api/sales/${id}/invoice`),
@@ -357,34 +362,33 @@ export const salaryHistoryApi = {
 }
 
 export const subscriptionsApi = {
-  list:       ()                       => api.get<any[]>('/api/subscriptions'),
-  due:        ()                       => api.get<any[]>('/api/subscriptions/due'),
-  byCustomer: (customerId: string)     => api.get<any[]>(`/api/subscriptions/customer/${customerId}`),
-  create:     (data: any)              => api.post<any>('/api/subscriptions', data),
-  update:     (id: string, data: any)  => api.put<any>(`/api/subscriptions/${id}`, data),
+  list:       ()                   => api.get<ApiSubscriptionWithItems[]>('/api/subscriptions'),
+  due:        ()                   => api.get<ApiSubscriptionWithItems[]>('/api/subscriptions/due'),
+  byCustomer: (customerId: string) => api.get<ApiSubscriptionWithItems[]>(`/api/subscriptions/customer/${customerId}`),
+  create:     (data: SubscriptionWrite)             => api.post<ApiSubscription>('/api/subscriptions', data),
+  update:     (id: string, data: SubscriptionWrite) => api.put<ApiSubscription>(`/api/subscriptions/${id}`, data),
   delete:     (id: string)             => api.delete<void>(`/api/subscriptions/${id}`),
 }
 
 export const goalsApi = {
-  list:   ()                       => api.get<any[]>('/api/goals'),
-  create: (data: any)              => api.post<any>('/api/goals', data),
-  update: (id: string, data: any)  => api.put<any>(`/api/goals/${id}`, data),
-  delete: (id: string)             => api.delete<any>(`/api/goals/${id}`),
+  list:   ()                            => api.get<ApiGoal[]>('/api/goals'),
+  create: (data: GoalWrite)             => api.post<ApiGoal>('/api/goals', data),
+  update: (id: string, data: GoalWrite) => api.put<ApiGoal>(`/api/goals/${id}`, data),
+  delete: (id: string)                  => api.delete<{ success: boolean }>(`/api/goals/${id}`),
 }
 
 export const expensesApi = {
-  list:   () => api.get<any[]>('/api/expenses'),
-  create: (data: any) => api.post<any>('/api/expenses', data),
-  update: (id: string, data: any) => api.put<any>(`/api/expenses/${id}`, data),
-  delete: (id: string) => api.delete<any>(`/api/expenses/${id}`),
+  list:   () => api.get<ApiExpense[]>('/api/expenses'),
+  create: (data: ExpenseWrite) => api.post<ApiExpense>('/api/expenses', data),
+  update: (id: string, data: ExpenseWrite) => api.put<ApiExpense>(`/api/expenses/${id}`, data),
+  delete: (id: string) => api.delete<{ success: boolean }>(`/api/expenses/${id}`),
 }
 
 export const dashboardApi = {
   stats: () => api.get<ApiDashboardStats>('/api/dashboard/stats'),
-  // ⚠️ `sales` rend des lignes de `Sale` : typé avec `salesApi`, pour définir la frontière
-  // Sale UNE SEULE FOIS plutôt qu'en deux exemplaires libres de diverger.
+  // Même frontière `Sale` que `salesApi` — UNE définition, deux consommateurs.
   sales: (period: string) =>
-    api.get<any>(`/api/reports/sales?period=${period}`),
+    api.get<ApiReportSales>(`/api/reports/sales?period=${period}`),
 }
 
 export interface InventoryInsights {
@@ -468,13 +472,13 @@ export const usersApi = {
 
 export const aiApi = {
   analyze: (type: string, lang: string) =>
-    api.post<any>('/api/ai/analyze', { type, lang }),
+    api.post<ApiAiAnalysis>('/api/ai/analyze', { type, lang }),
   // Envoie via messages[] pour compatibilité ancienne et nouvelle API
   chat: (message: string, lang: string) =>
-    api.post<any>('/api/ai/chat', { messages: [{ role: 'user', content: message }], lang }),
+    api.post<ApiAiChat>('/api/ai/chat', { messages: [{ role: 'user', content: message }], lang }),
   // Version historique complète (conversation multi-tours)
   chatHistory: (messages: Array<{role:string; content:string}>, lang: string) =>
-    api.post<any>('/api/ai/chat', { messages, lang }),
+    api.post<ApiAiChat>('/api/ai/chat', { messages, lang }),
 }
 
 export const whatsappApi = {

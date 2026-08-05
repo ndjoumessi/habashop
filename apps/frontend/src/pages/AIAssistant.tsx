@@ -162,7 +162,9 @@ export default function AIAssistant() {
     setAnalyzing(true)
     try {
       const data = await aiApi.analyze(type, lang)
-      resolveMsg(loadingId, data.analysis ?? data.response ?? '')
+      // `data.response` n'existe pas sur /api/ai/analyze (le handler rend `analysis`) :
+      // repli mort, retiré — il masquait une réponse vide au lieu de la montrer.
+      resolveMsg(loadingId, data.analysis ?? '')
     } catch (err: any) {
       resolveMsg(loadingId, `❌ ${err.message}`)
     } finally {

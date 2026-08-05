@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Skeleton from '@/components/ui/skeleton'
 import { useAppStore, useFormatAmount, useCurrencyInfo } from '@/stores/appStore'
 import { dashboardApi, goalsApi } from '@/lib/api'
+import type { ApiGoal } from '@/lib/apiTypes'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import toast from 'react-hot-toast'
 import { Plus, Trophy, Pencil, X, Check, Trash2, Target, ArrowUpRight, ArrowDownRight } from 'lucide-react'
@@ -20,6 +21,23 @@ interface Goal {
   category: 'revenue' | 'stock' | 'customers' | 'team'
   linkedMetric?: string | null  // salesMonth | transactionsMonth | avgBasket | null
 }
+
+/**
+ * ⚠️ FRONTIÈRE — `Goal.unit` et `Goal.category` sont des unions côté ÉCRAN, mais des chaînes
+ * LIBRES en base (`String @default("")`). Rien côté serveur ne garantit qu'une ligne porte
+ * l'une des valeurs attendues : une donnée saisie hors de l'app, ou un futur libellé, rendrait
+ * l'union fausse en silence. Le mapper tranche ici, une seule fois, avec un repli explicite —
+ * plutôt qu'un `as Goal[]` qui affirmerait ce que la base ne promet pas.
+ */
+const GOAL_UNITS = ['currency', 'FCFA', '%', 'clients', 'transactions'] as const
+const GOAL_CATS = ['revenue', 'stock', 'customers', 'team'] as const
+const mapApiGoal = (g: ApiGoal): Goal => ({
+  id: g.id, label: g.label, target: g.target, current: g.current,
+  unit: (GOAL_UNITS as readonly string[]).includes(g.unit) ? (g.unit as Goal['unit']) : 'currency',
+  period: g.period, color: g.color, icon: g.icon,
+  category: (GOAL_CATS as readonly string[]).includes(g.category) ? (g.category as Goal['category']) : 'revenue',
+  linkedMetric: g.linkedMetric,
+})
 
 const BLANK_GOAL: Goal = { id:'', label:'', target:0, current:0, unit:'currency', period:'Mai 2026', color:'#6C47FF', icon:'🎯', category:'revenue', linkedMetric: null }
 
@@ -53,7 +71,7 @@ export default function Goals() {
   // Charge depuis le backend au mount
   useEffect(() => {
     goalsApi.list()
-      .then((data) => setGoals(Array.isArray(data) ? data : []))
+      .then((data) => setGoals(Array.isArray(data) ? data.map(mapApiGoal) : []))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
@@ -388,11 +406,11 @@ export default function Goals() {
                     try {
                       if (editGoal) {
                         const updated = await goalsApi.update(editGoal.id, payload)
-                        setGoals(prev => prev.map(g => g.id === editGoal.id ? updated : g))
+                        setGoals(prev => prev.map(g => g.id === editGoal.id ? mapApiGoal(updated) : g))
                         toast.success(lang === 'en' ? 'Goal updated' : lang === 'es' ? 'Objetivo modificado' : lang === 'it' ? 'Obiettivo modificato' : 'Objectif modifié')
                       } else {
                         const created = await goalsApi.create(payload)
-                        setGoals(prev => [...prev, created])
+                        setGoals(prev => [...prev, mapApiGoal(created)])
                         toast.success(lang === 'en' ? 'Goal created' : lang === 'es' ? 'Objetivo creado' : lang === 'it' ? 'Obiettivo creato' : 'Objectif créé')
                       }
                       setShowEditModal(false)
