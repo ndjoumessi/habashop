@@ -5,7 +5,7 @@ import { customersApi, marketingApi, type Campaign } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { Search, Send, Users, CheckSquare, Square, Smartphone, Tag, Package, Gift, MessageCircle, Megaphone, Clock, Loader2 } from 'lucide-react'
 import { normalizeClientType, CLIENT_TYPES } from '@/lib/clientType'
-import { clientTypeToLabel, typeLabel } from '@/components/customers/customersShared'
+import { clientTypeToLabel, typeLabel, type ApiCustomer } from '@/components/customers/customersShared'
 
 interface Customer {
   id: string
@@ -235,8 +235,11 @@ export default function Marketing() {
 
   useEffect(() => {
     customersApi.list()
+      // Prédicat de TYPE, pas un simple filtre : l'écran exige un `phone` non nul, et le
+      // compilateur ne peut pas le déduire d'un `filter` ordinaire. Sans lui, on retombe sur
+      // un `any` qui laisserait passer un client sans numéro dans une liste de diffusion.
       .then(data => setCustomers(
-        (data ?? []).filter((c: any) => c.phone?.trim())
+        (data ?? []).filter((c): c is ApiCustomer & { phone: string } => !!c.phone?.trim())
       ))
       .catch(() => {})
       .finally(() => setLoading(false))

@@ -1,7 +1,9 @@
 import { logger } from '@/lib/logger'
 import type { ApiSupplier, SupplierCreate, SupplierWrite } from '@/components/suppliers/suppliersShared'
 import type { ApiOrder, OrderWrite } from '@/components/orders/ordersShared'
-import type { ApiCustomerSale } from '@/components/customers/customersShared'
+import type { ApiCustomer, ApiCustomerSearchHit, ApiCustomerSale, CustomerWrite } from '@/components/customers/customersShared'
+import type { ApiProduct, ProductWrite } from '@/components/stock/stockShared'
+import type { ApiEmployee, EmployeeWrite } from '@/components/hr/hrShared'
 import type { ApiSupplierOrder } from '@/components/suppliers/suppliersShared'
 
 const BASE_URL: string = (import.meta as any).env?.VITE_API_URL
@@ -164,18 +166,19 @@ export const consolidatedApi = {
 }
 
 export const productsApi = {
-  list:     () => api.get<any[]>('/api/products'),
-  create:   (data: any) => api.post<any>('/api/products', data),
-  update:   (id: string, data: any) => api.put<any>(`/api/products/${id}`, data),
-  delete:   (id: string) => api.delete<any>(`/api/products/${id}`),
-  lowStock: () => api.get<any[]>('/api/products/low-stock'),
+  list:     () => api.get<ApiProduct[]>('/api/products'),
+  create:   (data: ProductWrite) => api.post<ApiProduct>('/api/products', data),
+  update:   (id: string, data: ProductWrite) => api.put<ApiProduct>(`/api/products/${id}`, data),
+  // `DELETE` rend `{ success: true }` (soft delete) — pas le produit supprimé.
+  delete:   (id: string) => api.delete<{ success: boolean }>(`/api/products/${id}`),
+  lowStock: () => api.get<ApiProduct[]>('/api/products/low-stock'),
   /**
    * Résolution CIBLÉE d'un code scanné absent du cache local (Chantier B).
    * UN produit (~600 o), jamais la liste (~22 Ko gz pour 500 réf.). `null` si le
    * serveur ne le connaît pas — l'appelant ne doit PAS en conclure « n'existe pas ».
    */
-  lookup: (code: string) =>
-    api.get<any>(`/api/products/lookup?code=${encodeURIComponent(code)}`).catch(() => null),
+  lookup: (code: string): Promise<ApiProduct | null> =>
+    api.get<ApiProduct>(`/api/products/lookup?code=${encodeURIComponent(code)}`).catch(() => null),
 }
 
 export interface StockTransfer {
@@ -257,15 +260,16 @@ export const ticketZApi = {
 }
 
 export const customersApi = {
-  list:   () => api.get<any[]>('/api/customers'),
+  list:   () => api.get<ApiCustomer[]>('/api/customers'),
   // Recherche (sélecteur POS) : ≥2 chars, max 8 résultats, chaque résultat enrichi de `tier`.
-  search: (q: string) => api.get<any[]>(`/api/customers?search=${encodeURIComponent(q)}`),
-  get:    (id: string) => api.get<any>(`/api/customers/${id}`),
+  // ⚠️ SEULE cette route porte `tier` → type distinct, cf. `customersShared`.
+  search: (q: string) => api.get<ApiCustomerSearchHit[]>(`/api/customers?search=${encodeURIComponent(q)}`),
+  get:    (id: string) => api.get<ApiCustomer>(`/api/customers/${id}`),
   // Historique d'achats (#214) — ⚠️ type de FRONTIÈRE `ApiCustomerSale`, pas `Purchase` :
   // `mapApiCustomerSale` traverse (ref/date/refunded). 50 lignes max, plus récentes d'abord.
   sales:  (id: string) => api.get<ApiCustomerSale[]>(`/api/customers/${id}/sales`),
-  create: (data: any) => api.post<any>('/api/customers', data),
-  update: (id: string, data: any) => api.put<any>(`/api/customers/${id}`, data),
+  create: (data: CustomerWrite) => api.post<ApiCustomer>('/api/customers', data),
+  update: (id: string, data: CustomerWrite) => api.put<ApiCustomer>(`/api/customers/${id}`, data),
   delete: (id: string) => api.delete<void>(`/api/customers/${id}`),
 }
 
@@ -316,10 +320,11 @@ export const ordersApi = {
 }
 
 export const employeesApi = {
-  list:   () => api.get<any[]>('/api/employees'),
-  create: (data: any) => api.post<any>('/api/employees', data),
-  update: (id: string, data: any) => api.put<any>(`/api/employees/${id}`, data),
-  delete: (id: string) => api.delete<any>(`/api/employees/${id}`),
+  list:   () => api.get<ApiEmployee[]>('/api/employees'),
+  create: (data: EmployeeWrite) => api.post<ApiEmployee>('/api/employees', data),
+  update: (id: string, data: EmployeeWrite) => api.put<ApiEmployee>(`/api/employees/${id}`, data),
+  // Suppression DURE côté serveur (`prisma.employee.delete`) → `{ success: true }`.
+  delete: (id: string) => api.delete<{ success: boolean }>(`/api/employees/${id}`),
 }
 
 // Bulletins de paie PERSISTÉS. ⚠️ `month` = clé ISO « YYYY-MM » (cf. `monthKey`) — le
@@ -533,16 +538,15 @@ export const cronApi = {
   testMorning: () => api.post('/api/whatsapp/test-morning', {}),
 }
 
-// backward-compat alias (used by Header.tsx)
+/**
+ * Alias de compatibilité (`Header.tsx`) — il DÉLÈGUE désormais au lieu de redéfinir.
+ * ⚠️ Les deux entrées étaient recopiées à l'identique : deux définitions du même appel,
+ * donc deux types à maintenir et la liberté de diverger en silence. Un alias qui recopie
+ * n'est pas un alias.
+ */
 export const alertsApi = {
-  lowStock: () => api.get<any[]>('/api/products/low-stock'),
-  /**
-   * Résolution CIBLÉE d'un code scanné absent du cache local (Chantier B).
-   * UN produit (~600 o), jamais la liste (~22 Ko gz pour 500 réf.). `null` si le
-   * serveur ne le connaît pas — l'appelant ne doit PAS en conclure « n'existe pas ».
-   */
-  lookup: (code: string) =>
-    api.get<any>(`/api/products/lookup?code=${encodeURIComponent(code)}`).catch(() => null),
+  lowStock: productsApi.lowStock,
+  lookup: productsApi.lookup,
 }
 
 export const shiftsApi = {

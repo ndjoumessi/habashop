@@ -76,7 +76,9 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
     if (custSearch.length < 2) { setCustResults([]); return }
     const t = setTimeout(() => {
       customersApi.search(custSearch)
-        .then((r: SubCustomer[]) => setCustResults(r.slice(0, 6)))
+        // Frontière : l'API rend `phone: string | null`, le domaine `SubCustomer` veut
+        // `string | undefined`. La traversée est explicite plutôt que masquée par un cast.
+        .then(r => setCustResults(r.slice(0, 6).map(c => ({ ...c, phone: c.phone ?? undefined }))))
         .catch(() => {})
     }, 300)
     return () => clearTimeout(t)

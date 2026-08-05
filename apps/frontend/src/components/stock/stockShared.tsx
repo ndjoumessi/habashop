@@ -1,6 +1,67 @@
 import { t } from '@/stores/appStore'
 import { isPromotionActive } from '@/lib/pricing'
 
+/**
+ * FRONTIÈRE — ce que `GET /api/products` renvoie RÉELLEMENT (#185).
+ *
+ * ⚠️ Dérivé du `model Product` de `schema.prisma`, pas de ce qu'on croit recevoir : la route
+ * fait `prisma.product.findMany({ where: { tenantId, deletedAt: null } })` — **aucun `select`**,
+ * donc le modèle ENTIER traverse. La leçon de la semaine (`isActive` lu comme `active`,
+ * `totalRevenue` lu comme `totalCA`) : un type écrit d'après une supposition COMPILE ET MENT.
+ *
+ * ⚠️ Distinct de `ProductItem`, qui est le type de DOMAINE : le mapper renomme
+ * (`buyPrice`→`buy`, `sellPrice`→`sell`, `stockQty`→`stock`, `stockMin`→`threshold`).
+ * Les confondre est exactement ce qui a produit les deux bugs de frontière de #215.
+ *
+ * ⚠️ Les `DateTime` Prisma arrivent en **chaîne ISO** après sérialisation JSON, jamais en `Date`.
+ */
+export type ApiProduct = {
+  id: string
+  tenantId: string
+  sku: string
+  name: string
+  description: string | null
+  category: string
+  unit: string
+  buyPrice: number
+  sellPrice: number
+  wholesalePrice: number | null
+  semiWholesalePrice: number | null
+  stockQty: number
+  stockMin: number
+  supplierId: string | null
+  barcode: string | null
+  taxRate: number
+  isActive: boolean
+  hasPromotion: boolean
+  promotionPrice: number | null
+  promotionEnd: string | null
+  emoji: string
+  notes: string | null
+  /** `Json?` côté Prisma — non contraint en base, donc validé à la lecture, pas supposé. */
+  priceTiers: { minQty: number; price: number; label?: string }[] | null
+  /** Écrits SERVEUR uniquement (hors liste blanche PUT) — lisibles, jamais renvoyés en écriture. */
+  previousPricing: unknown | null
+  pricingChangedAt: string | null
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
+
+/**
+ * Corps accepté en écriture — miroir des zod `PRODUCT_CREATE` / `PRODUCT_UPDATE`
+ * (`apps/backend/src/routes/products.ts`). ⚠️ `PRODUCT_UPDATE` est une liste blanche STRICTE
+ * (strip) : un champ hors de cette liste est SILENCIEUSEMENT supprimé côté serveur — le typer
+ * ici évite de croire qu'on écrit un champ que le serveur jette (c'est le garde anti
+ * mass-assignment, on ne l'affaiblit pas, on le rend visible).
+ */
+export type ProductWrite = Partial<Pick<ApiProduct,
+  | 'name' | 'description' | 'category' | 'unit' | 'buyPrice' | 'sellPrice'
+  | 'wholesalePrice' | 'semiWholesalePrice' | 'stockQty' | 'stockMin'
+  | 'supplierId' | 'barcode' | 'taxRate' | 'isActive'
+  | 'hasPromotion' | 'promotionPrice' | 'promotionEnd' | 'emoji' | 'notes' | 'priceTiers'
+>> & { sku?: string }
+
 export type ProductItem = {
   _id?: string; sku: string; name: string; category: string
   buy: number; sell: number; stock: number; threshold: number

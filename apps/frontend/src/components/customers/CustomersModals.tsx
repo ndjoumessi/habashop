@@ -246,7 +246,13 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                   }}>{t('btn_cancel')}</button>
                   <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer' }} onClick={async () => {
                     if (!editCustForm.name) { toast.error(i('Nom requis', 'Name required', 'Nombre requerido', 'Nome richiesto')); return }
-                    try { await customersApi.update(editCustomer.id, { name: editCustForm.name, phone: editCustForm.phone, email: editCustForm.email, address: editCustForm.address, notes: editCustForm.notes, type: clientTypeToValue(editCustForm.type) }) } catch {}
+                    // ⚠️ `notes` N'EST PAS ENVOYÉ : la table `Customer` n'a aucune colonne `notes` et le
+                    // handler ne retient que name/type/phone/email/address — le champ était donc jeté en
+                    // SILENCE, pendant que la fusion optimiste ci-dessous (`{...c, ...editCustForm}`) le
+                    // faisait paraître enregistré jusqu'au prochain rechargement. Le `any` sur cet appel
+                    // masquait l'écart ; le typer l'a révélé (#185). Persister les notes = décision de
+                    // schéma (colonne + zod), pas un oubli du front.
+                    try { await customersApi.update(editCustomer.id, { name: editCustForm.name, phone: editCustForm.phone, email: editCustForm.email, address: editCustForm.address, type: clientTypeToValue(editCustForm.type) }) } catch {}
                     setCustomers(prev => prev.map(c =>
                       c.id === editCustomer.id ? { ...c, ...editCustForm } : c
                     ))

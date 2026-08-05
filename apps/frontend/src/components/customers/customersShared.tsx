@@ -48,6 +48,60 @@ export type CustomerForm = { name: string; type: ClientType; phone: string; emai
 export type EditCustomerForm = CustomerForm & { notes: string }
 
 /**
+ * FRONTIÈRE — ce que `GET /api/customers` renvoie RÉELLEMENT (#185).
+ *
+ * ⚠️ Dérivé du `model Customer` de `schema.prisma` (aucun `select` sur la route : le modèle
+ * entier traverse) PLUS l'enrichissement serveur `withPurchaseRate` → `purchasesPerMonth`,
+ * fenêtre glissante de 90 jours (#215). Ce champ N'EXISTE PAS en base : le déduire du
+ * modèle Prisma seul l'aurait manqué.
+ *
+ * ⚠️ ASYMÉTRIE ASSUMÉE, et c'est le piège à ne pas gommer : seule la RECHERCHE
+ * (`?search=`) ajoute `tier`. `list()` et `get(id)` ne le portent pas. Un type unique qui
+ * l'annoncerait partout laisserait un écran lire `tier` sur la liste et afficher un palier
+ * vide sans que rien ne rougisse — exactement le motif d'`isActive`/`active` de #215.
+ * D'où deux types distincts, et `search()` seul rend `ApiCustomerSearchHit`.
+ *
+ * ⚠️ `DateTime` Prisma → chaîne ISO après sérialisation JSON.
+ */
+export interface ApiCustomer {
+  id: string
+  tenantId: string
+  name: string
+  /** Enum serveur normalisé (#215) — jamais le libellé français du <select>. */
+  type: ClientTypeValue
+  phone: string | null
+  email: string | null
+  address: string | null
+  loyaltyPoints: number
+  totalRevenue: number
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+  /** Ajouté par `withPurchaseRate` — dérivé des ventes, pas une colonne. */
+  purchasesPerMonth: number
+}
+
+/** Résultat de recherche POS : `ApiCustomer` + le palier de fidélité calculé serveur. */
+export interface ApiCustomerSearchHit extends ApiCustomer {
+  tier: string
+}
+
+/**
+ * Corps accepté en écriture — miroir de `CUSTOMER_FIELDS`
+ * (`apps/backend/src/routes/customers.ts`), partagé par CREATE et UPDATE.
+ * ⚠️ `type` part en ENUM SERVEUR : passer par `clientTypeToValue`, jamais la clé d'affichage.
+ */
+export type CustomerWrite = {
+  name?: string
+  type?: ClientTypeValue
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  loyaltyPoints?: number
+  totalRevenue?: number
+}
+
+/**
  * ⚠️ Type de FRONTIÈRE (`ApiCustomerSale`), pas le domaine `Purchase` : sur le fil, une
  * vente porte `createdAt` (ISO), un `invoiceNumber` NULLABLE et un `status`. L'écran, lui,
  * veut une `ref` toujours affichable et un booléen. `mapApiCustomerSale` traverse.

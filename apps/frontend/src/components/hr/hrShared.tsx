@@ -6,6 +6,71 @@ import React from 'react'
 export type ContractForm = { empId: string; type: string; hiredAt: string; contractEnd: string; salary: number; role: string; dept: string }
 export type LeaveForm = { empId: string | number; type: string; startDate: string; endDate: string; notes: string }
 
+/**
+ * FRONTIÈRE — ce que `GET /api/employees` renvoie RÉELLEMENT (#185).
+ *
+ * ⚠️ Dérivé du `model Employee` de `schema.prisma` : la route fait
+ * `prisma.employee.findMany({ where: { tenantId } })`, sans `select`, donc le modèle entier
+ * traverse.
+ *
+ * ⚠️ TROIS écarts avec le type de domaine `Employee` ci-dessous, tous du motif exact de #215
+ * (`isActive` lu comme `active`) :
+ *   • `id` est un **cuid string**, jamais un nombre (cf. CLAUDE.md § Pièges — « jamais
+ *     `Number(id)` ») — le domaine le déclare `number`, ce qui est faux sur le fil ;
+ *   • `isActive` côté API ↔ `active` côté écran ;
+ *   • `photo` côté API ↔ `photoUrl` côté écran.
+ * Les confondre donne un `undefined` silencieux, pas une erreur.
+ *
+ * ⚠️ `GET /api/employees` ne filtre PAS `deletedAt` — la colonne existe (soft delete) mais la
+ * liste la ignore. C'est une observation, pas une correction : la route `DELETE` fait un
+ * `prisma.employee.delete()` DUR, donc `deletedAt` n'est aujourd'hui jamais renseigné par ce
+ * chemin. Champ conservé au type parce qu'il EST sur le fil.
+ */
+export interface ApiEmployee {
+  id: string
+  tenantId: string
+  name: string
+  role: string
+  dept: string
+  type: string
+  salary: number
+  phone: string | null
+  email: string | null
+  address: string | null
+  photo: string | null
+  hiredAt: string
+  endAt: string | null
+  isActive: boolean
+  perf: number
+  avatar: string
+  color: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
+
+/**
+ * Corps accepté en écriture — miroir d'`EMPLOYEE_FIELDS` (`apps/backend/src/schemas/writesB.ts`),
+ * partagé par CREATE et UPDATE. ⚠️ `hiredAt` y est `z.any()` : le serveur accepte une chaîne
+ * ISO, on ne promet donc pas mieux qu'une chaîne ici.
+ */
+export type EmployeeWrite = {
+  name?: string
+  role?: string
+  dept?: string
+  type?: string
+  salary?: number
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  photo?: string | null
+  isActive?: boolean
+  color?: string
+  hiredAt?: string
+  perf?: number
+  avatar?: string
+}
+
 export interface Employee {
   id: number
   name: string
