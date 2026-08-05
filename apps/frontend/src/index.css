@@ -316,10 +316,31 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 .badge-green,.pill.green  { background:rgba(0,208,132,.1);  border:1px solid rgba(0,208,132,.2);  color:var(--acc2)   }
 .badge-red,.pill.red      { background:rgba(255,59,92,.1);  border:1px solid rgba(255,59,92,.2);  color:var(--danger) }
 .badge-amber,.pill.amber  { background:rgba(255,184,0,.1);  border:1px solid rgba(255,184,0,.2);  color:var(--warn)   }
-.badge-blue,.pill.blue    { background:rgba(0,184,255,.1);  border:1px solid rgba(0,184,255,.2);  color:var(--acc3)   }
+/* ⚠️ Texte EXPLICITE (pas var(--acc3)) : sur le fond teinté composité, le token rendait
+   4,10:1 — sous AA. Éclairci de 8 % vers le blanc → 4,59:1. Le token reste juste pour ses
+   autres usages ; c'est CETTE paire qui devait bouger (#193). */
+.badge-blue,.pill.blue    { background:rgba(0,184,255,.1);  border:1px solid rgba(0,184,255,.2);  color:#5D90F1   }
 .badge-violet,.badge-purple,.pill.purple { background:rgba(108,71,255,.1); border:1px solid rgba(108,71,255,.2); color:var(--p3) }
 .badge-teal,.pill.teal    { background:rgba(0,184,163,.1);  border:1px solid rgba(0,184,163,.2);  color:#00B8A3 }
 .badge-gray,.pill.gray    { background:rgba(136,136,168,.1);border:1px solid rgba(136,136,168,.2);color:var(--text3)  }
+
+/* ⚠️ PASTILLES EN THÈME CLAIR — texte assombri, fonds INCHANGÉS (#193).
+   Les 7 paires étaient TOUTES sous AA en clair, l'ambre à 1,28:1 (jaune sur blanc cassé,
+   illisible). Le fond réel n'est pas `--card` mais le DÉGRADÉ `--grad-card` du `.panel` :
+   mesuré sur sa pire extrémité, sinon le calcul flatte. Seul le texte bouge — les pastilles
+   restent claires et aérées, la contrainte « ne pas assombrir les surfaces » est tenue.
+   Les tokens (--acc2, --danger…) ne sont PAS touchés : ils servent ailleurs, sur d'autres
+   fonds, où ils passent déjà. C'est la PAIRE qui échoue, pas la couleur.
+   Ratios obtenus (pire extrémité du dégradé clair) : vert 4,61 · rouge 4,52 · ambre 4,52 ·
+   bleu 4,55 · violet 4,56 · teal 4,56 · gris 4,52. Verrou : contrast-aa.test.ts. */
+:root[data-theme="light"] .badge-green,  :root[data-theme="light"] .pill.green  { color:#00744A }
+:root[data-theme="light"] .badge-red,    :root[data-theme="light"] .pill.red    { color:#BA2B43 }
+:root[data-theme="light"] .badge-amber,  :root[data-theme="light"] .pill.amber  { color:#876200 }
+:root[data-theme="light"] .badge-blue,   :root[data-theme="light"] .pill.blue   { color:#006D96 }
+:root[data-theme="light"] .badge-violet, :root[data-theme="light"] .badge-purple,
+:root[data-theme="light"] .pill.purple { color:#6241E8 }
+:root[data-theme="light"] .badge-teal,   :root[data-theme="light"] .pill.teal   { color:#007265 }
+:root[data-theme="light"] .badge-gray,   :root[data-theme="light"] .pill.gray   { color:#63637B }
 .stat-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:var(--fw-regular); background:rgba(108,71,255,.1); color:var(--p3); border:1px solid rgba(108,71,255,.15) }
 .stat-chip.up   { background:rgba(0,208,132,.1);  color:var(--acc2);  border-color:rgba(0,208,132,.2) }
 .stat-chip.down { background:rgba(255,59,92,.1);  color:var(--danger);border-color:rgba(255,59,92,.2) }

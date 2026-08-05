@@ -2,7 +2,12 @@
  * Logo HabaShop — mark « Sac + H » (sac de courses violet, anse or, monogramme H).
  * Tuile autonome (fond violet arrondi inclus) : le conteneur hôte ne doit PAS ajouter de
  * fond violet (double fond). Remplit son conteneur par défaut (width/height 100 %).
- * Source de vérité éditable : ../habashop-brand/habashop-mark.svg.
+ * ⚠️ SOURCE DE VÉRITÉ du mark : CE FICHIER. Le commentaire précédent renvoyait à
+ * `../habashop-brand/habashop-mark.svg`, qui n'existe pas — une référence morte qui envoyait
+ * éditer un fichier absent, et c'est ainsi que `public/favicon.svg` a dérivé (tracé redessiné
+ * à la main, rx de tuile −6,4 %, rx des barres du H −30 %, cf. #178).
+ * Toute modification se fait ICI, puis se recopie telle quelle dans `public/favicon.svg`
+ * (même viewBox, mêmes nombres). Verrou : `src/tests/faviconMatchesMark.test.ts`.
  */
 export default function LogoMark({ size, style }: { size?: number; style?: React.CSSProperties }) {
   return (
