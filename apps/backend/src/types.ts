@@ -41,6 +41,9 @@ export interface ProductBody {
 export interface CustomerBody {
   name?: string; type?: string; phone?: string; email?: string; address?: string
   loyaltyPoints?: number; totalRevenue?: number
+  /** Notes libres du commerçant — colonne ajoutée le 2026-08-05, cf. migration
+   *  `20260805233000_add_customer_notes`. Le champ existait à l'écran bien avant. */
+  notes?: string | null
 }
 export interface EmployeeBody {
   name?: string; role?: string; dept?: string; type?: string; salary?: number

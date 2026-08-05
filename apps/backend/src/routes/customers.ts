@@ -19,6 +19,7 @@ const CUSTOMER_FIELDS = {
   address: z.string().nullish(),
   loyaltyPoints: z.coerce.number().optional(),
   totalRevenue:  z.coerce.number().optional(),
+  notes:   z.string().nullish(),
 }
 const CUSTOMER_CREATE = z.object(CUSTOMER_FIELDS).passthrough() // « nom requis » reste géré par le handler
 const CUSTOMER_UPDATE = z.object(CUSTOMER_FIELDS).passthrough()
@@ -190,6 +191,10 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
           phone: data.phone,
           email: data.email,
           address: data.address,
+          // ⚠️ Ce `data:` est une liste EN DUR : ajouter `notes` au zod ne suffisait PAS.
+          // Sans cette ligne, la valeur passait la validation puis était jetée ici — le
+          // silence exact qu'on ferme. Deux endroits, pas un.
+          notes: data.notes,
         }
       })
     } catch (err: any) {

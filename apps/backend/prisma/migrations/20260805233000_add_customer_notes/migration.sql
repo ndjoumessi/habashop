@@ -1,0 +1,21 @@
+-- Notes libres sur un client — la colonne qui manquait sous un champ déjà à l'écran.
+--
+-- La modale d'édition client proposait un champ « Notes », `EditCustomerForm` le portait, et
+-- le front l'envoyait. Mais `Customer` n'avait AUCUNE colonne `notes` et le handler `PUT` ne
+-- retenait que name/type/phone/email/address : la valeur était jetée en silence, pendant que
+-- la fusion optimiste locale (`{...c, ...editCustForm}`) la faisait paraître enregistrée
+-- jusqu'au prochain rechargement. Défaut révélé par le typage de `customersApi` (#185).
+--
+-- ⚠️ ADDITIVE PURE : une colonne NULLABLE, sans DEFAULT, aucune donnée réécrite, aucun DROP.
+-- Les lignes existantes prennent `NULL` — indiscernable de « pas de note », ce qui est exact.
+--
+-- Précédent aligné : `Supplier.notes String?`, persisté de longue date. Le client n'avait pas
+-- de raison d'en être privé, et l'écran promettait déjà la fonctionnalité.
+--
+-- ⚠️ Le zod SEUL n'aurait pas suffi : le handler `PUT` liste ses champs EN DUR dans son
+-- `data:`. Une colonne + une liste blanche laissée sans le handler auraient reproduit le
+-- silence exact qu'on ferme ici.
+--
+-- ⚠️ Idempotent (`IF NOT EXISTS`) : rejouer la migration ne lève pas « column already exists ».
+
+ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "notes" TEXT;

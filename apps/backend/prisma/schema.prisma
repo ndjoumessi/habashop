@@ -394,6 +394,11 @@ model Customer {
   address       String?
   loyaltyPoints Int       @default(0)
   totalRevenue  Float     @default(0)
+  // Notes libres saisies par le commerçant. Le champ existait À L'ÉCRAN (modale d'édition)
+  // et dans `EditCustomerForm`, mais aucune colonne ne le recevait : le handler ne retenait
+  // que name/type/phone/email/address, et la fusion optimiste locale faisait croire à un
+  // enregistrement jusqu'au prochain rechargement. Aligné sur `Supplier.notes`, déjà persisté.
+  notes         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime? // null = actif (soft delete)

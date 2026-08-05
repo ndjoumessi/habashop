@@ -74,6 +74,8 @@ export interface ApiCustomer {
   address: string | null
   loyaltyPoints: number
   totalRevenue: number
+  /** Colonne ajoutée le 2026-08-05 — le champ existait à l'écran depuis bien plus longtemps. */
+  notes: string | null
   createdAt: string
   updatedAt: string
   deletedAt: string | null
@@ -99,6 +101,7 @@ export type CustomerWrite = {
   address?: string | null
   loyaltyPoints?: number
   totalRevenue?: number
+  notes?: string | null
 }
 
 /**
