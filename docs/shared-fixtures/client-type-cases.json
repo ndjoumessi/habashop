@@ -1,0 +1,50 @@
+{
+  "_comment": [
+    "Cas PARTAGÉS front↔back de `normalizeClientType` (#215). La règle vit en DEUX exemplaires",
+    "jumeaux — apps/backend/src/lib/clientType.ts et apps/frontend/src/lib/clientType.ts — et ces",
+    "cas ARBITRENT les deux côtés : changer la règle d'un seul côté rougit ce côté-là.",
+    "",
+    "POURQUOI : `Customer.type` contenait DEUX formats. Le défaut de colonne est 'retail' (anglais),",
+    "mais les deux chemins d'écriture du front envoyaient le LIBELLÉ français du <select>",
+    "('Grossiste', 'Semi-gros'…), et rien ne validait au milieu — le zod disait `z.string()`.",
+    "Conséquence NON cosmétique : `mapApiCustomer` ne reconnaissait que l'anglais et repliait tout",
+    "le reste sur 'Détail'. Mesuré en prod : 9 clients sur 9 en français, dont 3 grossistes et",
+    "2 semi-gros, TOUS affichés « Détail » — un palier commercial faux sur la fiche client.",
+    "",
+    "CANONIQUE = l'ANGLAIS, pour trois raisons mesurables et non par goût : c'est le défaut de la",
+    "colonne ('retail'), c'est ce que `mapApiCustomer` attendait déjà, et la convention i18n du",
+    "dépôt dit de NE PAS traduire les enums d'API (l'écran traduit, la base non).",
+    "",
+    "⚠️ Les libellés français restent acceptés en LECTURE : c'est un ensemble CLOS de nos propres",
+    "anciennes `value`, pas une inférence sur du texte libre. Une PWA en cache en envoie encore, et",
+    "9 lignes en base en portent. Même précédent que la table des libellés hérités de lib/country.ts.",
+    "",
+    "⚠️ NE PAS confondre avec `Sale.clientType` ('retail' | 'semi' | 'wholesale'), qui est le TARIF",
+    "d'une vente, pas le palier d'un client. Vocabulaires voisins, champs différents — 'semi' n'est",
+    "pas 'semi-wholesale'."
+  ],
+  "canonical": ["retail", "semi-wholesale", "wholesale", "loyal"],
+  "cases": [
+    { "in": "retail",         "out": "retail",         "why": "canonique — laissé tel quel" },
+    { "in": "semi-wholesale", "out": "semi-wholesale", "why": "canonique" },
+    { "in": "wholesale",      "out": "wholesale",      "why": "canonique" },
+    { "in": "loyal",          "out": "loyal",          "why": "canonique" },
+
+    { "in": "Détail",    "out": "retail",         "why": "libellé hérité du <select> français" },
+    { "in": "Semi-gros", "out": "semi-wholesale", "why": "libellé hérité" },
+    { "in": "Grossiste", "out": "wholesale",      "why": "libellé hérité — 3 lignes en prod" },
+    { "in": "Fidèle",    "out": "loyal",          "why": "libellé hérité" },
+
+    { "in": " Grossiste ", "out": "wholesale", "why": "espaces en bord tolérés" },
+    { "in": "grossiste",   "out": "wholesale", "why": "casse tolérée sur un ensemble CLOS" },
+    { "in": "RETAIL",      "out": "retail",    "why": "casse tolérée" },
+    { "in": "detail",      "out": "retail",    "why": "accent manquant sur notre propre libellé" },
+
+    { "in": "wholesaler", "out": null, "why": "mot anglais VOISIN, hors de l'ensemble — refuser plutôt que deviner" },
+    { "in": "Client",     "out": null, "why": "texte libre" },
+    { "in": "semi",       "out": null, "why": "⚠️ c'est le vocabulaire de Sale.clientType, pas celui d'un client" },
+    { "in": "",           "out": null, "why": "vide ≠ 'Détail' : une valeur jamais saisie n'est pas un palier" },
+    { "in": "   ",        "out": null, "why": "espaces seuls" },
+    { "in": null,         "out": null, "why": "absent" }
+  ]
+}

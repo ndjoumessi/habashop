@@ -10,7 +10,7 @@ import { lazy, Suspense, type Dispatch, type SetStateAction } from 'react'
 // Lazy : LoyaltyCardDigital embarque html2canvas + qrcode (~45 Ko gz) — hors du chunk Customers
 const LoyaltyCardDigital = lazy(() => import('@/components/ui/LoyaltyCardDigital'))
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
-import { type Customer, type ClientType, type CustomerForm, type EditCustomerForm, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyNextThreshold, usePurchaseHistory, purchaseRateLabel } from '@/components/customers/customersShared'
+import { type Customer, type ClientType, type CustomerForm, type EditCustomerForm, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyNextThreshold, usePurchaseHistory, purchaseRateLabel, clientTypeToValue } from '@/components/customers/customersShared'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { announce } from '@/lib/announce'
 import { fmtDate } from '@/lib/formatDate'
@@ -246,7 +246,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                   }}>{t('btn_cancel')}</button>
                   <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer' }} onClick={async () => {
                     if (!editCustForm.name) { toast.error(i('Nom requis', 'Name required', 'Nombre requerido', 'Nome richiesto')); return }
-                    try { await customersApi.update(editCustomer.id, { name: editCustForm.name, phone: editCustForm.phone, email: editCustForm.email, address: editCustForm.address, notes: editCustForm.notes, type: editCustForm.type }) } catch {}
+                    try { await customersApi.update(editCustomer.id, { name: editCustForm.name, phone: editCustForm.phone, email: editCustForm.email, address: editCustForm.address, notes: editCustForm.notes, type: clientTypeToValue(editCustForm.type) }) } catch {}
                     setCustomers(prev => prev.map(c =>
                       c.id === editCustomer.id ? { ...c, ...editCustForm } : c
                     ))

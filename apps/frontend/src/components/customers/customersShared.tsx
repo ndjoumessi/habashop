@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Building2, ShoppingBag, Star, ShoppingCart } from 'lucide-react'
 import { useAppStore, isThemeLight, useCurrencyInfo, useConvertFromXOF } from '@/stores/appStore'
 import { customersApi } from '@/lib/api'
+import { normalizeClientType, type ClientTypeValue } from '@/lib/clientType'
 
 /** Montant avec suffixe devise DISCRET (pattern tuiles POS item 11) : chiffre
  *  proéminent, symbole plus petit et atténué — au lieu du fmt() d'un seul tenant. */
@@ -17,6 +18,29 @@ export function AmountCur({ xof, suffixSize = 10, suffixColor = 'var(--text3)' }
 }
 
 export type ClientType = 'Grossiste' | 'Semi-gros' | 'Fidèle' | 'Détail'
+
+/**
+ * Deux vocabulaires, une frontière (#215) : la BASE porte l'enum canonique anglais
+ * (`retail`…), l'ÉCRAN porte la clé d'affichage française (`Détail`…, celle de `TYPE_CFG`
+ * et `TYPE_LABELS`). Ces deux tables sont le seul passage entre les deux — les écrire à la
+ * main au point d'appel est exactement ce qui a produit la divergence.
+ */
+const LABEL_BY_VALUE: Record<ClientTypeValue, ClientType> = {
+  wholesale: 'Grossiste', 'semi-wholesale': 'Semi-gros', loyal: 'Fidèle', retail: 'Détail',
+}
+const VALUE_BY_LABEL: Record<ClientType, ClientTypeValue> = {
+  Grossiste: 'wholesale', 'Semi-gros': 'semi-wholesale', Fidèle: 'loyal', Détail: 'retail',
+}
+
+/** Enum serveur (ou libellé hérité déjà normalisé) → clé d'affichage. `null` → « Détail ». */
+export const clientTypeToLabel = (v: ClientTypeValue | null): ClientType => (v ? LABEL_BY_VALUE[v] : 'Détail')
+
+/**
+ * Clé d'affichage → enum serveur. ⚠️ À utiliser sur TOUT chemin d'écriture : envoyer la
+ * clé française telle quelle est précisément ce que faisaient `handleCreateCustomer` et la
+ * modale d'édition, et ce qui a rempli la base de libellés que le lecteur ne comprenait pas.
+ */
+export const clientTypeToValue = (l: ClientType): ClientTypeValue => VALUE_BY_LABEL[l] ?? 'retail'
 
 // État du formulaire client (Customers.tsx `useState` + prop `form`/`setForm` de CustomersModals).
 export type CustomerForm = { name: string; type: ClientType; phone: string; email: string; address: string }
@@ -196,7 +220,11 @@ export function mapApiCustomer(c: any): Customer {
   return {
     id: c.id,
     name: c.name,
-    type: (c.type === 'wholesale' ? 'Grossiste' : c.type === 'semi-wholesale' ? 'Semi-gros' : c.type === 'loyal' ? 'Fidèle' : 'Détail') as ClientType,
+    // ⚠️ Ce ternaire ne reconnaissait QUE l'anglais et repliait tout le reste sur « Détail ».
+    // Comme les deux formulaires envoyaient le libellé français, 3 grossistes et 2 semi-gros
+    // s'affichaient « Détail » en prod (#215). `normalizeClientType` accepte les deux formes
+    // — l'ensemble des libellés hérités est CLOS, ce n'est pas une inférence sur du texte libre.
+    type: clientTypeToLabel(normalizeClientType(c.type)),
     phone: c.phone || '',
     email: c.email || '',
     address: c.address || '',

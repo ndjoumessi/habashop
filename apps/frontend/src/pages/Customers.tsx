@@ -20,7 +20,7 @@ import CustomerMap from '@/components/customers/CustomerMap'
 import CustomersList from '@/components/customers/CustomersList'
 import CustomersStats from '@/components/customers/CustomersStats'
 import CustomersModals from '@/components/customers/CustomersModals'
-import { type ClientType, type Customer, type CustomerForm, type EditCustomerForm, mapApiCustomer, useGoogleMaps, GMAPS_KEY, AmountCur } from '@/components/customers/customersShared'
+import { type ClientType, type Customer, type CustomerForm, type EditCustomerForm, mapApiCustomer, clientTypeToValue, useGoogleMaps, GMAPS_KEY, AmountCur } from '@/components/customers/customersShared'
 
 export default function Customers() {
   const { lang } = useConfig()
@@ -214,7 +214,8 @@ export default function Customers() {
     const fullPhone = form.phone ?? ''
     const data = {
       name:    form.name.trim(),
-      type:    form.type    ?? 'retail',
+      // Enum SERVEUR, pas la clé d'affichage : `form.type` est « Grossiste »… (#215).
+      type:    clientTypeToValue(form.type),
       phone:   fullPhone,
       email:   form.email   ?? '',
       address: form.address ?? '',

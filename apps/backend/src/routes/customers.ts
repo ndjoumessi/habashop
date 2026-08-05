@@ -7,6 +7,7 @@ import { authenticate } from '../middleware/authenticate'
 import { getTenantId } from '../lib/tenantId'
 import { notifyTenant } from './notifications'
 import { tierForPoints } from '../lib/loyalty'
+import { normalizeClientType } from '../lib/clientType'
 
 // ── Schémas (item 6) ─────────────────────────────────────────────────────────
 const ID_PARAMS = z.object({ id: z.string().min(1) })
@@ -134,6 +135,14 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     if (!name || !name.trim()) {
       return reply.code(400).send({ error: 'Le nom est requis' })
     }
+    // Palier NORMALISÉ (#215) : le front envoyait le libellé français du <select>, la
+    // colonne défaut est 'retail' — deux formats, aucun juge au milieu. Absent = 'retail'
+    // (défaut de colonne, rétro-compatible) ; présent mais irrésolvable = 400, jamais un
+    // repli silencieux qui rangerait un grossiste au détail.
+    const normalizedType = type === undefined || type === null ? 'retail' : normalizeClientType(type)
+    if (!normalizedType) {
+      return reply.code(400).send({ error: `Type client invalide : ${String(type)}`, code: 'INVALID_CLIENT_TYPE' })
+    }
     const tenantId = getTenantId(request)
 
     try {
@@ -141,7 +150,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
         data: {
           tenantId,
           name:          name?.trim() ?? '',
-          type:          type          ?? 'retail',
+          type:          normalizedType,
           phone:         phone         ?? '',
           email:         email         ?? '',
           address:       address       ?? '',
@@ -164,12 +173,20 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const data = request.body as CustomerBody
+    // Même juge qu'à la création. ⚠️ `undefined` reste `undefined` (Prisma ne touche pas
+    // au champ) : une modification de téléphone ne doit pas réécrire le palier.
+    let normalizedType: string | undefined
+    if (data.type !== undefined && data.type !== null) {
+      const t = normalizeClientType(data.type)
+      if (!t) return reply.code(400).send({ error: `Type client invalide : ${String(data.type)}`, code: 'INVALID_CLIENT_TYPE' })
+      normalizedType = t
+    }
     try {
       return await prisma.customer.update({
         where: { id, tenantId },
         data: {
           name: data.name,
-          type: data.type,
+          type: normalizedType,
           phone: data.phone,
           email: data.email,
           address: data.address,
