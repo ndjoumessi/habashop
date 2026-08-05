@@ -143,7 +143,20 @@ describe('LoginPage — corrections de contenu (ne doivent PAS réapparaître)',
   it('garde l’accroche vraie et les capacités factuelles', () => {
     render(<LoginPage />)
     expect(screen.getByText(/réseau s'arrête|réseau s’arrête/)).toBeInTheDocument()
-    expect(screen.getByText(/Wave · Orange Money · MTN MoMo · PayDunya/)).toBeInTheDocument()
+    // ⚠️ Wave a été RETIRÉ de la liste des capacités le 2026-08-06 : mesuré sur Railway,
+    // `WAVE_API_KEY` n'existe pas (le service rend alors un lien factice sandbox) et aucun
+    // écran ne l'appelle — le POS route « Orange » vers Campay. Ne nommer que le câblé.
+    expect(screen.getByText(/MTN MoMo · Orange Money · PayDunya/)).toBeInTheDocument()
+    expect(screen.queryByText(/Wave/)).not.toBeInTheDocument()
+  })
+
+  it('attribue le hors-ligne à l’application MOBILE, jamais au web', () => {
+    const { container } = render(<LoginPage />)
+    // Le POS web AVORTE la vente hors réseau (`pages/POS.tsx` : « il n'y a pas de
+    // persistance locale des ventes ») ; la file d'attente vit dans mobile/. L'aperçu
+    // doit donc porter le compteur de synchro, qui n'a de sens que sur mobile.
+    expect(screen.getByText(/ventes en attente de synchro/)).toBeInTheDocument()
+    expect(container.textContent).not.toContain('Hors-ligne — vente enregistrée')
   })
 })
 

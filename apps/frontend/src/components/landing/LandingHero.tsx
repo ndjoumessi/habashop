@@ -1,4 +1,5 @@
-import { Sparkles, Star, Zap, Play, Check, TrendingUp, ShoppingBag } from 'lucide-react'
+import { ArrowRight, Check, Store, WifiOff, RefreshCw } from 'lucide-react'
+import { scrollTo } from './landingShared'
 import type { LandingT } from './landingShared'
 
 interface Props {
@@ -7,76 +8,66 @@ interface Props {
   navigate: (to: string) => void
 }
 
-// Refonte split (Linear/Stripe) : colonne texte à gauche, carte aperçu produit à droite.
-// 100 % en tokens CSS (var(--…)) → reste lisible en thème Clair comme en Sombre.
+/**
+ * Hero — split 2 colonnes, 100 % tokens CSS (lisible en thème Clair comme en Sombre).
+ *
+ * La colonne droite est une DÉMONSTRATION PRODUIT, et elle remplace délibérément la
+ * preuve sociale qui vivait ici (« 500+ Boutiques », « 12 Pays », « 99,9 % », « 4,9/5 »).
+ * Un chiffre de preuve sociale demande qu'on nous croie ; un écran de produit se vérifie.
+ *
+ * ⚠️ La légende « Application mobile HabaShop » est LOAD-BEARING, pas décorative : la file
+ * d'attente hors-ligne n'existe QUE dans `mobile/` (`services/offlineQueue.ts`,
+ * `components/ui/OfflineBanner.tsx` — d'où vient le libellé « N ventes en attente de
+ * synchro » reproduit ici). Le POS web, lui, avorte la vente hors réseau. Retirer cette
+ * attribution transformerait une capacité réelle en affirmation fausse.
+ *
+ * Densité : plus de `minHeight: 100vh` — le hero occupait un écran entier pour trois
+ * lignes de texte, ce qui repoussait tout le reste sous la ligne de flottaison.
+ */
 export default function LandingHero({ lp, i, navigate }: Props) {
   return (
     <section style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center',
-      padding: '120px clamp(16px,4vw,64px) 80px',
+      padding: '112px clamp(16px,4vw,64px) 64px',
       position: 'relative', overflow: 'hidden',
       background: 'linear-gradient(160deg,var(--bg) 0%,var(--bg2) 55%,var(--bg) 100%)',
     }}>
       {/* Grille décor (masquée en fondu radial) */}
-      <div style={{
+      <div aria-hidden="true" style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         backgroundImage: 'linear-gradient(color-mix(in srgb,var(--p) 6%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--p) 6%,transparent) 1px,transparent 1px)',
         backgroundSize: '48px 48px',
         maskImage: 'radial-gradient(ellipse 90% 80% at 50% 40%,black 30%,transparent 100%)',
         WebkitMaskImage: 'radial-gradient(ellipse 90% 80% at 50% 40%,black 30%,transparent 100%)',
       }}/>
-      {/* Halos */}
-      <div style={{ position: 'absolute', top: '4%', left: '2%', width: 520, height: 520, borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb,var(--p) 16%,transparent),transparent 70%)', filter: 'blur(64px)', pointerEvents: 'none', animation: 'lp-float 6s ease-in-out infinite' }}/>
-      <div style={{ position: 'absolute', bottom: '8%', right: '4%', width: 440, height: 440, borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb,var(--acc2) 12%,transparent),transparent 70%)', filter: 'blur(56px)', pointerEvents: 'none', animation: 'lp-float 8s ease-in-out infinite reverse' }}/>
-      <div style={{ position: 'absolute', top: '30%', right: '38%', width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb,var(--acc) 12%,transparent),transparent 70%)', filter: 'blur(44px)', pointerEvents: 'none' }}/>
+      <div aria-hidden="true" style={{ position: 'absolute', top: '2%', left: '2%', width: 460, height: 460, borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb,var(--p) 16%,transparent),transparent 70%)', filter: 'blur(64px)', pointerEvents: 'none' }}/>
+      <div aria-hidden="true" style={{ position: 'absolute', bottom: '-6%', right: '4%', width: 380, height: 380, borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb,var(--acc2) 12%,transparent),transparent 70%)', filter: 'blur(56px)', pointerEvents: 'none' }}/>
 
-      {/* Grille split */}
       <div className="lp-hero-grid" style={{
-        position: 'relative', zIndex: 1, width: '100%', maxWidth: 1180, margin: '0 auto',
-        display: 'grid', gridTemplateColumns: '1.02fr .98fr', gap: 'clamp(32px,5vw,64px)', alignItems: 'center',
+        position: 'relative', zIndex: 1, width: '100%', maxWidth: 1140, margin: '0 auto',
+        display: 'grid', gridTemplateColumns: '1.04fr .96fr', gap: 'clamp(28px,4vw,56px)', alignItems: 'center',
       }}>
-        {/* ── Colonne gauche : texte ── */}
+        {/* ── Colonne gauche : la promesse ── */}
         <div className="lp-hero-left" style={{ textAlign: 'left' }}>
-          {/* Badge */}
-          <div className="lp-inline-group" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '6px 16px', background: 'color-mix(in srgb,var(--p) 12%,transparent)',
-            border: '1px solid color-mix(in srgb,var(--p2) 35%,transparent)', borderRadius: 999,
-            marginBottom: 26, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-          }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--acc)', animation: 'lp-pulse 2s infinite', display: 'inline-block' }}/>
-            <Sparkles size={12} strokeWidth={2.4} color="var(--acc)"/>
-            <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--p3)' }}>{lp.badge}</span>
-          </div>
-
-          {/* H1 — un seul titre fort, mot d'accent en --p2 */}
           <h1 style={{
-            fontSize: 'clamp(34px,5vw,58px)', fontWeight: 900, color: 'var(--text)',
-            letterSpacing: 'clamp(-1.6px,-.12vw,-.4px)', lineHeight: 1.08,
-            marginBottom: 18, overflowWrap: 'break-word',
+            fontSize: 'clamp(32px,4.6vw,54px)', fontWeight: 900, color: 'var(--text)',
+            letterSpacing: 'clamp(-1.6px,-.12vw,-.4px)', lineHeight: 1.06,
+            margin: '0 0 16px', overflowWrap: 'break-word',
           }}>
-            {i('Gérez votre commerce, en toute ', 'Run your business with total ', 'Gestione su comercio con total ', 'Gestisci la tua attività in tutta ')}
-            <span style={{ color: 'var(--p2)' }}>{i('clarté', 'clarity', 'claridad', 'chiarezza')}</span>.
+            {lp.h1a}
+            <span style={{ color: 'var(--p2)' }}>{lp.h1_accent}</span>.
           </h1>
 
-          {/* Sous-titre — plus léger */}
           <p style={{
-            fontSize: 'clamp(15px,1.5vw,19px)', fontWeight: 500, color: 'var(--text2)',
-            lineHeight: 1.65, maxWidth: 520, marginBottom: 32,
+            fontSize: 'clamp(15px,1.4vw,18px)', fontWeight: 500, color: 'var(--text2)',
+            lineHeight: 1.6, maxWidth: 540, margin: '0 0 26px',
           }}>
-            {i(
-              'Caisse, stock, clients, RH et Mobile Money — une seule plateforme, même hors-ligne.',
-              'POS, stock, customers, HR and Mobile Money — one platform, even offline.',
-              'TPV, stock, clientes, RR. HH. y Mobile Money — una sola plataforma, incluso sin conexión.',
-              'Cassa, magazzino, clienti, HR e Mobile Money — una sola piattaforma, anche offline.',
-            )}
+            {lp.hero_sub}
           </p>
 
-          {/* CTAs */}
-          <div className="lp-inline-group" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 26 }}>
+          <div className="lp-inline-group" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
             <button type="button" onClick={() => navigate('/signup')}
               style={{
-                padding: '14px 30px', borderRadius: 14, background: 'var(--grad-p)',
+                padding: '14px 28px', borderRadius: 14, background: 'var(--grad-p)',
                 border: 'none', color: '#fff', fontSize: 'var(--fs-title)', fontWeight: 800,
                 cursor: 'pointer', fontFamily: 'var(--font)', boxShadow: 'var(--sh-p2)',
                 transition: 'transform .2s, box-shadow .2s',
@@ -85,129 +76,107 @@ export default function LandingHero({ lp, i, navigate }: Props) {
               onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 12px 36px rgba(108,71,255,.5)' }}
               onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.boxShadow = 'var(--sh-p2)' }}
             >
-              <Zap size={16} strokeWidth={2.6}/>{lp.cta1}
+              {lp.cta1}<ArrowRight size={16} strokeWidth={2.6}/>
             </button>
-            <button type="button" onClick={() => navigate('/login')}
+            <button type="button" onClick={() => scrollTo('section-pricing')}
               style={{
-                padding: '14px 26px', borderRadius: 14, background: 'var(--card)',
+                padding: '14px 24px', borderRadius: 14, background: 'var(--card)',
                 border: '1px solid var(--border2)', color: 'var(--text)',
                 fontSize: 'var(--fs-title)', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)',
                 transition: 'background .2s, border-color .2s',
-                display: 'inline-flex', alignItems: 'center', gap: 8,
               }}
               onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--card2)'; el.style.borderColor = 'var(--border3)' }}
               onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--card)'; el.style.borderColor = 'var(--border2)' }}
             >
-              <Play size={14} strokeWidth={2.6}/>{lp.cta2}
+              {lp.cta2}
             </button>
           </div>
 
-          {/* Réassurance */}
-          <div className="lp-inline-group" style={{
-            display: 'flex', alignItems: 'center', gap: 'clamp(10px,1.6vw,16px)',
-            flexWrap: 'wrap', marginBottom: 30, fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text3)',
+          <p className="lp-inline-group" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7, margin: 0,
+            fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text3)',
           }}>
-            {[
-              i('Sans carte', 'No card', 'Sin tarjeta', 'Nessuna carta'),
-              i('14 jours d\'essai', '14-day trial', '14 días de prueba', '14 giorni di prova'),
-              i('Wave & Orange Money', 'Wave & Orange Money', 'Wave y Orange Money', 'Wave e Orange Money'),
-            ].map((txt, idx) => (
-              <div key={txt} style={{ display: 'inline-flex', alignItems: 'center', gap: 'clamp(10px,1.6vw,16px)' }}>
-                {idx > 0 && <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--text4)' }}/>}
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <Check size={14} strokeWidth={3} color="var(--acc2)"/>{txt}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Bandeau stats (avec note) */}
-          <div className="lp-inline-group" style={{ display: 'flex', alignItems: 'center', gap: 'clamp(16px,3vw,32px)', flexWrap: 'wrap' }}>
-            {[
-              { v: '500+',  l: i('Boutiques', 'Shops', 'Tiendas', 'Negozi') },
-              { v: '12',    l: i('Pays', 'Countries', 'Países', 'Paesi') },
-              { v: '99,9%', l: i('Disponibilité', 'Uptime', 'Disponibilidad', 'Disponibilità') },
-            ].map((s, idx) => (
-              <div key={s.l} style={{ display: 'flex', alignItems: 'center', gap: 'clamp(16px,3vw,32px)' }}>
-                {idx > 0 && <div style={{ width: 1, height: 34, background: 'var(--border2)' }}/>}
-                <div>
-                  <div style={{ fontSize: 'clamp(22px,2.6vw,28px)', fontWeight: 900, color: 'var(--acc)', fontFamily: 'var(--mono)', letterSpacing: '-1px', lineHeight: 1.1 }}>{s.v}</div>
-                  <div style={{ fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--text3)', marginTop: 3 }}>{s.l}</div>
-                </div>
-              </div>
-            ))}
-            <div style={{ width: 1, height: 34, background: 'var(--border2)' }}/>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                {[1, 2, 3, 4, 5].map(n => <Star key={n} size={14} fill="var(--acc)" color="var(--acc)"/>)}
-              </div>
-              <div style={{ fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--text3)', marginTop: 5 }}>
-                <strong style={{ color: 'var(--text2)' }}>4,9/5</strong>{' · '}{lp.proof_stores}
-              </div>
-            </div>
-          </div>
+            <Check size={14} strokeWidth={3} color="var(--acc2)"/>{lp.hero_note}
+          </p>
         </div>
 
-        {/* ── Colonne droite : carte aperçu produit ── */}
+        {/* ── Colonne droite : démonstration produit ── */}
         <div className="lp-hero-right">
-          <div style={{
-            borderRadius: 22, padding: 'clamp(18px,2vw,26px)',
-            background: 'var(--grad-card)',
-            border: '1px solid var(--border3)',
-            boxShadow: '0 40px 90px -24px color-mix(in srgb,var(--p) 45%,transparent)',
-          }}>
-            {/* Barre de fenêtre */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--danger)' }}/>
-                <span style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--acc)' }}/>
-                <span style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--acc2)' }}/>
+          <div
+            role="img"
+            aria-label={i(
+              'Aperçu : une vente encaissée hors-ligne dans l’application mobile, trois ventes en attente de synchronisation',
+              'Preview: a sale taken offline in the mobile app, three sales waiting to sync',
+              'Vista previa: una venta cobrada sin conexión en la app móvil, tres ventas pendientes de sincronizar',
+              'Anteprima: una vendita incassata offline nell’app mobile, tre vendite in attesa di sincronizzazione',
+            )}
+            style={{
+              borderRadius: 20, overflow: 'hidden',
+              background: 'var(--grad-card)',
+              border: '1px solid var(--border3)',
+              boxShadow: '0 36px 80px -24px color-mix(in srgb,var(--p) 45%,transparent)',
+            }}>
+            {/* Bandeau hors-ligne — reproduit `mobile/src/components/ui/OfflineBanner.tsx` */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px',
+              background: 'var(--c-orange-bg)', borderBottom: '1px solid var(--c-orange-border)',
+              fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--acc3)', flexWrap: 'wrap',
+            }}>
+              <WifiOff size={13} strokeWidth={2.4}/>
+              <span>{lp.demo_offline}</span>
+              <span aria-hidden="true" style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: .6 }}/>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
+                <RefreshCw size={12} strokeWidth={2.4}/>{lp.demo_pending}
+              </span>
+            </div>
+
+            <div style={{ padding: 'clamp(16px,1.8vw,22px)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <Store size={14} strokeWidth={2} color="var(--text3)"/>
+                <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text2)' }}>Dakar Central</span>
+                <span style={{
+                  marginLeft: 'auto', fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--acc)',
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                }}>
+                  <Check size={12} strokeWidth={3}/>{lp.demo_recorded}
+                </span>
               </div>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--acc2)' }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--acc2)', animation: 'lp-pulse 2s infinite', display: 'inline-block' }}/>
-                {i('En direct', 'Live', 'En vivo', 'In diretta')}
-              </span>
-            </div>
 
-            {/* CA du jour */}
-            <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
-              {i('Chiffre d\'affaires du jour', 'Today\'s revenue', 'Ingresos de hoy', 'Fatturato di oggi')}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 'clamp(28px,3.4vw,38px)', fontWeight: 900, color: 'var(--acc)', fontFamily: 'var(--mono)', letterSpacing: '-1px', lineHeight: 1 }}>1 240 000</span>
-              <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text3)' }}>FCFA</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-label)', fontWeight: 700, color: 'var(--acc2)', background: 'color-mix(in srgb,var(--acc2) 14%,transparent)', border: '1px solid color-mix(in srgb,var(--acc2) 28%,transparent)', borderRadius: 99, padding: '2px 8px' }}>
-                <TrendingUp size={12} strokeWidth={2.6}/> +18%
-              </span>
-            </div>
-
-            {/* Mini KPIs */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
               {[
-                { Icon: ShoppingBag, v: '42', l: i('Ventes', 'Sales', 'Ventas', 'Vendite'), c: 'var(--acc3)' },
-                { Icon: TrendingUp,  v: '29 500', l: i('Panier moyen', 'Avg. basket', 'Cesta media', 'Scontrino medio'), c: 'var(--p2)' },
-              ].map(k => (
-                <div key={k.l} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--card3)', border: '1px solid var(--border)', borderRadius: 12 }}>
-                  <span style={{ width: 30, height: 30, borderRadius: 9, background: 'color-mix(in srgb,var(--p) 12%,transparent)', color: k.c, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <k.Icon size={15} strokeWidth={2.4}/>
+                { n: 'Riz local 25 kg',    q: '1 × 11 000', a: '11 000' },
+                { n: 'Café Touba 250 g',   q: '2 × 1 300',  a: '2 600'  },
+                { n: 'Savon de Marseille', q: '1 × 500',    a: '500'    },
+              ].map((l, idx) => (
+                <div key={l.n} style={{
+                  display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 12px',
+                  padding: '8px 0', borderBottom: idx < 2 ? '1px dashed var(--border)' : 'none',
+                }}>
+                  <span>
+                    <span style={{ display: 'block', fontSize: 'var(--fs-sm)', fontWeight: 500, color: 'var(--text)' }}>{l.n}</span>
+                    <span style={{ display: 'block', fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{l.q}</span>
                   </span>
-                  <div>
-                    <div style={{ fontSize: 'var(--fs-title)', fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--mono)', lineHeight: 1.1 }}>{k.v}</div>
-                    <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 600, color: 'var(--text3)' }}>{k.l}</div>
-                  </div>
+                  <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text)', alignSelf: 'center', fontVariantNumeric: 'tabular-nums' }}>{l.a}</span>
                 </div>
               ))}
+
+              <div style={{
+                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12,
+                marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border2)',
+              }}>
+                <span style={{ fontSize: 'var(--fs-label)', textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text3)', fontWeight: 700 }}>
+                  {lp.demo_total}
+                </span>
+                <span style={{ fontSize: 'clamp(24px,2.6vw,30px)', fontWeight: 800, color: 'var(--acc)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-.02em', lineHeight: 1 }}>
+                  14 350<small style={{ fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--text3)', marginLeft: 5 }}>F CFA</small>
+                </span>
+              </div>
             </div>
 
-            {/* Barre d'objectif — 68 % */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-                <span style={{ fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--text3)' }}>{i('Objectif du jour', 'Daily goal', 'Objetivo del día', 'Obiettivo del giorno')}</span>
-                <span style={{ fontSize: 'var(--fs-label)', fontWeight: 800, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>68%</span>
-              </div>
-              <div style={{ height: 8, borderRadius: 99, background: 'var(--border)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: '68%', borderRadius: 99, background: 'var(--grad-p)', boxShadow: '0 0 12px color-mix(in srgb,var(--p) 50%,transparent)' }}/>
-              </div>
+            <div style={{
+              padding: '9px 14px', borderTop: '1px solid var(--border)', background: 'var(--card3)',
+              fontSize: 'var(--fs-caption)', fontWeight: 600, color: 'var(--text3)', textAlign: 'center',
+            }}>
+              {lp.demo_caption}
             </div>
           </div>
         </div>

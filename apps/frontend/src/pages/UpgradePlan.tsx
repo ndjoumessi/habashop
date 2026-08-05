@@ -4,14 +4,20 @@ import toast from 'react-hot-toast'
 import { useAppStore } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { api, billingApi } from '@/lib/api'
+import { purchasablePlans, planAmountXOF } from '@/lib/plans'
 
 type Step = 'plan' | 'payment' | 'done'
 type L4 = { fr: string; en: string; es: string; it: string }
 
-const PRICES: Record<string, Record<string, number>> = {
-  pro:        { monthly: 24900, yearly: 249000 },
-  enterprise: { monthly: 49900, yearly: 499000 },
-}
+/**
+ * ⚠️ Plus de grille locale. Elle disait `pro 24 900 / enterprise 49 900` pendant que la
+ * vitrine affichait 14 400 / 34 750 et le backend facturait encore autre chose : quatre
+ * grilles pour deux formules. Tout vient de `lib/plans.ts` (jumeau du backend).
+ *
+ * `enterprise` ne figure PLUS dans le sélecteur : il est sur devis, sans self-service.
+ * Le tunnel automatique le refuse en 422 PLAN_QUOTE_ONLY — l'afficher ici reviendrait à
+ * proposer un achat qui se termine par un refus.
+ */
 
 const PAYMENT_METHODS: { id: string; icon: string; name: string; color: string; desc: L4; number: string }[] = [
   { id: 'wave', icon: '🌊', name: 'Wave', color: '#00B3FF', desc: { fr: 'Paiement instantané', en: 'Instant payment', es: 'Pago instantáneo', it: 'Pagamento istantaneo' }, number: '+221 77 000 0000' },
@@ -28,9 +34,9 @@ export default function UpgradePlan() {
 
   const [step, setStep] = useState<Step>('plan')
   const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({ plan: 'pro', period: 'monthly', paymentMethod: 'wave', paymentRef: '', notes: '' })
+  const [form, setForm] = useState({ plan: 'business', period: 'monthly', paymentMethod: 'wave', paymentRef: '', notes: '' })
   const set = (patch: Partial<typeof form>) => setForm(f => ({ ...f, ...patch }))
-  const amount = PRICES[form.plan][form.period]
+  const amount = planAmountXOF(form.plan, form.period === 'yearly' ? 'yearly' : 'monthly') ?? 0
   // Wave & Orange Money ont une API : on initie le paiement et on redirige.
   // Les autres méthodes (MTN, virement) restent en demande manuelle.
   const isAuto = form.paymentMethod === 'wave' || form.paymentMethod === 'orange_money'
@@ -85,30 +91,32 @@ export default function UpgradePlan() {
             <p style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginBottom: 20 }}>{i('Activé sous 24-48h après validation du paiement.', 'Activated within 24-48h after payment validation.', 'Activado en 24-48h después de la validación del pago.', 'Attivato entro 24-48h dopo la validazione del pagamento.')}</p>
 
             <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,.05)', borderRadius: 10, padding: 3, marginBottom: 16, width: 'fit-content' }}>
-              {([{ id: 'monthly', label: { fr: 'Mensuel', en: 'Monthly', es: 'Mensual', it: 'Mensile' } }, { id: 'yearly', label: { fr: 'Annuel (-20%)', en: 'Yearly (-20%)', es: 'Anual (-20%)', it: 'Annuale (-20%)' } }] as { id: string; label: L4 }[]).map(p => (
+              {([{ id: 'monthly', label: { fr: 'Mensuel', en: 'Monthly', es: 'Mensual', it: 'Mensile' } }, { id: 'yearly', label: { fr: 'Annuel (2 mois offerts)', en: 'Yearly (2 months free)', es: 'Anual (2 meses gratis)', it: 'Annuale (2 mesi gratis)' } }] as { id: string; label: L4 }[]).map(p => (
                 <button key={p.id} type="button" onClick={() => set({ period: p.id })} style={{ padding: '6px 14px', borderRadius: 8, background: form.period === p.id ? 'linear-gradient(135deg,#6C47FF,#8B6FFF)' : 'transparent', border: 'none', cursor: 'pointer', color: form.period === p.id ? '#fff' : 'var(--text3)', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', fontFamily: 'var(--font)', transition: 'all .15s' }}>{L(p.label)}</button>
               ))}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-              {['pro', 'enterprise'].map(planId => {
-                const price = PRICES[planId][form.period]
+              {purchasablePlans().map(plan => {
+                const planId = plan.id
+                const price = planAmountXOF(planId, form.period === 'yearly' ? 'yearly' : 'monthly') ?? 0
                 const isSelected = form.plan === planId
+                const isLead = planId === 'business'
                 return (
-                  <button key={planId} type="button" onClick={() => set({ plan: planId })} style={{ padding: 16, borderRadius: 14, background: isSelected ? (planId === 'pro' ? 'rgba(108,71,255,.12)' : 'rgba(255,149,0,.1)') : 'rgba(255,255,255,.03)', border: `2px solid ${isSelected ? (planId === 'pro' ? 'rgba(108,71,255,.4)' : 'rgba(255,149,0,.35)') : 'rgba(255,255,255,.08)'}`, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .2s', display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: planId === 'pro' ? 'rgba(108,71,255,.2)' : 'rgba(255,149,0,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-2xl)', flexShrink: 0 }}>{planId === 'pro' ? '⚡' : '🏢'}</div>
+                  <button key={planId} type="button" onClick={() => set({ plan: planId })} style={{ padding: 16, borderRadius: 14, background: isSelected ? (isLead ? 'rgba(108,71,255,.12)' : 'rgba(255,149,0,.1)') : 'rgba(255,255,255,.03)', border: `2px solid ${isSelected ? (isLead ? 'rgba(108,71,255,.4)' : 'rgba(255,149,0,.35)') : 'rgba(255,255,255,.08)'}`, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .2s', display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: isLead ? 'rgba(108,71,255,.2)' : 'rgba(255,149,0,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-2xl)', flexShrink: 0 }}>{isLead ? '⚡' : '🌱'}</div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-semibold)', color: isSelected ? (planId === 'pro' ? 'var(--p3)' : 'var(--acc)') : 'var(--text)', marginBottom: 2 }}>
-                        {planId === 'pro' ? 'Pro' : 'Enterprise'}
-                        {planId === 'pro' && <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 'var(--fw-regular)', padding: '2px 7px', borderRadius: 99, background: 'rgba(108,71,255,.2)', color: 'var(--p3)' }}>{i('POPULAIRE', 'POPULAR', 'POPULAR', 'POPOLARE')}</span>}
+                      <div style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-semibold)', color: isSelected ? (isLead ? 'var(--p3)' : 'var(--acc)') : 'var(--text)', marginBottom: 2 }}>
+                        {plan.label}
+                        {isLead && <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 'var(--fw-regular)', padding: '2px 7px', borderRadius: 99, background: 'rgba(108,71,255,.2)', color: 'var(--p3)' }}>{i('RECOMMANDÉ', 'RECOMMENDED', 'RECOMENDADO', 'CONSIGLIATO')}</span>}
                       </div>
-                      <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{planId === 'pro' ? i('5 utilisateurs · Rapports · WhatsApp', '5 users · Reports · WhatsApp', '5 usuarios · Informes · WhatsApp', '5 utenti · Report · WhatsApp') : i('Illimité · IA · Support prioritaire', 'Unlimited · AI · Priority support', 'Ilimitado · IA · Soporte prioritario', 'Illimitato · IA · Supporto prioritario')}</div>
+                      <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{isLead ? i('5 utilisateurs · Stock illimité · RH & paie', '5 users · Unlimited stock · HR & payroll', '5 usuarios · Stock ilimitado · RRHH y nóminas', '5 utenti · Magazzino illimitato · HR e paghe') : i('1 poste · 500 produits · Rapports de base', '1 register · 500 products · Basic reports', '1 caja · 500 productos · Informes básicos', '1 cassa · 500 prodotti · Report di base')}</div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 'var(--fw-semibold)', color: isSelected ? (planId === 'pro' ? 'var(--p3)' : 'var(--acc)') : 'var(--text2)', fontFamily: 'var(--mono)' }}>{price.toLocaleString('fr-FR')}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>F/{i('mois', 'mo', 'mes', 'mese')}</div>
+                      <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 'var(--fw-semibold)', color: isSelected ? (isLead ? 'var(--p3)' : 'var(--acc)') : 'var(--text2)', fontFamily: 'var(--mono)' }}>{price.toLocaleString('fr-FR')}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>F/{form.period === 'yearly' ? i('an', 'yr', 'año', 'anno') : i('mois', 'mo', 'mes', 'mese')}</div>
                     </div>
-                    {isSelected && <div style={{ width: 22, height: 22, borderRadius: '50%', background: planId === 'pro' ? 'var(--p2)' : 'var(--acc)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-caption)', color: '#fff', fontWeight: 'var(--fw-regular)', flexShrink: 0 }}>✓</div>}
+                    {isSelected && <div style={{ width: 22, height: 22, borderRadius: '50%', background: isLead ? 'var(--p2)' : 'var(--acc)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-caption)', color: '#fff', fontWeight: 'var(--fw-regular)', flexShrink: 0 }}>✓</div>}
                   </button>
                 )
               })}

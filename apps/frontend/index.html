@@ -7,8 +7,10 @@
 
   <!-- ─── SEO Principal ─────────────────────── -->
   <title>HabaShop — Logiciel de Gestion Commerciale pour l'Afrique | POS, Stock, RH</title>
+  <!-- ⚠️ « N°1 en Afrique francophone » retiré le 2026-08-06 : superlatif invérifiable, et
+       il vivait dans la meta description, donc dans le résultat de recherche lui-même. -->
   <meta name="description"
-    content="HabaShop est le logiciel SaaS de gestion commerciale N°1 en Afrique francophone. Caisse enregistreuse (POS), gestion de stock, clients, fournisseurs, RH et analytics. Essai gratuit 14 jours."/>
+    content="HabaShop est un logiciel SaaS de gestion commerciale pour les boutiques et superettes d'Afrique. Caisse (POS), stock, clients, fournisseurs, RH et rapports. Essai gratuit 14 jours, sans carte bancaire."/>
   <meta name="keywords"
     content="logiciel gestion commerciale Afrique, caisse enregistreuse Sénégal, POS Côte d'Ivoire, gestion stock Mali, ERP Afrique francophone, logiciel boutique Dakar, gestion superette, facturation Afrique, HabaShop"/>
   <meta name="robots" content="index, follow"/>
@@ -21,7 +23,7 @@
   <meta property="og:title"
     content="HabaShop — Logiciel de Gestion Commerciale pour l'Afrique"/>
   <meta property="og:description"
-    content="Gérez votre boutique, superette ou commerce en Afrique avec HabaShop. POS, stock temps réel, clients, RH, analytics. Essai gratuit 14 jours. Wave & Orange Money acceptés."/>
+    content="Gérez votre boutique, superette ou commerce en Afrique avec HabaShop. POS, stock temps réel, clients, RH, rapports. Essai gratuit 14 jours, sans carte bancaire."/>
   <meta property="og:url"         content="%VITE_APP_URL%"/>
   <meta property="og:image"
     content="%VITE_APP_URL%/og-image.webp"/>
@@ -45,7 +47,14 @@
   <meta name="twitter:image"
     content="%VITE_APP_URL%/og-image.webp"/>
 
-  <!-- ─── Structured Data (JSON-LD) ───────────── -->
+  <!-- ─── Structured Data (JSON-LD) ─────────────
+       ⚠️ Le bloc `aggregateRating` (4,8/5 sur 127 avis) a été SUPPRIMÉ le 2026-08-06.
+       Il était entièrement fabriqué — la production ne contenait alors aucune vente de
+       marchand réel — et c'était la plus lourde des affirmations de la vitrine : Google
+       en tire les étoiles affichées dans les résultats de recherche, donc le mensonge
+       sortait du site. Ne pas le remettre sans un vrai dispositif d'avis.
+       Les prix suivent `landingShared.PLAN_PRICE_XOF` (ils annonçaient 9 900 / 24 900 /
+       49 900, une TROISIÈME grille distincte de la vitrine et de la page /pricing). -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -62,47 +71,29 @@
       "Gestion clients et fidélité",
       "Ressources humaines et paie",
       "Analytics et rapports",
-      "Paiement Wave et Orange Money",
-      "Multi-devises (XOF, XAF, EUR, USD)"
+      "Paiement MTN MoMo, Orange Money et PayDunya",
+      "Multi-devises (XOF, XAF, EUR, USD, CAD, GBP)"
     ],
     "offers": [
       {
         "@type": "Offer",
         "name": "Starter",
-        "price": "9900",
+        "price": "8000",
         "priceCurrency": "XOF",
         "description": "Plan de démarrage — essai gratuit 14 jours"
       },
       {
         "@type": "Offer",
-        "name": "Pro",
-        "price": "24900",
+        "name": "Business",
+        "price": "25000",
         "priceCurrency": "XOF",
-        "description": "Plan professionnel mensuel"
-      },
-      {
-        "@type": "Offer",
-        "name": "Enterprise",
-        "price": "49900",
-        "priceCurrency": "XOF",
-        "description": "Plan entreprise mensuel"
+        "description": "Plan mensuel pour les commerces en croissance"
       }
     ],
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "reviewCount": "127",
-      "bestRating": "5"
-    },
     "creator": {
       "@type": "Organization",
       "name": "HabaShop",
-      "url": "%VITE_APP_URL%",
-      "areaServed": [
-        "Sénégal","Côte d'Ivoire","Mali",
-        "Burkina Faso","Guinée","Cameroun",
-        "Congo","Gabon","Togo","Bénin"
-      ]
+      "url": "%VITE_APP_URL%"
     }
   }
   </script>
@@ -142,18 +133,18 @@
     "mainEntity": [
       {
         "@type": "Question",
-        "name": "HabaShop fonctionne-t-il sans connexion internet ?",
+        "name": "La caisse fonctionne-t-elle sans connexion internet ?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Oui, la caisse (POS) de HabaShop fonctionne en mode hors-ligne grâce à sa technologie PWA. Les ventes sont enregistrées localement et synchronisées automatiquement à la reconnexion."
+          "text": "Dans l'application mobile, oui : la vente est enregistrée sur l'appareil et rejouée automatiquement au retour du réseau. Depuis un navigateur, la caisse a besoin de la connexion pour enregistrer une vente."
         }
       },
       {
         "@type": "Question",
-        "name": "Quels modes de paiement sont acceptés pour s'abonner ?",
+        "name": "Comment se passe le paiement de l'abonnement ?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "HabaShop accepte Wave, Orange Money, MTN Money, virement bancaire et carte bancaire. Aucune carte internationale n'est requise."
+          "text": "Les 14 premiers jours sont gratuits et ne demandent aucune carte bancaire. Le passage à un plan payant se fait avec notre équipe : les paiements Mobile Money et carte bancaire sont intégrés et en cours d'activation."
         }
       },
       {
@@ -161,23 +152,23 @@
         "name": "Combien coûte HabaShop ?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "HabaShop propose un essai gratuit de 14 jours. Le plan Starter coûte 9 900 F CFA/mois, le plan Pro 24 900 F CFA/mois et le plan Enterprise 49 900 F CFA/mois."
+          "text": "Le plan Starter coûte 8 000 F CFA par mois, le plan Business 25 000 F CFA par mois, et le plan Enterprise est sur devis. Les 14 jours d'essai valent pour tous les plans."
         }
       },
       {
         "@type": "Question",
-        "name": "HabaShop est-il disponible en Côte d'Ivoire, au Mali et au Burkina Faso ?",
+        "name": "Puis-je gérer plusieurs boutiques ?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Oui, HabaShop est disponible dans toute l'Afrique francophone : Sénégal, Côte d'Ivoire, Mali, Burkina Faso, Guinée, Cameroun, Congo, Gabon, Togo, Bénin et plus de 150 pays."
+          "text": "Oui. Un même compte peut être rattaché à plusieurs boutiques, chacune avec ses produits, ses ventes et son équipe. Le sélecteur de boutique apparaît à la connexion."
         }
       },
       {
         "@type": "Question",
-        "name": "Puis-je importer mes produits existants dans HabaShop ?",
+        "name": "Comment ajouter mes produits dans HabaShop ?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Oui, HabaShop permet l'import de produits via fichier CSV ou Excel. L'équipe support peut vous accompagner dans la migration depuis votre ancien système."
+          "text": "Un par un depuis l'écran Stock, avec le code-barres saisi, scanné à la douchette ou lu à la caméra. L'import en masse par fichier n'est pas encore disponible."
         }
       }
     ]

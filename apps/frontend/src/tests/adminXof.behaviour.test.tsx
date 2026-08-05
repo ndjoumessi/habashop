@@ -49,6 +49,7 @@ vi.mock('@/components/admin/SecurityEvents', () => ({ default: () => <div /> }))
 
 import AdminDashboard from '@/pages/AdminDashboard'
 import { useAppStore, formatInCurrency, convertAmount } from '@/stores/appStore'
+import { purchasablePlans, planAmountXOF } from '@/lib/plans'
 
 /** Ce que l'ANCIEN code aurait affiché : le montant converti dans la devise du super-admin. */
 const enDeviseSuperAdmin = (xof: number, devise: string) =>
@@ -73,7 +74,8 @@ describe('console plateforme — super-admin en EUR, montants en FCFA', () => {
     // Sans cette ancre, un store resté en XOF rendrait tout le fichier vert par accident :
     // XOF → XOF ne convertit pas, donc les deux implémentations donneraient le même écran.
     expect(useAppStore.getState().currency).toBe('EUR')
-    expect(enDeviseSuperAdmin(9900, 'EUR')).not.toBe(formatInCurrency(9900, 'XOF'))
+    const ref = planAmountXOF('starter', 'monthly')!
+    expect(enDeviseSuperAdmin(ref, 'EUR')).not.toBe(formatInCurrency(ref, 'XOF'))
   })
 
   it('le CA d’une boutique s’affiche en FCFA, PAS converti en euros', async () => {
@@ -90,10 +92,20 @@ describe('console plateforme — super-admin en EUR, montants en FCFA', () => {
     fireEvent.click(screen.getByRole('button', { name: /Nouvelle boutique/ }))
     const select = await screen.findByLabelText('Plan')
     const options = within(select).getAllByRole('option').map(o => o.textContent ?? '')
-    // Les trois plans, en FCFA : 9 900 / 24 900 / 49 900.
-    expect(options.join(' | ')).toMatch(/9[\s\u202f\u00a0]?900\s*FCFA/)
-    expect(options.join(' | ')).toMatch(/49[\s\u202f\u00a0]?900\s*FCFA/)
-    // …et aucun euro : 9 900 XOF convertis donneraient « 15,09 € ».
+    // ⚠️ Les montants viennent du CATALOGUE, plus d'un littéral : ce test épinglait
+    // « 9 900 / 24 900 / 49 900 » et serait redevenu faux à chaque changement de grille.
+    // L'invariant qu'il garde n'est pas le PRIX mais l'UNITÉ : la console plateforme
+    // affiche des FCFA, jamais la devise du super-admin.
+    // `txt` rend un MATCHER pour getByText, pas une chaîne : sur une comparaison de
+    // chaînes il faut normaliser soi-même les espaces insécables d'Intl.
+    const norme = (x: string) => x.replace(/\s+/g, ' ').trim()
+    const joined = norme(options.join(' | '))
+    for (const p of purchasablePlans()) {
+      expect(joined, `plan ${p.id} absent ou converti`).toContain(norme(formatInCurrency(p.monthly!, 'XOF')))
+    }
+    // Enterprise est SUR DEVIS : aucun montant ne doit apparaître pour lui.
+    expect(joined).toMatch(/Enterprise\s*—\s*sur devis/)
+    // …et aucun euro : 8 000 XOF convertis donneraient « 12,20 € ».
     expect(options.join(' | ')).not.toMatch(/€/)
   })
 

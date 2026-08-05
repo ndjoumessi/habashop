@@ -1,5 +1,6 @@
 import { Shield } from 'lucide-react'
 import LogoMark from '@/components/ui/LogoMark'
+import { copyrightLine } from '@/lib/publicYear'
 import { D } from './landingShared'
 import type { LandingT } from './landingShared'
 
@@ -40,7 +41,7 @@ export default function LandingFooter({ lp }: Props) {
           </div>
         </div>
         <div style={{ textAlign: 'center', fontSize: 'var(--fs-caption)', color: D.text4, paddingTop: 18, borderTop: `1px solid ${D.border}`, display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center', width: '100%' }}>
-          {lp.footer}<Shield size={11}/>
+          {copyrightLine()} · {lp.footer_tagline}<Shield size={11}/>
         </div>
       </footer>
 

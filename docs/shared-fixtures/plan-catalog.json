@@ -1,0 +1,66 @@
+{
+  "_comment": [
+    "CATALOGUE DES PLANS — grille arrêtée par Nelson le 2026-08-06. Source de vérité.",
+    "",
+    "Lu à l'EXÉCUTION (readFileSync) par les tests jumeaux des deux côtés :",
+    "  apps/backend/src/lib/plans.ts   ← apps/backend/src/tests/planCatalog.test.ts",
+    "  apps/frontend/src/lib/plans.ts  ← apps/frontend/src/tests/planCatalog.test.ts",
+    "Modifier un seul côté fait rougir l'autre.",
+    "",
+    "⚠️ POURQUOI DEUX JUMEAUX ET PAS UN MODULE PARTAGÉ : le contexte de build Docker du",
+    "backend est `apps/backend` SEUL (Dockerfile : COPY src, scripts, prisma, package*.json,",
+    "tsconfig.json). Un `import` depuis packages/ ou docs/ compile en local — où le monorepo",
+    "entier est présent — puis casse le déploiement Railway en TS2307, invisible pour tsc",
+    "local, la suite ET la revue. C'est arrivé le 2026-08-05 (prod figée 20 min). Ce fichier",
+    "n'est donc JAMAIS importé : il est lu par chemin, à l'exécution, par les tests.",
+    "",
+    "yearly = monthly × 10 : c'est la règle DÉJÀ présente dans le code (2 mois offerts),",
+    "pas une remise inventée pour l'occasion.",
+    "",
+    "enterprise n'a pas de prix public : devis uniquement, aucun self-service.",
+    "`purchasable: false` ⇒ le tunnel de paiement le REFUSE explicitement (422",
+    "PLAN_QUOTE_ONLY, pas 400 « Plan invalide » : c'est un choix commercial, pas une",
+    "erreur technique). `billable: true` ⇒ un tenant déjà sur ce plan continue d'être",
+    "facturé, au montant négocié porté par sa PlanRequest — jamais par une constante."
+  ],
+
+  "yearlyMonths": 10,
+  "xofPerEur": 655.957,
+  "defaultPlanOnSignup": "starter",
+  "aliases": { "pro": "business" },
+
+  "plans": [
+    {
+      "id": "starter",
+      "label": "Starter",
+      "monthly": 8000,
+      "yearly": 80000,
+      "purchasable": true,
+      "billable": true
+    },
+    {
+      "id": "business",
+      "label": "Business",
+      "monthly": 25000,
+      "yearly": 250000,
+      "purchasable": true,
+      "billable": true
+    },
+    {
+      "id": "enterprise",
+      "label": "Enterprise",
+      "monthly": null,
+      "yearly": null,
+      "purchasable": false,
+      "billable": true
+    }
+  ],
+
+  "_expectedEur": {
+    "_comment": "Contrepartie euro recalculée DEPUIS le FCFA à la parité fixe, arrondie au centime. Jamais l'inverse, jamais de « ≈ ».",
+    "starter.monthly": "12,20",
+    "starter.yearly": "121,96",
+    "business.monthly": "38,11",
+    "business.yearly": "381,12"
+  }
+}

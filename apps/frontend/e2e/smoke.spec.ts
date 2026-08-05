@@ -17,10 +17,19 @@ test.describe('HabaShop — Smoke Tests', () => {
     await expect(page.locator('text=HabaShop').first()).toBeVisible()
   })
 
+  // ⚠️ Les libellés de plan ont changé au 2026-08-06 : /pricing portait sa PROPRE grille
+  // (Starter / Pro / Enterprise à 9 900 / 24 900 / 49 900) pendant que la vitrine en
+  // affichait une autre. Elle réutilise désormais la grille unique — Starter / Business /
+  // Enterprise. Ce test échouera donc tant que la prod sert l'ancienne page : il est le
+  // signal de déploiement, pas un faux positif.
   test('Page pricing accessible', async ({ page }) => {
     await page.goto(`${BASE}/pricing`)
     await expect(page.locator('text=Starter').first()).toBeVisible()
-    await expect(page.locator('text=Pro').first()).toBeVisible()
+    await expect(page.locator('text=Business').first()).toBeVisible()
+    await expect(page.locator('text=Enterprise').first()).toBeVisible()
+    // La recommandation est un avis, pas une affirmation sur d'autres acheteurs.
+    await expect(page.locator('text=Recommandé').first()).toBeVisible()
+    await expect(page.locator('text=/plus populaire/i')).toHaveCount(0)
   })
 
   test('Login page accessible', async ({ page }) => {

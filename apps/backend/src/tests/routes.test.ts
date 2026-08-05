@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { decideWsAuth } from '../lib/wsAuth'
+import { resolvePlanId, planAmountXOF, purchasablePlans, YEARLY_MONTHS } from '../lib/plans'
 
 describe('Rate-limiting config', () => {
   it('Login : max 30 / 15 min (relevé pour CGNAT mobile)', () => {
@@ -30,20 +31,30 @@ describe('Multi-tenant isolation', () => {
   })
 })
 
-describe('Billing — plans et prix', () => {
-  const PRICES: Record<string,Record<string,number>> = {
-    pro: { monthly:24900, yearly:249000 },
-    enterprise: { monthly:49900, yearly:499000 },
-  }
-  it('Plans valides', () => {
-    expect(['pro','enterprise'].includes('pro')).toBe(true)
-    expect(['pro','enterprise'].includes('starter')).toBe(false)
+/**
+ * ⚠️ Ce bloc déclarait sa PROPRE copie des prix puis se vérifiait lui-même :
+ *     const PRICES = { pro: { monthly: 24900 … } }
+ *     expect(PRICES.pro.monthly).toBe(24900)
+ * Une tautologie, verte quoi qu'il arrive au vrai tunnel de paiement. Pire, il figeait
+ * le BUG en attente : « `starter` n'est pas un plan valide » — alors que `auth.ts`
+ * l'attribue à chaque inscription. Un test qui protège le défaut, comme `reports.spec.ts`
+ * assertait un bloc fabriqué. Il lit désormais le CATALOGUE.
+ */
+describe('Billing — plans et prix (lus dans le catalogue, pas recopiés)', () => {
+  it('Plans valides — starter EN FAIT PARTIE', () => {
+    expect(resolvePlanId('business')).toBe('business')
+    expect(resolvePlanId('starter')).toBe('starter')     // ← était attendu FAUX
+    expect(resolvePlanId('paypal')).toBeNull()
   })
-  it('Prix pro mensuel', () => {
-    expect(PRICES.pro.monthly).toBe(24900)
+  it('Prix mensuels du catalogue', () => {
+    expect(planAmountXOF('starter', 'monthly')).toBe(8000)
+    expect(planAmountXOF('business', 'monthly')).toBe(25000)
   })
-  it('Annuel < 12x mensuel', () => {
-    expect(PRICES.pro.yearly).toBeLessThan(PRICES.pro.monthly*12)
+  it('Annuel < 12 × mensuel (2 mois offerts)', () => {
+    for (const p of purchasablePlans()) {
+      expect(p.yearly!).toBeLessThan(p.monthly! * 12)
+      expect(p.yearly!).toBe(p.monthly! * YEARLY_MONTHS)
+    }
   })
   it('Méthodes paiement valides', () => {
     const m = ['wave','orange_money','mtn_money','virement','card']

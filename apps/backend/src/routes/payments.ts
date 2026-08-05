@@ -14,23 +14,59 @@ import {
 } from '../services/orangeMoney'
 import { sendUpgradeConfirmation } from '../services/email'
 import { appBaseUrl } from '../lib/appUrl'
+import { getPlan, planAmountXOF } from '../lib/plans'
+import type { PlanId, BillingPeriod } from '../lib/plans'
 
 // Lecture unique via `lib/appUrl` (adossée à FRONTEND_URL) — plus de repli local dupliqué.
 const FRONTEND_URL = appBaseUrl()
 const BACKEND_URL = process.env.BACKEND_URL
   ?? 'https://habashop-production.up.railway.app'
 
-const PRICES: Record<string, Record<string, number>> = {
-  pro:        { monthly: 24900, yearly: 249000 },
-  enterprise: { monthly: 49900, yearly: 499000 },
-}
-
 // Body des checkouts d'abonnement (Wave & Orange). La validation sémantique fine
-// (couple plan/period existant dans PRICES) reste dans le handler → 400 « Plan invalide ».
+// (plan achetable, période connue) reste dans le handler → messages conservés.
 const CHECKOUT_BODY = z.object({
   plan:   z.string().trim().min(1),
   period: z.string().trim().min(1),
 })
+
+/**
+ * Résout un couple plan/période en montant facturable, ou explique le refus.
+ *
+ * ⚠️ TROIS SORTIES DISTINCTES, et la distinction EST le correctif :
+ *  • `ok`         → montant du catalogue ;
+ *  • `quote_only` → le plan EXISTE mais n'est pas vendable en self-service
+ *                   (enterprise). On répond **422 PLAN_QUOTE_ONLY** avec un contact,
+ *                   PAS 400 « Plan invalide » : c'est un choix commercial, pas une
+ *                   erreur technique, et un 400 enverrait le prospect chercher une
+ *                   panne au lieu de nous écrire ;
+ *  • `invalid`    → plan ou période inconnus → 400, message conservé.
+ *
+ * `starter` est désormais ACHETABLE. Il ne figurait dans AUCUNE grille du tunnel alors
+ * que `routes/auth.ts` l'attribue à CHAQUE inscription : le parcours principal du
+ * produit terminait en 400 « Plan invalide ». Un plan attribué par défaut doit exister
+ * dans le tunnel de paiement — c'est ce qu'exige `planCatalog.test.ts`.
+ */
+export function resolveCheckout(rawPlan: unknown, rawPeriod: unknown):
+  | { kind: 'ok'; planId: PlanId; period: BillingPeriod; amount: number }
+  | { kind: 'quote_only'; planId: PlanId }
+  | { kind: 'invalid' } {
+  const plan = getPlan(rawPlan)
+  if (!plan) return { kind: 'invalid' }
+  const period: BillingPeriod | null =
+    rawPeriod === 'monthly' || rawPeriod === 'yearly' ? rawPeriod : null
+  if (!period) return { kind: 'invalid' }
+  if (!plan.purchasable) return { kind: 'quote_only', planId: plan.id }
+  const amount = planAmountXOF(plan.id, period)
+  if (amount === null) return { kind: 'quote_only', planId: plan.id }
+  return { kind: 'ok', planId: plan.id, period, amount }
+}
+
+/** Corps unique du refus commercial — identique sur les deux prestataires. */
+const QUOTE_ONLY_BODY = {
+  error: 'Le plan Enterprise est proposé sur devis : contactez-nous pour une offre adaptée.',
+  code: 'PLAN_QUOTE_ONLY',
+  contactEmail: 'contact@habashop.com',
+}
 
 /**
  * Routes de paiement automatique Wave & Orange Money.
@@ -124,19 +160,20 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
     const { plan, period } = request.body as { plan?: string; period?: string }
     const tenantId = request.tenantId as string
 
-    if (!plan || !period || !PRICES[plan]?.[period]) {
-      return reply.code(400).send({ error: 'Plan invalide' })
-    }
+    const resolved = resolveCheckout(plan, period)
+    if (resolved.kind === 'quote_only') return reply.code(422).send(QUOTE_ONLY_BODY)
+    if (resolved.kind === 'invalid')    return reply.code(400).send({ error: 'Plan invalide' })
 
-    const amount    = PRICES[plan][period]
+    const amount    = resolved.amount
     const reference = `HABA-${tenantId.slice(0, 8)}-${Date.now()}`
 
     // Enregistre la demande en DB
     const planReq = await prisma.planRequest.create({
       data: {
         tenantId,
-        plan,
-        period,
+        // Identifiant CANONIQUE : un alias reçu (`pro`) n'est plus jamais écrit en base.
+        plan:   resolved.planId,
+        period: resolved.period,
         amount,
         paymentMethod: 'wave',
         paymentRef:    reference,
@@ -148,7 +185,7 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
       const checkout = await createWaveCheckout({
         amount,
         currency:    'XOF',
-        description: `HabaShop ${plan} — ${period}`,
+        description: `HabaShop ${resolved.planId} — ${resolved.period}`,
         reference,
         redirectUrl: `${FRONTEND_URL}/app/upgrade/callback`,
         webhookUrl:  `${BACKEND_URL}/api/payments/wave/webhook`,
@@ -165,8 +202,8 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
         checkoutId:  checkout.checkoutId,
         reference,
         amount,
-        plan,
-        period,
+        plan:   resolved.planId,
+        period: resolved.period,
       }
     } catch (err: any) {
       await prisma.planRequest.delete({ where: { id: planReq.id } }).catch(() => {})
@@ -184,18 +221,19 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
     const { plan, period } = request.body as { plan?: string; period?: string }
     const tenantId = request.tenantId as string
 
-    if (!plan || !period || !PRICES[plan]?.[period]) {
-      return reply.code(400).send({ error: 'Plan invalide' })
-    }
+    const resolved = resolveCheckout(plan, period)
+    if (resolved.kind === 'quote_only') return reply.code(422).send(QUOTE_ONLY_BODY)
+    if (resolved.kind === 'invalid')    return reply.code(400).send({ error: 'Plan invalide' })
 
-    const amount    = PRICES[plan][period]
+    const amount    = resolved.amount
     const reference = `HABA-OM-${tenantId.slice(0, 8)}-${Date.now()}`
 
     const planReq = await prisma.planRequest.create({
       data: {
         tenantId,
-        plan,
-        period,
+        // Identifiant CANONIQUE : un alias reçu (`pro`) n'est plus jamais écrit en base.
+        plan:   resolved.planId,
+        period: resolved.period,
         amount,
         paymentMethod: 'orange_money',
         paymentRef:    reference,
@@ -207,7 +245,7 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
       const payment = await createOMPayment({
         amount,
         reference,
-        description: `HabaShop ${plan} — ${period}`,
+        description: `HabaShop ${resolved.planId} — ${resolved.period}`,
         notifUrl:    `${BACKEND_URL}/api/payments/orange/webhook`,
         returnUrl:   `${FRONTEND_URL}/app/upgrade/callback?status=success&ref=${reference}`,
         cancelUrl:   `${FRONTEND_URL}/app/upgrade/callback?status=cancel&ref=${reference}`,
@@ -223,8 +261,8 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
         payToken:   payment.payToken,
         reference,
         amount,
-        plan,
-        period,
+        plan:   resolved.planId,
+        period: resolved.period,
       }
     } catch (err: any) {
       await prisma.planRequest.delete({ where: { id: planReq.id } }).catch(() => {})

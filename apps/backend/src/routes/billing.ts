@@ -5,12 +5,21 @@ import { getTenantId } from '../lib/tenantId'
 import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticate } from '../middleware/authenticate'
 import type { BillingBody } from '../types'
+import { getPlan, planAmountXOF } from '../lib/plans'
 
-const PLAN_PRICES: Record<string, Record<string, number>> = {
-  pro:        { monthly: 24900, yearly: 249000 },
-  enterprise: { monthly: 49900, yearly: 499000 },
-}
 const VALID_PAYMENTS = ['wave', 'orange_money', 'mtn_money', 'virement', 'card']
+
+/**
+ * ⚠️ Cette route est la voie MANUELLE (demande validée ensuite par un super-admin),
+ * pas le tunnel automatique. C'est donc ELLE qui porte le devis : `enterprise` y est
+ * ACCEPTÉ — c'est précisément le chemin « nous contacter » — alors que
+ * les checkouts automatiques Wave et Orange le refusent en 422 PLAN_QUOTE_ONLY.
+ *
+ * ⚠️ Le montant n'a plus de repli. L'ancien `?? PLAN_PRICES[plan]?.monthly ?? 24900`
+ * facturait le prix de `pro` à tout plan inconnu, en silence : un repli qui invente un
+ * montant est pire qu'une absence de montant. Un plan sur devis enregistre `amount: 0`
+ * — « à négocier », et le super-admin saisit le montant réel à l'activation.
+ */
 
 /**
  * Routes de facturation HabaShop. Flux : le tenant demande un upgrade
@@ -28,8 +37,9 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
     const { userId } = request.user
     const { plan, period, paymentMethod, paymentRef, notes } = (request.body ?? {}) as BillingBody
 
-    if (!['pro', 'enterprise'].includes(plan)) {
-      return reply.code(400).send({ error: 'Plan invalide. Choisissez pro ou enterprise.' })
+    const resolvedPlan = getPlan(plan)
+    if (!resolvedPlan) {
+      return reply.code(400).send({ error: 'Plan invalide. Choisissez starter, business ou enterprise.' })
     }
     if (!['monthly', 'yearly'].includes(period)) {
       return reply.code(400).send({ error: 'Période invalide. Choisissez monthly ou yearly.' })
@@ -39,13 +49,15 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
     }
     // Après les gardes 400 : `getTenantId` peut lever, l'ordre des sorties reste identique.
     const tenantId = getTenantId(request)
-    const amount = PLAN_PRICES[plan]?.[period] ?? PLAN_PRICES[plan]?.monthly ?? 24900
+    const normalizedPeriod = period === 'yearly' ? 'yearly' : 'monthly'
+    // `null` = plan sur devis → 0, « à négocier ». Jamais un montant de repli inventé.
+    const amount = planAmountXOF(resolvedPlan.id, normalizedPeriod) ?? 0
 
     const planRequest = await prisma.planRequest.create({
       data: {
         tenantId,
-        plan,
-        period: period === 'yearly' ? 'yearly' : 'monthly',
+        plan: resolvedPlan.id,          // canonique : l'alias `pro` n'est plus écrit
+        period: normalizedPeriod,
         amount,
         paymentMethod,
         paymentRef: paymentRef?.trim() || null,

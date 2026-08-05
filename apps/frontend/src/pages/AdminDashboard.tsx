@@ -21,6 +21,7 @@ import LogoMark from '@/components/ui/LogoMark'
 import OpsInfrastructure from '@/components/integrations/OpsInfrastructure'
 import SecurityEvents from '@/components/admin/SecurityEvents'
 import { Server, Rocket, CheckCircle2 } from 'lucide-react'
+import { planAmountXOF, purchasablePlans } from '@/lib/plans'
 
 // Version PRODUIT = SOURCE UNIQUE injectée au build (package.json racine), jamais un
 // littéral (la garde `versionSource.test.ts` échoue si un semver en dur réapparaît).
@@ -40,8 +41,19 @@ type Tenant = {
 
 // Valeur mensuelle par plan, en XOF. Affichée TELLE QUELLE (fmtXOF) : la console plateforme
 // raisonne en FCFA, jamais convertie vers la devise du super-admin. Cf. adminXof.test.ts.
+//
+// ⚠️ Les montants viennent du CATALOGUE (`lib/plans.ts`, jumeau du backend) — ils étaient
+// en dur ici et donnaient une QUATRIÈME grille : starter 9 900 · pro 24 900 · business
+// 24 900 · enterprise 49 900, quand la vitrine affichait 14 400 / 34 750.
+// `enterprise` vaut 0 : il est sur DEVIS, donc il n'a pas de valeur mensuelle catalogue.
+// Le chiffre d'affaires d'un tenant enterprise ne se déduit pas d'une constante — il est
+// porté par sa PlanRequest, saisie par l'opérateur à l'activation.
 const PLAN_PRICE: Record<string, number> = {
-  free: 0, trial: 0, starter: 9900, pro: 24900, business: 24900, enterprise: 49900,
+  free: 0, trial: 0,
+  starter:    planAmountXOF('starter', 'monthly') ?? 0,
+  business:   planAmountXOF('business', 'monthly') ?? 0,
+  pro:        planAmountXOF('pro', 'monthly') ?? 0,   // alias ascendant, résolu vers business
+  enterprise: planAmountXOF('enterprise', 'monthly') ?? 0,
 }
 const PLAN_COLOR: Record<string, string> = {
   free: 'var(--text3)', trial: 'var(--warn)', starter: 'var(--acc2)',
@@ -651,9 +663,11 @@ export default function AdminDashboard() {
                 <div>
                   <label style={lbl}>Plan</label>
                   <select aria-label="Plan" className="input" value={newTenantForm.plan} onChange={e => setNewTenantForm(f => ({ ...f, plan: e.target.value }))}>
-                    <option value="starter">Starter — {fmtXOF(9900)}/{i('mois', 'mo', 'mes', 'mese')}</option>
-                    <option value="pro">Pro — {fmtXOF(24900)}/{i('mois', 'mo', 'mes', 'mese')}</option>
-                    <option value="enterprise">Enterprise — {fmtXOF(49900)}/{i('mois', 'mo', 'mes', 'mese')}</option>
+                    {purchasablePlans().map(p => (
+                      <option key={p.id} value={p.id}>{p.label} — {fmtXOF(p.monthly ?? 0)}/{i('mois', 'mo', 'mes', 'mese')}</option>
+                    ))}
+                    {/* Sur devis : aucun prix affiché, l'opérateur saisit le montant négocié. */}
+                    <option value="enterprise">Enterprise — {i('sur devis', 'custom quote', 'presupuesto', 'su preventivo')}</option>
                   </select>
                 </div>
                 <div>

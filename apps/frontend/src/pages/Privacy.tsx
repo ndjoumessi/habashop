@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { appUrl, appUrlHost } from '@/lib/appUrl'
+import { copyrightLine } from '@/lib/publicYear'
 
 export default function Privacy() {
   useEffect(() => {
@@ -239,7 +240,7 @@ export default function Privacy() {
         margin: '40px 0'
       }}/>
       <p style={{ color: '#999', fontSize: 'var(--fs-sm)' }}>
-        © 2026 HabaShop. Tous droits réservés.
+        {copyrightLine()}. Tous droits réservés.
       </p>
     </div>
   )

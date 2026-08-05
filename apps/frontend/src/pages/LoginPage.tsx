@@ -3,21 +3,36 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore, landingFor } from '@/stores/authStore'
 import LogoMark from '@/components/ui/LogoMark'
 import { useI18n } from '@/hooks/useI18n'
+import { copyrightYear } from '@/lib/publicYear'
 import toast from 'react-hot-toast'
-import { Mail, Lock, Eye, EyeOff, AlertCircle, ArrowLeft, Store, WifiOff } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, AlertCircle, ArrowLeft, Store, WifiOff, RefreshCw } from 'lucide-react'
 
 /**
- * Page de connexion — refonte 2026-07 (formulaire héros, 100 % tokens CSS).
+ * Page de connexion — refonte 2026-07 (formulaire héros, 100 % tokens CSS),
+ * resserrée 2026-08.
  *
- * Trois corrections de fond appliquées avec la refonte :
+ * Trois corrections de fond appliquées avec la refonte de juillet :
  *  • le raccourci « connexion par rôle » ne s'affiche plus qu'en démo (VITE_DEMO_MODE) ;
  *  • « Déployé dans 150+ pays » retiré (revendication fausse : une poignée de boutiques) ;
  *  • badges SSL/TLS retirés (page + pied) — le chiffrement est un acquis, pas un argument.
  *
- * Le volet gauche ne liste plus de fonctionnalités génériques : une accroche, un aperçu
- * produit fidèle, et des capacités factuelles (moyens de paiement réellement intégrés,
- * devises, langues). Plus de dégradé violet en dur → tokens `var(--…)`, donc lisible en
- * thème Clair comme en Sombre.
+ * Août 2026 — l'aperçu hors-ligne du volet gauche était le meilleur actif de la page et il
+ * flottait en bas d'un vide : les deux volets sont désormais à 50/50, le contenu de gauche
+ * est centré dans une colonne bornée, le lien « Retour à l'accueil » est aligné sur le logo
+ * (il flottait seul en haut au centre du volet droit), et le CTA garde un fond d'accent
+ * même désactivé — il avait l'air en panne, pas en attente.
+ *
+ * ⚠️ DEUX AFFIRMATIONS CORRIGÉES ICI, mesurées le 2026-08-06 :
+ *  • l'aperçu annonçait « Hors-ligne — vente enregistrée » sans dire OÙ. La file d'attente
+ *    hors-ligne vit dans `mobile/src/services/offlineQueue.ts` ; le POS **web** avorte la
+ *    vente hors réseau (`pages/POS.tsx` : « il n'y a pas de persistance locale des
+ *    ventes ») et sa propre bannière annonce des fonctionnalités indisponibles. L'aperçu
+ *    est donc explicitement légendé « application mobile » ;
+ *  • la liste de capacités annonçait « Wave · Orange Money · MTN MoMo · PayDunya —
+ *    encaissement intégré ». Wave et Orange Money en direct n'ont AUCUNE clé sur Railway
+ *    (`WAVE_API_KEY`, `ORANGE_CLIENT_ID` absentes) et ne sont appelés depuis aucun écran ;
+ *    le POS route « Orange » vers Campay. Seuls les providers réellement câblés sont
+ *    nommés, avec leur statut.
  */
 
 // Replié au build : en production la valeur est absente → `false` → le module démo
@@ -122,7 +137,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-grid" style={{
-      minHeight: '100vh', display: 'grid', gridTemplateColumns: '1.05fr .95fr',
+      minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr',
       background: 'var(--bg)', fontFamily: 'var(--font)',
     }}>
 
@@ -132,7 +147,7 @@ export default function LoginPage() {
         background: 'linear-gradient(158deg,var(--bg) 0%,var(--bg2) 58%,var(--bg) 100%)',
         borderRight: '1px solid var(--border)',
         display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        gap: 30, padding: 'clamp(32px,4vw,56px)',
+        padding: 'clamp(32px,4vw,56px)',
       }}>
         <div aria-hidden="true" style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
@@ -144,8 +159,24 @@ export default function LoginPage() {
         <div aria-hidden="true" style={{ position: 'absolute', top: '-6%', left: '-4%', width: 340, height: 340, borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb,var(--p) 20%,transparent),transparent 70%)', filter: 'blur(56px)', pointerEvents: 'none' }}/>
         <div aria-hidden="true" style={{ position: 'absolute', bottom: '-4%', right: '2%', width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb,var(--acc) 13%,transparent),transparent 70%)', filter: 'blur(56px)', pointerEvents: 'none' }}/>
 
-        <Link to="/" aria-label={i('Retour à l\'accueil','Back to home','Volver al inicio','Torna alla home')} style={{
-          position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: 11,
+        {/* Colonne bornée, alignée à GAUCHE (pas centrée) : son bord gauche coïncide avec le
+            padding de l'aside, donc avec le lien « Retour à l'accueil » posé en haut. */}
+        <div style={{
+          position: 'relative', zIndex: 1, width: '100%', maxWidth: 460, marginRight: 'auto',
+          display: 'flex', flexDirection: 'column', gap: 26,
+        }}>
+
+        <Link to="/" className="login-back-link" style={{
+          display: 'inline-flex', alignItems: 'center', gap: 7, width: 'fit-content',
+          fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text3)',
+          textDecoration: 'none', transition: 'color .15s',
+        }}>
+          <ArrowLeft size={15} strokeWidth={2.4} />
+          {i('Retour à l\'accueil','Back to home','Volver al inicio','Torna alla home')}
+        </Link>
+
+        <Link to="/" aria-label="HabaShop" style={{
+          display: 'inline-flex', alignItems: 'center', gap: 11,
           textDecoration: 'none', width: 'fit-content',
         }}>
           <span style={{ width: 40, height: 40, borderRadius: 12, overflow: 'hidden', display: 'flex', flexShrink: 0, boxShadow: 'var(--sh-p, 0 8px 26px rgba(108,71,255,.35))' }}>
@@ -154,7 +185,7 @@ export default function LoginPage() {
           <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-.02em', color: 'var(--text)' }}>HabaShop</span>
         </Link>
 
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        <div>
           <h1 style={{
             fontSize: 'clamp(25px,2.6vw,33px)', lineHeight: 1.16, letterSpacing: '-.028em',
             fontWeight: 700, color: 'var(--text)', margin: 0, maxWidth: '15ch',
@@ -164,36 +195,46 @@ export default function LoginPage() {
               {i('réseau s\'arrête','network stops','red se cae','rete si ferma')}
             </span>.
           </h1>
-          <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--text2)', margin: '10px 0 0', maxWidth: '40ch' }}>
+          <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--text2)', margin: '10px 0 0', maxWidth: '42ch' }}>
             {i(
-              'Ventes, stock et encaissement Mobile Money — la boutique ne s\'arrête pas parce que la connexion tombe.',
-              'Sales, stock and Mobile Money payments — the shop doesn\'t stop because the connection does.',
-              'Ventas, stock y cobro Mobile Money — la tienda no se detiene porque se caiga la conexión.',
-              'Vendite, magazzino e incassi Mobile Money — il negozio non si ferma perché cade la connessione.',
+              'Ventes, stock et encaissement Mobile Money. Sur mobile, la vente est enregistrée sur l\'appareil et rejouée au retour du réseau.',
+              'Sales, stock and Mobile Money payments. On mobile, the sale is recorded on the device and replayed when the network returns.',
+              'Ventas, stock y cobro Mobile Money. En móvil, la venta se registra en el dispositivo y se reenvía al volver la red.',
+              'Vendite, magazzino e incassi Mobile Money. Su mobile la vendita è registrata sul dispositivo e rigiocata al ritorno della rete.',
             )}
           </p>
         </div>
 
-        {/* Aperçu produit — panier POS fidèle, purement décoratif pour un lecteur d'écran */}
+        {/* Aperçu produit — panier POS fidèle, purement décoratif pour un lecteur d'écran.
+            ⚠️ La légende « application mobile » est load-bearing : cf. l'en-tête du fichier. */}
         <div
           role="img"
-          aria-label={i('Aperçu du point de vente','Point of sale preview','Vista previa del punto de venta','Anteprima del punto vendita')}
+          aria-label={i(
+            'Aperçu de l’application mobile : une vente encaissée hors-ligne, trois ventes en attente de synchronisation',
+            'Mobile app preview: a sale taken offline, three sales waiting to sync',
+            'Vista previa de la app móvil: una venta cobrada sin conexión, tres ventas pendientes de sincronizar',
+            'Anteprima dell’app mobile: una vendita incassata offline, tre vendite in attesa di sincronizzazione',
+          )}
           style={{
-            position: 'relative', zIndex: 1, maxWidth: 400,
             border: '1px solid var(--border2)', borderRadius: 15, background: 'var(--card)',
             overflow: 'hidden', boxShadow: 'var(--sh-md, 0 20px 50px rgba(0,0,0,.3))',
           }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', borderBottom: '1px solid var(--border)', background: 'var(--card2)' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 7, padding: '8px 14px', flexWrap: 'wrap',
+            background: 'var(--c-orange-bg)', borderBottom: '1px solid var(--c-orange-border)',
+            fontSize: 11, fontWeight: 700, color: 'var(--acc3)',
+          }}>
+            <WifiOff size={12} strokeWidth={2.4} />
+            <span>{i('Mode hors-ligne','Offline mode','Modo sin conexión','Modalità offline')}</span>
+            <span aria-hidden="true" style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor', opacity: .6 }}/>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
+              <RefreshCw size={11} strokeWidth={2.4} />
+              {i('3 ventes en attente de synchro','3 sales waiting to sync','3 ventas pendientes de sincronizar','3 vendite in attesa di sincronizzazione')}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '1px solid var(--border)', background: 'var(--card2)' }}>
             <Store size={14} strokeWidth={2} color="var(--text3)" />
             <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text2)' }}>Dakar Central</span>
-            <span style={{
-              marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5,
-              fontSize: 10.5, fontWeight: 700, padding: '3px 9px', borderRadius: 999, whiteSpace: 'nowrap',
-              color: 'var(--acc)', background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)',
-            }}>
-              <WifiOff size={11} strokeWidth={2.4} />
-              {i('Hors-ligne — vente enregistrée','Offline — sale recorded','Sin conexión — venta registrada','Offline — vendita registrata')}
-            </span>
           </div>
           <div style={{ padding: '12px 14px 14px' }}>
             {[
@@ -220,12 +261,15 @@ export default function LoginPage() {
                 14 350<small style={{ fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--text3)', marginLeft: 4 }}>F CFA</small>
               </span>
             </div>
+            {/* ⚠️ Wave a été RETIRÉ de ces pastilles : aucun écran ne l'appelle et sa clé
+                n'existe pas. Les trois restants sont ceux que `POS.tsx` sait réellement
+                déclencher (MTN direct, Orange via Campay, PayDunya). */}
             <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
               {[
                 { label: i('Espèces','Cash','Efectivo','Contanti'), on: true },
-                { label: 'Wave', on: false },
-                { label: 'Orange Money', on: false },
                 { label: 'MTN MoMo', on: false },
+                { label: 'Orange Money', on: false },
+                { label: 'PayDunya', on: false },
               ].map(p => (
                 <span key={p.label} style={{
                   fontSize: 10.5, fontWeight: 600, padding: '5px 9px', borderRadius: 8, whiteSpace: 'nowrap',
@@ -238,11 +282,11 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Capacités FACTUELLES — vérifiables, aucune preuve sociale inventée */}
-        <ul style={{ position: 'relative', zIndex: 1, listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
+        {/* Capacités FACTUELLES — chaque ligne pointe un fichier du dépôt. */}
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
           {[
-            { b: 'Wave · Orange Money · MTN MoMo · PayDunya', t: i('encaissement intégré','built-in payments','cobro integrado','incassi integrati') },
-            { b: 'XOF · XAF · EUR · USD · CAD · GBP',        t: i('français, anglais, espagnol, italien','French, English, Spanish, Italian','francés, inglés, español, italiano','francese, inglese, spagnolo, italiano') },
+            { b: 'MTN MoMo · Orange Money · PayDunya', t: i('encaissement intégré à la caisse','payments wired into the till','cobro integrado en la caja','incassi integrati in cassa') },
+            { b: 'XOF · XAF · EUR · USD · CAD · GBP',  t: i('français, anglais, espagnol, italien','French, English, Spanish, Italian','francés, inglés, español, italiano','francese, inglese, spagnolo, italiano') },
           ].map(c => (
             <li key={c.b} style={{ fontSize: 12.5, color: 'var(--text2)', display: 'flex', alignItems: 'center', gap: 9 }}>
               <span aria-hidden="true" style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--acc2)', flexShrink: 0 }}/>
@@ -250,25 +294,30 @@ export default function LoginPage() {
             </li>
           ))}
         </ul>
+
+        </div>
       </aside>
 
       {/* ── Volet droit : le formulaire est le héros ── */}
       <main style={{
-        display: 'flex', flexDirection: 'column',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
         padding: 'clamp(26px,3vw,40px) clamp(20px,4vw,48px)',
         background: 'var(--bg2)',
       }}>
-        <Link to="/" className="login-back-link" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 7, width: 'fit-content',
+        {/* Retour à l'accueil : côté formulaire, il n'existe QUE sous 900 px — au-dessus,
+            le volet gauche le porte, aligné sur le logo. En doubler l'affichage remettrait
+            le lien flottant qu'on retire. */}
+        <Link to="/" className="login-back-link login-back-mobile" style={{
+          display: 'none', alignItems: 'center', gap: 7, width: 'fit-content',
           fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text3)',
-          textDecoration: 'none', padding: '6px 10px 6px 4px', borderRadius: 8,
+          textDecoration: 'none', marginBottom: 18,
           transition: 'color .15s',
         }}>
           <ArrowLeft size={15} strokeWidth={2.4} />
           {i('Retour à l\'accueil','Back to home','Volver al inicio','Torna alla home')}
         </Link>
 
-        <div style={{ width: '100%', maxWidth: 348, margin: 'auto' }}>
+        <div style={{ width: '100%', maxWidth: 400, margin: '0 auto' }}>
           {/* Logo repris en mobile, où le volet gauche est masqué */}
           <Link to="/" className="login-mobile-logo" aria-label="HabaShop" style={{
             display: 'none', alignItems: 'center', gap: 10, marginBottom: 20, textDecoration: 'none', width: 'fit-content',
@@ -399,7 +448,7 @@ export default function LoginPage() {
           )}
 
           <div style={{ marginTop: 26, textAlign: 'center', fontSize: 11.5, color: 'var(--text3)' }}>
-            HabaShop v{__APP_VERSION__} · © 2026 {i('Tous droits réservés','All rights reserved','Todos los derechos reservados','Tutti i diritti riservati')}
+            HabaShop v{__APP_VERSION__} · © {copyrightYear()} {i('Tous droits réservés','All rights reserved','Todos los derechos reservados','Tutti i diritti riservati')}
           </div>
         </div>
       </main>
@@ -449,10 +498,15 @@ export default function LoginPage() {
           cursor: pointer; transition: filter .15s, opacity .15s;
         }
         .login-cta:hover:not(:disabled) { filter: brightness(1.08); }
+        /* Désactivé ≠ en panne. L'ancien état (fond --card3 gris + bordure) donnait un
+           bouton qui avait l'air CASSÉ plutôt qu'en attente de saisie : on garde le fond
+           d'accent, atténué, pour qu'il reste identifiable comme l'action principale.
+           L'attribut disabled lui-même est conservé, login.anchor.test.tsx le verrouille.
+           (Pas de guillemets obliques ici : ce bloc est un template literal JS.) */
         .login-cta:disabled {
           cursor: not-allowed;
-          background: var(--card3); color: var(--text3);
-          border: 1px solid var(--border);
+          background: var(--grad-p); color: #fff;
+          opacity: .48;
         }
         .login-cta[aria-busy="true"] { cursor: wait; }
 
@@ -467,6 +521,7 @@ export default function LoginPage() {
           body .login-grid { grid-template-columns: 1fr !important; }
           body .login-brand { display: none !important; }
           body .login-mobile-logo { display: inline-flex !important; }
+          body .login-back-mobile { display: inline-flex !important; }
         }
         @media (max-width: 380px) {
           .login-demo-grid { grid-template-columns: 1fr !important; }

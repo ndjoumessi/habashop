@@ -6,6 +6,7 @@ import { prisma, basePrisma } from '../db'
 import { normalizeCountry } from '../lib/country'
 import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticateAdmin } from '../middleware/superAdmin'
+import { planAmountXOF } from '../lib/plans'
 import {
   sendUpgradeConfirmation,
   sendWelcomeEmail,
@@ -196,8 +197,8 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       to:        'test@habashop.vercel.app',
       shopName:  'Épicerie Test Dakar',
       ownerName: 'Mamadou Diallo',
-      plan:      'pro',
-      amount:    24900,
+      plan:      'business',
+      amount:    planAmountXOF('business', 'monthly') ?? 0,
       method:    'wave',
       ref:       'WV-TEST-123456',
       caToday:   450000,

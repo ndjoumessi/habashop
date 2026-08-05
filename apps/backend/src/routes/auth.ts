@@ -7,6 +7,7 @@ import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
 import { sendWelcomeEmail } from '../services/email'
 import type { LoginBody, RegisterBody } from '../types'
+import { DEFAULT_PLAN_ON_SIGNUP } from '../lib/plans'
 
 // ── Schémas de validation (item 6) ──────────────────────────────────────────
 // Login : PERMISSIF (présence seule) — la vérif des identifiants reste un 401 générique.
@@ -169,7 +170,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
           // mais il ne doit jamais transformer un libellé en pays deviné : `normalizeCountry`
           // rend null sur l'inconnu, et c'est ce null qui retombe sur le défaut, explicitement.
           country: normalizeCountry(country) ?? 'SN',
-          plan: 'starter',
+          plan: DEFAULT_PLAN_ON_SIGNUP,
           status: 'trial',
           isActive: true,
           trialEnds,
@@ -190,7 +191,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       to:        email,
       shopName:  tenant.name,
       ownerName: user.name ?? resolvedName,
-      plan:      'starter',
+      plan:      DEFAULT_PLAN_ON_SIGNUP,
     }).catch(() => {})
 
     return reply.code(201).send({
