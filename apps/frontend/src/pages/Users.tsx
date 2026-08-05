@@ -31,7 +31,7 @@ export default function Users() {
 
   useEffect(() => {
     usersApi.list()
-      .then((data: any[]) => { if (Array.isArray(data)) setUsers(data.map(mapApiUser)) })
+      .then((data) => { if (Array.isArray(data)) setUsers(data.map(mapApiUser)) })
       .catch(() => {})
   }, [])
 

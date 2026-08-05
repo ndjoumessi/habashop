@@ -76,7 +76,7 @@ export default function Orders() {
 
   useEffect(() => {
     customersApi.list()
-      .then((data: any[]) => setCustomers(data.map((c: any) => ({
+      .then((data) => setCustomers(data.map((c: any) => ({
         id: c.id, name: c.name,
         phone: c.phone || '',
         type: c.type || c.customerType || '',

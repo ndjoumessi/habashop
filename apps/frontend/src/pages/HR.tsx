@@ -109,7 +109,7 @@ export default function HR() {
 
   useEffect(() => {
     employeesApi.list()
-      .then((data: any[]) => {
+      .then((data) => {
         if (data?.length) {
           setEmployees(data.map((e: any, i: number) => ({
             id: e.id ?? i + 1,
@@ -134,7 +134,7 @@ export default function HR() {
       .finally(() => setLoadingEmployees(false))
 
     bonusesApi.list()
-      .then((data: any[]) => {
+      .then((data) => {
         if (!Array.isArray(data)) return
         const list = data.map(b => ({ id: b.id, empId: b.employeeId, amount: Number(b.amount || 0), reason: b.reason, date: b.date }))
         setBonusList(list)
@@ -146,7 +146,7 @@ export default function HR() {
       .catch(err => logger.warn('bonuses load:', err.message))
 
     salaryHistoryApi.list()
-      .then((data: any[]) => {
+      .then((data) => {
         if (!Array.isArray(data)) return
         const normalized = data.map(h => ({
           id:         h.id,

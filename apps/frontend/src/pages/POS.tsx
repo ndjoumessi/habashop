@@ -330,7 +330,7 @@ export default function POS() {
   useEffect(() => {
     let alive = true
     tenantApi.get()
-      .then((t: any) => { if (alive && t) updateConfig({ requireCashier: t.requireCashier ?? false }) })
+      .then((t) => { if (alive && t) updateConfig({ requireCashier: t.requireCashier ?? false }) })
       .catch(() => {}) // hors-ligne / erreur → on retombe sur la valeur persistée
       .finally(() => { if (alive) setSettingsLoaded(true) })
     return () => { alive = false }

@@ -53,7 +53,7 @@ export default function Goals() {
   // Charge depuis le backend au mount
   useEffect(() => {
     goalsApi.list()
-      .then((data: any[]) => setGoals(Array.isArray(data) ? data : []))
+      .then((data) => setGoals(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])

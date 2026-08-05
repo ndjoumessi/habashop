@@ -40,7 +40,7 @@ export default function Planning() {
   const [modalShift, setModalShift] = useState<ShiftType>('full')
 
   useEffect(() => {
-    employeesApi.list().then((data:any[]) => {
+    employeesApi.list().then((data) => {
       if (data?.length > 0) setEmployees(data.map((e:any) => ({
         id: e.id, name: e.name??'', role: e.role??'',
         dept: e.department ?? e.dept ?? '', avatar: (e.name??'??').split(' ')

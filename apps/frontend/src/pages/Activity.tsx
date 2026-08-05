@@ -179,7 +179,7 @@ export default function Activity() {
 
   useEffect(() => {
     auditApi.list()
-      .then((data: any[]) => setActivityLog((data ?? []).map(mapAuditLog)))
+      .then((data) => setActivityLog((data ?? []).map(mapAuditLog)))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])

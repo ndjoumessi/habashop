@@ -84,18 +84,18 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
       try {
         const [prods, custs, ords, sups] = await Promise.all([
           canAccess(role, 'stock')
-            ? productsApi.list().then((all: any[]) =>
+            ? productsApi.list().then((all) =>
                 all.filter(p => p.name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q)).slice(0, 4))
             : [],
           canAccess(role, 'customers')
-            ? customersApi.search(query).then((all: any[]) => (all ?? []).slice(0, 4))
+            ? customersApi.search(query).then((all) => (all ?? []).slice(0, 4))
             : [],
           canAccess(role, 'orders')
-            ? ordersApi.list().then((all: any[]) =>
+            ? ordersApi.list().then((all) =>
                 all.filter(o => o.ref?.toLowerCase().includes(q) || o.status?.toLowerCase().includes(q)).slice(0, 4))
             : [],
           canAccess(role, 'suppliers')
-            ? suppliersApi.list().then((all: any[]) =>
+            ? suppliersApi.list().then((all) =>
                 all.filter(s => s.name?.toLowerCase().includes(q) || s.categories?.toLowerCase().includes(q)).slice(0, 4))
             : [],
         ])

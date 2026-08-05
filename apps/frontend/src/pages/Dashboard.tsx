@@ -171,7 +171,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     dashboardApi.stats()
-      .then((data: any) => {
+      .then((data) => {
         if (data) setStats({
           salesToday:        data.salesToday        ?? stats.salesToday,
           transactionsToday: data.transactionsToday ?? stats.transactionsToday,
@@ -217,7 +217,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     dashboardApi.sales(reportPeriod)
-      .then((data: any) => {
+      .then((data) => {
         if (data?.sales?.length > 0) {
           // ⚠️ Série TEMPORELLE (un point par date, trié), pas un histogramme par jour de
           // semaine — cf. `buildSalesSeries` dans `dashboardShared` pour le bug d'origine.

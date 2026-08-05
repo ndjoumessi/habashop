@@ -107,7 +107,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
     if (!showCloseModal) { setCountedInput(''); return }
     let alive = true
     salesApi.list()
-      .then((sales: any[]) => {
+      .then((sales) => {
         if (!alive || !Array.isArray(sales)) return
         const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
         const acc: Record<string, number> = {}

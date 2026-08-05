@@ -22,7 +22,7 @@ export default function SectionCatalog() {
 
   useEffect(() => {
     tenantApi.get()
-      .then((d: any) => {
+      .then((d) => {
         if (!d) return
         setTenant(d)
         setForm({

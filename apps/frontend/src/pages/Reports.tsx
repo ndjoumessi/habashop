@@ -35,7 +35,7 @@ export default function Reports() {
 
   useEffect(() => {
     salesApi.list()
-      .then((d: any) => { if (d?.length) setSalesData(d) })
+      .then((d) => { if (d?.length) setSalesData(d) })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])

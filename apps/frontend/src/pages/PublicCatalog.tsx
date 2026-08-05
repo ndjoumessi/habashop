@@ -72,7 +72,7 @@ export default function PublicCatalog() {
         if (!res) setNotFound(true)
         else { setData(res); setNotFound(false) }
       })
-      .catch((err: any) => setError(err?.message ?? 'Erreur'))
+      .catch((err) => setError(err?.message ?? 'Erreur'))
       .finally(() => setLoading(false))
   }, [slug, version])
 

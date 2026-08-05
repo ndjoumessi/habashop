@@ -34,7 +34,7 @@ export default function SectionPOS() {
   // Charge les paramètres POS depuis le tenant (source de vérité backend).
   // posTaxRate côté front = vatRate côté backend (single source of truth — pas de doublon de TVA).
   useEffect(() => {
-    tenantApi.get().then((t: any) => {
+    tenantApi.get().then((t) => {
       if (!t) return
       cfg.updateConfig({
         posVatIncluded: t.posVatIncluded ?? true,

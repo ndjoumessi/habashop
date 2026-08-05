@@ -49,7 +49,7 @@ export default function SectionNotif() {
 
   // Charge depuis le tenant au mount
   useEffect(() => {
-    tenantApi.get().then((t: any) => {
+    tenantApi.get().then((t) => {
       if (!t) return
       setOwnerPhone(t.ownerPhone ?? '')
       setOwnerPhoneSaved(t.ownerPhone ?? '')

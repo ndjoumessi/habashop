@@ -26,7 +26,7 @@ export default function SectionShop() {
   const [tenantLoaded, setTenantLoaded] = useState(false)
 
   useEffect(() => {
-    tenantApi.get().then((d: any) => {
+    tenantApi.get().then((d) => {
       if (d) {
         setShopData(s => ({
           name: d.name ?? s.name, email: d.email ?? s.email, phone: d.phone ?? s.phone,
