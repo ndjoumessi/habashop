@@ -4,7 +4,7 @@ import { useAppStore } from '@/stores/appStore'
 import { customersApi, marketingApi, type Campaign } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { Search, Send, Users, CheckSquare, Square, Smartphone, Tag, Package, Gift, MessageCircle, Megaphone, Clock, Loader2 } from 'lucide-react'
-import { normalizeClientType } from '@/lib/clientType'
+import { normalizeClientType, CLIENT_TYPES } from '@/lib/clientType'
 import { clientTypeToLabel, typeLabel } from '@/components/customers/customersShared'
 
 interface Customer {
@@ -637,8 +637,13 @@ export default function Marketing() {
                   { val: 'bronze',    label: lang === 'en' ? 'Bronze' : 'Bronze' },
                   { val: 'silver',    label: lang === 'en' ? 'Silver' : lang === 'es' ? 'Plata' : lang === 'it' ? 'Argento' : 'Silver' },
                   { val: 'gold',      label: lang === 'en' ? 'Gold' : lang === 'es' ? 'Oro' : lang === 'it' ? 'Oro' : 'Gold' },
-                  { val: 'wholesale', label: lang === 'en' ? 'Wholesale' : lang === 'es' ? 'Mayorista' : lang === 'it' ? 'Ingrosso' : 'Gros' },
-                  { val: 'retail',    label: lang === 'en' ? 'Retail' : lang === 'es' ? 'Minorista' : lang === 'it' ? 'Dettaglio' : 'Détail' },
+                  // ⚠️ Types clients DÉRIVÉS de `CLIENT_TYPES` (#215) — c'était une QUATRIÈME
+                  // liste tenue à la main, et il lui manquait `loyal` ET `semi-wholesale` :
+                  // deux paliers valides côté serveur qu'aucun commerçant ne pouvait cibler.
+                  // Ajouter la ligne manquante aurait laissé le prochain palier dériver ;
+                  // la dériver rend l'oubli impossible. Libellés par la table partagée, donc
+                  // identiques à la pastille affichée juste en dessous.
+                  ...CLIENT_TYPES.map(v => ({ val: v, label: typeLabel(clientTypeToLabel(v), lang) })),
                 ].map(s => (
                   <button key={s.val} onClick={() => setSegment(s.val)} style={{
                     padding: '5px 12px', borderRadius: 20, fontSize: 'var(--fs-label)', cursor: 'pointer',

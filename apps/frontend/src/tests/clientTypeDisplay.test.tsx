@@ -55,6 +55,39 @@ beforeEach(() => {
   customersList.mockResolvedValue([CUST()])
 })
 
+describe('Marketing — sélecteur de segment', () => {
+  /** Boutons du sélecteur (les pastilles de palier sont des <span>). */
+  const segmentButtons = () => screen.getAllByRole('button').map(b => b.textContent?.trim())
+
+  it('⚠️ propose UN segment par palier client — aucun ne peut être oublié', async () => {
+    // C'était une quatrième liste écrite à la main : `loyal` et `semi-wholesale` y
+    // manquaient, donc deux paliers valides côté serveur étaient inatteignables.
+    customersList.mockResolvedValue([CUST()])
+    render(<Marketing />)
+    await screen.findByText('Boutique Teranga')
+    const btns = segmentButtons()
+    for (const label of ['Grossiste', 'Semi-gros', 'Fidèle', 'Détail']) {
+      expect(btns).toContain(label)
+    }
+  })
+
+  it('les libellés sont ceux de la table partagée, pas une variante locale', async () => {
+    // Le bouton disait « Gros » quand la pastille juste en dessous dit « Grossiste ».
+    customersList.mockResolvedValue([CUST()])
+    render(<Marketing />)
+    await screen.findByText('Boutique Teranga')
+    expect(segmentButtons()).not.toContain('Gros')
+  })
+
+  it('les segments de fidélité et « tous » restent proposés', async () => {
+    customersList.mockResolvedValue([CUST()])
+    render(<Marketing />)
+    await screen.findByText('Boutique Teranga')
+    const btns = segmentButtons()
+    for (const label of ['Tous', 'Bronze', 'Silver', 'Gold']) expect(btns).toContain(label)
+  })
+})
+
 describe('Marketing — pastille de palier', () => {
   it('affiche le LIBELLÉ traduit, jamais la valeur du fil', async () => {
     customersList.mockResolvedValue([CUST({ type: 'wholesale' })])
