@@ -119,9 +119,9 @@ async function main(): Promise<void> {
   // ── 4. Clients (≥1 requis par loyalty-card : bouton « Carte numérique » par ligne) ─
   // « Espace Sahel » : attendu (exact) par pos-customer-selector (recherche « es »).
   const customers = [
-    { id: 'e2e-cust-001', name: 'Boutique Teranga', type: 'Grossiste', phone: '+221 77 000 90 01', email: 'teranga@e2e.test', loyaltyPoints: 480, totalRevenue: 1250000 },
-    { id: 'e2e-cust-002', name: 'Comptoir Baobab',  type: 'Détail',    phone: '+221 77 000 90 02', email: 'baobab@e2e.test',  loyaltyPoints: 120, totalRevenue: 215000 },
-    { id: 'e2e-cust-003', name: 'Espace Sahel',     type: 'Semi-gros', phone: '+221 77 000 90 03', email: 'sahel@e2e.test',   loyaltyPoints: 260, totalRevenue: 685000 },
+    { id: 'e2e-cust-001', name: 'Boutique Teranga', type: 'wholesale', phone: '+221 77 000 90 01', email: 'teranga@e2e.test', loyaltyPoints: 480, totalRevenue: 1250000 },
+    { id: 'e2e-cust-002', name: 'Comptoir Baobab',  type: 'retail',    phone: '+221 77 000 90 02', email: 'baobab@e2e.test',  loyaltyPoints: 120, totalRevenue: 215000 },
+    { id: 'e2e-cust-003', name: 'Espace Sahel',     type: 'semi-wholesale', phone: '+221 77 000 90 03', email: 'sahel@e2e.test',   loyaltyPoints: 260, totalRevenue: 685000 },
   ]
   for (const c of customers) {
     const { id, ...rest } = c

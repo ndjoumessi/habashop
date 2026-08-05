@@ -78,11 +78,11 @@ async function seedDemo() {
   // ── 3. Clients fictifs sénégalais (noms d'enseignes génériques, n° +221 non-attribuables) ──
   // Soldes (totalRevenue) variés non nuls → l'écran ne montre pas "0 FCFA" partout.
   const customers = [
-    { id: 'demo-dkr-cust-1', name: 'Boutique Teranga', type: 'Grossiste', phone: '+221 77 000 01 01', email: 'teranga@demo.sn', address: 'Médina, Dakar',     loyaltyPoints: 480, totalRevenue: 1250000 },
-    { id: 'demo-dkr-cust-2', name: 'Espace Sahel',     type: 'Semi-gros', phone: '+221 77 000 02 02', email: 'sahel@demo.sn',   address: 'Plateau, Dakar',    loyaltyPoints: 260, totalRevenue: 685000 },
-    { id: 'demo-dkr-cust-3', name: 'Marché Médina',    type: 'Grossiste', phone: '+221 77 000 03 03', email: 'medina@demo.sn',  address: 'Médina, Dakar',     loyaltyPoints: 350, totalRevenue: 940000 },
-    { id: 'demo-dkr-cust-4', name: 'Comptoir Baobab',  type: 'Détail',    phone: '+221 77 000 04 04', email: 'baobab@demo.sn',  address: 'Sacré-Cœur, Dakar', loyaltyPoints: 120, totalRevenue: 215000 },
-    { id: 'demo-dkr-cust-5', name: 'Supérette Yoff',   type: 'Détail',    phone: '+221 77 000 05 05', email: 'yoff@demo.sn',    address: 'Yoff, Dakar',       loyaltyPoints: 40,  totalRevenue: 78000 },
+    { id: 'demo-dkr-cust-1', name: 'Boutique Teranga', type: 'wholesale', phone: '+221 77 000 01 01', email: 'teranga@demo.sn', address: 'Médina, Dakar',     loyaltyPoints: 480, totalRevenue: 1250000 },
+    { id: 'demo-dkr-cust-2', name: 'Espace Sahel',     type: 'semi-wholesale', phone: '+221 77 000 02 02', email: 'sahel@demo.sn',   address: 'Plateau, Dakar',    loyaltyPoints: 260, totalRevenue: 685000 },
+    { id: 'demo-dkr-cust-3', name: 'Marché Médina',    type: 'wholesale', phone: '+221 77 000 03 03', email: 'medina@demo.sn',  address: 'Médina, Dakar',     loyaltyPoints: 350, totalRevenue: 940000 },
+    { id: 'demo-dkr-cust-4', name: 'Comptoir Baobab',  type: 'retail',    phone: '+221 77 000 04 04', email: 'baobab@demo.sn',  address: 'Sacré-Cœur, Dakar', loyaltyPoints: 120, totalRevenue: 215000 },
+    { id: 'demo-dkr-cust-5', name: 'Supérette Yoff',   type: 'retail',    phone: '+221 77 000 05 05', email: 'yoff@demo.sn',    address: 'Yoff, Dakar',       loyaltyPoints: 40,  totalRevenue: 78000 },
   ]
   for (const c of customers) {
     const { id, ...rest } = c
@@ -142,9 +142,11 @@ async function seedDemo() {
   // passage anonyme. Ni 0 % (le défaut d'avant) ni 100 % (qui ferait disparaître le client
   // de passage, pourtant le cas dominant) ne seraient réalistes.
   const custByTier: Record<'large' | 'medium' | 'small', string[]> = {
-    large:  customers.filter(c => c.type === 'Grossiste').map(c => c.id),
-    medium: customers.filter(c => c.type === 'Semi-gros').map(c => c.id),
-    small:  customers.filter(c => c.type === 'Détail').map(c => c.id),
+    // ⚠️ Ces filtres lisent le littéral ci-dessus : le passer à l'enum canonique sans
+    // les suivre viderait les pools et remettrait le rattachement à 0 (#215).
+    large:  customers.filter(c => c.type === 'wholesale').map(c => c.id),
+    medium: customers.filter(c => c.type === 'semi-wholesale').map(c => c.id),
+    small:  customers.filter(c => c.type === 'retail').map(c => c.id),
   }
   const LINK_RATE = { large: 0.9, medium: 0.6, small: 0.12 } as const
 
