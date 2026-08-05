@@ -6,6 +6,8 @@ const { db } = vi.hoisted(() => ({
   db: {
     customer: { findMany: vi.fn(), findFirst: vi.fn() },
     tenant: { findUnique: vi.fn() },
+    // `purchasesPerMonth` (#215) : recherche ET détail agrègent les ventes rattachées.
+    sale: { groupBy: vi.fn().mockResolvedValue([]) },
   },
 }))
 vi.mock('../db', () => ({ prisma: db }))

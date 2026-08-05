@@ -24,6 +24,56 @@ const CUSTOMER_UPDATE = z.object(CUSTOMER_FIELDS).passthrough()
 // Ajustement fidélité manuel : points requis (nombre) ; le handler garde ses gardes (0, rôle).
 const LOYALTY_BODY = z.object({ points: z.coerce.number(), reason: z.string().nullish() }).passthrough()
 
+/**
+ * Fréquence d'achat RÉELLE, dérivée des ventes rattachées (#215).
+ *
+ * Le front l'écrivait `purchasesPerMonth: 0` en dur — un zéro qui mentait : la fiche d'un
+ * grossiste affichait « 0 commandes » au-dessus de ses 19 achats.
+ *
+ * ⚠️ FENÊTRE GLISSANTE de 90 jours, pas la moyenne de vie du client. C'est un choix, et il
+ * est mesuré : sur le tenant démo, la même donnée donne 0 sur 30 jours (trop volatil — une
+ * semaine de fermeture suffit à l'annuler), 0,7 sur 90 jours, et 6,3 en moyenne de vie.
+ * La moyenne de vie ne DÉCROÎT jamais : un client parti il y a un an afficherait encore
+ * « 6 achats/mois », ce qui viderait de son sens le KPI « Rétention » (part des clients
+ * à ≥ 3/mois). Un taux doit pouvoir retomber à zéro quand le client cesse de venir — et
+ * ce zéro-là, lui, sera CONSTATÉ.
+ *
+ * ⚠️ Les ventes REMBOURSÉES sont exclues : un achat annulé n'est pas une visite à compter
+ * dans une fréquence d'achat. (L'historique, lui, les MONTRE — ce n'est pas la même
+ * question : il raconte, celui-ci mesure.)
+ *
+ * Une décimale conservée : arrondir 0,7 à 1 gonflerait de 43 % la fréquence d'un
+ * grossiste qui vient une fois par trimestre.
+ */
+const PURCHASE_RATE_WINDOW_DAYS = 90
+
+type WithRate<T> = T & { purchasesPerMonth: number }
+
+async function withPurchaseRate<T extends { id: string }>(tenantId: string, customers: T[]): Promise<WithRate<T>[]> {
+  if (customers.length === 0) return []
+  const since = new Date(Date.now() - PURCHASE_RATE_WINDOW_DAYS * 86_400_000)
+  const grouped = await prisma.sale.groupBy({
+    by: ['customerId'],
+    where: {
+      tenantId,
+      customerId: { in: customers.map(c => c.id) },
+      createdAt: { gte: since },
+      status: { not: 'refunded' },
+    },
+    _count: { _all: true },
+  })
+  // ⚠️ PAS de `.catch(() => [])` ici, et c'est délibéré : un agrégat en échec rendrait
+  // « 0 achat/mois » pour TOUS les clients — le zéro menteur qu'on vient de retirer,
+  // reconstitué par la porte de derrière et cette fois indétectable. Mieux vaut que
+  // l'erreur remonte (liste vide côté handler, 404/500 côté détail) : une absence se voit.
+  const months = PURCHASE_RATE_WINDOW_DAYS / 30
+  const byCustomer = new Map(grouped.map(g => [g.customerId, g._count._all]))
+  return customers.map(c => ({
+    ...c,
+    purchasesPerMonth: Math.round(((byCustomer.get(c.id) ?? 0) / months) * 10) / 10,
+  }))
+}
+
 export async function customerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/customers', { preHandler: authenticate }, async (request) => {
     const tenantId = getTenantId(request)
@@ -47,15 +97,19 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
           where: { id: tenantId },
           select: { bronzeThreshold: true, silverThreshold: true },
         })
-        return matches.map(c => ({
+        // Même enrichissement que la liste : sans lui, un client résolu par la recherche
+        // porterait un `purchasesPerMonth` absent, que le front replierait sur 0 — le zéro
+        // menteur reviendrait par cette porte.
+        return withPurchaseRate(tenantId, matches.map(c => ({
           ...c,
           tier: tierForPoints(c.loyaltyPoints ?? 0, cfg?.bronzeThreshold ?? 2000, cfg?.silverThreshold ?? 5000),
-        }))
+        })))
       }
-      return await prisma.customer.findMany({
+      const customers = await prisma.customer.findMany({
         where: { tenantId, deletedAt: null },
         orderBy: { createdAt: 'desc' },
       })
+      return withPurchaseRate(tenantId, customers)
     } catch (err) {
       console.error('Get customers error:', err)
       return []
@@ -68,7 +122,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     const { id } = request.params as { id: string }
     const customer = await prisma.customer.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
-    return customer
+    return (await withPurchaseRate(tenantId, [customer]))[0]
   })
 
   app.post('/api/customers', { preHandler: authenticate, schema: { body: CUSTOMER_CREATE } }, async (request, reply) => {

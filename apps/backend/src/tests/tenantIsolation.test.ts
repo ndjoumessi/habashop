@@ -50,6 +50,9 @@ function model(store: Record<string, any>) {
     create:     vi.fn(async () => ({ id: 'new' })),
     count:      vi.fn(async () => 0),
     findMany:   vi.fn(async () => []),
+    // Agrégat (fréquence d'achat #215) : aucun résultat → 0, ce que ces tests d'isolation
+    // n'observent pas. Sans lui, le détail client renverrait 500 au lieu de 200/404.
+    groupBy:    vi.fn(async () => []),
   }
 }
 

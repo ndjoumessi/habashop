@@ -181,6 +181,17 @@ export function LoyaltyBar({ points }: { points: number }) {
   )
 }
 
+/**
+ * Affichage d'une fréquence d'achat (#215). Le serveur rend une DÉCIMALE (0,7 achat/mois
+ * pour un grossiste trimestriel) : la rendre par interpolation brute donnerait « 0.7 » —
+ * un point décimal anglais dans une interface française. `.0` est retiré, pour que
+ * « 5 achats/mois » ne s'écrive pas « 5,0 ».
+ */
+export function purchaseRateLabel(n: number, lang = 'fr'): string {
+  const loc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+  return (Number(n) || 0).toLocaleString(loc, { maximumFractionDigits: 1 })
+}
+
 export function mapApiCustomer(c: any): Customer {
   return {
     id: c.id,
@@ -189,7 +200,11 @@ export function mapApiCustomer(c: any): Customer {
     phone: c.phone || '',
     email: c.email || '',
     address: c.address || '',
-    purchasesPerMonth: 0,
+    // Fréquence d'achat SERVEUR (#215), dérivée des ventes rattachées sur 90 jours
+    // glissants. C'était `0` en dur : la fiche d'un grossiste annonçait « 0 commandes »
+    // au-dessus de ses 19 achats. Le repli à 0 ne subsiste que pour une réponse d'un
+    // backend antérieur au champ — jamais comme valeur par défaut d'un client actif.
+    purchasesPerMonth: typeof c.purchasesPerMonth === 'number' ? c.purchasesPerMonth : 0,
     totalCA: c.totalRevenue ?? 0,
     loyaltyPoints: c.loyaltyPoints ?? 0,
     since: c.createdAt?.split('T')[0] ?? new Date().toISOString().split('T')[0],

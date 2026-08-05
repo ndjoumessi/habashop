@@ -10,7 +10,7 @@ import { lazy, Suspense, type Dispatch, type SetStateAction } from 'react'
 // Lazy : LoyaltyCardDigital embarque html2canvas + qrcode (~45 Ko gz) — hors du chunk Customers
 const LoyaltyCardDigital = lazy(() => import('@/components/ui/LoyaltyCardDigital'))
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
-import { type Customer, type ClientType, type CustomerForm, type EditCustomerForm, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyNextThreshold, usePurchaseHistory } from '@/components/customers/customersShared'
+import { type Customer, type ClientType, type CustomerForm, type EditCustomerForm, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyNextThreshold, usePurchaseHistory, purchaseRateLabel } from '@/components/customers/customersShared'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { announce } from '@/lib/announce'
 import { fmtDate } from '@/lib/formatDate'
@@ -76,7 +76,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 { label: i('Téléphone', 'Phone', 'Teléfono', 'Telefono'),    value: viewCustomer.phone || '—' },
                 { label: 'Email',        value: viewCustomer.email || '—' },
                 { label: i('CA total', 'Total revenue', 'CA total', 'CA totale'),     value: fmt(viewCustomer.totalCA) },
-                { label: i('Achats/mois', 'Purchases/mo', 'Compras/mes', 'Acquisti/mese'),  value: `${viewCustomer.purchasesPerMonth} ${i('commandes', 'orders', 'pedidos', 'ordini')}` },
+                { label: i('Achats/mois', 'Purchases/mo', 'Compras/mes', 'Acquisti/mese'),  value: purchaseRateLabel(viewCustomer.purchasesPerMonth, lang) },
               ].map(f => (
                 <div key={f.label} className="p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
                   <div className="text-xs uppercase tracking-wide font-semibold mb-1" style={{ color: 'var(--text3)' }}>{f.label}</div>
@@ -478,7 +478,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                   // `hex` = HEX LITTÉRAL (concaténé `${k.hex}25`/`15`/`05` pour bord + dégradé) : un
                   // var(--x) s'y casse en silence. `color` reste un token (usage direct `color:k.color`).
                   { label: i('CA Total', 'Total Revenue', 'Ingresos totales', 'Fatturato totale'), value: fmt(detailCustomer.totalCA), icon: <DollarSign size={20} />, color: 'var(--acc)', hex: '#FFB020' },
-                  { label: i('Commandes/mois', 'Orders/month', 'Pedidos/mes', 'Ordini/mese'), value: `${detailCustomer.purchasesPerMonth}`, icon: <ShoppingCart size={20} />, color: 'var(--p2)', hex: '#6C47FF' },
+                  { label: i('Commandes/mois', 'Orders/month', 'Pedidos/mes', 'Ordini/mese'), value: purchaseRateLabel(detailCustomer.purchasesPerMonth, lang), icon: <ShoppingCart size={20} />, color: 'var(--p2)', hex: '#6C47FF' },
                   { label: i('Points fidélité', 'Loyalty pts', 'Puntos fidelidad', 'Punti fedeltà'), value: `${detailCustomer.loyaltyPoints} pts`, icon: <Star size={20} />, color: 'var(--warn)', hex: '#FFC53D' },
                 ].map(k => (
                   <div key={k.label} style={{ background: `linear-gradient(135deg,${k.hex}15,${k.hex}05)`, border: `1px solid ${k.hex}25`, borderRadius: 12, padding: '14px', textAlign: 'center' }}>
