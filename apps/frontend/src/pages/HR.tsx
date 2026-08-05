@@ -372,6 +372,13 @@ export default function HR() {
   const pg = usePagination(filtered, 12)
   useEffect(() => { pg.reset() }, [search, deptFilter, filterStatus])
 
+  // ⚠️ Somme en XOF puis UNE conversion à l'affichage (via `fmt`). L'écran Paie fait
+  // l'INVERSE — somme des lignes déjà converties — et c'est voulu là-bas : un bulletin liste
+  // des lignes et annonce un total qui doit s'additionner (cf. `PayrollTable.tsx:30` et le
+  // verrou `payrollConvertOnce.test.ts`). Les deux écrans peuvent donc différer d'un CENTIME
+  // sur la même masse salariale (2 530,65 ici, 2 530,66 en Paie). Ce n'est PAS un bug :
+  // deux arrondis corrects dans deux contextes différents. NE PAS « aligner » l'un sur
+  // l'autre sans traiter la convention de la Paie — c'est elle qui fait foi devant un employé.
   const totalPayroll = useMemo(() => (employees ?? []).filter(e => e.active).reduce((s, e) => s + e.salary, 0), [employees])
   const activeCount  = useMemo(() => (employees ?? []).filter(e => e.active).length, [employees])
   const pendingLeaves = useMemo(() => (leaves ?? []).filter(l => l.status === 'pending').length, [leaves])

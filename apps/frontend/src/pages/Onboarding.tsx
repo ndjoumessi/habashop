@@ -145,7 +145,11 @@ export default function Onboarding() {
               {([
                 { v: 'grocery',       label: i('Épicerie', 'Grocery', 'Tienda', 'Drogheria') },
                 { v: 'superette',     label: i('Superette', 'Mini-market', 'Superete', 'Minimarket') },
-                { v: 'semiwholesale', label: i('Demi-gros', 'Semi-wholesale', 'Semi-mayorista', 'Semi-ingrosso') },
+                // ⚠️ Libellé aligné sur « Semi-gros » (un seul mot dans toute l'app pour cette
+                // notion). La VALEUR `semiwholesale` reste inchangée : `shopType` décrit le
+                // TYPE DE COMMERCE, un axe distinct du palier client (`CLIENT_TYPES`) — les
+                // lier serait une erreur, malgré la ressemblance des mots.
+                { v: 'semiwholesale', label: i('Semi-gros', 'Semi-wholesale', 'Semi-mayorista', 'Semi-ingrosso') },
                 { v: 'wholesale',     label: i('Grossiste', 'Wholesale', 'Mayorista', 'Grossista') },
               ]).map(t => (
                 <button key={t.v} type="button" aria-pressed={form.shopType === t.v} onClick={() => set({ shopType: t.v })} style={chip(form.shopType === t.v)}>

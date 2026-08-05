@@ -352,7 +352,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
               }} />
               </div>
 
-              {/* Tarif client — toggle segmenté discret (Détail / Grossiste / Demi-gros) */}
+              {/* Tarif client — toggle segmenté discret (Détail / Grossiste / Semi-gros) */}
               <div role="group"
                 aria-label={lang === 'en' ? 'Price tier' : lang === 'es' ? 'Tarifa' : lang === 'it' ? 'Tariffa' : 'Tarif client'}
                 style={{
@@ -363,7 +363,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                 {([
                   { id:'retail',    icon: <User size={12} />,    label: lang === 'en' ? 'Retail'         : lang === 'es' ? 'Minorista'      : lang === 'it' ? 'Dettaglio'     : 'Détail'    },
                   { id:'wholesale', icon: <Factory size={12} />, label: lang === 'en' ? 'Wholesaler'     : lang === 'es' ? 'Mayorista'      : lang === 'it' ? 'Grossista'     : 'Grossiste' },
-                  { id:'semi',      icon: <Package size={12} />, label: lang === 'en' ? 'Semi-wholesale' : lang === 'es' ? 'Semi-mayorista' : lang === 'it' ? 'Semi-ingrosso' : 'Demi-gros' },
+                  { id:'semi',      icon: <Package size={12} />, label: lang === 'en' ? 'Semi-wholesale' : lang === 'es' ? 'Semi-mayorista' : lang === 'it' ? 'Semi-ingrosso' : 'Semi-gros' },
                 ] as { id:'retail'|'wholesale'|'semi'; icon: ReactNode; label:string }[]).map(ct => (
                   <button key={ct.id} type="button" onClick={() => setClientType(ct.id)}
                     aria-pressed={clientType === ct.id}
@@ -397,22 +397,40 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
           {/* Tarif actif — mention discrète ancrée AU-DESSUS de la grille (le sélecteur est
               loin à droite) : explique pourquoi les prix diffèrent du prix détail. Affichée
               seulement hors Détail (le mode par défaut n'a rien à justifier). */}
-          {posTab === 'pos' && clientType !== 'retail' && (
-            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-caption)', color: 'var(--text2)' }}>
-              <span style={{ display: 'flex', color: 'var(--p2)' }}>
-                {clientType === 'wholesale' ? <Factory size={12} /> : <Package size={12} />}
-              </span>
-              <span>
-                {lang === 'en' ? 'Pricing' : lang === 'es' ? 'Tarifa' : lang === 'it' ? 'Tariffa' : 'Tarif'}{' '}
-                <b style={{ color: 'var(--p2)', fontWeight: 'var(--fw-semibold)' }}>
-                  {clientType === 'wholesale'
-                    ? (lang === 'en' ? 'Wholesaler' : lang === 'es' ? 'Mayorista' : lang === 'it' ? 'Grossista' : 'Grossiste')
-                    : (lang === 'en' ? 'Semi-wholesale' : lang === 'es' ? 'Semi-mayorista' : lang === 'it' ? 'Semi-ingrosso' : 'Demi-gros')}
-                </b>{' '}
-                {lang === 'en' ? 'applied' : lang === 'es' ? 'aplicada' : lang === 'it' ? 'applicata' : 'appliqué'}
-              </span>
-            </div>
-          )}
+          {posTab === 'pos' && clientType !== 'retail' && (() => {
+            // ⚠️ « appliqué » n'est vrai que si un prix de ce palier EXISTE. Le mapper POS
+            // replie `priceWholesale`/`priceSemiWholesale` sur `price` quand le produit n'en
+            // a pas (miroir serveur, cf. posShared) — donc sans ce garde, le bandeau annonçait
+            // « Tarif Grossiste appliqué » au-dessus de prix STRICTEMENT identiques au détail.
+            // Le commerçant lisait qu'une remise gros s'appliquait alors qu'il vendait au
+            // prix de détail. On dit désormais ce qui est vrai, et pourquoi rien ne change.
+            const differs = filtered.some(p => (
+              clientType === 'wholesale' ? (p.priceWholesale ?? p.price) !== p.price
+                                         : (p.priceSemiWholesale ?? p.price) !== p.price
+            ))
+            const tierName = clientType === 'wholesale'
+              ? (lang === 'en' ? 'Wholesaler' : lang === 'es' ? 'Mayorista' : lang === 'it' ? 'Grossista' : 'Grossiste')
+              : (lang === 'en' ? 'Semi-wholesale' : lang === 'es' ? 'Semi-mayorista' : lang === 'it' ? 'Semi-ingrosso' : 'Semi-gros')
+            return (
+              <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-caption)', color: differs ? 'var(--text2)' : 'var(--warn)' }}>
+                <span style={{ display: 'flex', color: differs ? 'var(--p2)' : 'var(--warn)' }}>
+                  {clientType === 'wholesale' ? <Factory size={12} /> : <Package size={12} />}
+                </span>
+                <span>
+                  {lang === 'en' ? 'Pricing' : lang === 'es' ? 'Tarifa' : lang === 'it' ? 'Tariffa' : 'Tarif'}{' '}
+                  <b style={{ color: differs ? 'var(--p2)' : 'var(--warn)', fontWeight: 'var(--fw-semibold)' }}>{tierName}</b>{' '}
+                  {differs
+                    ? (lang === 'en' ? 'applied' : lang === 'es' ? 'aplicada' : lang === 'it' ? 'applicata' : 'appliqué')
+                    : (lang === 'en' ? '— no tier price set, retail price applied'
+                      : lang === 'es' ? '— sin precio de nivel, se aplica el precio minorista'
+                      : lang === 'it' ? '— nessun prezzo di livello, si applica il prezzo al dettaglio'
+                      // « pour ce tarif » et non « de gros » : le même message sert les DEUX
+                      // paliers, et « Tarif Semi-gros — aucun prix de gros » se contredisait.
+                      : '— aucun prix pour ce tarif, prix de détail appliqué')}
+                </span>
+              </div>
+            )
+          })()}
 
           {/* Grille produits — SCROLL ICI */}
           {posTab === 'pos' && <div style={{

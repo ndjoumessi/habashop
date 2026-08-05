@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { showStrikePrice } from '@/components/pos/posShared'
 
 // Fix affichage : le prix barré (référence) ne doit apparaître QUE s'il dépasse le
-// prix effectif — sinon « 2 800 2 800 FCFA » en Grossiste/Demi-gros sur les produits
+// prix effectif — sinon « 2 800 2 800 FCFA » en Grossiste/Semi-gros sur les produits
 // sans tarif de gros distinct (le tarif retombe sur le prix détail).
 describe('showStrikePrice — prix barré uniquement si vrai écart', () => {
   it('référence == effectif (pas de tarif distinct) → PAS de barré (un seul montant)', () => {
