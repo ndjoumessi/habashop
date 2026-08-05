@@ -16,7 +16,7 @@ import { payModeLabel } from '@/components/pos/posShared'
 import ConsolidatedShops from '@/components/dashboard/ConsolidatedShops'
 import {
   noSalesInPeriodLabel, noSalesThisMonthLabel, salesChartTitle, periodOptionLabel,
-  isChartPeriod, buildSalesSeries, CHART_PERIODS, type ChartPeriod,
+  isChartPeriod, buildSalesSeries, salesPointLabel, pickAxisTicks, CHART_PERIODS, type ChartPeriod,
 } from '@/components/dashboard/dashboardShared'
 // Charts isolés dans le chunk `charts` (recharts) → lazy pour ne pas bloquer le rendu des KPIs
 const DashSalesArea = lazy(() => import('@/components/charts/DashSalesArea'))
@@ -92,6 +92,9 @@ const CatTooltip = ({ active, payload }: any) => {
 const CustomTooltip = ({ active, payload, label }: any) => {
   const fmt = useFormatAmount()
   if (!active || !payload?.length) return null
+  // ⚠️ L'axe X porte `ts` (timestamp) depuis le passage en axe temporel : `label` est donc un
+  // NOMBRE brut. Le libellé lisible voyage avec le point (`name`), on le préfère.
+  const heading = payload[0]?.payload?.name ?? label
   return (
     <div style={{
       background: 'var(--card)',
@@ -101,9 +104,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       fontFamily: 'var(--font)',
       minWidth: 140,
     }}>
-      {label && (
+      {heading && (
         <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
-          {label}
+          {heading}
         </div>
       )}
       {payload.map((p: any, i: number) => (
@@ -440,7 +443,9 @@ export default function Dashboard() {
             </div>
           ) : (
           <Suspense fallback={<Skeleton height={190} count={1} radius={12} />}>
-            <DashSalesArea data={salesChart} abbr={abbr} tooltip={<CustomTooltip />} />
+            <DashSalesArea data={salesChart} abbr={abbr} tooltip={<CustomTooltip />}
+              ticks={pickAxisTicks(salesChart)}
+              tickFormatter={(ts: number) => salesPointLabel(new Date(ts), reportPeriod, lang)} />
           </Suspense>
           )}
           </div>

@@ -1,0 +1,57 @@
+{
+  "_comment": [
+    "Borne basse de la fenêtre de /api/reports/sales. Rejoué par les DEUX côtés :",
+    "  back  → apps/backend/src/utils/salesWindow.ts        (ce que le serveur REQUÊTE)",
+    "  front → apps/frontend/src/components/dashboard/dashboardShared.ts (ce que le graphe REMPLIT)",
+    "Le front remplit à 0 les jours sans vente : il doit connaître la fenêtre exacte du serveur,",
+    "sinon il invente des zéros avant le début réel ou ampute la période annoncée.",
+    "",
+    "⚠️ `now` et `from` sont des ISO SANS fuseau : les deux côtés les parsent en heure LOCALE,",
+    "et l'arithmétique de `Date` est locale elle aussi. Le cas est donc identique quel que soit",
+    "le TZ de la machine — un littéral en `Z` rendrait ces cas dépendants du runner."
+  ],
+  "cases": [
+    {
+      "label": "7 jours — l'heure du jour est CONSERVÉE (fenêtre glissante, pas alignée sur minuit)",
+      "period": "7days",
+      "now": "2026-08-05T14:30:00",
+      "from": "2026-07-29T14:30:00"
+    },
+    {
+      "label": "30 jours — franchit la frontière de mois",
+      "period": "30days",
+      "now": "2026-08-05T14:30:00",
+      "from": "2026-07-06T14:30:00"
+    },
+    {
+      "label": "30 jours — franchit février (2026 non bissextile)",
+      "period": "30days",
+      "now": "2026-03-15T08:00:00",
+      "from": "2026-02-13T08:00:00"
+    },
+    {
+      "label": "3 mois — cas nominal",
+      "period": "3months",
+      "now": "2026-08-05T14:30:00",
+      "from": "2026-05-05T14:30:00"
+    },
+    {
+      "label": "3 mois — DÉBORDEMENT `setMonth` : le 31 mai moins 3 mois donne le 3 MARS (31 février → 3 mars). Quirk JS d'origine, conservé sciemment.",
+      "period": "3months",
+      "now": "2026-05-31T10:00:00",
+      "from": "2026-03-03T10:00:00"
+    },
+    {
+      "label": "today — SEUL cas ramené à minuit",
+      "period": "today",
+      "now": "2026-08-05T14:30:00",
+      "from": "2026-08-05T00:00:00"
+    },
+    {
+      "label": "période inconnue → repli 1er janvier de l'année courante",
+      "period": "bogus",
+      "now": "2026-08-05T14:30:00",
+      "from": "2026-01-01T14:30:00"
+    }
+  ]
+}

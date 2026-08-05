@@ -3,6 +3,7 @@ import { prisma, basePrisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { getTenantId } from '../lib/tenantId'
 import { getCached } from '../lib/cache'
+import { salesWindowStart } from '../utils/salesWindow'
 
 /**
  * Évolution en % (1 décimale) entre la valeur actuelle et celle de la période
@@ -173,13 +174,9 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
     const { period = '7days' } = request.query as { period?: string }
 
     return getCached(`analytics:${tenantId}:reports:${period}`, 300, async () => {
-      const now = new Date()
-      const from = new Date()
-      if (period === 'today') from.setHours(0, 0, 0, 0)
-      else if (period === '7days') from.setDate(now.getDate() - 7)
-      else if (period === '30days') from.setDate(now.getDate() - 30)
-      else if (period === '3months') from.setMonth(now.getMonth() - 3)
-      else from.setFullYear(now.getFullYear(), 0, 1)
+      // ⚠️ Fenêtre = SOURCE UNIQUE `utils/salesWindow` — le front la reflète pour remplir à 0
+      // les jours sans vente ; cas partagés `docs/shared-fixtures/sales-window-cases.json`.
+      const from = salesWindowStart(period, new Date())
 
       const sales = await prisma.sale.findMany({
         where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: from } },

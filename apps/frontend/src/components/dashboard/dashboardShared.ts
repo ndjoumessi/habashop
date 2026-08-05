@@ -114,9 +114,58 @@ export function noSalesThisMonthLabel(lang: Lang): string {
 /* ────────────────────────── Série du graphe de ventes ────────────────────────── */
 
 export type SaleForChart = { createdAt: string | Date; total?: number | null }
-export type SalesPoint = { name: string; ventes: number; transactions: number }
+/** `ts` = minuit LOCAL du jour, en ms — l'axe X est temporel, pas catégoriel. */
+export type SalesPoint = { ts: number; name: string; ventes: number; transactions: number }
 
 const LOCALES: Record<Lang, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT' }
+
+/**
+ * MIROIR de `apps/backend/src/utils/salesWindow.ts` — cas partagés
+ * `docs/shared-fixtures/sales-window-cases.json`, rejoués par les deux côtés.
+ *
+ * ⚠️ Le front en a besoin pour REMPLIR À 0 les jours sans vente : sans la fenêtre exacte du
+ * serveur, il inventerait des zéros avant le début réel ou amputerait la période annoncée.
+ * Modifier la règle d'un seul côté fait rougir le jumeau d'en face.
+ */
+export function salesWindowStart(period: string, now: Date): Date {
+  const from = new Date(now)
+  if (period === 'today') from.setHours(0, 0, 0, 0)
+  else if (period === '7days') from.setDate(now.getDate() - 7)
+  else if (period === '30days') from.setDate(now.getDate() - 30)
+  else if (period === '3months') from.setMonth(now.getMonth() - 3)
+  else from.setFullYear(now.getFullYear(), 0, 1)
+  return from
+}
+
+/** Minuit LOCAL — jamais `toISOString`, qui bascule en UTC et décale d'un jour. */
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
+
+/**
+ * Jours AFFICHÉS : les N derniers jours pleins, terminant aujourd'hui.
+ *
+ * ⚠️ La fenêtre serveur est GLISSANTE (elle conserve l'heure : « 7 jours » démarre à
+ * J-7 14 h 30), donc son premier jour calendaire n'est couvert qu'en PARTIE. L'afficher
+ * comme un jour plein le sous-estimerait, et il ferait basculer « 7 jours » à HUIT points —
+ * dont le premier et le dernier tombent le même jour de semaine, ce qui remettrait
+ * exactement les libellés dupliqués qu'on vient de fermer. On démarre donc au premier jour
+ * PLEIN : « 7 derniers jours » rend 7 points, comme son titre le promet.
+ *
+ * Conséquence assumée : les ventes de ce premier jour partiel ne sont pas tracées. Elles
+ * sont hors de la fenêtre que le titre annonce.
+ */
+function displayedDays(period: string, now: Date): Date[] {
+  const winStart = salesWindowStart(period, now)
+  const first = period === 'today' ? startOfDay(winStart) : addDays(winStart, 1)
+  const last = startOfDay(now)
+  const days: Date[] = []
+  for (let d = first; d.getTime() <= last.getTime(); d = addDays(d, 1)) days.push(d)
+  return days
+}
+
+/** Clé de groupement : jour LOCAL. `toISOString().slice(0,10)` rendrait le jour UTC. */
+const dayKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 /**
  * Agrège les ventes en SÉRIE TEMPORELLE — un point par DATE, en ordre chronologique.
@@ -128,21 +177,45 @@ const LOCALES: Record<Lang, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', i
  * histogramme par jour de semaine, tracé en COURBE CONTINUE comme s'il était chronologique :
  * un pic s'y lisait comme une bonne journée alors qu'il cumulait trois mois de mercredis.
  *
- * ⚠️ La clé de groupement est la date **ISO** (`YYYY-MM-DD`) : elle trie chronologiquement en
- * comparaison de chaînes, contrairement à un libellé affiché qui dépend de la langue.
+ * ⚠️ La clé de groupement est le jour **LOCAL**, pas `toISOString()` : ce dernier rend le jour
+ * UTC, si bien qu'en UTC+1 une vente de 00 h 30 tombait dans le seau de la veille — décalage
+ * invisible mais réel, et incohérent avec un axe dont les jours sont ceux du commerçant.
  */
-export function buildSalesSeries(sales: SaleForChart[], period: ChartPeriod, lang: Lang): SalesPoint[] {
-  const byDate = new Map<string, { ventes: number; transactions: number }>()
+export function buildSalesSeries(
+  sales: SaleForChart[],
+  period: ChartPeriod,
+  lang: Lang,
+  now: Date = new Date(),
+): SalesPoint[] {
+  const byDay = new Map<string, { ventes: number; transactions: number }>()
   for (const sale of sales) {
-    const key = new Date(sale.createdAt).toISOString().slice(0, 10)
-    const cur = byDate.get(key) ?? { ventes: 0, transactions: 0 }
+    const key = dayKey(new Date(sale.createdAt))
+    const cur = byDay.get(key) ?? { ventes: 0, transactions: 0 }
     cur.ventes += sale.total ?? 0
     cur.transactions += 1
-    byDate.set(key, cur)
+    byDay.set(key, cur)
   }
-  return [...byDate.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([iso, v]) => ({ name: salesPointLabel(iso, period, lang), ...v }))
+  // ⚠️ On itère la FENÊTRE, pas les ventes : un jour sans vente vaut 0, il n'est pas absent.
+  // Une série qui saute les jours creux fait mentir la PENTE — sur l'ancien graphe, onze
+  // jours sans vente occupaient la même largeur qu'un seul, et la courbe reliait directement
+  // deux dates éloignées comme s'il s'agissait de deux jours consécutifs.
+  return displayedDays(period, now).map(d => ({
+    ts: d.getTime(),
+    name: salesPointLabel(d, period, lang),
+    ...(byDay.get(dayKey(d)) ?? { ventes: 0, transactions: 0 }),
+  }))
+}
+
+/**
+ * Graduations de l'axe X — au plus `max`, réparties régulièrement, bornes TOUJOURS incluses.
+ * À 3 mois la série porte ~90 points : tous les étiqueter rend l'axe illisible.
+ */
+export function pickAxisTicks(points: SalesPoint[], max = 7): number[] {
+  if (points.length <= max) return points.map(p => p.ts)
+  const step = (points.length - 1) / (max - 1)
+  const idx = new Set<number>()
+  for (let i = 0; i < max; i++) idx.add(Math.round(i * step))
+  return [...idx].sort((a, b) => a - b).map(i => points[i].ts)
 }
 
 /**
@@ -154,8 +227,8 @@ export function buildSalesSeries(sales: SaleForChart[], period: ChartPeriod, lan
  * ⚠️ `T00:00:00` — sans lui, `new Date('2026-08-05')` est lu minuit **UTC** et recule d'un
  * jour en fuseau négatif (même piège que `fmtDate`, cf. § Pièges techniques).
  */
-export function salesPointLabel(iso: string, period: ChartPeriod, lang: Lang): string {
-  const d = new Date(`${iso}T00:00:00`)
+export function salesPointLabel(day: Date, period: ChartPeriod, lang: Lang): string {
+  const d = day
   return period === '7days'
     ? d.toLocaleDateString(LOCALES[lang], { weekday: 'short' })
     : d.toLocaleDateString(LOCALES[lang], { day: '2-digit', month: '2-digit' })
