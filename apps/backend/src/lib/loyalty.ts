@@ -13,7 +13,8 @@ export const DEFAULT_GOLD_DISCOUNT   = 15.0
 
 export const MAX_TOTAL_DISCOUNT_PCT = 50 // plafond anti-abus : remise totale ≤ 50%
 
-export type LoyaltyTier = 'Bronze' | 'Silver' | 'Gold'
+export const LOYALTY_TIERS = ['Bronze', 'Silver', 'Gold'] as const
+export type LoyaltyTier = (typeof LOYALTY_TIERS)[number]
 
 /**
  * Points gagnés pour un montant payé (TTC, après remise) = floor(montant / pointsPerUnit).

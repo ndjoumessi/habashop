@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { vatBreakdown } from '@/stores/posStore'
 import type { CartItem, PaymentMode } from '@/stores/posStore'
 import type { Customer } from '@/types'
+import { clientTypeLabel } from '@/lib/clientType'
 import { useTheme, useFmt } from '@/stores/appStore'
 import { convertToXOF } from '@/services/exchangeRate'
 import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
@@ -199,7 +200,11 @@ export default function POSCart({
                   <Text style={s.custName} numberOfLines={1}>{customer.name}</Text>
                   <Text style={s.custSub} numberOfLines={1}>
                     {customer.loyaltyPoints ?? 0} {i('points', 'points', 'puntos', 'punti')}
-                    {loyalty ? ` · ${loyalty.tier}` : (customer.type ? ` · ${customer.type}` : '')}
+                    {/* ⚠️ LIBELLÉ, jamais la valeur brute (#215) : la base porte l'enum canonique
+                        anglais depuis la migration, donc `customer.type` afficherait « wholesale »
+                        à un commerçant francophone. `clientTypeLabel` rend `null` sur une valeur
+                        vide/inconnue — on n'affiche alors rien, plutôt qu'un palier inventé. */}
+                    {loyalty ? ` · ${loyalty.tier}` : (clientTypeLabel(customer.type, i) ? ` · ${clientTypeLabel(customer.type, i)}` : '')}
                     {loyalty && loyalty.pct > 0 ? ` · −${loyalty.pct}%` : ''}
                   </Text>
                 </View>

@@ -6,6 +6,8 @@ import { useConfig, useFormatAmount, formatInCurrency } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import type { OrderSupplierOption } from '@/components/orders/ordersShared'
 import { useModalFocus } from '@/hooks/useModalFocus'
+import { normalizeClientType } from '@/lib/clientType'
+import { clientTypeToLabel, typeLabel } from '@/components/customers/customersShared'
 import { suppliersApi } from '@/lib/api'
 
 interface NewOrderItem { id: string; name: string; price: number; qty: number; emoji: string }
@@ -247,7 +249,15 @@ export default function NewOrderModal({
                           <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customer.name}</div>
                           <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', display: 'flex', gap: 8, marginTop: 1, alignItems: 'center' }}>
                             {customer.phone && <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Phone size={10}/> {customer.phone}</span>}
-                            {customer.type && <span style={{ padding: '1px 6px', borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', background: bgAlpha, color }}>{customer.type}</span>}
+                            {/* ⚠️ LIBELLÉ, pas la valeur brute (#215) : `Orders.tsx` mappe `type: c.type`
+                                SANS traverser, donc on reçoit ici l'enum canonique anglais — « wholesale »
+                                s'affichait tel quel. Même juge + même table que partout ailleurs.
+                                ⚠️ On teste la valeur NORMALISÉE, pas le libellé : `clientTypeToLabel(null)`
+                                rend « Détail » — s'y fier afficherait un palier à un client qui n'en a pas. */}
+                            {(() => {
+                              const canon = normalizeClientType(customer.type)
+                              return canon && <span style={{ padding: '1px 6px', borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', background: bgAlpha, color }}>{typeLabel(clientTypeToLabel(canon), lang)}</span>
+                            })()}
                           </div>
                         </div>
                         {customer.totalCA > 0 && <div style={{ fontSize: 'var(--fs-caption)', fontFamily: 'var(--mono)', color: 'var(--acc)', fontWeight: 'var(--fw-semibold)', flexShrink: 0 }}>{fmt(customer.totalCA)}</div>}

@@ -9,7 +9,17 @@ import { redactPhone, redactError } from '../lib/redactPhone'
 import { costQuota } from '../middleware/costQuota'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import { fmtMoney, localeOf } from '../services/whatsappSend'
-import { tierForPoints } from '../lib/loyalty'
+import { tierForPoints, LOYALTY_TIERS } from '../lib/loyalty'
+import { CLIENT_TYPES } from '../lib/clientType'
+
+// Segments de campagne — UNE source par famille, et la liste valide en DÉCOULE.
+// ⚠️ DÉRIVÉS des paliers réels, en minuscules — c'est le vocabulaire du fil (le front
+// envoie 'bronze'). Écrits à la main, ils ne correspondaient à RIEN : `tierForPoints` rend
+// 'Bronze' (capitalisé) et la comparaison `=== segment` échouait toujours. Les TROIS
+// segments de fidélité ciblaient donc 0 destinataire, en silence, depuis leur création.
+const TIER_SEGMENTS: readonly string[] = LOYALTY_TIERS.map(t => t.toLowerCase())
+const ALL_SEGMENT = 'all'
+const VALID_SEGMENTS: readonly string[] = [ALL_SEGMENT, ...TIER_SEGMENTS, ...CLIENT_TYPES]
 
 // Envois sortants via le Twilio plateforme : réservés aux rôles de gestion
 const WHATSAPP_SEND_ROLES = ['ADMIN', 'SUPER_ADMIN', 'MANAGER'] as const
@@ -349,8 +359,13 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
 
     if (!message?.trim()) return reply.code(400).send({ error: 'Message requis' })
 
-    const VALID_SEGMENTS = ['all', 'bronze', 'silver', 'gold', 'wholesale', 'retail', 'semi']
-    if (!VALID_SEGMENTS.includes(segment)) return reply.code(400).send({ error: 'Segment invalide' })
+    // ⚠️ DÉRIVÉE, jamais ré-écrite : c'était une TROISIÈME liste tenue à la main, et elle
+    // contenait encore 'semi' après que `typeSegments` a été lié à CLIENT_TYPES. Un segment
+    // qui franchit cette porte sans être traité plus bas tombe dans le `else`, lequel
+    // sélectionnait TOUS les clients : « 0 destinataire en silence » serait devenu
+    // « toute la base en silence », sur un canal FACTURÉ. Trois listes qui doivent
+    // s'accorder finissent toujours par diverger — il n'y en a plus qu'une source.
+    if (!VALID_SEGMENTS.includes(segment)) return reply.code(400).send({ error: 'Segment invalide', code: 'INVALID_SEGMENT' })
 
     // Rate-limit : 1 campagne/heure/tenant. RÉSERVE-PUIS-LIBÈRE (finding [3]) : on
     // incrémente d'abord — ce qui bloque une 2e campagne concurrente — mais on LIBÈRE
@@ -381,8 +396,15 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     }
 
     // Résolution du segment → liste de numéros de téléphone
-    const tierSegments = ['bronze', 'silver', 'gold']
-    const typeSegments = ['wholesale', 'retail', 'semi']
+    const tierSegments = TIER_SEGMENTS
+    // ⚠️ Liés à l'ENUM CANONIQUE (#215), pas ré-écrits à la main : la branche ci-dessous
+    // filtre `type: segment` en base, donc un segment qui n'est pas une valeur canonique ne
+    // matche RIEN — en silence. C'était le cas de `'semi'` (le canonique est
+    // `'semi-wholesale'`, `'semi'` appartient au vocabulaire de `Sale.clientType`, qui
+    // désigne un tarif de vente, pas un palier client) : une campagne sur ce segment
+    // partait vers 0 destinataire sans lever quoi que ce soit. Lier la liste à
+    // `CLIENT_TYPES` rend cette divergence impossible plutôt que de la corriger une fois.
+    const typeSegments: readonly string[] = CLIENT_TYPES
 
     let customers: { phone: string | null; loyaltyPoints: number }[]
 
@@ -397,17 +419,24 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
         where: { tenantId, deletedAt: null, phone: { not: null } },
         select: { phone: true, loyaltyPoints: true },
       })
-      customers = all.filter(c => tierForPoints(c.loyaltyPoints, bronzeT, silverT) === segment)
+      customers = all.filter(c => tierForPoints(c.loyaltyPoints, bronzeT, silverT).toLowerCase() === segment)
     } else if (typeSegments.includes(segment)) {
       customers = await prisma.customer.findMany({
         where: { tenantId, deletedAt: null, phone: { not: null }, type: segment },
         select: { phone: true, loyaltyPoints: true },
       })
-    } else {
+    } else if (segment === ALL_SEGMENT) {
       customers = await prisma.customer.findMany({
         where: { tenantId, deletedAt: null, phone: { not: null } },
         select: { phone: true, loyaltyPoints: true },
       })
+    } else {
+      // ⚠️ Inatteignable tant que VALID_SEGMENTS reste dérivée — et c'est le but : « tous
+      // les clients » doit être DEMANDÉ explicitement, jamais le repli d'un segment que
+      // personne n'a traité. Un futur segment ajouté à la liste sans branche s'arrête ici
+      // au lieu d'arroser toute la base.
+      await releaseSlot()
+      return reply.code(400).send({ error: `Segment non résolu : ${segment}`, code: 'UNRESOLVED_SEGMENT' })
     }
 
     // ⚠️ Numéros de CLIENTS : aucune donnée ne permet de deviner leur pays. On passe le

@@ -22,9 +22,14 @@ vi.mock('../db', () => ({ prisma: db }))
 vi.mock('../redis', () => ({ redis: redisMock }))
 vi.mock('../middleware/authenticate', () => ({ authenticate: authMock }))
 vi.mock('../lib/wsAuth', () => ({ decideWsAuth: vi.fn().mockReturnValue({ ok: false }) }))
+// ⚠️ Ce mock rendait des paliers en MINUSCULES ('gold'…) alors que le vrai
+// `tierForPoints` rend 'Gold'. Il décrivait donc un monde qui n'existe pas, et c'est
+// précisément ce qui a laissé les segments de fidélité cibler 0 destinataire en prod
+// sans qu'aucun test ne bronche. Il reflète désormais la casse RÉELLE.
 vi.mock('../lib/loyalty', () => ({
+  LOYALTY_TIERS: ['Bronze', 'Silver', 'Gold'] as const,
   tierForPoints: (pts: number, b: number, s: number) =>
-    pts >= s ? 'gold' : pts >= b ? 'silver' : 'bronze',
+    pts >= s ? 'Gold' : pts >= b ? 'Silver' : 'Bronze',
 }))
 vi.mock('twilio', () => ({
   default: () => ({ messages: { create: vi.fn().mockResolvedValue({ sid: 'SM1' }) } }),

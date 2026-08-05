@@ -4,6 +4,8 @@ import { useAppStore } from '@/stores/appStore'
 import { customersApi, marketingApi, type Campaign } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { Search, Send, Users, CheckSquare, Square, Smartphone, Tag, Package, Gift, MessageCircle, Megaphone, Clock, Loader2 } from 'lucide-react'
+import { normalizeClientType } from '@/lib/clientType'
+import { clientTypeToLabel, typeLabel } from '@/components/customers/customersShared'
 
 interface Customer {
   id: string
@@ -523,11 +525,26 @@ export default function Marketing() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{
-                        fontSize: 10, fontWeight: 'var(--fw-regular)', padding: '2px 7px', borderRadius: 20,
-                        background: c.type === 'wholesale' ? 'rgba(91,78,232,.12)' : c.type === 'semi' ? 'rgba(240,165,0,.12)' : 'rgba(14,196,126,.12)',
-                        color: c.type === 'wholesale' ? 'var(--p2)' : c.type === 'semi' ? 'var(--acc)' : 'var(--acc2)',
-                      }}>{c.type}</span>
+                      {/* ⚠️ Type client : NORMALISÉ puis LIBELLÉ (#215). Deux défauts ici avant :
+                          (1) la comparaison portait sur `'semi'`, qui n'est pas une valeur
+                          canonique (`semi-wholesale`) — le semi-gros prenait donc la couleur
+                          du détail ; (2) `{c.type}` était rendu BRUT, affichant « wholesale »
+                          à un commerçant francophone. On passe par le juge unique et la table
+                          de libellés, jamais par une comparaison écrite au point d'appel. */}
+                      {(() => {
+                        const canon = normalizeClientType(c.type)
+                        // ⚠️ Rien plutôt qu'un palier inventé : `clientTypeToLabel(null)` rend
+                        // « Détail », donc afficher sans ce garde donnerait un palier à un client
+                        // dont le type est vide ou inconnu — le repli menteur qu'on élimine.
+                        if (!canon) return null
+                        return (
+                          <span style={{
+                            fontSize: 10, fontWeight: 'var(--fw-regular)', padding: '2px 7px', borderRadius: 20,
+                            background: canon === 'wholesale' ? 'rgba(91,78,232,.12)' : canon === 'semi-wholesale' ? 'rgba(240,165,0,.12)' : 'rgba(14,196,126,.12)',
+                            color: canon === 'wholesale' ? 'var(--p2)' : canon === 'semi-wholesale' ? 'var(--acc)' : 'var(--acc2)',
+                          }}>{typeLabel(clientTypeToLabel(canon), lang)}</span>
+                        )
+                      })()}
                       {(c.loyaltyPoints ?? 0) >= 5000
                         ? <span title="Gold"   style={{ fontSize:9, fontWeight:'var(--fw-regular)', color:'#F0A500', background:'rgba(240,165,0,.15)',   borderRadius:4, padding:'1px 5px' }}>G</span>
                         : (c.loyaltyPoints ?? 0) >= 2000
