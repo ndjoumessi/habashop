@@ -3,6 +3,8 @@ import type { ApiSupplier, SupplierCreate, SupplierWrite } from '@/components/su
 import type { ApiOrder, OrderWrite } from '@/components/orders/ordersShared'
 import type { ApiCustomer, ApiCustomerSearchHit, ApiCustomerSale, CustomerWrite } from '@/components/customers/customersShared'
 import type { ApiProduct, ProductWrite } from '@/components/stock/stockShared'
+import type { ApiSecurityEvent, ApiAuditLog, ApiBillingStatus, ApiPendingPlanRequest, PlanRequestWrite } from '@/lib/apiTypes'
+import type { ApiDashboardStats } from '@/components/dashboard/dashboardShared'
 import type {
   ApiEmployee, EmployeeWrite, ApiEmployeeBonus, BonusWrite, ApiSalaryHistory, SalaryHistoryWrite,
   ApiLeaveRequest, ApiLeaveRequestWithEmployee, LeaveRequestWrite, LeaveStatus,
@@ -378,7 +380,9 @@ export const expensesApi = {
 }
 
 export const dashboardApi = {
-  stats: () => api.get<any>('/api/dashboard/stats'),
+  stats: () => api.get<ApiDashboardStats>('/api/dashboard/stats'),
+  // ⚠️ `sales` rend des lignes de `Sale` : typé avec `salesApi`, pour définir la frontière
+  // Sale UNE SEULE FOIS plutôt qu'en deux exemplaires libres de diverger.
   sales: (period: string) =>
     api.get<any>(`/api/reports/sales?period=${period}`),
 }
@@ -530,12 +534,12 @@ export const adminApi = {
 }
 
 export const accountApi = {
-  securityActivity: () => api.get<any[]>('/api/account/security-activity'),
+  securityActivity: () => api.get<ApiSecurityEvent[]>('/api/account/security-activity'),
 }
 
 export const billingApi = {
-  status:      () => api.get<any>('/api/billing/status'),
-  requestPlan: (data: any) => api.post<any>('/api/billing/request-plan', data),
+  status:      () => api.get<ApiBillingStatus>('/api/billing/status'),
+  requestPlan: (data: PlanRequestWrite) => api.post<{ success: boolean; request?: ApiPendingPlanRequest }>('/api/billing/request-plan', data),
 }
 
 export const cronApi = {
@@ -586,7 +590,7 @@ export const attendanceApi = {
 }
 
 export const auditApi = {
-  list: () => api.get<any[]>('/api/audit-logs'),
+  list: () => api.get<ApiAuditLog[]>('/api/audit-logs'),
 }
 
 export const sentryStatusApi = {

@@ -111,6 +111,35 @@ export function noSalesThisMonthLabel(lang: Lang): string {
   return NO_SALES_THIS_MONTH[lang]
 }
 
+/**
+ * FRONTIÈRE — `GET /api/dashboard/stats` (#185).
+ *
+ * ⚠️ OBJET LITTÉRAL construit par le handler (`analytics.ts`), PAS un modèle Prisma : rien ici
+ * ne se déduit du schéma. Les quatre blocs détaillés sont scopés au MOIS EN COURS côté serveur
+ * (`createdAt: { gte: monthStart }`) — sauf `recentActivity`, qui n'a AUCUNE borne de date.
+ * C'est précisément cette asymétrie qui justifie les messages d'état vide de ce module.
+ */
+export interface ApiDashboardStats {
+  salesToday: number
+  transactionsToday: number
+  salesMonth: number
+  transactionsMonth: number
+  totalProducts: number
+  lowStockProducts: number
+  activeEmployees: number
+  pendingOrders: number
+  /** `null` = pas d'historique comparable → aucun badge de tendance affiché. */
+  salesTodayTrend: number | null
+  salesMonthTrend: number | null
+  /** Top 5 du MOIS ; `name` retombe sur « Produit supprimé » si le produit n'existe plus. */
+  topProducts: { name: string; ca: number }[]
+  stockAlerts: { name: string; stockQty: number; stockMin: number }[]
+  /** ⚠️ AUCUN filtre de date côté serveur : 5 dernières ventes, tous temps confondus. */
+  recentActivity: { id: string; total: number; paymentMode: string; createdAt: string }[]
+  /** Mois en cours, 6 catégories max, triées par CA décroissant. */
+  categoryBreakdown: { name: string; value: number }[]
+}
+
 /* ────────────────────────── Série du graphe de ventes ────────────────────────── */
 
 export type SaleForChart = { createdAt: string | Date; total?: number | null }
