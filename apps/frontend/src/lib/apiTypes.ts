@@ -485,3 +485,117 @@ export interface ApiSessionUser {
   shopName: string
   isPlatformAdmin: boolean
 }
+
+/* ──────────────────────── Boutique ──────────────────────── */
+
+/**
+ * FRONTIÈRE `Tenant` — ⚠️ RÉ-EXPORT de l'interface d'`appStore`, PAS une seconde définition.
+ *
+ * Deux interfaces « Tenant » libres de diverger seraient le doublon `alertsApi` en pire, sur
+ * la structure la plus utilisée de l'app. On complète donc l'interface EXISTANTE (lot 8) et
+ * on la ré-exporte sous le nom de frontière.
+ *
+ * ⚠️ Elle reste plus ÉTROITE que la réponse (81 colonnes traversent, on en déclare ~50) :
+ * déclarer moins que ce qui arrive est sûr, déclarer plus produit les bugs.
+ */
+export type { Tenant as ApiTenant } from '@/stores/appStore'
+
+/* ──────────────────────── Utilisateurs · ticket Z · fidélité · OCR ──────────────────────── */
+
+/**
+ * `GET /api/tenant/users` — ⚠️ le handler fait
+ * `users.map(({ passwordHash, twoFASecret, ...u }) => u)` : ces DEUX champs sont RETIRÉS du
+ * retour. Le modèle les porte, le fil non — et c'est une décision de sécurité, pas un oubli.
+ * Les déclarer ici les ferait lire comme disponibles (le motif exact de `phone` sur le
+ * catalogue public, lot 7).
+ */
+export interface ApiTenantUser {
+  id: string
+  tenantId: string
+  name: string
+  email: string
+  role: string
+  isPlatformAdmin: boolean
+  twoFAEnabled: boolean
+  isActive: boolean
+  lastLoginAt: string | null
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
+
+/** Ticket Z — clôture de caisse serveur. `null` si aucun ticket pour le jour demandé. */
+export interface ApiTicketZ {
+  id: string
+  tenantId: string
+  date: string
+  caVentes: number
+  nbVentes: number
+  totalRemboursements: number
+  caNets: number
+  cashAmount: number
+  mobileMoneyAmount: number
+  cardAmount: number
+  panierMoyen: number
+  nbClients: number
+  generatedBy: string
+  generatedAt: string
+}
+
+/** Mouvement de points — `select` de 6 champs, 50 lignes max, plus récent d'abord. */
+export interface ApiLoyaltyTxn {
+  id: string
+  points: number
+  type: string
+  reason: string | null
+  saleId: string | null
+  createdAt: string
+}
+
+/**
+ * ⚠️ LECTURE SEULE. Le créditage est 100 % SERVEUR (transaction de vente) — la route d'ajout
+ * a été retirée, et ce type n'a donc aucun pendant en écriture.
+ */
+export interface ApiLoyalty {
+  points: number
+  tier: string
+  history: ApiLoyaltyTxn[]
+  pointsPerAmount: number
+  bronzeThreshold: number
+  silverThreshold: number
+  bronzeDiscount?: number
+  silverDiscount?: number
+  goldDiscount?: number
+}
+
+/**
+ * `POST /api/suppliers/scan-invoice` — miroir d'`InvoiceOcrResult`
+ * (`apps/backend/src/services/invoiceOcr.ts`).
+ *
+ * ⚠️ Toutes les valeurs extraites sont NULLABLES : l'OCR peut ne rien reconnaître sur une
+ * photo floue, et `error` est renseigné SANS que la requête échoue (200 avec un contenu
+ * vide). Un type non-nullable ferait croire à une extraction toujours réussie.
+ */
+export interface ApiInvoiceOcr {
+  supplierName: string | null
+  invoiceDate: string | null
+  items: { name: string; qty: number; unitPrice: number }[]
+  total: number | null
+  notes: string | null
+  error?: string
+  rawText?: string
+}
+
+/**
+ * Corps de `POST /api/whatsapp/broadcast` — `{ phones, message, lang }` côté handler.
+ *
+ * ⚠️ `phones` part vers des numéros de CLIENTS : le serveur n'infère AUCUN pays pour eux
+ * (`resolveRecipient`, flux client) et refuse tout ce qui n'est pas un international
+ * explicite. Envoyer des numéros nationaux ici ne « marche » pas à moitié — ils sont écartés
+ * et remontés dans `refused[]`. Cf. § Normalisation téléphonique.
+ */
+export type WhatsAppBroadcastWrite = {
+  phones: string[]
+  message: string
+  lang: string
+}

@@ -8,7 +8,8 @@ import type {
   ApiSale, ApiSaleWithItems, ApiReportSales, SaleWrite, ApiExpense, ExpenseWrite, ApiGoal, GoalWrite,
   ApiSubscription, ApiSubscriptionWithItems, SubscriptionWrite, ApiAiAnalysis, ApiAiChat,
   ApiAdminTenant, ApiAdminStats, ApiPlanRequest, AdminCreateTenantWrite, ApiAdminSecurityEvent,
-  ApiPublicCatalog, ApiMe, ApiSessionUser,
+  ApiPublicCatalog, ApiMe, ApiSessionUser, ApiTenant,
+  ApiTenantUser, ApiTicketZ, ApiLoyalty, ApiInvoiceOcr, WhatsAppBroadcastWrite,
 } from '@/lib/apiTypes'
 import type { ApiDashboardStats } from '@/components/dashboard/dashboardShared'
 import type {
@@ -127,8 +128,12 @@ async function request<T>(
     const text = await res.text()
     if (!text) return {} as T
     return JSON.parse(text)
-  } catch (err: any) {
-    if (err.message?.includes('fetch')) {
+  } catch (err: unknown) {
+    // ⚠️ `unknown`, pas `any` : une valeur attrapée peut être N'IMPORTE QUOI (une string, un
+    // objet sans `message`). L'`any` laissait `err.message` compiler et exploser à
+    // l'exécution sur un rejet non-Error — le seul chemin où l'utilisateur voit « impossible
+    // de contacter le serveur » est précisément celui d'une erreur inattendue.
+    if (err instanceof Error && err.message.includes('fetch')) {
       throw new Error('Impossible de contacter le serveur')
     }
     throw err
@@ -160,17 +165,19 @@ export const authApi = {
   // Un type inexact ici ne casse pas la compilation — il déconnecte au rechargement.
   me: () => api.get<ApiMe>('/api/auth/me'),
   register: (data: Record<string, unknown>) =>
-    api.post<{ token: string; user: ApiSessionUser; tenant?: any }>('/api/auth/register', data),
+    api.post<{ token: string; user: ApiSessionUser; tenant?: ApiTenant | null }>('/api/auth/register', data),
   changePassword: (currentPassword: string, newPassword: string) =>
     api.patch<{ success: boolean; message: string }>('/api/auth/password', { currentPassword, newPassword }),
   // Multi-boutiques
   tenants: () => api.get<AccessibleTenant[]>('/api/auth/tenants'),
   switchTenant: (tenantId: string) =>
-    api.post<{ token: string; tenant: any; activeTenantId: string; role: string }>('/api/auth/switch-tenant', { tenantId }),
+    api.post<{ token: string; tenant: ApiTenant | null; activeTenantId: string; role: string }>('/api/auth/switch-tenant', { tenantId }),
   createTenant: (data: { name: string; currency?: string; lang?: string; address?: string; country?: string; phone?: string }) =>
-    api.post<{ tenant: any }>('/api/tenants', data),
+    api.post<{ tenant: ApiTenant }>('/api/tenants', data),
   inviteToTenant: (tenantId: string, data: { name?: string; email: string; password?: string; role?: string }) =>
-    api.post<{ linked?: boolean; created?: boolean; userId?: string; user?: any }>(`/api/tenants/${tenantId}/invite`, data),
+    // Deux formes selon le cas : compte EXISTANT rattaché (200 `{linked, userId}`) ou
+    // compte CRÉÉ (201 `{created, user}`). Le handler ne renvoie jamais les deux.
+    api.post<{ linked?: boolean; created?: boolean; userId?: string; user?: ApiTenantUser }>(`/api/tenants/${tenantId}/invite`, data),
 }
 
 export const consolidatedApi = {
@@ -270,9 +277,9 @@ export const paymentStatsApi = {
 }
 
 export const ticketZApi = {
-  today:    () => api.get<any>('/api/ticket-z/today'),
-  history:  () => api.get<any[]>('/api/ticket-z/history'),
-  generate: () => api.post<any>('/api/ticket-z/generate', {}),
+  today:    () => api.get<ApiTicketZ | null>('/api/ticket-z/today'),
+  history:  () => api.get<ApiTicketZ[]>('/api/ticket-z/history'),
+  generate: () => api.post<ApiTicketZ>('/api/ticket-z/generate', {}),
   openPdf:  (id: string) => openAuthedPdf(`/api/ticket-z/${id}/pdf`),
 }
 
@@ -303,7 +310,7 @@ export const suppliersApi = {
   // Historique des commandes (#214) — ⚠️ type de FRONTIÈRE `ApiSupplierOrder`, pas
   // `SupplierOrder` : `mapApiSupplierOrder` traverse. 50 lignes max, plus récentes d'abord.
   orders: (id: string) => api.get<ApiSupplierOrder[]>(`/api/suppliers/${id}/orders`),
-  scanInvoice: async (file: File): Promise<any> => {
+  scanInvoice: async (file: File): Promise<ApiInvoiceOcr> => {
     const token = getToken()
     const fd = new FormData()
     fd.append('invoice', file)
@@ -444,16 +451,11 @@ export interface AccountingReport {
 }
 
 export const tenantApi = {
-  // ⚠️ NON TYPÉ VOLONTAIREMENT (#185, lot 7). `GET /api/tenant` rend le modèle ENTIER
-  // (81 champs) et les Réglages en lisent ~20 que l'interface `Tenant` partagée ne déclare
-  // pas encore. Le typer aujourd'hui obligerait à compléter ce type au jugé, en fin de série,
-  // sur la structure la plus utilisée de l'app — exactement le geste qui m'a piégé trois fois.
-  // Passe dédiée, comme adminApi. Reste : ce domaine + `usersApi`.
-  get:        () => api.get<any>('/api/tenant'),
-  update:     (data: any) => api.patch<any>('/api/tenant', data),
-  setSlug:    (slug: string) => api.patch<any>('/api/tenant/slug', { slug }),
-  users:      () => api.get<any[]>('/api/tenant/users'),
-  createUser: (data: any) => api.post<any>('/api/tenant/users', data),
+  get:        () => api.get<ApiTenant>('/api/tenant'),
+  update:     (data: Partial<ApiTenant>) => api.patch<ApiTenant>('/api/tenant', data),
+  setSlug:    (slug: string) => api.patch<ApiTenant>('/api/tenant/slug', { slug }),
+  users:      () => api.get<ApiTenantUser[]>('/api/tenant/users'),
+  createUser: (data: { name: string; email: string; role: string; password: string }) => api.post<ApiTenantUser>('/api/tenant/users', data),
 }
 
 // Catalogue public — fetch direct sans JWT (n'utilise pas le wrapper api.ts qui ajoute le token).
@@ -468,17 +470,17 @@ export const publicApi = {
 }
 
 export const usersApi = {
-  list:         () => api.get<any[]>('/api/tenant/users'),
+  list:         () => api.get<ApiTenantUser[]>('/api/tenant/users'),
   invite:       (data: { name: string; email: string; role: string; password: string }) =>
-                  api.post<any>('/api/tenant/users', data),
+                  api.post<ApiTenantUser>('/api/tenant/users', data),
   update:       (id: string, data: { name?: string; email?: string; role?: string }) =>
-                  api.put<any>(`/api/tenant/users/${id}`, data),
+                  api.put<ApiTenantUser>(`/api/tenant/users/${id}`, data),
   toggleActive: (id: string, active: boolean) =>
-                  api.patch<any>(`/api/tenant/users/${id}/active`, { active }),
+                  api.patch<ApiTenantUser>(`/api/tenant/users/${id}/active`, { active }),
   toggle2FA:    (id: string, twoFA: boolean) =>
-                  api.patch<any>(`/api/tenant/users/${id}/2fa`, { twoFA }),
+                  api.patch<ApiTenantUser>(`/api/tenant/users/${id}/2fa`, { twoFA }),
   delete:       (id: string) =>
-                  api.delete<any>(`/api/tenant/users/${id}`),
+                  api.delete<{ success: boolean }>(`/api/tenant/users/${id}`),
 }
 
 export const aiApi = {
@@ -501,7 +503,7 @@ export const whatsappApi = {
     discount?:    number
     reference?:   string
   }) => api.post<{ success: boolean; sid?: string }>('/api/whatsapp/send-ticket', data),
-  broadcast:   (data: any) => api.post('/api/whatsapp/broadcast', data),
+  broadcast:   (data: WhatsAppBroadcastWrite) => api.post('/api/whatsapp/broadcast', data),
   testEvening: () => api.post('/api/whatsapp/test-evening', {}),
   testMorning: () => api.post('/api/whatsapp/test-morning', {}),
 }
@@ -518,7 +520,7 @@ export interface Campaign {
 }
 
 export const marketingApi = {
-  broadcast:  (data: any) => api.post('/api/whatsapp/broadcast', data),
+  broadcast:  (data: WhatsAppBroadcastWrite) => api.post('/api/whatsapp/broadcast', data),
   campaign:   (data: { message: string; segment: string }) => api.post<{ sent: number; failed: number; recipientCount: number }>('/api/marketing/whatsapp/campaign', data),
   campaigns:  () => api.get<Campaign[]>('/api/marketing/whatsapp/campaigns'),
 }
@@ -526,7 +528,7 @@ export const marketingApi = {
 export const loyaltyApi = {
   // Lecture seule : solde + palier + historique. Le créditage est 100% SERVEUR
   // (transaction de vente) — pas d'ajout déclenché par le front (route /add retirée).
-  get: (id: string) => api.get<{ points: number; tier: string; history: any[]; bronzeDiscount?: number; silverDiscount?: number; goldDiscount?: number }>(`/api/customers/${id}/loyalty`),
+  get: (id: string) => api.get<ApiLoyalty>(`/api/customers/${id}/loyalty`),
   // Carte fidélité numérique (scope tenant strict, tout rôle).
   getCard: (id: string) => api.get<{
     customerId: string; customerName: string; tier: string; points: number;

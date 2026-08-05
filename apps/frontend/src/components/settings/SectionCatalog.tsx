@@ -24,7 +24,14 @@ export default function SectionCatalog() {
     tenantApi.get()
       .then((d) => {
         if (!d) return
-        setTenant(d)
+        // Frontière : `ApiTenant` déclare ces champs OPTIONNELS — une boutique jamais
+        // configurée les a réellement absents. L'état local les veut présents, la traversée
+        // est donc explicite, avec les mêmes replis que le formulaire juste en dessous.
+        setTenant({
+          id: d.id, name: d.name, phone: d.phone ?? null,
+          slug: d.slug ?? null, description: d.description ?? null,
+          whatsappPhone: d.whatsappPhone ?? null, catalogVisible: d.catalogVisible !== false,
+        })
         setForm({
           slug: d.slug ?? '',
           description: d.description ?? '',
@@ -53,7 +60,7 @@ export default function SectionCatalog() {
     setSaving(true)
     try {
       const updated = await tenantApi.setSlug(form.slug)
-      setTenant(t => t ? { ...t, slug: updated.slug } : t)
+      setTenant(t => t ? { ...t, slug: updated.slug ?? null } : t)
       setSlugErr(null)
       toast.success(i('Lien mis à jour', 'Link updated', 'Enlace actualizado', 'Link aggiornato'))
     } catch (e: any) {

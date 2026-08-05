@@ -80,10 +80,14 @@ export default function NewOrderModal({
           note: result.notes ?? f.note,
         }))
       }
-      if (result.supplierName && !selectedSupplierId) {
+      // Hissé en local : le garde ci-dessous existe déjà, mais TS ne peut pas propager le
+      // narrowing d'une propriété dans la closure du `find`. `ApiInvoiceOcr.supplierName` est
+      // légitimement nullable — l'OCR ne reconnaît pas toujours le fournisseur.
+      const ocrSupplier = result.supplierName
+      if (ocrSupplier && !selectedSupplierId) {
         const match = suppliersList.find(s =>
-          s.name.toLowerCase().includes(result.supplierName.toLowerCase()) ||
-          result.supplierName.toLowerCase().includes(s.name.toLowerCase())
+          s.name.toLowerCase().includes(ocrSupplier.toLowerCase()) ||
+          ocrSupplier.toLowerCase().includes(s.name.toLowerCase())
         )
         if (match) setSelectedSupplierId(match.id)
       }

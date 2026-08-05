@@ -304,6 +304,43 @@ export interface Tenant {
   ninea?: string | null
   rccm?: string | null
   vatNumber?: string | null
+
+  // ── Champs AJOUTÉS (#185, lot 8) ────────────────────────────────────────────
+  // ⚠️ `GET /api/tenant` fait `findUnique` SANS `select` : le modèle ENTIER (81 colonnes)
+  // traverse depuis toujours. Ces champs étaient donc déjà sur le fil et lus par les
+  // Réglages, le POS et le catalogue — l'interface ne les déclarait simplement pas, ce qui
+  // forçait `tenantApi` à rester en `any`. Types repris du schéma Prisma, un par un.
+  // On reste en OPTIONNEL : déclarer moins que ce qui arrive est sûr, l'inverse produit les
+  // bugs (règle établie au lot 6).
+  lang?: string
+  // Catalogue public
+  slug?: string | null
+  description?: string | null
+  whatsappPhone?: string | null
+  catalogVisible?: boolean
+  // POS / caisse
+  posVatIncluded?: boolean
+  posAutoprint?: boolean
+  posDefaultFund?: number
+  requireCashier?: boolean
+  enableScanner?: boolean
+  priceMode?: string
+  autoWhatsApp?: boolean
+  enableAutoWhatsApp?: boolean
+  // Notifications — ⚠️ chaque canal a SA bascule ; ne pas les traiter comme un bloc
+  // (cf. § Crons multi-canaux : un garde écrit pour un canal en a coupé trois).
+  ownerPhone?: string | null
+  notifEmailSales?: boolean
+  notifEmailStock?: boolean
+  notifEmailPayroll?: boolean
+  notifSmsSales?: boolean
+  notifSmsStock?: boolean
+  notifPushAll?: boolean
+  // Facturation / cycle de vie
+  status?: string
+  isActive?: boolean
+  trialEnds?: string | null
+  planActivatedAt?: string | null
 }
 
 const TRIAL_DAYS = 14
