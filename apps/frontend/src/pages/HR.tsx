@@ -184,7 +184,7 @@ export default function HR() {
   useEffect(() => {
     let cancelled = false
     attendanceApi.list(attendanceMonth)
-      .then((rows: any[]) => {
+      .then(rows => {
         if (cancelled || !Array.isArray(rows)) return
         const map: Record<string, { in: string|null; out: string|null; status: AttendUiStatus }> = {}
         for (const r of rows) {

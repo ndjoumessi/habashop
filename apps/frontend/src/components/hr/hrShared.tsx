@@ -77,6 +77,108 @@ export type SalaryHistoryWrite = {
   date?: string
 }
 
+/**
+ * FRONTIÈRE — plannings, présences, bulletins (#185).
+ *
+ * ⚠️ MÊME ASYMÉTRIE que les congés, sur DEUX domaines de plus : `GET /api/shifts` et
+ * `GET /api/attendance` font tous deux
+ * `include: { employee: { select: { id, name, avatar, dept } } }`, tandis que leurs `POST`
+ * (upsert) et `PATCH` rendent la ligne NUE. Trois domaines RH partagent donc ce piège —
+ * d'où un type de base et un type « …WithEmployee », jamais un type unique optimiste.
+ *
+ * ⚠️ `date` est une CHAÎNE `YYYY-MM-DD` et les heures des chaînes `HH:MM` — pas des
+ * `DateTime`. C'est délibéré côté schéma ; les convertir en `Date` réintroduirait le
+ * décalage de fuseau.
+ */
+export interface ApiShift {
+  id: string
+  tenantId: string
+  employeeId: string
+  date: string
+  /** morning | afternoon | full | night | rest | leave — validé serveur (400 sinon). */
+  shiftTypeKey: string
+  startTime: string | null
+  endTime: string | null
+  label: string | null
+  color: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ApiAttendance {
+  id: string
+  tenantId: string
+  employeeId: string
+  date: string
+  /** PRESENT | LATE | ABSENT | LEAVE | REST */
+  status: string
+  arriveTime: string | null
+  departTime: string | null
+  note: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** L'employé partiellement sélectionné, commun aux trois listes RH. */
+export type EmployeeStub = { id: string; name: string; avatar: string; dept: string }
+
+/**
+ * Corps de `PATCH /api/shifts/:id` — le handler n'écrit QUE ces cinq champs (spread
+ * conditionnel sur `!== undefined`). `employeeId` et `date` ne sont PAS modifiables : ils
+ * identifient la case du planning, on supprime et on recrée.
+ */
+export type ShiftWrite = {
+  shiftTypeKey?: string
+  startTime?: string | null
+  endTime?: string | null
+  label?: string | null
+  color?: string | null
+}
+
+/** Corps de `PATCH /api/attendance/:id` — quatre champs, même motif. */
+export type AttendanceWrite = {
+  status?: string
+  arriveTime?: string | null
+  departTime?: string | null
+  note?: string | null
+}
+
+/** Formes rendues par les LISTES seules (`include` serveur). */
+export interface ApiShiftWithEmployee extends ApiShift { employee: EmployeeStub }
+export interface ApiAttendanceWithEmployee extends ApiAttendance { employee: EmployeeStub }
+
+/**
+ * Bulletin PERSISTÉ — ⚠️ INSTANTANÉ GELÉ (cf. § Paie de CLAUDE.md) : `baseSalary`, `bonus`,
+ * `overtime`, `deductions`, `absences`, `cnss`, `ir`, `net` ET `employeeName` sont figés à la
+ * génération. `cnss`/`ir` le sont parce qu'ils dépendent de TAUX LÉGAUX : les recalculer à
+ * l'affichage rejouerait un bulletin passé au barème du jour.
+ *
+ * ⚠️ Ne JAMAIS joindre `Employee.salary` pour l'affichage — une augmentation postérieure
+ * réécrirait ce qui a été versé.
+ */
+export interface ApiPayroll {
+  id: string
+  tenantId: string
+  employeeId: string
+  /** Clé ISO `YYYY-MM`, jamais le libellé d'écran — le serveur refuse le reste en 400. */
+  month: string
+  status: string
+  /** Posé par le SERVEUR : une date de versement doit être vérifiable, pas déclarée. */
+  paidAt: string | null
+  employeeName: string
+  role: string
+  baseSalary: number
+  bonus: number
+  overtime: number
+  deductions: number
+  absences: number
+  cnss: number
+  ir: number
+  net: number
+  createdAt: string
+  updatedAt: string
+}
+
 export const LEAVE_STATUSES = ['PENDING', 'APPROVED', 'REFUSED'] as const
 export type LeaveStatus = typeof LEAVE_STATUSES[number]
 

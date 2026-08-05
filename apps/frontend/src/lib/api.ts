@@ -6,6 +6,8 @@ import type { ApiProduct, ProductWrite } from '@/components/stock/stockShared'
 import type {
   ApiEmployee, EmployeeWrite, ApiEmployeeBonus, BonusWrite, ApiSalaryHistory, SalaryHistoryWrite,
   ApiLeaveRequest, ApiLeaveRequestWithEmployee, LeaveRequestWrite, LeaveStatus,
+  ApiShift, ApiShiftWithEmployee, ShiftWrite,
+  ApiAttendance, ApiAttendanceWithEmployee, AttendanceWrite, ApiPayroll,
 } from '@/components/hr/hrShared'
 import type { ApiSupplierOrder } from '@/components/suppliers/suppliersShared'
 
@@ -333,9 +335,9 @@ export const employeesApi = {
 // Bulletins de paie PERSISTÉS. ⚠️ `month` = clé ISO « YYYY-MM » (cf. `monthKey`) — le
 // libellé d'écran est refusé par le serveur en 400, volontairement.
 export const payrollApi = {
-  list:      (month: string) => api.get<any[]>(`/api/payroll?month=${encodeURIComponent(month)}`),
-  generate:  (month: string) => api.post<{ created: number; rows: any[] }>('/api/payroll/generate', { month }),
-  setStatus: (id: string, status: string) => api.patch<any>(`/api/payroll/${id}`, { status }),
+  list:      (month: string) => api.get<ApiPayroll[]>(`/api/payroll?month=${encodeURIComponent(month)}`),
+  generate:  (month: string) => api.post<{ created: number; rows: ApiPayroll[] }>('/api/payroll/generate', { month }),
+  setStatus: (id: string, status: string) => api.patch<ApiPayroll>(`/api/payroll/${id}`, { status }),
 }
 
 export const bonusesApi = {
@@ -552,11 +554,12 @@ export const alertsApi = {
   lookup: productsApi.lookup,
 }
 
+// ⚠️ Comme les congés : seule `list` porte l'employé imbriqué. Cf. `hrShared`.
 export const shiftsApi = {
-  list:   (month?: string) => api.get<any[]>(`/api/shifts${month ? `?month=${month}` : ''}`),
+  list:   (month?: string) => api.get<ApiShiftWithEmployee[]>(`/api/shifts${month ? `?month=${month}` : ''}`),
   upsert: (data: { employeeId: string; date: string; shiftTypeKey: string; startTime?: string | null; endTime?: string | null; label?: string | null; color?: string | null }) =>
-    api.post<any>('/api/shifts', data),
-  update: (id: string, data: any) => api.patch<any>(`/api/shifts/${id}`, data),
+    api.post<ApiShift>('/api/shifts', data),
+  update: (id: string, data: ShiftWrite) => api.patch<ApiShift>(`/api/shifts/${id}`, data),
   remove: (id: string) => api.delete<{ success: boolean }>(`/api/shifts/${id}`),
 }
 
@@ -573,11 +576,12 @@ export const leaveRequestsApi = {
   update:  (id: string, data: LeaveRequestWrite) => api.patch<ApiLeaveRequest>(`/api/leave-requests/${id}`, data),
 }
 
+// ⚠️ Idem : `list` enrichie, `upsert`/`update` nues.
 export const attendanceApi = {
-  list:   (month?: string) => api.get<any[]>(`/api/attendance${month ? `?month=${month}` : ''}`),
+  list:   (month?: string) => api.get<ApiAttendanceWithEmployee[]>(`/api/attendance${month ? `?month=${month}` : ''}`),
   upsert: (data: { employeeId: string; date: string; status: string; arriveTime?: string | null; departTime?: string | null; note?: string | null }) =>
-    api.post<any>('/api/attendance', data),
-  update: (id: string, data: any) => api.patch<any>(`/api/attendance/${id}`, data),
+    api.post<ApiAttendance>('/api/attendance', data),
+  update: (id: string, data: AttendanceWrite) => api.patch<ApiAttendance>(`/api/attendance/${id}`, data),
   remove: (id: string) => api.delete<{ success: boolean }>(`/api/attendance/${id}`),
 }
 
