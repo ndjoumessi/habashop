@@ -23,7 +23,15 @@ test('Reports — all 5 tabs render (charts incl.), no errors', async ({ page })
   // NB : les onglets sont des role="tab" (composant <Tabs> unifié, Vague 2), pas role="button".
   // Stock
   await page.getByRole('tab', { name: /^Stock$/ }).first().click()
-  await expect(page.getByText(/Rotation des stocks|Stock rotation/).first()).toBeVisible({ timeout: 5000 })
+  // ⚠️ Assertion RÉALIGNÉE. Ce spec vérifiait « Rotation des stocks » — un bloc dont les
+  // 5 catégories, pourcentages et montants étaient des LITTÉRAUX FABRIQUÉS. Il était donc
+  // vert PARCE QUE la page mentait, et il est passé au rouge quand le bloc a été retiré
+  // (516493ec) : un test E2E qui garde l'existence d'une donnée inventée protège le défaut,
+  // pas l'utilisateur. On asserte désormais un KPI calculé sur les vraies données.
+  await expect(page.getByText(/Articles en stock|Items in stock/).first()).toBeVisible({ timeout: 5000 })
+  // Et le bloc serveur du dessus, qui doit rester cohérent avec lui (c'est la contradiction
+  // « À réapprovisionner : 2 » vs « 7 en rupture » que la refonte a supprimée).
+  await expect(page.getByText(/À réapprovisionner|To reorder/).first()).toBeVisible({ timeout: 5000 })
 
   // Clients
   await page.getByRole('tab', { name: /^Clients$|^Customers$/ }).first().click()
@@ -35,7 +43,7 @@ test('Reports — all 5 tabs render (charts incl.), no errors', async ({ page })
 
   // RH
   await page.getByRole('tab', { name: /^RH$|^HR$/ }).first().click()
-  await expect(page.getByText(/Masse salariale|Payroll total/).first()).toBeVisible({ timeout: 5000 })
+  await expect(page.getByText(/Masse salariale|Payroll/).first()).toBeVisible({ timeout: 5000 })
 
   expect(errors, `page errors:\n${errors.join('\n')}`).toEqual([])
 })
