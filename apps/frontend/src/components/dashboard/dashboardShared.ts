@@ -110,3 +110,53 @@ export function noSalesInPeriodLabel(period: ChartPeriod, lang: Lang): string {
 export function noSalesThisMonthLabel(lang: Lang): string {
   return NO_SALES_THIS_MONTH[lang]
 }
+
+/* ────────────────────────── Série du graphe de ventes ────────────────────────── */
+
+export type SaleForChart = { createdAt: string | Date; total?: number | null }
+export type SalesPoint = { name: string; ventes: number; transactions: number }
+
+const LOCALES: Record<Lang, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT' }
+
+/**
+ * Agrège les ventes en SÉRIE TEMPORELLE — un point par DATE, en ordre chronologique.
+ *
+ * ⚠️ Groupement par DATE, **jamais** par nom de jour. La version précédente prenait
+ * `labels[d.getDay()]` pour clé : sur « 3 mois », les ~13 mercredis s'additionnaient en un
+ * seul point « Mer », et `Object.values` rendait l'ordre D'APPARITION — d'où un axe
+ * « Sam · Ven · Mer · Mar · Lun · Dim · Jeu ». Ce n'était pas une série temporelle mais un
+ * histogramme par jour de semaine, tracé en COURBE CONTINUE comme s'il était chronologique :
+ * un pic s'y lisait comme une bonne journée alors qu'il cumulait trois mois de mercredis.
+ *
+ * ⚠️ La clé de groupement est la date **ISO** (`YYYY-MM-DD`) : elle trie chronologiquement en
+ * comparaison de chaînes, contrairement à un libellé affiché qui dépend de la langue.
+ */
+export function buildSalesSeries(sales: SaleForChart[], period: ChartPeriod, lang: Lang): SalesPoint[] {
+  const byDate = new Map<string, { ventes: number; transactions: number }>()
+  for (const sale of sales) {
+    const key = new Date(sale.createdAt).toISOString().slice(0, 10)
+    const cur = byDate.get(key) ?? { ventes: 0, transactions: 0 }
+    cur.ventes += sale.total ?? 0
+    cur.transactions += 1
+    byDate.set(key, cur)
+  }
+  return [...byDate.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([iso, v]) => ({ name: salesPointLabel(iso, period, lang), ...v }))
+}
+
+/**
+ * Libellé d'un point — la FORME dépend de la période.
+ *
+ * ⚠️ Au-delà de 7 jours, le nom de jour ne suffit plus : deux points porteraient le même
+ * libellé (« Mer » et « Mer »), ce qui est précisément ce qui rendait l'ancien axe illisible.
+ *
+ * ⚠️ `T00:00:00` — sans lui, `new Date('2026-08-05')` est lu minuit **UTC** et recule d'un
+ * jour en fuseau négatif (même piège que `fmtDate`, cf. § Pièges techniques).
+ */
+export function salesPointLabel(iso: string, period: ChartPeriod, lang: Lang): string {
+  const d = new Date(`${iso}T00:00:00`)
+  return period === '7days'
+    ? d.toLocaleDateString(LOCALES[lang], { weekday: 'short' })
+    : d.toLocaleDateString(LOCALES[lang], { day: '2-digit', month: '2-digit' })
+}

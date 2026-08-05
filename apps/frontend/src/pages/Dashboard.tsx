@@ -16,7 +16,7 @@ import { payModeLabel } from '@/components/pos/posShared'
 import ConsolidatedShops from '@/components/dashboard/ConsolidatedShops'
 import {
   noSalesInPeriodLabel, noSalesThisMonthLabel, salesChartTitle, periodOptionLabel,
-  isChartPeriod, CHART_PERIODS, type ChartPeriod,
+  isChartPeriod, buildSalesSeries, CHART_PERIODS, type ChartPeriod,
 } from '@/components/dashboard/dashboardShared'
 // Charts isolés dans le chunk `charts` (recharts) → lazy pour ne pas bloquer le rendu des KPIs
 const DashSalesArea = lazy(() => import('@/components/charts/DashSalesArea'))
@@ -218,23 +218,9 @@ export default function Dashboard() {
     dashboardApi.sales(reportPeriod)
       .then((data: any) => {
         if (data?.sales?.length > 0) {
-          const DAY_LABELS: Record<string, string[]> = {
-            fr: ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],
-            en: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
-            es: ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'],
-            it: ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'],
-          }
-          const labels = DAY_LABELS[lang] ?? DAY_LABELS.fr
-          const grouped = data.sales.reduce((acc: any, sale: any) => {
-            const d = new Date(sale.createdAt)
-            const key = labels[d.getDay()]
-            if (!acc[key]) acc[key] = { name: key, ventes: 0, transactions: 0 }
-            acc[key].ventes += sale.total
-            acc[key].transactions += 1
-            return acc
-          }, {})
-          const chartData = Object.values(grouped)
-          setSalesChart(chartData as any)
+          // ⚠️ Série TEMPORELLE (un point par date, trié), pas un histogramme par jour de
+          // semaine — cf. `buildSalesSeries` dans `dashboardShared` pour le bug d'origine.
+          setSalesChart(buildSalesSeries(data.sales, reportPeriod, lang))
         } else {
           setSalesChart([])
         }
