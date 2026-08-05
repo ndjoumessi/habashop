@@ -40,10 +40,10 @@ function grid(clientType: 'retail' | 'wholesale' | 'semi', products: Record<stri
       posTab="pos" lang="fr" activeCat="" setActiveCat={noop}
       clientType={clientType} setClientType={noop}
       fmt={(n: number) => `${n} F`} amountLabel={(n: number) => String(n)} curSuffix="F"
-      filtered={products as never} cart={[]} addItem={noop} getPrice={(p: never) => (p as { price: number }).price}
+      filtered={products as never} cart={[]} addItem={noop} getPrice={(p: any) => p.price}
       posShowStockOnTile loadingHistory={false} salesHistory={[]}
       canAuditPrices={false} divergenceOnly={false} onToggleDivergence={noop}
-      gapFilter="" onGapFilterChange={noop}
+      gapFilter="none" onGapFilterChange={noop}
       canRefund={false} onRefundClick={noop} canCloseDay={false} onCloseDay={noop}
       isMobile={false} mobileView="grid" totalProducts={products.length}
       loadingProducts={false} navigate={noop}

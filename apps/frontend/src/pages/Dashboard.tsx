@@ -14,6 +14,10 @@ import Skeleton from '@/components/ui/skeleton'
 import { normCat } from '@/utils/normCat'
 import { payModeLabel } from '@/components/pos/posShared'
 import ConsolidatedShops from '@/components/dashboard/ConsolidatedShops'
+import {
+  noSalesInPeriodLabel, noSalesThisMonthLabel, salesChartTitle, periodOptionLabel,
+  isChartPeriod, CHART_PERIODS, type ChartPeriod,
+} from '@/components/dashboard/dashboardShared'
 // Charts isolés dans le chunk `charts` (recharts) → lazy pour ne pas bloquer le rendu des KPIs
 const DashSalesArea = lazy(() => import('@/components/charts/DashSalesArea'))
 const DashCategoryDonut = lazy(() => import('@/components/charts/DashCategoryDonut'))
@@ -141,7 +145,9 @@ export default function Dashboard() {
   const [stockAlerts, setStockAlerts] = useState<any[]>([])
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [catData, setCatData] = useState<any[]>([])
-  const [reportPeriod, setReportPeriod] = useState('7days')
+  // Typé `ChartPeriod` (pas `string`) : le message de vide se résout par un Record exhaustif,
+  // donc une période sans libellé ne peut pas exister sans casser `tsc`.
+  const [reportPeriod, setReportPeriod] = useState<ChartPeriod>('7days')
   // Résumé actionnable (réappro / dormants) — non bloquant, renvoie vers Rapports.
   const [inv, setInv] = useState<{ reorder: number; dormant: number } | null>(null)
   useEffect(() => {
@@ -429,21 +435,22 @@ export default function Dashboard() {
               <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(108,71,255,.15)', border: '1px solid rgba(108,71,255,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--p3)' }}>
                 <BarChart2 size={15} />
               </div>
-              <span className="panel-title">
-                {lang === 'fr' ? 'Ventes — 7 derniers jours' : lang === 'en' ? 'Sales — Last 7 days' : lang === 'es' ? 'Ventas — Últimos 7 días' : 'Vendite — Ultimi 7 giorni'}
-              </span>
+              {/* ⚠️ Le titre SUIT la période : figé sur « 7 derniers jours », il contredisait
+                  l'état vide dès qu'on passait à 30 jours ou 3 mois. */}
+              <span className="panel-title">{salesChartTitle(reportPeriod, lang)}</span>
             </div>
+            {/* Options RENDUES depuis `CHART_PERIODS` : le sélecteur ne peut pas offrir une
+                période dont les libellés n'existent pas (ce qu'un `as ChartPeriod` autorisait). */}
             <select className="input" style={{ width: 'auto', fontSize: 'var(--fs-label)', minHeight: 34 }}
-              value={reportPeriod} onChange={e => setReportPeriod(e.target.value)}>
-              <option value="7days">{lang === 'en' ? '7 days' : lang === 'es' ? '7 días' : lang === 'it' ? '7 giorni' : '7 jours'}</option>
-              <option value="30days">{lang === 'en' ? '30 days' : lang === 'es' ? '30 días' : lang === 'it' ? '30 giorni' : '30 jours'}</option>
-              <option value="3months">{lang === 'en' ? '3 months' : lang === 'es' ? '3 meses' : lang === 'it' ? '3 mesi' : '3 mois'}</option>
+              value={reportPeriod} onChange={e => { if (isChartPeriod(e.target.value)) setReportPeriod(e.target.value) }}>
+              {CHART_PERIODS.map(p => <option key={p} value={p}>{periodOptionLabel(p, lang)}</option>)}
             </select>
           </div>
           <div role="img" aria-label={lang === 'fr' ? 'Graphique des ventes par jour' : lang === 'en' ? 'Daily sales chart' : lang === 'es' ? 'Gráfico de ventas diarias' : 'Grafico vendite giornaliere'}>
           {salesChart.length === 0 ? (
             <div style={{ height: 190, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontSize: 'var(--fs-sm)', textAlign: 'center', padding: '0 16px' }}>
-              {lang === 'en' ? 'No sales yet' : lang === 'es' ? 'Sin ventas por ahora' : lang === 'it' ? 'Nessuna vendita per ora' : 'Aucune vente pour le moment'}
+              {/* ⚠️ Le message nomme la FENÊTRE, il ne dit pas « jamais » — cf. `dashboardShared`. */}
+              {noSalesInPeriodLabel(reportPeriod, lang)}
             </div>
           ) : (
           <Suspense fallback={<Skeleton height={190} count={1} radius={12} />}>
@@ -460,7 +467,8 @@ export default function Dashboard() {
           </div>
           {catData.length === 0 ? (
             <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>
-              {lang === 'en' ? 'No sales data available' : lang === 'es' ? 'No hay datos de ventas' : lang === 'it' ? 'Nessun dato di vendita' : 'Aucune donnée de vente disponible'}
+              {/* ⚠️ `categoryBreakdown` est scopé au MOIS EN COURS côté serveur — cf. `dashboardShared`. */}
+              {noSalesThisMonthLabel(lang)}
             </div>
           ) : (<>
           <div style={{ position: 'relative', margin: '0 -8px', overflow: 'visible' }}>
@@ -596,7 +604,8 @@ export default function Dashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {topProducts.length === 0 ? (
               <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 'var(--fs-sm)', lineHeight: 1.6 }}>
-                {lang === 'en' ? 'No sales recorded yet' : lang === 'es' ? 'Ninguna venta registrada' : lang === 'it' ? 'Nessuna vendita registrata' : 'Aucune vente enregistrée pour le moment'}
+                {/* ⚠️ « Top produits DU MOIS » : le vide est celui du MOIS EN COURS — cf. `dashboardShared`. */}
+                {noSalesThisMonthLabel(lang)}
               </div>
             ) : topProducts.map((p, i) => {
               const maxCa = topProducts[0]?.ca || 1
