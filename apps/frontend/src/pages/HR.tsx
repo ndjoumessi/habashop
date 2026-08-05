@@ -167,7 +167,7 @@ export default function HR() {
   useEffect(() => {
     setLeavesLoading(true)
     leaveRequestsApi.list()
-      .then((rows: any[]) => { if (Array.isArray(rows)) setLeaves(rows.map(mapApiLeave)) })
+      .then(rows => { if (Array.isArray(rows)) setLeaves(rows.map(mapApiLeave)) })
       .catch(() => toast.error(lang === 'en' ? 'Failed to load leave requests' : lang === 'es' ? 'Error al cargar permisos' : lang === 'it' ? 'Caricamento ferie fallito' : 'Échec du chargement des congés'))
       .finally(() => setLeavesLoading(false))
   }, [])

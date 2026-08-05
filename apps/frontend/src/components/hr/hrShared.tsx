@@ -26,6 +26,100 @@ export type LeaveForm = { empId: string | number; type: string; startDate: strin
  * `prisma.employee.delete()` DUR, donc `deletedAt` n'est aujourd'hui jamais renseigné par ce
  * chemin. Champ conservé au type parce qu'il EST sur le fil.
  */
+/**
+ * FRONTIÈRE — primes et historique salarial (#185).
+ *
+ * ⚠️ Dérivés des `model EmployeeBonus` / `model SalaryHistory` : les routes de `hr.ts` font
+ * un `findMany` SANS `select`, donc les modèles entiers traversent. Les quatre routes de
+ * liste (globale et par employé) rendent la MÊME forme.
+ *
+ * ⚠️ Ce sont les deux tables dont la FK `tenantId` vient d'être posée (#183) : `tenantId` est
+ * bien sur le fil, il n'est simplement plus falsifiable côté base.
+ */
+export interface ApiEmployeeBonus {
+  id: string
+  tenantId: string
+  employeeId: string
+  amount: number
+  reason: string
+  /** `DateTime` Prisma → chaîne ISO après sérialisation JSON. */
+  date: string
+  createdAt: string
+}
+
+export interface ApiSalaryHistory {
+  id: string
+  tenantId: string
+  employeeId: string
+  oldSalary: number
+  newSalary: number
+  reason: string
+  date: string
+  createdAt: string
+}
+
+/** Corps de `POST /api/bonuses` — `employeeId` et `amount` sont EXIGÉS par le handler (400 sinon). */
+export type BonusWrite = {
+  employeeId: string
+  amount: number
+  reason?: string
+  /** Absente → le serveur pose `new Date()`. */
+  date?: string
+}
+
+/** Corps de `POST /api/salary-history` — `employeeId` et `newSalary` exigés (400 sinon). */
+export type SalaryHistoryWrite = {
+  employeeId: string
+  newSalary: number
+  /** Absent → 0 côté serveur, pas une erreur. */
+  oldSalary?: number
+  reason?: string
+  date?: string
+}
+
+export const LEAVE_STATUSES = ['PENDING', 'APPROVED', 'REFUSED'] as const
+export type LeaveStatus = typeof LEAVE_STATUSES[number]
+
+/**
+ * FRONTIÈRE — `GET /api/leave-requests` (#185).
+ *
+ * ⚠️ ASYMÉTRIE, comme pour les commandes : la LISTE fait
+ * `include: { employee: { select: { id, name, avatar, dept } } }`, alors que `PATCH`,
+ * `approve` et `refuse` rendent la demande NUE, sans `employee`. Un type unique qui
+ * promettrait `employee` partout ferait lire `undefined.name` sur le retour d'une
+ * approbation — l'erreur n'apparaîtrait qu'à l'exécution.
+ *
+ * ⚠️ `startDate`/`endDate` sont des CHAÎNES `YYYY-MM-DD` en base (pas des `DateTime`) :
+ * les traiter en dates ferait repasser par le décalage de fuseau que `fmtDate` évite.
+ */
+export interface ApiLeaveRequest {
+  id: string
+  tenantId: string
+  employeeId: string
+  startDate: string
+  endDate: string
+  leaveType: string
+  status: LeaveStatus
+  reason: string | null
+  approvedBy: string | null
+  approvedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** Forme RENVOYÉE PAR LA LISTE seule : la demande + l'employé partiellement sélectionné. */
+export interface ApiLeaveRequestWithEmployee extends ApiLeaveRequest {
+  employee: { id: string; name: string; avatar: string; dept: string }
+}
+
+/** Corps de `PATCH /api/leave-requests/:id` — le handler n'écrit QUE ces quatre champs. */
+export type LeaveRequestWrite = {
+  startDate?: string
+  endDate?: string
+  leaveType?: string
+  reason?: string | null
+}
+
 export interface ApiEmployee {
   id: string
   tenantId: string

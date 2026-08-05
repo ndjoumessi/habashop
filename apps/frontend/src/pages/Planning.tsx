@@ -52,7 +52,7 @@ export default function Planning() {
 
   // Congés approuvés → jours verrouillés (au montage). eachDateInclusive partagé avec HR/backend.
   useEffect(() => {
-    leaveRequestsApi.list('APPROVED').then((rows:any[]) => {
+    leaveRequestsApi.list('APPROVED').then(rows => {
       if (!Array.isArray(rows)) return
       const s = new Set<string>()
       for (const lr of rows) {

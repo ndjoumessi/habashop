@@ -3,7 +3,10 @@ import type { ApiSupplier, SupplierCreate, SupplierWrite } from '@/components/su
 import type { ApiOrder, OrderWrite } from '@/components/orders/ordersShared'
 import type { ApiCustomer, ApiCustomerSearchHit, ApiCustomerSale, CustomerWrite } from '@/components/customers/customersShared'
 import type { ApiProduct, ProductWrite } from '@/components/stock/stockShared'
-import type { ApiEmployee, EmployeeWrite } from '@/components/hr/hrShared'
+import type {
+  ApiEmployee, EmployeeWrite, ApiEmployeeBonus, BonusWrite, ApiSalaryHistory, SalaryHistoryWrite,
+  ApiLeaveRequest, ApiLeaveRequestWithEmployee, LeaveRequestWrite, LeaveStatus,
+} from '@/components/hr/hrShared'
 import type { ApiSupplierOrder } from '@/components/suppliers/suppliersShared'
 
 const BASE_URL: string = (import.meta as any).env?.VITE_API_URL
@@ -336,17 +339,17 @@ export const payrollApi = {
 }
 
 export const bonusesApi = {
-  list:             () => api.get<any[]>('/api/bonuses'),
-  listByEmployee:   (employeeId: string) => api.get<any[]>(`/api/bonuses/employee/${employeeId}`),
-  create:           (data: any) => api.post<any>('/api/bonuses', data),
-  delete:           (id: string) => api.delete<any>(`/api/bonuses/${id}`),
+  list:             () => api.get<ApiEmployeeBonus[]>('/api/bonuses'),
+  listByEmployee:   (employeeId: string) => api.get<ApiEmployeeBonus[]>(`/api/bonuses/employee/${employeeId}`),
+  create:           (data: BonusWrite) => api.post<ApiEmployeeBonus>('/api/bonuses', data),
+  delete:           (id: string) => api.delete<{ success: boolean }>(`/api/bonuses/${id}`),
 }
 
 export const salaryHistoryApi = {
-  list:           () => api.get<any[]>('/api/salary-history'),
-  listByEmployee: (employeeId: string) => api.get<any[]>(`/api/salary-history/employee/${employeeId}`),
-  create:         (data: any) => api.post<any>('/api/salary-history', data),
-  delete:         (id: string) => api.delete<any>(`/api/salary-history/${id}`),
+  list:           () => api.get<ApiSalaryHistory[]>('/api/salary-history'),
+  listByEmployee: (employeeId: string) => api.get<ApiSalaryHistory[]>(`/api/salary-history/employee/${employeeId}`),
+  create:         (data: SalaryHistoryWrite) => api.post<ApiSalaryHistory>('/api/salary-history', data),
+  delete:         (id: string) => api.delete<{ success: boolean }>(`/api/salary-history/${id}`),
 }
 
 export const subscriptionsApi = {
@@ -557,13 +560,17 @@ export const shiftsApi = {
   remove: (id: string) => api.delete<{ success: boolean }>(`/api/shifts/${id}`),
 }
 
+// ⚠️ Seule `list` porte l'employé imbriqué (`include` côté serveur) — cf. `hrShared`.
+// `approve`/`refuse`/`update` rendent la demande NUE : le type le dit, plutôt que de le
+// laisser découvrir à l'exécution.
 export const leaveRequestsApi = {
-  list:    (status?: string) => api.get<any[]>(`/api/leave-requests${status ? `?status=${status}` : ''}`),
+  list:    (status?: LeaveStatus) =>
+    api.get<ApiLeaveRequestWithEmployee[]>(`/api/leave-requests${status ? `?status=${status}` : ''}`),
   create:  (data: { employeeId: string; startDate: string; endDate: string; leaveType?: string; reason?: string | null }) =>
-    api.post<any>('/api/leave-requests', data),
-  approve: (id: string) => api.post<any>(`/api/leave-requests/${id}/approve`, {}),
-  refuse:  (id: string) => api.post<any>(`/api/leave-requests/${id}/refuse`, {}),
-  update:  (id: string, data: any) => api.patch<any>(`/api/leave-requests/${id}`, data),
+    api.post<ApiLeaveRequest>('/api/leave-requests', data),
+  approve: (id: string) => api.post<ApiLeaveRequest>(`/api/leave-requests/${id}/approve`, {}),
+  refuse:  (id: string) => api.post<ApiLeaveRequest>(`/api/leave-requests/${id}/refuse`, {}),
+  update:  (id: string, data: LeaveRequestWrite) => api.patch<ApiLeaveRequest>(`/api/leave-requests/${id}`, data),
 }
 
 export const attendanceApi = {
