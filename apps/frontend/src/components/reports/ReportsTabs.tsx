@@ -1,9 +1,10 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
-import { Trophy, Receipt, CreditCard, Package, Users, TrendingUp, Wallet, DollarSign, UserCog } from 'lucide-react'
+import { Trophy, Receipt, CreditCard, Wallet, DollarSign } from 'lucide-react'
 import { t } from '@/stores/appStore'
 import { useThemeColor } from '@/hooks/useThemeColor'
 import { RADIAN } from '@/components/reports/reportsShared'
 import InventoryInsights from '@/components/reports/InventoryInsights'
+import { StockKpis, HrKpis, ClientSegments } from '@/components/reports/ReportsLiveKpis'
 
 interface ReportsTabsProps {
   reportTab: 'ventes' | 'stock' | 'clients' | 'finance' | 'rh'
@@ -25,6 +26,10 @@ const PAY_LABEL = (mode: string, lang: string) =>
   mode === 'card' ? (lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte') : mode
 
 export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, paymentData, activePayIndex, setActivePayIndex, salesData, data, topProducts }: ReportsTabsProps) {
+  // Helper i18n local — dérivé de la prop `lang` (et non du store) pour rester cohérent
+  // avec le reste du composant, qui lit déjà `lang` partout.
+  const i = (fr: string, en: string, es: string, it: string) =>
+    lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   // var() non résolu en attribut SVG recharts → couleurs résolues en JS, réactives au thème.
   const gridColor = useThemeColor('--border')
   const tickColor = useThemeColor('--text3', '#888')
@@ -110,7 +115,12 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
             <span className="panel-title">{t('reports_chart_week')}</span>
-            <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>Semaine du 7 au 13 mai 2026</span>
+            {/* ⚠️ Un libellé « Semaine du 7 au 13 mai 2026 » était FIGÉ ici (littéral, même
+                pas traduit) alors que le graphe est glissant — les 7 derniers jours à partir
+                de maintenant (Reports.tsx:163). Il affichait donc une semaine d'il y a trois
+                mois sous des données du jour. Retiré : le titre porte déjà la période, et
+                la remettre suppose de faire descendre la vraie plage depuis l'endroit où
+                `chartData` est calculé — sinon elle redériverait. */}
           </div>
           <ResponsiveContainer width="100%" height={160}>
             <AreaChart data={chartData} margin={{ top:4, right:8, left:0, bottom:0 }}>
@@ -319,87 +329,28 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
         <>
         {/* Rapports actionnables v1 — réappro + dormants (vraies données serveur) */}
         <InventoryInsights fmt={fmt} lang={lang} />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {[
-            { label: lang === 'en' ? 'Items in stock' : lang === 'es' ? 'Artículos en stock' : lang === 'it' ? 'Articoli in stock' : 'Articles en stock',   value:'142',        color:'var(--acc2)', sub: lang === 'en' ? 'active SKUs' : lang === 'es' ? 'SKU activos' : lang === 'it' ? 'SKU attivi' : 'références actives'   },
-            { label: lang === 'en' ? 'Total stock value' : lang === 'es' ? 'Valor stock total' : lang === 'it' ? 'Valore stock totale' : 'Valeur stock total', value:fmt(8420000), color:'var(--p2)',   sub: lang === 'en' ? 'purchase cost' : lang === 'es' ? 'costo de compra' : lang === 'it' ? 'costo d\'acquisto' : 'coût d\'achat' },
-            { label: lang === 'en' ? 'Out of stock' : lang === 'es' ? 'Artículos agotados' : lang === 'it' ? 'Articoli esauriti' : 'Articles en rupture',      value:'7',          color:'var(--danger)', sub: lang === 'en' ? 'urgent reorder' : lang === 'es' ? 'pedir con urgencia' : lang === 'it' ? 'da ordinare con urgenza' : 'à commander en urgence' },
-          ].map(k => (
-            <div key={k.label} className="kpi-card" style={{ borderTop:`3px solid ${k.color}` }}>
-              <div className="kpi-label">{k.label}</div>
-              <div className="kpi-value" style={{ color:k.color }}>{k.value}</div>
-              <div className="kpi-sub">{k.sub}</div>
-            </div>
-          ))}
-          <div className="panel lg:col-span-3" style={{ marginBottom:0 }}>
-            <div className="panel-head">
-              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Package size={14}/> {lang === 'en' ? 'Stock rotation — Top categories' : lang === 'es' ? 'Rotación de stock — Top categorías' : lang === 'it' ? 'Rotazione stock — Top categorie' : 'Rotation des stocks — Top catégories'}</span>
-            </div>
-            {[
-              { cat:'Céréales',   pct:82, val:fmt(2180000), color:'#818CF8' },
-              { cat:'Corps gras', pct:67, val:fmt(1640000), color:'#F59E0B' },
-              { cat:'Épicerie',   pct:74, val:fmt(1290000), color:'#34D399' },
-              { cat:'Hygiène',    pct:55, val:fmt(980000),  color:'#F472B6' },
-              { cat:'Laitiers',   pct:61, val:fmt(870000),  color:'#60A5FA' },
-            ].map(row => (
-              <div key={row.cat} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
-                <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', color:'var(--text)', width:100, flexShrink:0 }}>{row.cat}</span>
-                <div style={{ flex:1, height:8, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
-                  <div style={{ height:'100%', width:`${row.pct}%`, background:row.color, borderRadius:99, opacity:.85 }} />
-                </div>
-                <span style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:row.color, width:36, textAlign:'right' }}>{row.pct}%</span>
-                <span style={{ fontSize:'var(--fs-label)', fontFamily:'var(--mono)', color:'var(--text2)', width:80, textAlign:'right' }}>{row.val}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* ⚠️ KPI RÉELS (voir ReportsLiveKpis). Ils affichaient auparavant « 142 articles /
+            8 420 000 / 7 en rupture » — des littéraux — juste sous le bloc serveur ci-dessus
+            qui annonçait « À réapprovisionner : 2 ». Le même écran se contredisait.
+            ⚠️ SUPPRIMÉ avec : « Rotation des stocks — Top catégories », 5 catégories dont les
+            pourcentages et montants étaient inventés. Aucune source ne les calcule aujourd'hui
+            (il faudrait les ventes par catégorie sur la période) — un bloc absent est honnête,
+            un bloc inventé ne l'est pas. À rétablir le jour où l'endpoint existe. */}
+        <StockKpis fmt={fmt} i={i} />
         </>
       )}
 
       {/* ── Tab: Clients ── */}
+      {/* ⚠️ Segments RÉELS, groupés par le juge unique des paliers (#215).
+          Avant : « 45 grossistes / 31 détaillants / 13 directs » = 89 clients inventés (le
+          tenant en a 5), et un panneau « Métriques fidélisation » entièrement fabriqué
+          (rétention 68 %, panier 125 000, fréquence 2.4×/mois, NPS estimé 67).
+          ⚠️ SUPPRIMÉ plutôt que rebranché : la rétention et le panier moyen sont calculés
+          sur la page Clients avec une définition précise (fenêtre 90 j) — les recalculer ici
+          autrement recréerait deux vérités. Le « NPS estimé » n'a AUCUNE source : aucune
+          enquête n'est collectée, ce nombre ne pouvait être qu'inventé. */}
       {reportTab === 'clients' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="panel" style={{ marginBottom:0 }}>
-            <div className="panel-head">
-              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Users size={14}/> {lang === 'en' ? 'Customer segments' : lang === 'es' ? 'Segmentos de clientes' : lang === 'it' ? 'Segmenti clienti' : 'Segments clients'}</span>
-            </div>
-            {[
-              { label: lang === 'en' ? 'Wholesalers' : lang === 'es' ? 'Mayoristas' : lang === 'it' ? 'Grossisti' : 'Grossistes',  count:45,  ca:fmt(8400000), color:'#6C47FF', pct:52 },
-              { label: lang === 'en' ? 'Retailers' : lang === 'es' ? 'Minoristas' : lang === 'it' ? 'Dettaglianti' : 'Détaillants',    count:31,  ca:fmt(4200000), color:'#00B8FF', pct:26 },
-              { label: lang === 'en' ? 'Direct' : lang === 'es' ? 'Directos' : lang === 'it' ? 'Diretti' : 'Clients directs',       count:13,  ca:fmt(3600000), color:'#00D084', pct:22 },
-            ].map(seg => (
-              <div key={seg.label} style={{ padding:'14px 0', borderBottom:'1px solid var(--border)' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <div style={{ width:10, height:10, borderRadius:'50%', background:seg.color }} />
-                    <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{seg.label}</span>
-                    <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', background:'var(--bg3)', border:'1px solid var(--border)', padding:'1px 8px', borderRadius:'var(--r-full)' }}>{seg.count} clients</span>
-                  </div>
-                  <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-bold)', color:seg.color, fontFamily:'var(--mono)' }}>{seg.ca}</span>
-                </div>
-                <div style={{ height:6, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
-                  <div style={{ height:'100%', width:`${seg.pct}%`, background:seg.color, borderRadius:99 }} />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="panel" style={{ marginBottom:0 }}>
-            <div className="panel-head">
-              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><TrendingUp size={14}/> {lang === 'en' ? 'Loyalty metrics' : lang === 'es' ? 'Métricas de fidelización' : lang === 'it' ? 'Metriche fidelizzazione' : 'Métriques fidélisation'}</span>
-            </div>
-            {[
-              { label: lang === 'en' ? 'Retention rate' : lang === 'es' ? 'Tasa de retención' : lang === 'it' ? 'Tasso di fidelizzazione' : 'Taux de rétention',   value:'68 %',    color:'var(--acc2)' },
-              { label: lang === 'en' ? 'Avg. basket' : lang === 'es' ? 'Ticket medio' : lang === 'it' ? 'Scontrino medio' : 'Panier moyen',       value:fmt(125000), color:'var(--p2)'  },
-              { label: lang === 'en' ? 'Purchase freq.' : lang === 'es' ? 'Frec. compra' : lang === 'it' ? 'Freq. acquisto' : 'Achat fréquence',    value:'2.4×/mois', color:'var(--acc)' },
-              { label: lang === 'en' ? 'Estimated NPS' : lang === 'es' ? 'NPS estimado' : lang === 'it' ? 'NPS stimato' : 'NPS estimé',     value:'67',      color:'#A78BFA'    },
-            ].map(m => (
-              <div key={m.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 0', borderBottom:'1px solid var(--border)' }}>
-                <span style={{ fontSize:'var(--fs-sm)', color:'var(--text2)' }}>{m.label}</span>
-                <span style={{ fontSize:'var(--fs-md)', fontWeight:'var(--fw-semibold)', color:m.color, fontFamily:'var(--mono)' }}>{m.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ClientSegments fmt={fmt} i={i} lang={lang} />
       )}
 
       {/* ── Tab: Finance ── */}
@@ -446,50 +397,17 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
       )}
 
       {/* ── Tab: RH ── */}
+      {/* ⚠️ KPI RÉELS (effectif + masse salariale des employés ACTIFS, mêmes formules que
+          HR.tsx:375-376). Avant : « 8 collaborateurs / 1 036,65 € / 94 % de présence » —
+          littéraux — pour un tenant qui a 5 employés et 2 530,65 € de masse salariale.
+          ⚠️ SUPPRIMÉ : le bloc « Équipe », qui listait CINQ EMPLOYÉS INVENTÉS (Amara Diallo,
+          Fatou Sow, Omar Diop, Aïssatou Ba, Ibrahima Fall) avec salaires et statuts de
+          présence fictifs, alors que les vrais employés sont à deux clics. Et le « Taux de
+          présence » : les pointages existent (onglet Présences) mais par mois et par
+          employé — les agréger demande une décision (période, absences justifiées) qui ne
+          se prend pas dans un correctif d'affichage. Absent plutôt qu'inventé. */}
       {reportTab === 'rh' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {[
-            { label: lang === 'en' ? 'Total staff' : lang === 'es' ? 'Plantilla total' : lang === 'it' ? 'Organico totale' : 'Effectif total',   value:'8',         color:'var(--p2)',    sub: lang === 'en' ? 'employees' : lang === 'es' ? 'colaboradores' : lang === 'it' ? 'collaboratori' : 'collaborateurs' },
-            { label: lang === 'en' ? 'Payroll total' : lang === 'es' ? 'Masa salarial' : lang === 'it' ? 'Costo del personale' : 'Masse salariale', value:fmt(680000), color:'var(--acc)',   sub: lang === 'en' ? 'per month' : lang === 'es' ? 'por mes' : lang === 'it' ? 'al mese' : 'par mois' },
-            { label: lang === 'en' ? 'Attendance' : lang === 'es' ? 'Asistencia' : lang === 'it' ? 'Presenza' : 'Taux présence',    value:'94 %',      color:'var(--acc2)', sub: lang === 'en' ? 'this month' : lang === 'es' ? 'este mes' : lang === 'it' ? 'questo mese' : 'ce mois' },
-          ].map(k => (
-            <div key={k.label} className="kpi-card" style={{ borderTop:`3px solid ${k.color}` }}>
-              <div className="kpi-label">{k.label}</div>
-              <div className="kpi-value" style={{ color:k.color }}>{k.value}</div>
-              <div className="kpi-sub">{k.sub}</div>
-            </div>
-          ))}
-          <div className="panel lg:col-span-3" style={{ marginBottom:0 }}>
-            <div className="panel-head">
-              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><UserCog size={14}/> {lang === 'en' ? 'Team' : lang === 'es' ? 'Equipo' : lang === 'it' ? 'Squadra' : 'Équipe'}</span>
-            </div>
-            {[
-              { nom:'Amara Diallo',  poste: lang === 'en' ? 'Manager' : lang === 'es' ? 'Gerente' : lang === 'it' ? 'Manager' : 'Manager',     dept: lang === 'en' ? 'Management' : lang === 'es' ? 'Dirección' : lang === 'it' ? 'Direzione' : 'Direction', salaire:fmt(180000), status:'Présent' },
-              { nom:'Fatou Sow',     poste: lang === 'en' ? 'Cashier' : lang === 'es' ? 'Cajera' : lang === 'it' ? 'Cassiera' : 'Caissière',     dept:'POS',   salaire:fmt(85000),  status:'Présent' },
-              { nom:'Omar Diop',     poste: lang === 'en' ? 'Warehouse' : lang === 'es' ? 'Almacenero' : lang === 'it' ? 'Magazziniere' : 'Magasinier',   dept: lang === 'en' ? 'Stock' : lang === 'es' ? 'Stock' : lang === 'it' ? 'Stock' : 'Stock',  salaire:fmt(80000),  status:'Présent' },
-              { nom:'Aïssatou Ba',   poste: lang === 'en' ? 'Accountant' : lang === 'es' ? 'Contable' : lang === 'it' ? 'Contabile' : 'Comptable',  dept: lang === 'en' ? 'Finance' : lang === 'es' ? 'Finanzas' : lang === 'it' ? 'Finanza' : 'Finance', salaire:fmt(120000), status: lang === 'en' ? 'Leave' : lang === 'es' ? 'Permiso' : lang === 'it' ? 'Permesso' : 'Congé'  },
-              { nom:'Ibrahima Fall', poste: lang === 'en' ? 'Delivery' : lang === 'es' ? 'Repartidor' : lang === 'it' ? 'Fattorino' : 'Livreur',    dept: lang === 'en' ? 'Logistics' : lang === 'es' ? 'Logística' : lang === 'it' ? 'Logistica' : 'Logistique', salaire:fmt(75000),  status:'Présent' },
-            ].map(emp => (
-              <div key={emp.nom} style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
-                <div style={{ width:36, height:36, borderRadius:10, background:'rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                  <span style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-bold)', color:'var(--p3)' }}>{emp.nom[0]}</span>
-                </div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{emp.nom}</div>
-                  <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{emp.poste} · {emp.dept}</div>
-                </div>
-                <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)', color:'var(--text2)' }}>{emp.salaire}</span>
-                <span style={{
-                  display:'inline-flex', alignItems:'center',
-                  padding:'3px 9px', borderRadius:'var(--r-full)', fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
-                  background: emp.status === 'Présent' || emp.status === 'Present' ? 'var(--c-green-bg)' : 'var(--c-orange-bg)',
-                  border:     emp.status === 'Présent' || emp.status === 'Present' ? '1px solid var(--c-green-border)' : '1px solid var(--c-orange-border)',
-                  color:       emp.status === 'Présent' || emp.status === 'Present' ? 'var(--acc2)' : 'var(--warn)',
-                }}>{emp.status}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <HrKpis fmt={fmt} i={i} />
       )}
     </>
   )
