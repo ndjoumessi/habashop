@@ -1,6 +1,6 @@
 import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuthStore, canAccess, getLandingForRole, landingFor } from '@/stores/authStore'
+import { useAuthStore, canAccess, getLandingForRole, landingFor, isKnownRole } from '@/stores/authStore'
 import { authApi, tenantApi } from '@/lib/api'
 import { useAppStore } from '@/stores/appStore'
 import AppLayout from '@/components/layout/AppLayout'
@@ -106,7 +106,13 @@ export default function App() {
   useEffect(() => {
     if (token) {
       authApi.me()
-        .then(user => updateUser(user))
+        // ⚠️ CHEMIN DE RAFRAÎCHISSEMENT (`.catch` → `logout()`) : une erreur ici DÉCONNECTE
+        // au rechargement, elle ne casse pas la compilation. `/api/auth/me` rend `role` en
+        // CHAÎNE LIBRE ; le store attend l'union `UserRole`. On ne coerce donc pas à
+        // l'aveugle : un rôle inconnu est OMIS, ce qui conserve celui déjà en session au
+        // lieu d'en inventer un — inventer un rôle sur le chemin de session, c'est décider
+        // de droits d'accès sur une valeur non vérifiée.
+        .then(me => updateUser(isKnownRole(me.role) ? { ...me, role: me.role } : { ...me, role: undefined }))
         .catch(() => logout())
       // Re-synchronise le tenant (non persisté) au rechargement → la devise
       // d'affichage suit la boutique (setTenant aligne currency sur tenant.currency).

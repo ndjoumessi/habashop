@@ -409,3 +409,79 @@ export type AdminCreateTenantWrite = {
   ownerEmail?: string
   ownerPassword?: string
 }
+
+/* ──────────────────────── Catalogue PUBLIC (non authentifié) ──────────────────────── */
+
+/**
+ * ⚠️ CONTRAT VISIBLE DE L'EXTÉRIEUR — `GET /api/public/catalog/:slug` n'exige aucun jeton.
+ * Sa forme n'est pas un détail interne : elle est servie à des navigateurs quelconques.
+ *
+ * ⚠️ `select` EXPLICITE des deux côtés. Le tenant expose 9 champs, le produit 11 — et
+ * SURTOUT : ni `buyPrice`, ni `wholesalePrice`, ni `semiWholesalePrice`, ni `sku`, ni
+ * `stockMin`, ni `priceTiers` ne sont sur le fil. Élargir ce type reviendrait à annoncer
+ * comme public ce que la route ne publie pas ; élargir le `select` publierait des PRIX
+ * D'ACHAT et des marges. Ne pas confondre `ApiPublicProduct` avec `ApiProduct`.
+ */
+export interface ApiPublicTenant {
+  id: string
+  name: string
+  description: string | null
+  logo: string | null
+  /** Replié serveur : `whatsappPhone || phone || null`. */
+  whatsappPhone: string | null
+  // ⚠️ PAS de `phone` : le handler fait explicitement `phone: undefined` — « on ne renvoie
+  // pas le phone interne séparément côté public ». Il EST dans le `select` mais retiré du
+  // retour, donc absent du JSON. Le déclarer ici contredisait une décision de
+  // CONFIDENTIALITÉ, et l'aurait fait lire comme disponible. Mesuré sur la vraie réponse.
+  currency: string
+  country: string | null
+  lang: string
+}
+
+export interface ApiPublicProduct {
+  id: string
+  name: string
+  description: string | null
+  sellPrice: number
+  promotionPrice: number | null
+  hasPromotion: boolean
+  promotionEnd: string | null
+  emoji: string
+  stockQty: number
+  unit: string
+  category: string
+}
+
+export type ApiPublicCatalog = { tenant: ApiPublicTenant; products: ApiPublicProduct[] }
+
+/* ──────────────────────── Session ──────────────────────── */
+
+/**
+ * ⚠️ `GET /api/auth/me` — chemin de RAFRAÎCHISSEMENT, pas de login. `App.tsx` l'appelle au
+ * montage et fait `.catch(() => logout())` : un type trop strict ici ne « casse » pas la
+ * compilation, il DÉCONNECTE l'utilisateur au rechargement. C'est le chemin qu'on n'exerce
+ * pas en regardant l'écran, et c'est pourquoi il est typé exactement.
+ *
+ * ⚠️ `shopName` et `currency` viennent de `tenant?.` : ils sont donc `undefined` quand aucune
+ * boutique n'est active (multi-boutiques avant sélection). Les déclarer `string` ferait
+ * promettre une valeur que la route ne rend pas.
+ */
+export interface ApiMe {
+  id: string
+  name: string
+  email: string
+  role: string
+  shopName?: string
+  currency?: string
+  isPlatformAdmin: boolean
+}
+
+/** L'utilisateur tel que renvoyé par le LOGIN (forme distincte de `ApiMe`). */
+export interface ApiSessionUser {
+  id: string
+  name: string
+  email: string
+  role: string
+  shopName: string
+  isPlatformAdmin: boolean
+}

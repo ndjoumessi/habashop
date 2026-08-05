@@ -3,7 +3,16 @@ import { persist } from 'zustand/middleware'
 import { authApi, type AccessibleTenant } from '@/lib/api'
 import { useAppStore } from '@/stores/appStore'
 
-export type UserRole = 'ADMIN' | 'MANAGER' | 'CASHIER' | 'ACCOUNTANT' | 'HR' | 'SUPER_ADMIN' | 'admin' | 'manager' | 'cashier' | 'accountant' | 'hr'
+export const USER_ROLES = ['ADMIN', 'MANAGER', 'CASHIER', 'ACCOUNTANT', 'HR', 'SUPER_ADMIN', 'admin', 'manager', 'cashier', 'accountant', 'hr'] as const
+export type UserRole = typeof USER_ROLES[number]
+
+/**
+ * Le serveur rend `role` en CHAÎNE LIBRE (`/api/auth/me`). Cette garde est le seul point où
+ * une chaîne devient un `UserRole` — ⚠️ dérivée de `USER_ROLES`, pas d'une liste recopiée :
+ * une valeur ajoutée à l'union est couverte sans rien à mettre à jour ici.
+ */
+export const isKnownRole = (v: unknown): v is UserRole =>
+  typeof v === 'string' && (USER_ROLES as readonly string[]).includes(v)
 
 // ─── RBAC ─────────────────────────────────────────────────────────────────────
 // Slug = last segment of `/app/<slug>`. '*' = full access (admins).
@@ -130,7 +139,12 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem('habashop_token', token)
           useAppStore.getState().setTenant(tenant ?? null)
           set({
-            user, token, isAuthenticated: true, isLoading: false,
+            // ⚠️ `role` arrive en CHAÎNE LIBRE du serveur — même garde que le chemin de
+            // rafraîchissement (`App.tsx`) : un rôle inconnu retombe sur le MOINS privilégié,
+            // jamais sur un rôle deviné. Décider de droits d'accès sur une valeur non
+            // vérifiée est le seul risque réel de ce typage.
+            user: { ...user, role: isKnownRole(user.role) ? user.role : 'CASHIER' },
+            token, isAuthenticated: true, isLoading: false,
             tenants: tenant ? [{ id: tenant.id, name: tenant.name, currency: tenant.currency, plan: tenant.plan, logo: tenant.logo ?? null, address: tenant.address ?? null, role: 'ADMIN' }] : [],
             activeTenantId: tenant?.id ?? null,
           })

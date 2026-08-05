@@ -8,6 +8,7 @@ import type {
   ApiSale, ApiSaleWithItems, ApiReportSales, SaleWrite, ApiExpense, ExpenseWrite, ApiGoal, GoalWrite,
   ApiSubscription, ApiSubscriptionWithItems, SubscriptionWrite, ApiAiAnalysis, ApiAiChat,
   ApiAdminTenant, ApiAdminStats, ApiPlanRequest, AdminCreateTenantWrite, ApiAdminSecurityEvent,
+  ApiPublicCatalog, ApiMe, ApiSessionUser,
 } from '@/lib/apiTypes'
 import type { ApiDashboardStats } from '@/components/dashboard/dashboardShared'
 import type {
@@ -155,8 +156,11 @@ export interface AccessibleTenant {
 export const authApi = {
   login: (email: string, password: string) =>
     api.post<{token:string; user:any; tenant?:any; tenants?: AccessibleTenant[]; activeTenantId?: string | null}>('/api/auth/login', { email, password }),
-  me: () => api.get<any>('/api/auth/me'),
-  register: (data: any) => api.post<{token:string; user:any; tenant?:any}>('/api/auth/register', data),
+  // ⚠️ Chemin de RAFRAÎCHISSEMENT : `App.tsx` l'appelle au montage et `.catch(() => logout())`.
+  // Un type inexact ici ne casse pas la compilation — il déconnecte au rechargement.
+  me: () => api.get<ApiMe>('/api/auth/me'),
+  register: (data: Record<string, unknown>) =>
+    api.post<{ token: string; user: ApiSessionUser; tenant?: any }>('/api/auth/register', data),
   changePassword: (currentPassword: string, newPassword: string) =>
     api.patch<{ success: boolean; message: string }>('/api/auth/password', { currentPassword, newPassword }),
   // Multi-boutiques
@@ -440,6 +444,11 @@ export interface AccountingReport {
 }
 
 export const tenantApi = {
+  // ⚠️ NON TYPÉ VOLONTAIREMENT (#185, lot 7). `GET /api/tenant` rend le modèle ENTIER
+  // (81 champs) et les Réglages en lisent ~20 que l'interface `Tenant` partagée ne déclare
+  // pas encore. Le typer aujourd'hui obligerait à compléter ce type au jugé, en fin de série,
+  // sur la structure la plus utilisée de l'app — exactement le geste qui m'a piégé trois fois.
+  // Passe dédiée, comme adminApi. Reste : ce domaine + `usersApi`.
   get:        () => api.get<any>('/api/tenant'),
   update:     (data: any) => api.patch<any>('/api/tenant', data),
   setSlug:    (slug: string) => api.patch<any>('/api/tenant/slug', { slug }),
@@ -449,7 +458,8 @@ export const tenantApi = {
 
 // Catalogue public — fetch direct sans JWT (n'utilise pas le wrapper api.ts qui ajoute le token).
 export const publicApi = {
-  catalog: async (slug: string): Promise<{ tenant: any; products: any[] } | null> => {
+  // ⚠️ Contrat PUBLIC (aucun jeton) — forme visible de l'extérieur, cf. `apiTypes`.
+  catalog: async (slug: string): Promise<ApiPublicCatalog | null> => {
     const res = await fetch(`${BASE_URL}/api/public/catalog/${encodeURIComponent(slug)}`)
     if (res.status === 404) return null
     if (!res.ok) throw new Error(`Erreur ${res.status}`)

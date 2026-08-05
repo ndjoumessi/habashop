@@ -13,7 +13,7 @@ type TenantPublic = {
   logo: string | null
   whatsappPhone: string | null
   currency: string
-  country: string
+  country: string | null
   lang: string
 }
 type CatalogProduct = {
