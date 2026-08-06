@@ -91,7 +91,11 @@ describe('① le vocabulaire dit ce qui est mesuré', () => {
 
   it('avant la réponse du serveur, RIEN n’est présenté comme configuré', async () => {
     // Une promesse qui ne se résout jamais : l'état « je ne sais pas ».
-    api.integrationStatusApi.get.mockReturnValue(new Promise(() => {}))
+    // ⚠️ L'exécuteur est VOLONTAIREMENT sans corps — n'appeler ni `resolve` ni `reject` est
+    // tout le sujet du test. Le typer `<never>` et nommer le vide évite l'avertissement
+    // `no-empty-function` : c'est cet oubli qui a fait franchir le cliquet lint et laissé
+    // `main` rouge 6 h le 2026-08-06 (cf. § CI, « un cliquet contraint la SOMME »).
+    api.integrationStatusApi.get.mockReturnValue(new Promise<never>(() => { /* jamais résolue */ }))
     const { container } = render(<Integrations />)
     await waitFor(() => expect(container.textContent).toMatch(/Vérification/))
     // ⚠️ Aucun « N/5 configurées » optimiste tant que le serveur n'a pas répondu.

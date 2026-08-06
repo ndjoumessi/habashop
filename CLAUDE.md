@@ -92,7 +92,36 @@ le changement — signal que la CI unitaire ne donne pas. Les supprimer coûtera
 
 ⚠️ **Et `$?` après un pipe n'est PAS celui de `tsc`.** `npx tsc --noEmit 2>&1 | tail -20` rend le statut de `tail`, donc **0** alors que tsc sort en 2 : mesuré le 2026-08-05, deux erreurs de type affichées sous un « exit=0 ». Annoncer « tsc 0 » depuis une commande pipée ne prouve rien — lancer sans pipe, ou lire `${PIPESTATUS[0]}`. ⚠️ Depuis la RACINE, `npx tsc --noEmit` ne vérifie **rien du tout** (aucun `tsconfig.json` racine) : il imprime son aide et sort en 1. Toujours depuis le workspace concerné.
 
-**CI** (`.github/workflows/ci.yml`, Node 22) : tsc + **lint** + tests unitaires sur les deux workspaces, build front avec **garde de taille de bundle < 100 Ko gz** (`index-*.js`), scan de secrets en dur ; sur `main` uniquement : tests d'intégration (lecture seule contre la PROD) et E2E Playwright. ⚠️ **Le lint backend est un CLIQUET** : `--max-warnings 323` = l'état actuel, donc tout NOUVEL avertissement casse la CI. Ne pas relever le plafond pour faire passer un commit — corriger, ou l'abaisser quand on nettoie (descendu de 333 → 327 au fil de l'item 10, puis → 325 en extrayant le handler d'erreur, → 323 en typant l'export CSV par Prisma ; chaque suppression d'`any` abaisse le plafond d'autant). (Il était à 200 pour 333 avertissements réels : la CI ne lançait pas le lint, l'échec passait inaperçu.) ⚠️ **Le front a AUSSI un cliquet, et il était FAUX D'UN CRAN** : `--max-warnings 209` pour **210** avertissements réels depuis `e076b7aa` — la CI de `main` échouait donc à l'étape « Lint » du job frontend, en continu et sans que personne le lise (constaté le 2026-08-06 sur le run 31123111872). Corrigé **par le bas**, jamais en relevant le plafond : deux imports morts (`CNSS_RATE`/`IR_RATE` dans `NewContractModal`) supprimés → **208 réels, cliquet à 208**. ⚠️ Un cliquet faux d'un cran est PIRE qu'un cliquet absent : il rend la CI rouge en permanence, donc illisible — et le prochain vrai échec se noie dedans. ✅ **`mobile/` est COUVERT** depuis #163 par un job dédié `unit-tests-mobile` (`tsc` + la suite jest) : `mobile/` ayant son propre lockfile, il fait son `npm ci` **dans** `mobile/` (`cache-dependency-path: mobile/package-lock.json`), il n'est PAS servi par le `npm ci` racine. ⚠️ **AUCUN filtre de chemin, délibérément** : restreindre à `mobile/**` rouvrirait le trou qu'on ferme — une fixture partagée vit dans `docs/`, pas dans `mobile/`, et ne déclencherait donc pas le job. MESURÉ : install à froid **28 s**, suite **5 s**.
+**CI** (`.github/workflows/ci.yml`, Node 22) : tsc + **lint** + tests unitaires sur les deux workspaces, build front avec **garde de taille de bundle < 100 Ko gz** (`index-*.js`), scan de secrets en dur ; sur `main` uniquement : tests d'intégration (lecture seule contre la PROD) et E2E Playwright. ⚠️ **Le lint backend est un CLIQUET** : `--max-warnings 323` = l'état actuel, donc tout NOUVEL avertissement casse la CI. Ne pas relever le plafond pour faire passer un commit — corriger, ou l'abaisser quand on nettoie (descendu de 333 → 327 au fil de l'item 10, puis → 325 en extrayant le handler d'erreur, → 323 en typant l'export CSV par Prisma ; chaque suppression d'`any` abaisse le plafond d'autant). (Il était à 200 pour 333 avertissements réels : la CI ne lançait pas le lint, l'échec passait inaperçu.) ⚠️ **Le front a AUSSI un cliquet** (`--max-warnings 208`), et il a été FRANCHI le 2026-08-06 : `da31e7a9` a fait passer le compte de 209 à **210**, par une `() => {}` vide dans un test qu'il ajoutait — la CI de `main` a échoué à l'étape « Lint » du job frontend pendant **6 h et 5 commits**. Corrigé **par le bas**, jamais en relevant le plafond.
+
+⚠️ **UN CLIQUET CONTRAINT LA SOMME, PAS L'INTRODUCTION** — et c'est la leçon la plus chère de cet épisode. « Lint au cliquet » ne prouve **PAS** qu'aucun avertissement n'a été ajouté : il prouve que le TOTAL n'a pas monté. Le premier correctif l'a soldé en supprimant deux imports morts (`CNSS_RATE`/`IR_RATE` dans `NewContractModal`) qui n'avaient rien à voir — le chiffre redevenait juste, **la fonction vide restait**, et deux nettoyages légitimes avaient été dépensés pour payer une dette qu'ils n'avaient pas creusée. Un cliquet soldé par une coupe ailleurs cesse de mesurer ce qu'il devait mesurer, et le budget de nettoyage part sans que rien ne soit nettoyé.
+
+**Règle : on retire l'avertissement QU'ON A INTRODUIT**, puis on abaisse le plafond de ce qu'on a nettoyé **par ailleurs** — jamais l'inverse, jamais en compensant. La comptabilité se tient en deux colonnes séparées, et elle s'écrit :
+
+| | Δ | Plafond |
+|---|---|---|
+| état avant `da31e7a9` | — | **209** |
+| régression introduite (`() => {}` vide, `integrationsRendered.test.tsx:94`) | +1 | 210 → **rouge** |
+| ↳ **remboursée** : `new Promise<never>(() => { /* jamais résolue */ })` | −1 | retour à 209 |
+| nettoyage **indépendant** : 2 imports morts de `NewContractModal` | −2 | **207** |
+
+Solde net identique à un « −1 » global, mais les deux mouvements ne disent pas la même chose : le premier répare, le second progresse. Confondus, on croit avoir nettoyé alors qu'on a seulement remboursé.
+
+### ⚠️ L'ALARME QUI NE PEUT PAS SONNER — et qui se déclare VERTE
+
+Ce n'est pas le cliquet franchi qui compte, c'est que l'échec soit **passé inaperçu 6 h et 5 commits**. Cause racine, mesurée le 2026-08-06 : le job `notify-failure` faisait
+
+```bash
+if [ -z "$DISCORD_WEBHOOK" ]; then echo "absent — skip"; exit 0; fi
+```
+
+et le dépôt n'a **AUCUN secret** (`gh api repos/…/actions/secrets` → `total_count: 0`). L'étape sortait donc en 0, et la page du run affichait une **coche VERTE** à côté de « Notify on failure » — sur un run rouge où personne n'avait été prévenu. Un fail-open **non tracé** rend l'absence de canal indistinguable d'une alerte envoyée : c'est le motif « une pastille qui ne peut pas rougir ne prouve rien » (§ Console Ops) appliqué à la CI elle-même.
+
+Corrigé : secret absent → `::error::` **+ `exit 1`**. ⚠️ Le job ne tourne que `if: failure()` — le faire échouer ne rend aucun run vert rouge ; il rend seulement lisible, sur un run déjà rouge, que l'alerte n'est pas partie. Ajouté au passage : `--fail-with-body` sur le `curl` (sans lui, un webhook **révoqué** sortait en 0 sur un 404 — aussi silencieux que le secret absent, pour la même raison), et les métadonnées passent par des variables `env:` + `jq` au lieu d'être interpolées dans le corps du `run:` (une branche portant un guillemet cassait le JSON, ou s'y injectait ; vérifié avec `main"; rm -rf /`, correctement échappé).
+
+⚠️ **Le motif ne se répète PAS ici — vérifié, pas supposé.** `DISCORD_WEBHOOK` est le **seul** `secrets.*` de `ci.yml` et `pages.yml`, et l'unique `exit 0` sur secret absent. Les deux `continue-on-error: true` (npm audit) sont d'une autre nature : **délibérés, nommés « non bloquant », et l'étape reste visiblement en échec**. Ne pas les « corriger » par analogie.
+
+**Règle générale : un garde qui ne peut pas échouer n'est pas un garde.** Tout `exit 0`, `|| true` ou `continue-on-error` sur l'ABSENCE d'une configuration doit soit échouer, soit émettre un `::error::`/`::warning::` — jamais réussir en silence. Et cela vaut d'abord pour les gardes qui surveillent les autres gardes : c'est là que le vert coûte le plus cher. ✅ **`mobile/` est COUVERT** depuis #163 par un job dédié `unit-tests-mobile` (`tsc` + la suite jest) : `mobile/` ayant son propre lockfile, il fait son `npm ci` **dans** `mobile/` (`cache-dependency-path: mobile/package-lock.json`), il n'est PAS servi par le `npm ci` racine. ⚠️ **AUCUN filtre de chemin, délibérément** : restreindre à `mobile/**` rouvrirait le trou qu'on ferme — une fixture partagée vit dans `docs/`, pas dans `mobile/`, et ne déclencherait donc pas le job. MESURÉ : install à froid **28 s**, suite **5 s**.
 
 ### ⚠️ Vérification en PROD — trois formes autorisées, pas une de plus
 
@@ -962,6 +991,23 @@ code.** MESURÉ le 2026-08-06, chaîne complète :
 (`CLAUDE.md:16`, `mobile/CLAUDE.md:58` et `:90` nomment désormais « le seul build store » et
 comptent les installations). Ne pas aller les chercher — elles n'y sont plus. Seul le message de
 commit reste tel quel, n'étant pas réécrivable.
+
+#### Traces NON RÉÉCRIVABLES — messages de commit portant une affirmation fausse
+
+Un message de commit ne se corrige pas. Il se **RECENSE**, sinon il redevient une source :
+c'est un texte daté, signé, que `git log` remonte en premier et qu'on relit sans le suspecter.
+
+| Commit | Ce qu'il affirme | Ce qui est mesuré |
+|---|---|---|
+| 2026-08-06 (parc mobile) | « le parc store est en runtime 1.2.0 » | **aucun parc** — 1 seul `PushToken`, sur l'appareil de test |
+| `01f37fe5` | « cliquet faux d'un cran **depuis `e076b7aa`**, CI rouge **en continu** » | `e076b7aa` a été poussé avec `0a07d5b5` : leur run est **VERT**, le cliquet à 209 était **JUSTE**. La CI est passée au rouge à `da31e7a9`, **le soir même** — **14 runs** depuis `e076b7aa`, **5 rouges**, fenêtre de **6 h**, **5 commits** poussés dessus. Cause : `da31e7a9`, c'est-à-dire **le même auteur, 3 h plus tôt** |
+
+⚠️ Le motif de `01f37fe5` n'est pas la synthèse qui compresse (ci-dessus) mais son symétrique :
+**attribuer à une dette HÉRITÉE ce qu'on vient soi-même d'introduire**. Il naît du même
+raccourci — un cliquet trouvé faux, un commit ancien qui l'a posé, et la conclusion tirée sans
+mesurer l'intervalle. La parade est identique et tient en une commande : `git log`/`gh run list`
+**datent** le basculement, ils ne le supposent pas. **Un « depuis <commit> » qu'on n'a pas daté
+run par run est une hypothèse, pas un fait** — et celle-ci s'est trompée de coupable.
 
 ⚠️ **Les deux affirmations en litige étaient FAUSSES toutes les deux**, et c'est le point qu'on
 retient mal : « aucun build production, jamais » l'était aussi — **deux AAB `FINISHED` existent**

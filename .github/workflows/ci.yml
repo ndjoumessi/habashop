@@ -257,16 +257,45 @@ jobs:
     needs: [unit-tests-backend, unit-tests-frontend, unit-tests-mobile]
     if: failure()
     steps:
+      # ⚠️ CE JOB EST L'ALARME. Il ne doit JAMAIS se déclarer vert sans avoir sonné.
+      #
+      # Il le faisait : `if [ -z "$DISCORD_WEBHOOK" ]; then echo "absent — skip"; exit 0; fi`.
+      # Le dépôt n'a AUCUN secret (`actions/secrets` → total_count 0), donc l'étape sortait en 0
+      # et la page du run affichait une COCHE VERTE à côté de « Notify on failure » — pendant que
+      # personne n'était prévenu. MESURÉ le 2026-08-06 : `main` est resté rouge 6 h et a reçu
+      # 5 commits sans que l'échec soit lu une seule fois.
+      #
+      # C'est le motif « une pastille qui ne peut pas rougir ne prouve rien » (§ Console Ops),
+      # appliqué à la CI elle-même : un fail-open NON TRACÉ rend l'absence de canal indistinguable
+      # d'une alerte envoyée. Un canal absent doit être VISIBLE, pas vert.
+      #
+      # ⚠️ Ce job ne tourne que `if: failure()` : le faire échouer ne rend AUCUN run vert rouge.
+      # Il rend seulement lisible, sur un run déjà rouge, le fait que l'alerte n'est pas partie.
       - name: Alerte Discord
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          # ⚠️ Interpolées en VARIABLES, jamais dans le corps du `run:` : une branche ou un nom
+          # d'auteur porteur d'un guillemet cassait le JSON, ou pire s'y injectait.
+          BRANCHE: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+          AUTEUR: ${{ github.actor }}
+          LIEN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          if [ -z "$DISCORD_WEBHOOK" ]; then echo "DISCORD_WEBHOOK absent — skip"; exit 0; fi
-          curl -X POST "$DISCORD_WEBHOOK" -H "Content-Type: application/json" -d '{
-            "embeds": [{
-              "title": "❌ HabaShop CI Failed",
-              "description": "Branch: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\nAuthor: ${{ github.actor }}",
-              "color": 16711680,
-              "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          set -euo pipefail
+          if [ -z "${DISCORD_WEBHOOK:-}" ]; then
+            echo "::error title=Alerte CI NON ENVOYÉE::Le secret DISCORD_WEBHOOK est absent : aucune notification d'échec ne part, et personne n'apprendra que main est rouge. Poser le secret (Settings → Secrets → Actions), ou retirer ce job — mais ne pas le laisser vert."
+            exit 1
+          fi
+          CORPS=$(jq -n --arg b "$BRANCHE" --arg c "$COMMIT" --arg a "$AUTEUR" --arg u "$LIEN" '{
+            embeds: [{
+              title: "❌ HabaShop CI Failed",
+              description: ("Branche : " + $b + "\nCommit : " + $c + "\nAuteur : " + $a),
+              color: 16711680,
+              url: $u
             }]
-          }'
+          }')
+          # ⚠️ `--fail-with-body` : sans lui, `curl` sort en 0 sur un 404/500 du webhook — un
+          # webhook révoqué serait aussi silencieux que le secret absent, pour la même raison.
+          curl --fail-with-body --silent --show-error --retry 3 --retry-delay 5 \
+            -X POST "$DISCORD_WEBHOOK" -H "Content-Type: application/json" -d "$CORPS"
+          echo "✅ Alerte Discord envoyée."

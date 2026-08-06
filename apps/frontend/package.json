@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build && node scripts/gen-seo.mjs",
     "preview": "vite preview",
-    "lint": "eslint src --ext .ts,.tsx --max-warnings 208",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 207",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
