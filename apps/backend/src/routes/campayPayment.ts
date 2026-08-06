@@ -5,32 +5,19 @@ import { authenticate } from '../middleware/authenticate'
 import { collect, getStatus, getPaymentLink } from '../services/campay'
 import { prisma } from '../db'
 import { isNotConfigured, notConfiguredBody } from '../lib/payments/providerConfig'
+import { normalizeMsisdn } from '../lib/msisdn'
 
 const IS_SANDBOX = (process.env.CAMPAY_ENVIRONMENT ?? 'demo') !== 'production'
 
-// ── Normalisation MSISDN Cameroun ────────────────────────────────────────────
-// Formats acceptés :
-//   - Déjà préfixé 237XXXXXXXXX (10 chiffres après 237) → retourné tel quel
-//   - +237XXXXXXXXX → retire le +
-//   - Tout numéro de 9 chiffres commençant par 6 → préfixe 237
-// Opérateurs :
-//   - Orange CM : 69XXXXXXX, 65[5-9]XXXXXXX
-//   - MTN CM    : 67XXXXXXX, 65[0-4]XXXXXXX
-// Retourne null si le numéro ne peut pas être normalisé.
-export function normalizeCameroonPhone(raw: string): string | null {
-  const stripped = raw.trim().replace(/[\s\-().]/g, '')
-
-  // Déjà en format international complet : 237 + 9 chiffres
-  if (/^237[0-9]{9}$/.test(stripped)) return stripped
-
-  // Avec le +
-  if (/^\+237[0-9]{9}$/.test(stripped)) return stripped.slice(1)
-
-  // 9 chiffres commençant par 6 (numéro local Cameroun)
-  if (/^6[0-9]{8}$/.test(stripped)) return `237${stripped}`
-
-  return null
-}
+/**
+ * ⚠️ L'IMPLÉMENTATION A ÉTÉ FUSIONNÉE dans `lib/msisdn.ts` (jumeau du frontend).
+ * Il en existait deux, homonymes, qui divergeaient sur 8 entrées de 20 : celle-ci
+ * retirait le point et refusait tout numéro non camerounais, celle de `POS.tsx` gardait
+ * le point et acceptait 8–15 chiffres de tout pays. Le périmètre restreint est VOULU ici —
+ * Campay ne dessert que le Cameroun — d'où la politique explicite au point d'appel.
+ */
+export const normalizeCameroonPhone = (raw: string): string | null =>
+  normalizeMsisdn(raw, 'cm-only')
 
 export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
   // ── Capture du corps BRUT (rawBody) pour la vérif de signature du webhook Campay. ──

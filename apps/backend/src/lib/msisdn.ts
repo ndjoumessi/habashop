@@ -1,7 +1,7 @@
 /**
- * NORMALISATION MSISDN — source unique, côté FRONTEND.
+ * NORMALISATION MSISDN — source unique, côté BACKEND.
  *
- * ⚠️ JUMEAU À L'IDENTIQUE de `apps/backend/src/lib/msisdn.ts`, exercé contre
+ * ⚠️ JUMEAU À L'IDENTIQUE de `apps/frontend/src/lib/msisdn.ts`, exercé contre
  * `docs/shared-fixtures/msisdn-cases.json` (lu à l'EXÉCUTION, jamais importé : le contexte
  * de build Docker du backend est `apps/backend` seul).
  *

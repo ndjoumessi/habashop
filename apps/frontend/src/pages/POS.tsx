@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useCashierIsOpen, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi, paydunyaApi } from '@/lib/api'
-import { normalizeCameroonPhone } from '@/lib/msisdn'
+import { normalizeMsisdn } from '@/lib/msisdn'
 import { resolveTierPrice, isPromotionActive } from '@/lib/pricing'
 import { barcodeMatches, matchesScannedCode } from '@/lib/barcode'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
@@ -575,7 +575,8 @@ export default function POS() {
 
   const startMtnPayment = async () => {
     setMtnError('')
-    const phone = normalizeCameroonPhone(mtnPhone)
+    // MTN : périmètre INTERNATIONAL — le bac à sable MTN utilise des numéros étrangers.
+    const phone = normalizeMsisdn(mtnPhone, 'international')
     if (!phone) {
       setMtnError(
         lang === 'en' ? 'Enter a valid number (8–15 digits, e.g. 677000000)' :

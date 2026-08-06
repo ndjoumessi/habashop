@@ -1,0 +1,55 @@
+{
+  "_comment": [
+    "NORMALISATION MSISDN — cas partagés, lus à l'EXÉCUTION par les tests jumeaux :",
+    "  apps/frontend/src/lib/msisdn.ts  ← src/tests/msisdnShared.test.ts",
+    "  apps/backend/src/lib/msisdn.ts   ← src/tests/msisdnShared.test.ts",
+    "Modifier la règle d'un seul côté fait rougir l'autre.",
+    "",
+    "⚠️ DEUX POLITIQUES, PAS DEUX FONCTIONS. Il existait deux implémentations homonymes",
+    "(`normalizeCameroonPhone`) : `POS.tsx` pour MTN, `routes/campayPayment.ts` pour Campay.",
+    "Mesuré le 2026-08-06 : 8 entrées sur 20 divergeaient, sur DEUX axes distincts —",
+    "",
+    "  1. PONCTUATION — accidentel. Le back retirait le POINT et appliquait `trim()`,",
+    "     le front non : « 699.000.001 » était accepté par l'un, refusé par l'autre.",
+    "     Aucune raison ; la fusion prend le sur-ensemble (on retire aussi le point).",
+    "",
+    "  2. PÉRIMÈTRE GÉOGRAPHIQUE — DÉLIBÉRÉ, à ne pas aplatir. Le front accepte tout",
+    "     numéro de 8 à 15 chiffres, parce que le bac à sable MTN utilise des numéros",
+    "     ÉTRANGERS (46733123453 = Suède) ; Campay ne sert que le Cameroun et doit",
+    "     refuser le reste. Fusionner en une seule règle aurait cassé un des deux :",
+    "     la version permissive aurait laissé Campay expédier un numéro français à une",
+    "     API qui ne sait pas le traiter ; la version stricte aurait tué le flux MTN.",
+    "",
+    "D'où `normalizeMsisdn(raw, policy)` : une règle de nettoyage, deux périmètres.",
+    "  'international' → POS.tsx (MTN)              · repli 8–15 chiffres",
+    "  'cm-only'       → campayPayment.ts (Campay)  · Cameroun uniquement"
+  ],
+
+  "_expectedNull": null,
+
+  "cases": [
+    { "in": "699000001",          "cmOnly": "237699000001",    "international": "237699000001", "why": "9 chiffres locaux → préfixe 237" },
+    { "in": "237699000001",       "cmOnly": "237699000001",    "international": "237699000001", "why": "déjà normalisé" },
+    { "in": "+237699000001",      "cmOnly": "237699000001",    "international": "237699000001", "why": "le + est retiré" },
+    { "in": "6 99 00 00 01",      "cmOnly": "237699000001",    "international": "237699000001", "why": "espaces" },
+    { "in": "+237 699 000 001",   "cmOnly": "237699000001",    "international": "237699000001", "why": "espaces + indicatif" },
+    { "in": "237-699-000-001",    "cmOnly": "237699000001",    "international": "237699000001", "why": "tirets" },
+    { "in": "  699000001  ",      "cmOnly": "237699000001",    "international": "237699000001", "why": "espaces de bord" },
+
+    { "in": "699.000.001",        "cmOnly": "237699000001",    "international": "237699000001", "why": "POINT — le front le refusait, divergence accidentelle corrigée" },
+    { "in": "237.699.000.001",    "cmOnly": "237699000001",    "international": "237699000001", "why": "POINT + indicatif, idem" },
+
+    { "in": "799000001",          "cmOnly": null,              "international": "799000001",    "why": "9 chiffres NON camerounais : hors périmètre Campay" },
+    { "in": "46733123453",        "cmOnly": null,              "international": "46733123453",  "why": "bac à sable MTN (Suède) — c'est CE cas qui justifie le repli" },
+    { "in": "0612345678",         "cmOnly": null,              "international": "0612345678",   "why": "France sans indicatif" },
+    { "in": "+33612345678",       "cmOnly": null,              "international": "33612345678",  "why": "France, + retiré" },
+    { "in": "12345678",           "cmOnly": null,              "international": "12345678",     "why": "borne basse : 8 chiffres" },
+    { "in": "123456789012345",    "cmOnly": null,              "international": "123456789012345", "why": "borne haute : 15 chiffres" },
+
+    { "in": "1234567",            "cmOnly": null,              "international": null,           "why": "7 chiffres, trop court" },
+    { "in": "1234567890123456",   "cmOnly": null,              "international": null,           "why": "16 chiffres, trop long" },
+    { "in": "",                   "cmOnly": null,              "international": null,           "why": "vide" },
+    { "in": "abcdefghi",          "cmOnly": null,              "international": null,           "why": "texte" },
+    { "in": "69900000a",          "cmOnly": null,              "international": null,           "why": "lettres mélangées" }
+  ]
+}
