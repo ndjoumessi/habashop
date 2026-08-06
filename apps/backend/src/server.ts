@@ -53,7 +53,7 @@ import { publicRoutes }       from './routes/public'
 import { sendWeeklyReport } from './services/email'
 import { runMonthlyPayrollReports } from './services/payrollReport'
 import { payrollRoutes } from './routes/payroll'
-import { runTrialReminders, runDailyStockAlerts } from './services/notificationCrons'
+import { runTrialReminders, runDailyStockAlerts, runDemoPiiSweep } from './services/notificationCrons'
 
 // ─── Validation des variables d'environnement obligatoires ───
 const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET']
@@ -293,6 +293,14 @@ async function start() {
     const now = new Date()
     if (now.getDay() !== 1 || now.getHours() !== 8 || now.getMinutes() > 5) return
     runWeeklyReports().catch(err => console.error('❌ Cron weekly reports:', err))
+  }, 60 * 60 * 1000)
+
+  // Balayage PII des démos — lundi 9h (vérifié chaque heure). Après le rapport hebdo, pour
+  // ne pas empiler deux tâches sur le même créneau.
+  setInterval(() => {
+    const now = new Date()
+    if (now.getDay() !== 1 || now.getHours() !== 9 || now.getMinutes() > 5) return
+    runDemoPiiSweep().catch(err => console.error('❌ Cron balayage PII démo:', err))
   }, 60 * 60 * 1000)
 
   // Alertes stock — quotidien 7h (vérifié chaque heure)

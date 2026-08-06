@@ -7,6 +7,7 @@ import {
 } from './email'
 import { sendTrialExpiring, sendStockAlertBatch } from './pushService'
 import { notifyStockAlertSms } from './sms'
+import * as Sentry from '@sentry/node'
 
 /**
  * CRONS DE NOTIFICATION — extraits de `server.ts` pour être TESTABLES.
@@ -19,6 +20,32 @@ import { notifyStockAlertSms } from './sms'
  * ⚠️ CHAQUE canal porte sa PROPRE garde. Ne jamais conditionner un canal à la garde d'un
  * autre — c'est exactement la faute que `stockAlertChannels.test.ts` verrouille.
  */
+
+/**
+ * BALAYAGE HEBDOMADAIRE — coordonnées réelles dans un tenant de DÉMONSTRATION.
+ *
+ * ⚠️ Il RAPPORTE, il n'empêche pas. Motif : `demo-tenant-001` a porté un nom réel, un mobile
+ * personnel, une adresse postale et un e-mail personnel pendant TROIS SEMAINES, dans un tenant
+ * dont le mot de passe est public. Empêcher supposerait de refuser des saisies dans une démo
+ * dont l'intérêt est qu'on puisse tout y faire ; regarder coûte moins et vaut mieux.
+ *
+ * ⚠️ La sortie ne reproduit AUCUNE valeur — identifiants et NOMS DE CHAMPS seulement (§ PII).
+ * Un rapport qui recopierait le numéro pour le signaler l'écrirait dans les logs Railway :
+ * il déplacerait la fuite au lieu de la fermer.
+ */
+export async function runDemoPiiSweep(): Promise<void> {
+  const { balayerDemos, rapporter } = await import('../lib/piiSweep')
+  const signalements = await balayerDemos(prisma as never)
+  const texte = rapporter(signalements)
+  if (signalements.length === 0) { console.log(texte); return }
+  console.warn(texte)
+  // Sentry : le seul canal qui atteint quelqu'un sans dépenser. Un `console.warn` seul
+  // serait un signal que personne ne reçoit — cf. § « L'ALARME QUI NE PEUT PAS SONNER ».
+  Sentry.captureMessage(`[pii-sweep] ${signalements.length} ligne(s) hors fixture en démo`, {
+    level: 'warning',
+    extra: { signalements },
+  })
+}
 
 export async function runTrialReminders(): Promise<void> {
   const now     = new Date()
