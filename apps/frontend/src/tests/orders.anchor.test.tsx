@@ -90,11 +90,14 @@ describe('Orders — NewOrderModal : flux de création (câblage props/état)', 
     return screen.findByRole('dialog')
   }
 
-  it('ouvre la modale, bouton créer désactivé tant que client + article manquent', async () => {
+  it('ouvre la modale, bouton créer ACTIF qui nomme client + article manquants', async () => {
     const dialog = await openModal()
     expect(within(dialog).getByText(/Commande client/)).toBeInTheDocument()
     const createBtn = within(dialog).getByRole('button', { name: /Créer la commande/ })
-    expect(createBtn).toBeDisabled()
+    // ⚠️ ACTIF : au clic à vide, la modale NOMME ce qui manque au lieu de refuser en silence.
+    expect(createBtn).toBeEnabled()
+    fireEvent.click(createBtn)
+    expect(within(dialog).getByText(/Il manque encore/)).toBeInTheDocument()
   })
 
   it('commande CLIENT : AUCUN appel serveur — locale et éphémère (décision produit)', async () => {

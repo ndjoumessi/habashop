@@ -7,13 +7,18 @@ const fmt = (n: number) => `${n} F`
 const SALE = { id: 'abcdef123456', total: 1000, paymentMode: 'cash', items: [{ qty: 1, unitPrice: 1000, total: 1000, product: { name: 'Riz' } }] }
 
 describe('RefundModal', () => {
-  it('confirmer désactivé tant que le motif est vide ; restock PRÉ-COCHÉ', () => {
+  it('confirmer ACTIF ; le motif manquant est nommé ; restock PRÉ-COCHÉ', () => {
     const onConfirm = vi.fn()
     render(<RefundModal sale={SALE} onClose={() => {}} onConfirm={onConfirm} saving={false} lang="fr" fmt={fmt} />)
     const confirm = screen.getByRole('button', { name: /Confirmer le remboursement/ })
-    expect(confirm).toBeDisabled()
+    // ⚠️ Le CTA n'est plus éteint par la validation : il NOMME le motif manquant au clic.
+    // Un bouton désactivé gronde avant l'erreur et n'explique rien au toucher.
+    expect(confirm).toBeEnabled()
+    fireEvent.click(confirm)
+    expect(screen.getByText(/Il manque encore/)).toBeInTheDocument()
+    expect(onConfirm).not.toHaveBeenCalled()
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Produit défectueux' } })
-    expect(confirm).not.toBeDisabled()
+    expect(confirm).toBeEnabled()
     fireEvent.click(confirm)
     // restock pré-coché → true par défaut
     expect(onConfirm).toHaveBeenCalledWith('Produit défectueux', true)

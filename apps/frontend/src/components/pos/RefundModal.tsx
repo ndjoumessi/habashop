@@ -26,6 +26,9 @@ export default function RefundModal({ sale, onClose, onConfirm, saving, lang, fm
   const [restock, setRestock] = useState(true) // pré-coché (ON par défaut)
   // Piège à focus (hook AVANT le return conditionnel — règle des hooks)
   const boxRef = useModalFocus<HTMLDivElement>(!!sale)
+  // ⚠️ AVANT le `return null` : un hook appelé conditionnellement casse l'ordre des hooks
+  // entre deux rendus. Placé plus bas, il passait tsc et rougissait au lint.
+  const [showMissing, setShowMissing] = useState(false)
   if (!sale) return null
 
   const i = (fr: string, en: string, es: string, it: string) =>
@@ -33,6 +36,22 @@ export default function RefundModal({ sale, onClose, onConfirm, saving, lang, fm
 
   const isTracking = TRACKING_MODES.includes(String(sale.paymentMode))
   const canConfirm = reason.trim().length > 0 && !saving
+
+  /**
+   * ⚠️ Le CTA n'est plus désactivé par la VALIDATION — seulement pendant l'envoi.
+   * Un bouton éteint gronde avant toute erreur, ne dit pas ce qui manque, et n'affiche
+   * aucune infobulle au toucher. Même correctif que /signup et /login : au clic, on NOMME
+   * ce qui manque et on donne le focus au champ. Le remboursement est une action
+   * destructrice, d'où le motif OBLIGATOIRE — mais l'exiger n'oblige pas à éteindre.
+   */
+  const handleConfirm = () => {
+    if (!canConfirm) {
+      if (!saving) { setShowMissing(true); document.getElementById('refund-reason')?.focus() }
+      return
+    }
+    setShowMissing(false)
+    onConfirm(reason.trim(), restock)
+  }
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true"
@@ -72,6 +91,7 @@ export default function RefundModal({ sale, onClose, onConfirm, saving, lang, fm
           {i('Motif', 'Reason', 'Motivo', 'Motivo')} *
         </label>
         <textarea
+          id="refund-reason"
           className="input"
           value={reason}
           onChange={e => setReason(e.target.value)}
@@ -112,13 +132,25 @@ export default function RefundModal({ sale, onClose, onConfirm, saving, lang, fm
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 8 }}>
+          {showMissing && !canConfirm && (
+            <div role="status" aria-live="polite" style={{
+              flexBasis: '100%', marginBottom: 8, padding: '9px 12px', borderRadius: 9,
+              background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)',
+              color: 'var(--text2)', fontSize: 'var(--fs-sm)',
+            }}>
+              {i('Il manque encore : le motif du remboursement',
+                 'Still missing: the refund reason',
+                 'Todavía falta: el motivo del reembolso',
+                 'Manca ancora: il motivo del rimborso')}
+            </div>
+          )}
           <button type="button" onClick={onClose} disabled={saving} className="btn-ghost"
             style={{ flex: 1, justifyContent: 'center', cursor: saving ? 'default' : 'pointer' }}>
             {i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}
           </button>
-          <button type="button" onClick={() => canConfirm && onConfirm(reason.trim(), restock)} disabled={!canConfirm}
+          <button type="button" onClick={handleConfirm} disabled={saving}
             className="btn-danger"
-            style={{ flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 6, opacity: canConfirm ? 1 : .55, cursor: canConfirm ? 'pointer' : 'not-allowed' }}>
+            style={{ flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 6, opacity: saving ? .55 : 1, cursor: saving ? 'wait' : 'pointer' }}>
             {saving
               ? <><AlertTriangle size={14} /> {i('Remboursement…', 'Refunding…', 'Reembolsando…', 'Rimborso…')}</>
               : <><RotateCcw size={14} /> {i('Confirmer le remboursement', 'Confirm refund', 'Confirmar reembolso', 'Conferma rimborso')}</>}

@@ -581,7 +581,7 @@ export default function Marketing() {
         {/* ── Send button ── */}
         <button
           onClick={handleSend}
-          disabled={sending || !selected.size || !message.trim()}
+          disabled={sending}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             width: '100%', padding: '13px',
@@ -682,7 +682,7 @@ export default function Marketing() {
             )}
 
             {/* Send */}
-            <button onClick={handleCampaign} disabled={campaignSending || !campaignMsg.trim()} style={{
+            <button onClick={handleCampaign} disabled={campaignSending} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               padding: '11px', borderRadius: 10, border: 'none', cursor: campaignSending || !campaignMsg.trim() ? 'not-allowed' : 'pointer',
               background: campaignSending || !campaignMsg.trim() ? 'var(--bg4)' : 'linear-gradient(135deg, var(--p), var(--p2))',

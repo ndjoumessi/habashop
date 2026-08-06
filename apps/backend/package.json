@@ -13,7 +13,7 @@
     "db:seed": "ts-node --transpile-only prisma/seed.ts",
     "seed:demo": "tsx prisma/seed-demo.ts",
     "db:studio": "prisma studio",
-    "lint": "eslint src --ext .ts --max-warnings 323",
+    "lint": "eslint src --ext .ts --max-warnings 321",
     "lint:fix": "eslint src --ext .ts --fix",
     "test": "vitest run",
     "test:unit": "vitest run",

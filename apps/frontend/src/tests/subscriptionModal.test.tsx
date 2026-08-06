@@ -6,7 +6,8 @@ import { render, screen } from '@testing-library/react'
  *
  * Fige le résultat de la refonte : le panier est le seul bloc en relief, le total vit
  * dans le pied épinglé (et vaut « — », jamais « 0 F », tant qu'il est vide), aucun jour
- * n'est présélectionné, et « Enregistrer » reste éteint en NOMMANT ce qui manque.
+ * n'est présélectionné, et « Enregistrer » reste ACTIF en NOMMANT ce qui manque
+ * (il ne s'éteint que pendant l'envoi — cf. la méta-règle « aucun CTA désactivé »).
  *
  * Le contraste du montant est MESURÉ ici, pas supposé : c'est cette mesure qui justifie
  * la bascule sur `--text` en thème clair.
@@ -201,10 +202,13 @@ describe('ancrage — modale à l\'ouverture', () => {
     expect(screen.getByText('Aucun jour choisi — sélectionnez-en un.')).toBeTruthy()
   })
 
-  it('« Enregistrer » est désactivé ET dit ce qui manque', () => {
+  it('« Enregistrer » est ACTIF ET dit ce qui manque', () => {
     open()
     const save = screen.getByRole('button', { name: /Enregistrer/ }) as HTMLButtonElement
-    expect(save.disabled).toBe(true)
+    // ⚠️ Ce test exigeait `save.disabled === true`. La liste des manques était DÉJÀ
+    // affichée juste au-dessus du bouton : l'éteindre n'ajoutait qu'un refus muet.
+    // Il ne se désactive plus que pendant l'envoi.
+    expect(save.disabled).toBe(false)
     expect(screen.getByText('Il manque : le client, le nom du panier, au moins un produit, le jour de livraison.')).toBeTruthy()
   })
 

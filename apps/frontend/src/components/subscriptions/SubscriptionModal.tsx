@@ -625,7 +625,10 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
               <button
                 className="btn-primary"
                 onClick={() => save()}
-                disabled={!canSave}
+                // ⚠️ Éteint pendant l'ENVOI seulement. Il l'était aussi tant que des champs
+                // manquaient — alors que la liste des manques est déjà affichée juste
+                // au-dessus (l. 610) : le bouton n'ajoutait qu'un refus muet.
+                disabled={saving}
                 // Pas d'`opacity` inline : `.btn-primary:disabled` (opacity .4 + not-allowed)
                 // est déjà la règle maison — une valeur en ligne la surchargerait et rendrait
                 // le bouton éteint PLUS vif que partout ailleurs.

@@ -416,12 +416,29 @@ describe('contre-preuve : les règles détectent bien ce qu’elles prétendent'
  * Ne pas supprimer l'un en croyant que l'autre couvre : le méta-test ne clique sur rien,
  * l'ancre ne voit qu'une page.
  */
-describe('aucun CTA de soumission désactivé sur une surface publique', () => {
-  /** Fichiers du corpus qui contiennent un bouton (les seuls à examiner). */
-  const withButtons = CORPUS.filter(c => /<button/i.test(c.copy))
+describe('aucun CTA de soumission désactivé — surfaces publiques ET authentifiées', () => {
+  /**
+   * ⚠️ PÉRIMÈTRE ÉTENDU (2026-08-06) : la règle ne visait que les routes publiques, et
+   * l'inventaire a montré le même défaut sur trois écrans AUTHENTIFIÉS — remboursement,
+   * nouvelle commande, nouveau fournisseur. Un bouton éteint n'explique pas davantage à
+   * un commerçant connecté qu'à un prospect. On balaie donc TOUT `src/`, en gardant le
+   * graphe de routes pour l'autre règle (les affirmations, qui restent publiques).
+   */
+  const walkAll = (dir: string): string[] => {
+    const out: string[] = []
+    for (const e of readdirSync(dir)) {
+      const full = join(dir, e)
+      if (statSync(full).isDirectory()) { if (e !== 'tests') out.push(...walkAll(full)) }
+      else if (/\.tsx?$/.test(e)) out.push(full)
+    }
+    return out
+  }
+  const ALL = walkAll(SRC).map(f => ({ file: f, copy: stripNonCopy(readFileSync(f, 'utf8')) }))
+  const withButtons = ALL.filter(c => /<button/i.test(c.copy))
 
   it('des boutons existent dans le corpus (sinon la règle ne garde rien)', () => {
-    expect(withButtons.length, 'aucun <button> trouvé : le corpus ou le filtre est cassé').toBeGreaterThanOrEqual(5)
+    // Le balayage couvre tout `src/` : bien plus que les 5 des seules pages publiques.
+    expect(withButtons.length, 'aucun <button> trouvé : le corpus ou le filtre est cassé').toBeGreaterThanOrEqual(40)
   })
 
   /**
@@ -432,7 +449,17 @@ describe('aucun CTA de soumission désactivé sur une surface publique', () => {
    * Sont donc ignorés : les drapeaux de requête en vol, les sélecteurs CSS `:disabled`,
    * et les déclarations de type (`disabled: boolean`).
    */
-  const IN_FLIGHT = /^!?\s*(loading|busy|saving|submitting|pending|isSaving|isLoading)\b/
+  const IN_FLIGHT = /^!?\s*(loading|busy|saving|submitting|pending|isSaving|isLoading|scanning|resolving)\b/
+  /**
+   * ⚠️ LA RÈGLE VISE LA VALIDATION D'UN FORMULAIRE, pas toute désactivation.
+   * Étendre à tout `src/` a d'abord produit une liste où le défaut se noyait : un « + »
+   * éteint au stock maximum, un « Encaisser » éteint sur panier vide, un mode de paiement
+   * éteint hors-ligne — ce sont des CAPACITÉS indisponibles, et il n'y a rien à nommer
+   * qui « manque ». Le défaut, lui, a une forme reconnaissable : le bouton est éteint
+   * parce qu'un CHAMP n'est pas rempli. On vise cette forme ; élargir davantage aurait
+   * demandé une liste d'exemptions si longue qu'elle aurait vidé la règle.
+   */
+  const FORM_VALIDITY = /^!\s*(can[A-Z]\w*|\w*[Vv]alid\w*|form\.|step\d|\w+\.trim\(\))/
   function offendingDisabled(line: string): boolean {
     if (!/\bdisabled\b/.test(line)) return false
     if (/:disabled|:not\(:disabled\)/.test(line)) return false          // CSS
@@ -448,10 +475,11 @@ describe('aucun CTA de soumission désactivé sur une surface publique', () => {
     // et l'appelant est lui-même dans le corpus, donc lui-même scanné. Exempter ici ne
     // crée pas de trou — le déplacer, oui, et c'est ce que la règle vérifie chez lui.
     if (expr === 'disabled') return false
-    return true
+    // Ne mord QUE sur la forme « éteint parce qu'un champ n'est pas rempli ».
+    return expr.split('||').some(part => FORM_VALIDITY.test(part.trim()))
   }
 
-  it('aucun CTA désactivé par la VALIDATION sur une route publique', () => {
+  it('aucun CTA désactivé par la VALIDATION, nulle part dans src/', () => {
     const hits: string[] = []
     for (const { file, copy } of withButtons) {
       copy.split('\n').forEach((line, idx) => {
@@ -473,6 +501,15 @@ describe('aucun CTA de soumission désactivé sur une surface publique', () => {
     expect(offendingDisabled('  <button type="button" onClick={handleNext}>')).toBe(false)
     expect(offendingDisabled('  <button disabled={disabled}>')).toBe(false)      // relais
     expect(offendingDisabled('  <input disabled={!editable} />')).toBe(false)    // champ
+    // Autorisé : CAPACITÉ indisponible — rien à « nommer » qui manque.
+    expect(offendingDisabled('  <button disabled={atMax}>')).toBe(false)
+    expect(offendingDisabled('  <button disabled={cart.length === 0}>')).toBe(false)
+    expect(offendingDisabled('  <button disabled={offline}>')).toBe(false)
+    expect(offendingDisabled('  <button disabled={blocked}>')).toBe(false)
+    // Interdit : éteint parce qu'un CHAMP n'est pas rempli.
+    expect(offendingDisabled('  <button disabled={!form.name.trim()}>')).toBe(true)
+    expect(offendingDisabled('  <button disabled={!canCreate}>')).toBe(true)
+    expect(offendingDisabled('  <button disabled={!mtnPhone.trim() || busy}>')).toBe(true)
   })
 })
 

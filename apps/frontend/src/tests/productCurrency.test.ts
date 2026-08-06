@@ -1,9 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { hydratePricesFromApi, dehydratePricesForApi } from '@/lib/productCurrency'
+import { XOF_PER_EUR } from '@/lib/plans'
 
-// Le taux XOF→EUR utilisé dans appStore est ~655.957 (taux fixe historique).
-// Pour les tests on garde une tolérance epsilon de 1 (arrondi).
-const EUR_RATE = 655.957 // approx
+/**
+ * ⚠️ La parité était RECOPIÉE ici (`const EUR_RATE = 655.957 // approx`) et le commentaire
+ * était faux : le franc CFA est arrimé à l'euro à taux FIXE, il n'y a rien d'approximatif.
+ * Elle est désormais LUE depuis la source unique. La tolérance epsilon de 1 reste, elle :
+ * elle absorbe l'arrondi entier, pas une incertitude de change.
+ */
+const EUR_RATE = XOF_PER_EUR
 
 describe('hydratePricesFromApi', () => {
   it('XOF → EUR convertit tous les champs prix', () => {

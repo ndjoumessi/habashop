@@ -16,7 +16,8 @@ describe('fmtMoney', () => {
     // U+202F (fine insécable fr-FR) n'a pas de glyphe en Helvetica/WinAnsi → pdfkit
     // rendait « 5 /900 ». fmtMoney doit sortir une espace simple U+0020.
     expect(fmtMoney(5900, 'XOF')).toBe('5 900 FCFA')
-    expect(fmtMoney(655.957, 'EUR')).toBe('1,00 €')
+    // Parité LUE, pas recopiée : 1 € vaut exactement XOF_PER_EUR francs CFA.
+    expect(fmtMoney(XOF_PER_EUR, 'EUR')).toBe('1,00 €')
   })
 
   it("aucune espace insécable (U+202F / U+00A0) dans la sortie — c'est CE chemin que les 352 tests front ne couvraient pas", () => {
@@ -46,6 +47,7 @@ vi.mock('./notifications', () => ({ notifyTenant: vi.fn() }))
 vi.mock('../lib/cache', () => ({ invalidateTenantCache: vi.fn().mockResolvedValue(undefined) }))
 
 import { saleRoutes } from '../routes/sales'
+import { XOF_PER_EUR } from '../lib/plans'
 
 async function buildApp() { const app = Fastify(); app.setValidatorCompiler(validatorCompiler); await app.register(saleRoutes); await app.ready(); return app }
 const SALE = {

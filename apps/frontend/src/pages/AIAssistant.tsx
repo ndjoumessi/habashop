@@ -500,7 +500,7 @@ export default function AIAssistant() {
 
           <button
             onClick={() => sendMessage()}
-            disabled={!input.trim() || analyzing}
+            disabled={analyzing}
             style={{
               width:50, height:50, borderRadius:14, flexShrink:0,
               background: input.trim() && !analyzing ? 'var(--grad-p)' : 'var(--bg4)',

@@ -88,17 +88,21 @@ describe('Suppliers — test d’ancrage (comportement à figer avant/après dé
 })
 
 describe('Suppliers — modale création (câblage props/état)', () => {
-  it('ouvre la modale, bouton créer désactivé sans nom, puis crée via suppliersApi.create', async () => {
+  it('ouvre la modale, bouton créer ACTIF qui nomme le champ manquant, puis crée', async () => {
     const { suppliersApi } = await import('@/lib/api') as any
     render(<Suppliers />)
     await waitFor(() => expect(screen.getByText('Sococim')).toBeInTheDocument())
     fireEvent.click(screen.getByText(/Nouveau fournisseur/i))
     const dialog = await screen.findByRole('dialog')
     const createBtn = within(dialog).getByRole('button', { name: /Créer le fournisseur/i })
-    expect(createBtn).toBeDisabled()
+    // ⚠️ ACTIF : le clic à vide nomme le champ manquant, il ne refuse pas en silence.
+    expect(createBtn).toBeEnabled()
+    fireEvent.click(createBtn)
+    expect(within(dialog).getByText(/Il manque encore/)).toBeInTheDocument()
+    expect(suppliersApi.create).not.toHaveBeenCalled()
     // 1er champ texte = Nom / Raison sociale (label non associé → on cible par position)
     fireEvent.change(within(dialog).getAllByRole('textbox')[0], { target: { value: 'Nouveau' } })
-    expect(createBtn).not.toBeDisabled()
+    expect(createBtn).toBeEnabled()
     fireEvent.click(createBtn)
     await waitFor(() => expect(suppliersApi.create).toHaveBeenCalled())
   })

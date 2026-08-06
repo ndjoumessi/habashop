@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { resolveMonth, computeReport, buildAccountingReport } from '../routes/reports'
+import { XOF_PER_EUR } from '../lib/plans'
 
 describe('resolveMonth', () => {
   const now = new Date(2026, 4, 30) // 30 mai 2026 (mois 0-based = 4)
@@ -116,9 +117,12 @@ describe('computeReport', () => {
 describe('computeReport — conversion EUR/USD : arrondis & cas limites', () => {
   const base = { monthStr: '2026-05', generatedAt: '2026-05-30T00:00:00.000Z', payrollTotal: 0, revenueCount: 0, expenses: [] as { category: string; amountTTC: number | null }[] }
 
-  it('arrondit XOF→EUR sur un montant NON rond : round(xof / 655.957)', () => {
+  it('arrondit XOF→EUR sur un montant NON rond : round(xof / parité fixe)', () => {
     const r = computeReport({ ...base, currency: 'EUR', revenueTotal: 100_000, revenueCount: 3 })
-    expect(r.revenue.total).toBe(152) // 100 000 / 655.957 = 152.449 → 152
+    // Attendu CALCULÉ depuis la source unique, plus un 152 en dur avec le calcul en
+    // commentaire : si la parité changeait, le commentaire mentirait avant le test.
+    expect(r.revenue.total).toBe(Math.round(100_000 / XOF_PER_EUR))
+    expect(r.revenue.total).toBe(152)   // valeur du jour, gardée comme cas doré
   })
 
   it('total dépenses = somme des catégories CONVERTIES (parts cohérentes ≠ conv(somme))', () => {

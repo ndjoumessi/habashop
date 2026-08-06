@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useCashierIsOpen, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi, paydunyaApi } from '@/lib/api'
+import { normalizeCameroonPhone } from '@/lib/msisdn'
 import { resolveTierPrice, isPromotionActive } from '@/lib/pricing'
 import { barcodeMatches, matchesScannedCode } from '@/lib/barcode'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
@@ -512,15 +513,6 @@ export default function POS() {
   // ── MTN MoMo — normalisation MSISDN ──────────────────────────────────────
   // Cameroun : 6XXXXXXXX → 237XXXXXXXXX, +237/237 → normalisés.
   // Tout autre pays : 8–15 chiffres acceptés tels quels (l'API MTN valide côté serveur).
-  const normalizeCameroonPhone = (raw: string): string | null => {
-    const s = raw.replace(/[\s\-\(\)]/g, '')          // garde + pour détecter +237
-    if (/^\+237[0-9]{9}$/.test(s)) return s.slice(1) // +237XXXXXXXXX → 237XXXXXXXXX
-    if (/^237[0-9]{9}$/.test(s))   return s           // déjà normalisé 12 chiffres
-    if (/^6[0-9]{8}$/.test(s))     return `237${s}`  // 9 chiffres locaux → préfixer 237
-    const d = s.replace(/^\+/, '')                    // retire + éventuel
-    if (/^[0-9]{8,15}$/.test(d))   return d           // tout pays : 8–15 chiffres
-    return null
-  }
 
   const handleMtnPhone = (v: string) => { setMtnPhone(v); if (mtnError) setMtnError('') }
 

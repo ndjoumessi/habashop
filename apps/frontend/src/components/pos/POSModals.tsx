@@ -832,7 +832,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       />
                       <button
                         type="button"
-                        disabled={!mtnPhone.trim() || mtnStatus === 'requesting'}
+                        disabled={mtnStatus === 'requesting'}
                         onClick={startMtnPayment}
                         style={{
                           minHeight:44, padding:'0 14px', borderRadius:10, border:'none',
@@ -931,7 +931,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       />
                       <button
                         type="button"
-                        disabled={!orangePhone.trim() || orangeStatus === 'requesting'}
+                        disabled={orangeStatus === 'requesting'}
                         onClick={startOrangePayment}
                         style={{
                           minHeight:44, padding:'0 14px', borderRadius:10, border:'none',

@@ -1,16 +1,13 @@
 import { describe, it, expect } from 'vitest'
+import { normalizeCameroonPhone } from '@/lib/msisdn'
 
-// Copie de normalizeCameroonPhone (pure function, indépendante du composant React).
-// Mettre à jour ici si la fonction dans POS.tsx change.
-function normalizeCameroonPhone(raw: string): string | null {
-  const s = raw.replace(/[\s\-\(\)]/g, '')          // garde + pour détecter +237
-  if (/^\+237[0-9]{9}$/.test(s)) return s.slice(1) // +237XXXXXXXXX → 237XXXXXXXXX
-  if (/^237[0-9]{9}$/.test(s))   return s           // déjà normalisé 12 chiffres
-  if (/^6[0-9]{8}$/.test(s))     return `237${s}`  // 9 chiffres locaux → préfixer 237
-  const d = s.replace(/^\+/, '')                    // retire + éventuel
-  if (/^[0-9]{8,15}$/.test(d))   return d           // tout pays : 8–15 chiffres
-  return null
-}
+/**
+ * ⚠️ Ce fichier contenait une COPIE MANUELLE de `normalizeCameroonPhone`, avec le
+ * commentaire « Mettre à jour ici si la fonction dans POS.tsx change ». Les 19 cas
+ * validaient donc la copie, jamais le code exécuté à la caisse — sur le numéro qui
+ * REÇOIT le paiement MTN. La fonction a été extraite dans `lib/msisdn.ts` et est
+ * désormais IMPORTÉE : la copie ne peut plus dériver puisqu'elle n'existe plus.
+ */
 
 describe('normalizeCameroonPhone', () => {
   // ── Numéros Cameroun — normalisation ────────────────────────────────────────

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { usePagination } from '../hooks/usePagination'
 import { useI18n } from '../hooks/useI18n'
-import { formatInCurrency, convertFromXOF, convertToXOF } from '../stores/appStore'
+import { formatInCurrency, convertFromXOF, convertToXOF, VALID_THEMES } from '../stores/appStore'
 
 // Mock appStore pour useI18n (on garde les vraies fonctions de conversion)
 vi.mock('../stores/appStore', async (importOriginal) => {
@@ -105,39 +105,23 @@ describe('usePagination — edge cases', () => {
   })
 })
 
-describe('BillingBanner — logique', () => {
-  it('Affiche si ≤7 jours restants', () => {
-    expect(5 <= 7).toBe(true)
-  })
-  it('Cache si >7 jours restants', () => {
-    expect(10 <= 7).toBe(false)
-  })
-  it('Urgent si ≤3 jours', () => {
-    expect(3 <= 3).toBe(true)
-    expect(4 <= 3).toBe(false)
-  })
-  it('Expiré si trialDaysLeft = 0', () => {
-    expect((0 === 0)).toBe(true)
-  })
-})
 
 describe('Thèmes', () => {
-  it('3 thèmes disponibles (Sombre / Clair / Système)', () => {
-    const themes = ['dark', 'light', 'system']
-    expect(themes.length).toBe(3)
-    expect(themes.includes('dark')).toBe(true)
-    expect(themes.includes('gold')).toBe(false)
+  /**
+   * ⚠️ Ce cas déclarait `['dark','light','system']` puis vérifiait sa propre liste : si
+   * un thème obsolète revenait dans `appStore`, il restait vert. Il LIT désormais
+   * `VALID_THEMES`, seul endroit qui décide. C'est le seul des 7 cas autonomes de ce
+   * fichier qui pouvait être rebranché sur la production ; les 6 autres sont supprimés.
+   */
+  it('3 thèmes valides, lus depuis appStore (Sombre / Clair / Système)', () => {
+    expect(VALID_THEMES.size).toBe(3)
+    expect(VALID_THEMES.has('dark')).toBe(true)
+    expect(VALID_THEMES.has('light')).toBe(true)
+    expect(VALID_THEMES.has('system')).toBe(true)
+    // Les anciens thèmes ne doivent pas revenir (fallback gracieux du `merge`).
+    for (const mort of ['gold', 'soleil', 'midnight', 'forest', 'ocean', 'sunset', 'darker']) {
+      expect(VALID_THEMES.has(mort as never), `thème obsolète réintroduit : ${mort}`).toBe(false)
+    }
   })
 })
 
-describe('Onboarding', () => {
-  it('5 étapes définies', () => {
-    const STEPS = ['welcome', 'location', 'config', 'product', 'ready']
-    expect(STEPS.length).toBe(5)
-  })
-  it('Types de commerce valides', () => {
-    const types = ['retail', 'wholesale', 'restaurant', 'service']
-    expect(types.includes('retail')).toBe(true)
-    expect(types.includes('boutique')).toBe(false)
-  })
-})

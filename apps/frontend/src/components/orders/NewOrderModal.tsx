@@ -47,6 +47,8 @@ export default function NewOrderModal({
   const fmt = useFormatAmount()
   const boxRef = useModalFocus<HTMLDivElement>()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // ⚠️ Le CTA « Créer » n'est plus éteint par la validation : il nomme ce qui manque.
+  const [showMissing, setShowMissing] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -558,18 +560,33 @@ export default function NewOrderModal({
           padding: '14px 24px', borderTop: '1px solid var(--border)',
           flexShrink: 0, display: 'flex', gap: 8, background: 'var(--bg2)',
         }}>
+          {showMissing && (
+            <div role="status" aria-live="polite" style={{
+              flexBasis: '100%', marginBottom: 8, padding: '9px 12px', borderRadius: 9,
+              background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)',
+              color: 'var(--text2)', fontSize: 'var(--fs-sm)',
+            }}>
+              {orderType === 'client'
+                ? i('Il manque encore : le nom du client et au moins un article', 'Still missing: the customer name and at least one item', 'Todavía falta: el nombre del cliente y al menos un artículo', 'Manca ancora: il nome del cliente e almeno un articolo')
+                : i('Il manque encore : le fournisseur et au moins un article', 'Still missing: the supplier and at least one item', 'Todavía falta: el proveedor y al menos un artículo', 'Manca ancora: il fornitore e almeno un articolo')}
+            </div>
+          )}
           {(() => {
             const canCreate = orderType === 'client'
               ? newOrderForm.clientName.trim() !== '' && newOrderForm.items.length > 0
               : selectedSupplierId !== '' && newOrderForm.items.length > 0
             return (
-              <button disabled={!canCreate} onClick={handleCreateOrder}
+              // ⚠️ ACTIF : le bouton nomme ce qui manque au lieu de s'éteindre.
+              <button onClick={() => {
+                  if (!canCreate) { setShowMissing(true); return }
+                  setShowMissing(false); handleCreateOrder()
+                }}
                 style={{
                   flex: 1, padding: '12px', border: 'none', borderRadius: 12,
-                  background: canCreate ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'var(--bg4)',
-                  color: canCreate ? '#fff' : 'var(--text3)',
+                  background: 'linear-gradient(135deg,var(--p),var(--p2))',
+                  color: '#fff',
                   fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-bold)', fontFamily: 'var(--font)',
-                  cursor: canCreate ? 'pointer' : 'not-allowed',
+                  cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   transition: 'all .15s',
                 }}>

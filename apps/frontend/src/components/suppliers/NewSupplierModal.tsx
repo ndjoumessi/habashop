@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useConfig, t } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { useModalFocus } from '@/hooks/useModalFocus'
@@ -21,6 +22,8 @@ interface Props {
 }
 
 export default function NewSupplierModal({ form, setForm, onClose, onCreate }: Props) {
+  // ⚠️ Le CTA « Créer » n'est plus éteint par la validation : il nomme ce qui manque.
+  const [showMissing, setShowMissing] = useState(false)
   const { lang } = useConfig()
   const { i } = useI18n()
   const boxRef = useModalFocus<HTMLDivElement>()
@@ -98,8 +101,17 @@ export default function NewSupplierModal({ form, setForm, onClose, onCreate }: P
               onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
           </div>
         </div>
+        {showMissing && (
+          <div role="status" aria-live="polite" className="mt-4" style={{
+            padding: '9px 12px', borderRadius: 9,
+            background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)',
+            color: 'var(--text2)', fontSize: 'var(--fs-sm)',
+          }}>
+            {i('Il manque encore : le nom / la raison sociale', 'Still missing: the name / company name', 'Todavía falta: el nombre / razón social', 'Manca ancora: il nome / ragione sociale')}
+          </div>
+        )}
         <div className="flex gap-2 mt-5">
-          <button className="btn btn-primary flex-1 justify-center" style={{ display:'flex', alignItems:'center', gap:6 }} disabled={!form.name.trim()} onClick={onCreate}><CheckCircle size={13}/> {i('Créer le fournisseur', 'Create supplier', 'Crear proveedor', 'Crea fornitore')}</button>
+          <button className="btn btn-primary flex-1 justify-center" style={{ display:'flex', alignItems:'center', gap:6 }} onClick={() => { if (!form.name.trim()) { setShowMissing(true); return } setShowMissing(false); onCreate() }}><CheckCircle size={13}/> {i('Créer le fournisseur', 'Create supplier', 'Crear proveedor', 'Crea fornitore')}</button>
           <button className="btn btn-ghost" onClick={onClose}>{t('btn_cancel')}</button>
         </div>
       </div>
