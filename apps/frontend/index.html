@@ -11,14 +11,18 @@
        il vivait dans la meta description, donc dans le résultat de recherche lui-même. -->
   <meta name="description"
     content="HabaShop est un logiciel SaaS de gestion commerciale pour les boutiques et superettes d'Afrique. Caisse (POS), stock, clients, fournisseurs, RH et rapports. Essai gratuit 14 jours, sans carte bancaire."/>
+  <!-- ⚠️ CIBLAGE CAMEROUN — décision du 2026-08-06. Le SEO est le SEUL élément de la
+       vitrine qui ATTIRE du trafic : viser un pays où aucun prestataire n'encaisse fait
+       venir des gens qui ne pourront pas payer. Campay (cm-only) et MTN MoMo sont les
+       seuls chemins de paiement câblés, tous deux camerounais.
+       Les mots-clés précédents visaient le Sénégal, la Côte d'Ivoire, le Mali et Dakar.
+       ⚠️ C'est l'EXCEPTION : partout ailleurs les exemples ne nomment aucun pays
+       (cf. l'en-tête de `landingShared.ts`). Le SEO est ciblé par nature, la copie non.
+       ⚠️ CE COMMENTAIRE EST AU-DESSUS DE LA BALISE, PAS DEDANS. Placé entre `name` et
+       `content`, il devenait une SUITE D'ATTRIBUTS BIDON et `content` valait `null` dans
+       le DOM — mesuré en production le 2026-08-06, le mot-clé était perdu. Même faute que
+       dans le bloc `application/ld+json`, deux fois le même jour. -->
   <meta name="keywords"
-    <!-- ⚠️ CIBLAGE CAMEROUN — décision du 2026-08-06. Le SEO est le SEUL élément de la
-         vitrine qui ATTIRE du trafic : viser un pays où aucun prestataire n'encaisse fait
-         venir des gens qui ne pourront pas payer. Campay (cm-only) et MTN MoMo sont les
-         seuls chemins de paiement câblés, tous deux camerounais.
-         Les mots-clés précédents visaient le Sénégal, la Côte d'Ivoire, le Mali et Dakar.
-         ⚠️ C'est l'EXCEPTION : partout ailleurs les exemples ne nomment aucun pays
-         (cf. l'en-tête de `landingShared.ts`). Le SEO est ciblé par nature, la copie non. -->
     content="logiciel gestion commerciale Cameroun, caisse enregistreuse Douala, POS Yaoundé, gestion stock Cameroun, ERP Afrique francophone, logiciel boutique Cameroun, gestion superette, facturation Afrique, HabaShop"/>
   <meta name="robots" content="index, follow"/>
   <meta name="author" content="HabaShop"/>
