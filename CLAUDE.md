@@ -506,6 +506,14 @@ décrite, ce que le ternaire ne peut pas faire (son `else` avale silencieusement
   mesuré : `posStore.PaymentMode` du mobile ne contient pas `mtn`, le défaut semblait donc
   inatteignable — il ne l'est pas, `app/(app)/sales/index.tsx` réimprime depuis
   `sale.paymentMode`, une vente RELUE DU SERVEUR (encaissée sur le web).
+- **`Sale.paymentMode` WEB** — `apps/frontend/src/lib/salePaymentModes.ts`, jumeau de
+  `mobile/src/lib/paymentLabel.ts`, fixture `docs/shared-fixtures/sale-payment-modes.json`.
+  **CINQUIÈME et SIXIÈME instances du même domaine, dans le même fichier**, deux jours après
+  la correction mobile ci-dessus — la preuve que corriger un jumeau ne ferme rien tant que la
+  SOURCE n'existe pas. Les deux erreurs étaient **symétriques**, et c'est ce qui les rendait
+  invisibles à la relecture : `mobile` était RENDU alors que le serveur ne l'écrit **jamais**
+  (0 sur 1 908 ventes), pendant que `mtn` et `mixed` étaient écrits et **absents du
+  graphique**. Cf. § Répartition paiements.
 - **`Tenant.status`** — `mobile/src/lib/tenantStatus.ts`. `pending_payment` et `cancelled`
   tombaient dans le VERT « actif », libellés par le champ brut de la base. Or
   `pending_payment` est l'état de **tout futur client payant** (la voie d'abonnement est
@@ -984,6 +992,77 @@ toutes les cellules mesurent deux lignes sans qu'aucune ne se soit enroulée. Le
 mesure le **TEXTE** : `Range.getClientRects()` rend un rectangle **par ligne rendue**.
 2 sabotages vérifiés (`nowrap` retiré d'une cellule monétaire → 1 rouge · `overflow-x` retiré
 du conteneur → 3 rouges).
+
+### RÉPARTITION PAIEMENTS ⚠️ — QUATRE dénominateurs sur un seul camembert
+
+**MESURÉ le 2026-08-07.** L'écran Rapports → Ventes portait, pour le même dessin et les
+mêmes ventes, quatre populations différentes. Aucune n'était visible à la relecture : chacune
+était correcte *localement*.
+
+| Surface | Dénominateur | Sur `demo-tenant-001` |
+|---|---|---|
+| légende / infobulle | toutes les ventes chargées | Σ = **96 %** |
+| donut (`percent` de recharts) | Σ des parts **rendues** | Σ = **101 %**, `cash` à 38 % vs 36 % |
+| PDF imprimé, pied de tableau | **littéral `'100 %'`** | et un total en argent **court de 11 535 XOF** |
+| KPI « Transactions » (juste au-dessus) | ventes de la **période** | **8** — contre « 50 transactions » sous le camembert |
+
+⚠️ **La quatrième est la pire, et elle n'était pas dans la commande** : le sélecteur de
+période n'agissait pas sur ce panneau. Sur `demo-tenant-002`, la carte annonçait **0
+transaction** pendant que le camembert en répartissait **50** avec assurance.
+
+**Cause unique : une liste de modes RÉÉNUMÉRÉE en dur** (`cash · mobile · wave · orange ·
+card`), fausse dans les deux sens — `mobile` rendu alors que le serveur ne l'écrit **jamais**
+(0 sur 1 908 ventes), `mtn` et `mixed` écrits et **avalés**. Les 2 ventes avalées sur 50 sont
+tout l'écart 96/101 : tant que rien ne manque, les deux dénominateurs coïncident, et le
+défaut dort.
+
+**Ce qui est en place** — `components/reports/paymentBreakdown.ts` :
+- **UNE série d'entiers**, et c'est elle que recharts reçoit en `dataKey`. L'angle vaut alors
+  `pct/100` : géométrie et libellé sont le même nombre **par construction**, pas par chance.
+  ⚠️ Ne PAS revenir à un compte brut en `dataKey` — cela recrée le second dénominateur.
+- **Arrondi DISTRIBUÉ** (plus forts restes) : Σ == 100 exactement, aucune part à plus d'un
+  point de sa valeur exacte. Un camembert dont les parts ne somment pas n'a pas besoin d'être
+  faux pour paraître faux.
+- **Catégories DÉRIVÉES des données** : un mode inconnu apparaît **seul**, sous son nom
+  (`Paypal`), jamais fondu. Le filtre porte sur le **COMPTE**, jamais sur le pourcentage —
+  `filter(value > 0)` ré-avalait une part réelle mais minuscule (1/500 → 0 %), soit le même
+  défaut sous une autre forme. Une part sous 0,5 % est annoncée **« < 1 % »**.
+- ⚠️ **`?? 'cash'` SUPPRIMÉ.** Un mode absent est sa propre catégorie (« Non renseigné »).
+  C'est la famille `rating ?? 0`, sur de l'argent. **Honnêteté : la colonne est
+  `String @default("cash")` NOT NULL et la production porte ZÉRO ligne sans mode** — on
+  retire un piège, on ne colmate pas une fuite qui aurait coulé.
+- **Le repli fabriqué `62/22/16/8/5` (Σ = 113 %) était MORT** — `Reports.tsx` rendait déjà un
+  état vide 140 lignes plus haut. Justesse **empruntée** : il aurait resurgi au premier
+  déplacement de la garde. Le sous-titre « Données de démonstration » était le second vestige
+  de la même croyance. Le cas vide est désormais **atteignable** (période sans vente) et il
+  se **DIT** — pas d'anneau à zéro part, qui se lit comme un graphique cassé.
+
+**Verrou** : `paymentBreakdown.test.tsx` (18) — cas déclencheur rejoué depuis
+`fixtures/reports-paymentData.avant.txt` (extrait par `git show`), **DOM rendu** dans les
+trois cas, périmètre DÉRIVÉ de l'arborescence + assertion de couverture (> 150 fichiers).
+Jumeau mobile : `salePaymentModesShared.test.ts` (4). **5 sabotages vérifiés.**
+
+⚠️ **Le sabotage S4 est passé VERT au premier tir, et la leçon est neuve.** La règle « aucune
+ligne de TOTAL n'affirme son propre pourcentage » scrutait **la ligne**. Or ma propre
+correction venait d'éclater la ligne du total sur six lignes : la règle était devenue aveugle
+à la forme **que le code venait de prendre**. *Un verrou qui ne détecte pas son défaut dans la
+forme ACTUELLE du code ne garde rien* — c'est distinct de l'angle « forme » (chercher ce qui
+ne peut pas exister) : ici la forme cherchée existait hier et plus aujourd'hui. Réécrit par
+**appariement de crochets**, jamais par regex sur la structure.
+
+⚠️ **CALIBRAGE de cette même règle — deux formulations rejetées avant la bonne.**
+`/['"]100\s*%['"]/` rendait **87 fichiers** (tout `width: '100%'`). `/['"]\d+ %['"]/` rendait
+5 sites dont **4 légitimes** : les colonnes « taux » d'un bulletin de paie (`'100 %'` pour le
+salaire de base, `'25 %'` pour les heures sup) sont des constantes de **barème**, pas des
+totaux. Retenu : pourcentage en dur **dans la même ligne de tableau** qu'un marqueur de total
+— 1 avant, 0 après, et les 4 colonnes de paie ne sont pas touchées.
+
+⚠️ `expect` de **jest ne prend PAS de message** (c'est un vitest-isme) : passé quand même, il
+lève « Expect takes at most one argument ». Le contexte d'un échec mobile passe par la forme
+comparée, pas par un second argument.
+
+⚠️ Un commentaire JSX `{/* … */}` **ne peut pas vivre dans une liste d'attributs** (TS1005,
+commis deux fois dans ce chantier) : l'ancrer au-dessus de l'élément.
 
 ### La MOYENNE SANS SON DÉNOMINATEUR ⚠️ — `perf` / `rating`
 

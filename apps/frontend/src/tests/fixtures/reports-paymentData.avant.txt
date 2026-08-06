@@ -1,0 +1,27 @@
+  const paymentData = useMemo(() => {
+    const counts: Record<string, number> = {}
+    const totals: Record<string, number> = {}
+    salesData.forEach((sale: any) => {
+      const mode = sale.paymentMode ?? 'cash'
+      counts[mode] = (counts[mode] ?? 0) + 1
+      totals[mode] = (totals[mode] ?? 0) + (sale.total ?? 0)
+    })
+    const total = Object.values(counts).reduce((s, v) => s + v, 0)
+    if (total === 0) return [
+      { name: lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces', value: 62, amount: 0, color: '#00D084' },
+      { name: 'Mobile',                             value: 22, amount: 0, color: '#8B6FFF' },
+      { name: 'Wave',                               value: 16, amount: 0, color: '#00B8FF' },
+      { name: 'Orange Money',                       value:  8, amount: 0, color: '#FF3B5C' },
+      { name: lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte',    value:  5, amount: 0, color: '#FF9500' },
+    ]
+    return [
+      { name: lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces', value: Math.round(((counts.cash   ?? 0) / total) * 100), amount: totals.cash   ?? 0, color: '#00D084' },
+      { name: 'Mobile',                            value: Math.round(((counts.mobile ?? 0) / total) * 100), amount: totals.mobile ?? 0, color: '#8B6FFF' },
+      { name: 'Wave',                              value: Math.round(((counts.wave   ?? 0) / total) * 100), amount: totals.wave   ?? 0, color: '#00B8FF' },
+      { name: 'Orange Money',                      value: Math.round(((counts.orange ?? 0) / total) * 100), amount: totals.orange ?? 0, color: '#FF3B5C' },
+      { name: lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte',   value: Math.round(((counts.card   ?? 0) / total) * 100), amount: totals.card   ?? 0, color: '#FF9500' },
+    ].filter(d => d.value > 0)
+  }, [salesData, lang])
+  const paymentModes = paymentData.map(p => ({ label: p.name, pct: p.value, color: p.color, amount: p.amount }))
+                      paymentModes.map(m => [m.label, '—', fmt(m.amount), m.pct + ' %']),
+                      [`<strong>${t('common_total')}</strong>`, '—', `<strong>${fmt(paymentModes.reduce((s,m) => s + m.amount, 0))}</strong>`, '100 %']

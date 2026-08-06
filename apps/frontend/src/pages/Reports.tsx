@@ -14,6 +14,7 @@ import { salesApi, expensesApi, productsApi, employeesApi } from '@/lib/api'
 // ReportsTabs porte les graphes recharts (chunk `charts`) → lazy pour alléger le shell Reports
 const ReportsTabs = lazy(() => import('@/components/reports/ReportsTabs'))
 import { type Period, Trend } from '@/components/reports/reportsShared'
+import { buildPaymentBreakdown, pctLabel } from '@/components/reports/paymentBreakdown'
 
 const WEEK_ABBR: Record<string, string[]> = {
   fr: ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],
@@ -39,31 +40,6 @@ export default function Reports() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
-
-  const paymentData = useMemo(() => {
-    const counts: Record<string, number> = {}
-    const totals: Record<string, number> = {}
-    salesData.forEach((sale: any) => {
-      const mode = sale.paymentMode ?? 'cash'
-      counts[mode] = (counts[mode] ?? 0) + 1
-      totals[mode] = (totals[mode] ?? 0) + (sale.total ?? 0)
-    })
-    const total = Object.values(counts).reduce((s, v) => s + v, 0)
-    if (total === 0) return [
-      { name: lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces', value: 62, amount: 0, color: '#00D084' },
-      { name: 'Mobile',                             value: 22, amount: 0, color: '#8B6FFF' },
-      { name: 'Wave',                               value: 16, amount: 0, color: '#00B8FF' },
-      { name: 'Orange Money',                       value:  8, amount: 0, color: '#FF3B5C' },
-      { name: lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte',    value:  5, amount: 0, color: '#FF9500' },
-    ]
-    return [
-      { name: lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces', value: Math.round(((counts.cash   ?? 0) / total) * 100), amount: totals.cash   ?? 0, color: '#00D084' },
-      { name: 'Mobile',                            value: Math.round(((counts.mobile ?? 0) / total) * 100), amount: totals.mobile ?? 0, color: '#8B6FFF' },
-      { name: 'Wave',                              value: Math.round(((counts.wave   ?? 0) / total) * 100), amount: totals.wave   ?? 0, color: '#00B8FF' },
-      { name: 'Orange Money',                      value: Math.round(((counts.orange ?? 0) / total) * 100), amount: totals.orange ?? 0, color: '#FF3B5C' },
-      { name: lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte',   value: Math.round(((counts.card   ?? 0) / total) * 100), amount: totals.card   ?? 0, color: '#FF9500' },
-    ].filter(d => d.value > 0)
-  }, [salesData, lang])
 
   const [period,     setPeriod]     = useState<Period>('30days')
   const [reportTab,  setReportTab]  = useState<'ventes' | 'stock' | 'clients' | 'finance' | 'rh'>('ventes')
@@ -146,11 +122,36 @@ export default function Reports() {
 
   // KPIs + graphique 7j + top produits calculés depuis les vraies ventes
   // (les items incluent product.buyPrice → vraie marge brute = CA − coût d'achat).
+  /**
+   * Ventes de la PÉRIODE ACTIVE — la population de référence de tout l'onglet.
+   *
+   * ⚠️ QUATRIÈME dénominateur, mesuré le 2026-08-07 et plus grave que les trois autres :
+   * le panneau de paiement lisait `salesData` (les 50 ventes chargées, toutes dates
+   * confondues) alors que les KPI juste au-dessus lisent la période. Sur `demo-tenant-001`
+   * la carte « Transactions » affichait **8** pendant que le camembert annonçait
+   * « 50 transactions » ; sur `demo-tenant-002`, **0** contre 50 — une carte à zéro à côté
+   * d'un camembert qui répartit cinquante ventes avec assurance. Le sélecteur de période
+   * du haut de page n'agissait tout simplement pas sur ce panneau.
+   *
+   * Le dénominateur retenu est donc **les ventes de la période sélectionnée**, partout :
+   * c'est celui que le commerçant a choisi, et le seul qu'il puisse recouper d'une carte
+   * à l'autre.
+   */
+  const ventesPeriode = useMemo(() => {
+    const ts = (s: any) => new Date(s.createdAt).getTime()
+    return salesData.filter(s => ts(s) >= range.from && ts(s) <= range.to)
+  }, [salesData, range])
+
+  // Répartition des paiements — UNE seule série d'entiers sommant à 100, exhaustive.
+  // Le pourquoi (deux dénominateurs, modes avalés, repli fabriqué) vit dans
+  // `components/reports/paymentBreakdown.ts` : c'est là que la règle est écrite et testée.
+  const paymentData = useMemo(() => buildPaymentBreakdown(ventesPeriode, lang), [ventesPeriode, lang])
+
   const { data, chartData, topProducts } = useMemo(() => {
     const now = Date.now(); const DAY = 86400000
     const ts = (s: any) => new Date(s.createdAt).getTime()
     const winLen = range.to - range.from
-    const cur  = salesData.filter(s => ts(s) >= range.from && ts(s) <= range.to)
+    const cur  = ventesPeriode
     const prev = salesData.filter(s => ts(s) >= range.from - winLen && ts(s) < range.from)
     const agg = (arr: any[]) => {
       const ca = arr.reduce((s, x) => s + (x.total ?? 0), 0)
@@ -183,9 +184,15 @@ export default function Reports() {
       chartData: chart,
       topProducts: top,
     }
-  }, [salesData, range, lang, filterCat])
+  }, [salesData, ventesPeriode, range, lang, filterCat])
 
-  const paymentModes = paymentData.map(p => ({ label: p.name, pct: p.value, color: p.color, amount: p.amount }))
+  // Tableau « Répartition paiements » du PDF imprimé. ⚠️ Il lit la MÊME série que l'écran :
+  // c'était la TROISIÈME surface à porter son propre calcul, et la seule qui imprimait un
+  // total. Son pied disait « 100 % » en littéral pendant que ses lignes sommaient à 96 %,
+  // et son total en argent excluait les modes avalés — 11 535 XOF de ventes réelles
+  // absentes du total d'un document imprimé (mesuré sur demo-tenant-001 le 2026-08-07).
+  // La colonne « transactions » affichait « — » alors que le compte est connu.
+  const paymentModes = paymentData
 
   if (loading) return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
@@ -297,8 +304,15 @@ export default function Reports() {
                     <h2>${t('report_pdf_payment')}</h2>
                     ${htmlTable(
                       [t('expenses_mode'), t('reports_transactions'), t('col_amount'), '%'],
-                      paymentModes.map(m => [m.label, '—', fmt(m.amount), m.pct + ' %']),
-                      [`<strong>${t('common_total')}</strong>`, '—', `<strong>${fmt(paymentModes.reduce((s,m) => s + m.amount, 0))}</strong>`, '100 %']
+                      paymentModes.map(m => [m.name, String(m.count), fmt(m.amount), pctLabel(m)]),
+                      [
+                        `<strong>${t('common_total')}</strong>`,
+                        `<strong>${paymentModes.reduce((s, m) => s + m.count, 0)}</strong>`,
+                        `<strong>${fmt(paymentModes.reduce((s, m) => s + m.amount, 0))}</strong>`,
+                        // Le total se CONSTATE. Les parts étant exhaustives, il vaut 100 —
+                        // mais c'est la somme qui le dit, pas un littéral qui l'affirme.
+                        `<strong>${paymentModes.reduce((s, m) => s + m.pct, 0)} %</strong>`,
+                      ]
                     )}
                     <h2>${t('report_pdf_top')}</h2>
                     ${htmlTable(
@@ -363,6 +377,11 @@ export default function Reports() {
       />
 
       {/* Onglets détaillés */}
+      {/* ⚠️ `salesData={ventesPeriode}`, PAS `salesData` : le sous-titre du camembert porte
+          le dénominateur (« N transactions ») et « Ventes récentes » liste des ventes. Les
+          alimenter avec les 50 ventes chargées, toutes dates confondues, remettait la
+          contradiction mesurée — KPI « 0 transactions » à côté d'un camembert répartissant
+          50 ventes. Le voisin immédiat, « Top produits », était déjà sur la période. */}
       <Suspense fallback={<div style={{ minHeight: 200 }} />}>
         <ReportsTabs
           reportTab={reportTab}
@@ -370,7 +389,7 @@ export default function Reports() {
           chartData={chartData}
           paymentData={paymentData}
           activePayIndex={activePayIndex} setActivePayIndex={setActivePayIndex}
-          salesData={salesData}
+          salesData={ventesPeriode}
           data={data}
           topProducts={topProducts}
         />

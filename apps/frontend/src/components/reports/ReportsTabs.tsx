@@ -5,6 +5,8 @@ import { useThemeColor } from '@/hooks/useThemeColor'
 import { RADIAN } from '@/components/reports/reportsShared'
 import InventoryInsights from '@/components/reports/InventoryInsights'
 import { StockKpis, HrKpis, ClientSegments } from '@/components/reports/ReportsLiveKpis'
+import { type PaymentSlice, pctLabel } from '@/components/reports/paymentBreakdown'
+import { salePaymentLabel } from '@/lib/salePaymentModes'
 
 interface ReportsTabsProps {
   reportTab: 'ventes' | 'stock' | 'clients' | 'finance' | 'rh'
@@ -12,7 +14,7 @@ interface ReportsTabsProps {
   abbr: (n: number) => string
   lang: string
   chartData: any[]
-  paymentData: { name: string; value: number; amount: number; color: string }[]
+  paymentData: PaymentSlice[]
   activePayIndex: number | null
   setActivePayIndex: (i: number | null) => void
   salesData: any[]
@@ -20,10 +22,12 @@ interface ReportsTabsProps {
   topProducts: { rank: number; name: string; qty: number; ca: number }[]
 }
 
-const PAY_LABEL = (mode: string, lang: string) =>
-  mode === 'cash' ? (lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces') :
-  mode === 'mobile' ? 'Mobile' : mode === 'wave' ? 'Wave' : mode === 'orange' ? 'Orange' :
-  mode === 'card' ? (lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte') : mode
+// ⚠️ `PAY_LABEL` vivait ici : SIXIÈME réénumération du même domaine, dans le même fichier
+// que la cinquième. Elle connaissait `mobile` (que le serveur n'écrit jamais) et ignorait
+// `mtn` et `mixed` — d'où les « mixed » et « mtn » bruts, en minuscules, qu'on voyait dans
+// « Ventes récentes » : son dernier `: mode` rendait la clé telle quelle. C'est ce résidu
+// visible qui a permis de repérer le défaut du camembert, où les mêmes ventes, elles,
+// disparaissaient sans laisser de trace.
 
 export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, paymentData, activePayIndex, setActivePayIndex, salesData, data, topProducts }: ReportsTabsProps) {
   // Helper i18n local — dérivé de la prop `lang` (et non du store) pour rester cohérent
@@ -38,11 +42,20 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
     date: s.createdAt,
     client: s.customerId ? (lang === 'en' ? 'Customer' : lang === 'es' ? 'Cliente' : lang === 'it' ? 'Cliente' : 'Client') : (lang === 'en' ? 'Walk-in' : lang === 'es' ? 'Cliente directo' : lang === 'it' ? 'Cliente diretto' : 'Client direct'),
     total: s.total ?? 0,
-    mode: PAY_LABEL(s.paymentMode ?? 'cash', lang),
+    // ⚠️ Plus de `?? 'cash'` : un mode absent ne devient pas une vente en espèces sur une
+    // ligne d'historique. `salePaymentLabel` rend « — » plutôt qu'un mode qu'on invente.
+    mode: salePaymentLabel(s.paymentMode ?? '', lang),
     items: (s.items ?? []).length,
   }))
+  /**
+   * ⚠️ NE LIT PLUS le `percent` de recharts. C'était le SECOND dénominateur : recharts le
+   * calcule en `value / Σ(values rendues)`, donc il ne connaît que les parts dessinées —
+   * il renormalisait sur un sous-ensemble et affichait 38 % là où la légende disait 36 %.
+   * Le pourcentage vient désormais du `payload`, c'est-à-dire de la MÊME série que la
+   * légende, l'infobulle et le PDF. Un dessin, un nombre.
+   */
   const renderActiveShape = (props: any) => {
-    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload } = props
     return (
       <g>
         <g style={{ filter: `drop-shadow(0 0 12px ${fill}80)` }}>
@@ -51,7 +64,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
         </g>
         <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle"
           style={{ fontSize: 28, fontWeight: 'var(--fw-semibold)', fill, fontFamily: 'JetBrains Mono, monospace' }}>
-          {(percent * 100).toFixed(0)}%
+          {pctLabel(payload)}
         </text>
         <text x={cx} y={cy + 14} textAnchor="middle" dominantBaseline="middle"
           style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', fill: 'var(--text2)', fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '.5px' }}>
@@ -81,7 +94,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{d.name}</span>
         </div>
         <div style={{ fontSize: 'var(--fs-display)', fontWeight: 'var(--fw-semibold)', color: d.color, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-1px', marginBottom: d.amount > 0 ? 4 : 0 }}>
-          {d.value}%
+          {pctLabel(d)}
         </div>
         {d.amount > 0 && (
           <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace' }}>{fmt(d.amount)}</div>
@@ -90,15 +103,18 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
     )
   }
 
-  const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-    if (percent < 0.08) return null
+  // Étiquette DANS la part. Le seuil porte sur notre `pct` (entier, même série que tout le
+  // reste) et non sur le `percent` de recharts : une part trop étroite pour porter du texte
+  // reste muette ICI, mais elle est toujours dans la légende — masquer n'est pas supprimer.
+  const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, payload }: any) => {
+    if ((payload?.pct ?? 0) < 8) return null
     const r = innerRadius + (outerRadius - innerRadius) * 0.5
     const x = cx + r * Math.cos(-midAngle * RADIAN)
     const y = cy + r * Math.sin(-midAngle * RADIAN)
     return (
       <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
         style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', fill: '#fff', fontFamily: 'JetBrains Mono, monospace' }}>
-        {(percent * 100).toFixed(0)}%
+        {payload.pct} %
       </text>
     )
   }
@@ -155,16 +171,36 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
               }}><CreditCard size={18} style={{ color:'var(--p3)' }}/></div>
               <div>
                 <div className="panel-title">{lang === 'en' ? 'Payment breakdown' : lang === 'es' ? 'Desglose de pagos' : lang === 'it' ? 'Ripartizione pagamenti' : 'Répartition paiements'}</div>
+                {/* ⚠️ Le repli « Données de démonstration » a sauté avec le camembert
+                    inventé qu'il annonçait. Il était MORT depuis longtemps : `Reports.tsx`
+                    rend un état vide dès `salesData.length === 0`, 140 lignes plus haut,
+                    donc ce composant n'est jamais monté sans ventes. Deux vestiges d'une
+                    même croyance, dont l'un aurait resurgi au premier déplacement de la
+                    garde — c'est la « justesse empruntée » du § spendGuard.
+                    Ce sous-titre porte le DÉNOMINATEUR : il dit sur quoi portent les %. */}
                 <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>
-                  {salesData.length > 0
-                    ? `${salesData.length} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`
-                    : lang === 'en' ? 'Demo data' : lang === 'es' ? 'Datos de demostración' : lang === 'it' ? 'Dati dimostrativi' : 'Données de démonstration'}
+                  {`${salesData.length} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`}
                 </div>
               </div>
             </div>
           </div>
+          {/* ⚠️ TROIS états, jamais deux (§ La vérité vacante). Une période sans vente ne
+              dessine pas un camembert vide : elle DIT qu'il n'y a rien à répartir. Un
+              anneau à zéro part se lit comme un graphique cassé, pas comme une absence. */}
+          {paymentData.length === 0 ? (
+            <div style={{ padding: '28px 4px', color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>
+              {i('Aucune vente sur la période — rien à répartir.',
+                 'No sales in this period — nothing to break down.',
+                 'Sin ventas en el periodo — nada que desglosar.',
+                 'Nessuna vendita nel periodo — nulla da ripartire.')}
+            </div>
+          ) : (
           <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', flexShrink: 0 }}>
+              {/* ⚠️ `dataKey="pct"` — et non un compte brut. Les `pct` somment à 100
+                  exactement (plus forts restes), donc l'ANGLE que recharts calcule
+                  (`pct / Σpct`) vaut `pct/100` : la géométrie et le chiffre écrit
+                  dessus sont le même nombre, par construction et non par chance. */}
               <ResponsiveContainer width={220} height={220}>
                 <PieChart>
                   <Pie
@@ -173,7 +209,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                     data={paymentData}
                     cx="50%" cy="50%"
                     innerRadius={68} outerRadius={100}
-                    paddingAngle={2} dataKey="value"
+                    paddingAngle={2} dataKey="pct"
                     labelLine={false}
                     label={activePayIndex === null ? renderLabel : undefined}
                     onMouseEnter={(_: any, index: number) => setActivePayIndex(index)}
@@ -212,7 +248,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 <div key={i}
                   role="button" tabIndex={0}
                   aria-pressed={activePayIndex === i}
-                  aria-label={`${item.name} — ${item.value}%`}
+                  aria-label={`${item.name} — ${pctLabel(item)}, ${item.count} ${lang === 'en' ? 'sales' : lang === 'es' ? 'ventas' : lang === 'it' ? 'vendite' : 'ventes'}`}
                   onMouseEnter={() => setActivePayIndex(i)}
                   onMouseLeave={() => setActivePayIndex(null)}
                   /* Équivalent clic/clavier/tactile du highlight hover (le cursor:pointer était inerte) */
@@ -242,7 +278,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-semibold)', color: item.color, fontFamily: 'var(--mono)', letterSpacing: '-0.5px' }}>
-                      {item.value}%
+                      {pctLabel(item)}
                     </div>
                     {item.amount > 0 && (
                       <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(item.amount)}</div>
@@ -252,6 +288,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
               ))}
             </div>
           </div>
+          )}
         </div>
       </div>
 

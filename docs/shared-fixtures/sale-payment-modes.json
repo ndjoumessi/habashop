@@ -1,0 +1,34 @@
+{
+  "_comment": [
+    "DOMAINE de `Sale.paymentMode` — ce que le SERVEUR écrit, plus le mixte du panier.",
+    "",
+    "⚠️ CE N'EST PAS `payment-methods.json`. Celui-là décrit les moyens de paiement d'un",
+    "ABONNEMENT (wave | orange_money | mtn_money | virement | card) : ils se ressemblent,",
+    "ils diffèrent, et les fondre perdrait ce que chacun distingue (cf. § Arité des ternaires).",
+    "",
+    "⚠️ CE N'EST PAS NON PLUS `POS_PAY_MODES` (appStore) : celui-là énumère les tuiles",
+    "offertes comme DÉFAUT de caisse. Il ne contient pas `mixed` — on ne peut pas choisir",
+    "« mixte » par défaut, on y arrive en répartissant un encaissement. Les deux ensembles",
+    "coïncident à `mixed` près AUJOURD'HUI ; ils décrivent deux questions différentes.",
+    "",
+    "CINQUIÈME instance de ce domaine réénuméré à la main. Les quatre précédentes :",
+    "printReceipt.ts et whatsappTicket.ts (3 branches sur 6 → une vente MTN imprimée",
+    "« Carte »), lib/refund.ts, et Reports.tsx (5 clés en dur dont une, `mobile`, que le",
+    "serveur n'écrit JAMAIS — mesuré 0 sur 1 908 ventes — pendant que `mtn` et `mixed`",
+    "disparaissaient du graphique)."
+  ],
+  "modes": ["cash", "wave", "orange", "mtn", "card", "mixed"],
+  "labels": {
+    "cash":   { "fr": "Espèces",      "en": "Cash",         "es": "Efectivo",     "it": "Contanti" },
+    "wave":   { "fr": "Wave",         "en": "Wave",         "es": "Wave",         "it": "Wave" },
+    "orange": { "fr": "Orange Money", "en": "Orange Money", "es": "Orange Money", "it": "Orange Money" },
+    "mtn":    { "fr": "MTN MoMo",     "en": "MTN MoMo",     "es": "MTN MoMo",     "it": "MTN MoMo" },
+    "card":   { "fr": "Carte",        "en": "Card",         "es": "Tarjeta",      "it": "Carta" },
+    "mixed":  { "fr": "Mixte",        "en": "Split",        "es": "Mixto",        "it": "Misto" }
+  },
+  "_labels_comment": [
+    "Les MARQUES ne se traduisent pas (Wave, Orange Money, MTN MoMo) — § i18n du guide",
+    "racine. Les quatre formes sont écrites quand même : un test qui ne lit qu'une langue",
+    "ne verrait pas une traduction ajoutée à tort."
+  ]
+}
