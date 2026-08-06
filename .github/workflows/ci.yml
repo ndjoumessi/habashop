@@ -63,6 +63,13 @@ jobs:
       # premier match). Invisible pour tsc, les tests et la revue → on inspecte le sw.js livré.
       - name: Service worker — aucune règle de cache morte
         run: npm run verify:sw-routes --workspace=apps/frontend
+      # Tailwind est configuré mais N'ÉMET RIEN (aucune directive `@tailwind` dans index.css) :
+      # une classe utilitaire écrite dans un `className` est MORTE tant qu'elle n'est pas écrite
+      # à la main. Invisible pour tsc, les tests et la revue — la source est valide, l'artefact
+      # est nul. Même famille que la règle SW ci-dessus. La LOGIQUE, elle, est gardée par
+      # `src/tests/classesLivrees.test.ts` ; ici on juge le `dist/` livré.
+      - name: Classes CSS — aucun jeton écrit mais absent de l'artefact
+        run: npm run verify:classes --workspace=apps/frontend
       - name: Bundle size check (< 100KB gzip)
         working-directory: apps/frontend
         run: |

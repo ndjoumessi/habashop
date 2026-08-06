@@ -468,10 +468,16 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {/* Erreur inline — annoncée, jamais une alerte bloquante */}
+            {/* Erreur inline — annoncée, jamais une alerte bloquante.
+                ⚠️ L'`id` est FONCTIONNEL : les deux champs le pointent par
+                `aria-describedby`. Il n'y a PAS de `className` — le style est
+                intégralement inline ci-dessous, et la classe `login-error` qui
+                s'y trouvait n'existait dans aucune feuille livrée. Une poignée
+                morte à côté d'un style inline complet se relit comme un style
+                qui manque : c'est ce qui a fait croire à un message non stylé. */}
             <div aria-live="polite" role="status">
               {error && (
-                <div id="login-error" className="login-error" style={{
+                <div id="login-error" style={{
                   display: 'flex', alignItems: 'flex-start', gap: 9,
                   padding: '10px 13px', borderRadius: 10, marginBottom: 15,
                   color: 'var(--danger)', background: 'var(--c-red-bg)',

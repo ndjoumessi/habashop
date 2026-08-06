@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build && node scripts/gen-seo.mjs",
     "preview": "vite preview",
-    "lint": "eslint src --ext .ts,.tsx --max-warnings 209",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 208",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
@@ -18,7 +18,8 @@
     "verify:sw-routes": "node scripts/verify-sw-routes.mjs",
     "shot:subscriptions": "node e2e/subscriptions-modal.shot.mjs",
     "shot:freshness": "node e2e/pos-freshness.shot.mjs",
-    "verify:seo-urls": "node scripts/verify-seo-urls.mjs"
+    "verify:seo-urls": "node scripts/verify-seo-urls.mjs",
+    "verify:classes": "node scripts/verify-classes.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",

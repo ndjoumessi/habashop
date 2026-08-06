@@ -132,16 +132,20 @@ function SubCard({ sub, lang, canManage, fmt, onEdit, onToggle, onDelete, onLoad
         >
           <ShoppingCart size={13} /> {tx('load_cart', lang)}
         </button>
+        {/* ⚠️ `btn-secondary` n'existe dans aucune feuille — ces deux boutons se rendaient
+            SANS fond, SANS bordure et SANS `cursor:pointer` (qui vient de `.btn`). La classe
+            secondaire du système s'appelle `btn-ghost`, et la convention du dépôt est
+            `btn btn-ghost` (22 sites) : `.btn-ghost` seul n'apporte pas la base. */}
         {canManage && <>
           <button
-            className="btn-secondary"
+            className="btn btn-ghost"
             style={{ fontSize: 'var(--fs-label)', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 4 }}
             onClick={onEdit}
           >
             <Pencil size={12} /> {tx('edit', lang)}
           </button>
           <button
-            className="btn-secondary"
+            className="btn btn-ghost"
             style={{ fontSize: 'var(--fs-label)', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 4 }}
             onClick={onToggle}
           >
@@ -181,6 +185,9 @@ export default function Subscriptions() {
     setLoading(true)
     Promise.all([subscriptionsApi.list(), subscriptionsApi.due()])
       .then(([all, d]) => { setSubs(all as Sub[]); setDue(d as Sub[]) })
+      // Échec silencieux ASSUMÉ : les listes gardent leur valeur précédente et le `finally`
+      // ci-dessous rend la main. Ne pas y écrire un tableau vide — « aucun abonnement » sur
+      // une requête en échec est une affirmation, pas une absence de donnée.
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])

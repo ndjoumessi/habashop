@@ -9,7 +9,7 @@ import { type Employee, type ContractForm, COLORS, DEPT_COLORS, labelStyle, dept
 // ⚠️ `payrollDisplay` : conversion UNE fois + arrondi cohérent (lignes/total/net). Les
 // montants rendus sont DÉJÀ en devise d'affichage → `fmtDisplay`, jamais le `fmt` reçu en
 // prop (qui reconvertirait). Verrou : `payrollConvertOnce.test.ts`.
-import { payrollDisplay, fmtDisplay, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
+import { payrollDisplay, fmtDisplay } from '@/components/payroll/payrollShared'
 import { useConfig } from '@/stores/appStore'
 
 interface Props {

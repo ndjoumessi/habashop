@@ -154,6 +154,9 @@ export default function Dashboard() {
   useEffect(() => {
     reportsApi.inventory()
       .then(d => setInv({ reorder: d.reorder.length, dormant: d.dormant.length }))
+      // Échec silencieux ASSUMÉ : `inv` reste à `null` et les deux tuiles ne s'affichent
+      // simplement pas. Elles ne retombent sur AUCUNE valeur — un tableau de bord qui
+      // afficherait « 0 à réapprovisionner » sur une requête en échec mentirait.
       .catch(() => {})
   }, [])
   const catTotal = catData.reduce((s, d) => s + (d.value ?? 0), 0)
@@ -419,8 +422,12 @@ export default function Dashboard() {
 
       {/* Charts row */}
       <div className="dashboard-charts-grid" style={{ display: 'grid', gap: 12 }}>
-        {/* Bar chart (col span 2 on wide screens) */}
-        <div className="panel dashboard-chart-wide" style={{ marginBottom: 0 }}>
+        {/* Bar chart — il occupe la colonne large parce que `.dashboard-charts-grid` vaut
+            `2fr 1fr` au-delà de 1100px (`index.css:706-708`) et qu'il en est le 1ᵉʳ enfant.
+            ⚠️ Une classe `dashboard-chart-wide` accompagnait ce commentaire : elle n'existait
+            dans aucune feuille, donc elle n'a jamais rien élargi. Retirée — le mécanisme réel
+            est cité ci-dessus, vérifiable en dix secondes. */}
+        <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(108,71,255,.15)', border: '1px solid rgba(108,71,255,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--p3)' }}>

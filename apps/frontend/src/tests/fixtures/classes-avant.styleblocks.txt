@@ -1,0 +1,121 @@
+/* ═══ src/components/landing/LandingNav.tsx ═══ */
+      <style>{`
+        .lp-nav-login-ico { display: none; }
+        @media (max-width: 640px) {
+          .lp-nav-login-txt  { display: none !important; }
+          .lp-nav-login-ico  { display: inline-flex !important; }
+          .lp-nav-login      { padding: 8px 10px !important; }
+          .lp-nav-wordmark   { display: none !important; }
+          .lp-selectors > select { padding: 6px 20px 6px 7px !important; }
+        }
+        @media (max-width: 380px) {
+          .lp-nav-cta-signup { padding: 8px 14px !important; }
+        }
+      `}</style>
+/* ═══ src/components/subscriptions/SubscriptionModal.tsx ═══ */
+      <style>{`
+        @keyframes subModalIn {
+          from { opacity: 0; transform: scale(0.97) translateY(10px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) { .sub-modal-animated { animation-duration: 0.01ms !important; } }
+        .sub-stepper-btn:hover:not(:disabled) { background: var(--bg3) }
+        .sub-remove-btn:hover  { color: var(--danger) }
+        .sub-dd-item:hover     { background: var(--bg3) }
+        .sub-day-pill:hover:not([aria-pressed="true"]) { border-color: var(--p); color: var(--p) }
+        .sub-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+        @media (max-width: 640px) { .sub-grid2 { grid-template-columns: 1fr } }
+
+        /* Ligne de panier : une seule rangée en large. */
+        .sub-line { display: flex; align-items: center; gap: 10px; padding: 9px 2px }
+        .sub-line-nm { flex: 1; min-width: 0 }
+        .sub-line-break { display: none }
+        .sub-total { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px }
+        .sub-total-v { font-size: 29px; white-space: nowrap }
+
+        /* Étroit : le nom prend sa rangée, les contrôles passent dessous — sinon
+           le stepper écrase le nom et le sous-total chevauche (mesuré à 390 px). */
+        @media (max-width: 560px) {
+          .sub-line { flex-wrap: wrap; row-gap: 8px }
+          .sub-line-break { display: block; flex-basis: 100%; height: 0 }
+          .sub-line-qty { margin-left: 42px }
+          .sub-line-sub { flex: 1; text-align: right }
+          .sub-total { flex-direction: column; align-items: flex-start; gap: 4px }
+          .sub-total-v { font-size: 26px }
+        }
+      `}</style>
+/* ═══ src/pages/LoginPage.tsx ═══ */
+      <style>{`
+        .login-back-link:hover { color: var(--text) !important; }
+
+        .login-input {
+          width: 100%; box-sizing: border-box;
+          height: 46px; padding: 0 13px 0 40px;
+          border-radius: 11px; border: 1px solid var(--border2);
+          background: var(--card); color: var(--text);
+          font-size: 14px; font-family: var(--font);
+          transition: border-color .15s, box-shadow .15s;
+        }
+        .login-input-pwd { padding-right: 44px; }
+        .login-input::placeholder { color: var(--text3); }
+        .login-input:focus-visible,
+        .login-input:focus {
+          outline: none;
+          border-color: var(--p2);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--p) 28%, transparent);
+        }
+
+        .login-eye {
+          position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+          display: flex; align-items: center; justify-content: center;
+          width: 32px; height: 32px; padding: 0;
+          background: none; border: none; border-radius: 8px;
+          color: var(--text3); cursor: pointer; transition: color .15s, background .15s;
+        }
+        .login-eye:hover { color: var(--text); background: var(--card2); }
+
+        .login-link {
+          background: none; border: none; padding: 2px 0; cursor: pointer;
+          font-size: 13px; font-weight: 600; color: var(--p3);
+          font-family: var(--font); border-radius: 6px;
+        }
+        .login-link:hover { text-decoration: underline; }
+
+        .login-cta {
+          width: 100%; min-height: 48px; padding: 0 16px;
+          display: flex; align-items: center; justify-content: center; gap: 9px;
+          border: none; border-radius: 12px;
+          background: var(--grad-p); color: #fff;
+          font-size: 14.5px; font-weight: 700; font-family: var(--font);
+          cursor: pointer; transition: filter .15s, opacity .15s;
+        }
+        .login-cta:hover:not(:disabled) { filter: brightness(1.08); }
+        /* Désactivé ≠ en panne. L'ancien état (fond --card3 gris + bordure) donnait un
+           bouton qui avait l'air CASSÉ plutôt qu'en attente de saisie : on garde le fond
+           d'accent, atténué, pour qu'il reste identifiable comme l'action principale.
+           L'attribut disabled lui-même est conservé, login.anchor.test.tsx le verrouille.
+           (Pas de guillemets obliques ici : ce bloc est un template literal JS.) */
+        .login-cta:disabled {
+          cursor: not-allowed;
+          background: var(--grad-p); color: #fff;
+          opacity: .48;
+        }
+        .login-cta[aria-busy="true"] { cursor: wait; }
+
+        .login-demo-chip:hover:not(:disabled) { background: var(--card3) !important; border-color: var(--border2) !important; }
+
+        @media (prefers-reduced-motion: no-preference) {
+          .login-spin { animation: login-spin 1s linear infinite; }
+        }
+        @keyframes login-spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 900px) {
+          body .login-grid { grid-template-columns: 1fr !important; }
+          body .login-brand { display: none !important; }
+          body .login-mobile-logo { display: inline-flex !important; }
+          body .login-back-mobile { display: inline-flex !important; }
+        }
+        @media (max-width: 380px) {
+          .login-demo-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>

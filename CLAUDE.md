@@ -92,7 +92,7 @@ le changement — signal que la CI unitaire ne donne pas. Les supprimer coûtera
 
 ⚠️ **Et `$?` après un pipe n'est PAS celui de `tsc`.** `npx tsc --noEmit 2>&1 | tail -20` rend le statut de `tail`, donc **0** alors que tsc sort en 2 : mesuré le 2026-08-05, deux erreurs de type affichées sous un « exit=0 ». Annoncer « tsc 0 » depuis une commande pipée ne prouve rien — lancer sans pipe, ou lire `${PIPESTATUS[0]}`. ⚠️ Depuis la RACINE, `npx tsc --noEmit` ne vérifie **rien du tout** (aucun `tsconfig.json` racine) : il imprime son aide et sort en 1. Toujours depuis le workspace concerné.
 
-**CI** (`.github/workflows/ci.yml`, Node 22) : tsc + **lint** + tests unitaires sur les deux workspaces, build front avec **garde de taille de bundle < 100 Ko gz** (`index-*.js`), scan de secrets en dur ; sur `main` uniquement : tests d'intégration (lecture seule contre la PROD) et E2E Playwright. ⚠️ **Le lint backend est un CLIQUET** : `--max-warnings 323` = l'état actuel, donc tout NOUVEL avertissement casse la CI. Ne pas relever le plafond pour faire passer un commit — corriger, ou l'abaisser quand on nettoie (descendu de 333 → 327 au fil de l'item 10, puis → 325 en extrayant le handler d'erreur, → 323 en typant l'export CSV par Prisma ; chaque suppression d'`any` abaisse le plafond d'autant). (Il était à 200 pour 333 avertissements réels : la CI ne lançait pas le lint, l'échec passait inaperçu.) ✅ **`mobile/` est COUVERT** depuis #163 par un job dédié `unit-tests-mobile` (`tsc` + la suite jest) : `mobile/` ayant son propre lockfile, il fait son `npm ci` **dans** `mobile/` (`cache-dependency-path: mobile/package-lock.json`), il n'est PAS servi par le `npm ci` racine. ⚠️ **AUCUN filtre de chemin, délibérément** : restreindre à `mobile/**` rouvrirait le trou qu'on ferme — une fixture partagée vit dans `docs/`, pas dans `mobile/`, et ne déclencherait donc pas le job. MESURÉ : install à froid **28 s**, suite **5 s**.
+**CI** (`.github/workflows/ci.yml`, Node 22) : tsc + **lint** + tests unitaires sur les deux workspaces, build front avec **garde de taille de bundle < 100 Ko gz** (`index-*.js`), scan de secrets en dur ; sur `main` uniquement : tests d'intégration (lecture seule contre la PROD) et E2E Playwright. ⚠️ **Le lint backend est un CLIQUET** : `--max-warnings 323` = l'état actuel, donc tout NOUVEL avertissement casse la CI. Ne pas relever le plafond pour faire passer un commit — corriger, ou l'abaisser quand on nettoie (descendu de 333 → 327 au fil de l'item 10, puis → 325 en extrayant le handler d'erreur, → 323 en typant l'export CSV par Prisma ; chaque suppression d'`any` abaisse le plafond d'autant). (Il était à 200 pour 333 avertissements réels : la CI ne lançait pas le lint, l'échec passait inaperçu.) ⚠️ **Le front a AUSSI un cliquet, et il était FAUX D'UN CRAN** : `--max-warnings 209` pour **210** avertissements réels depuis `e076b7aa` — la CI de `main` échouait donc à l'étape « Lint » du job frontend, en continu et sans que personne le lise (constaté le 2026-08-06 sur le run 31123111872). Corrigé **par le bas**, jamais en relevant le plafond : deux imports morts (`CNSS_RATE`/`IR_RATE` dans `NewContractModal`) supprimés → **208 réels, cliquet à 208**. ⚠️ Un cliquet faux d'un cran est PIRE qu'un cliquet absent : il rend la CI rouge en permanence, donc illisible — et le prochain vrai échec se noie dedans. ✅ **`mobile/` est COUVERT** depuis #163 par un job dédié `unit-tests-mobile` (`tsc` + la suite jest) : `mobile/` ayant son propre lockfile, il fait son `npm ci` **dans** `mobile/` (`cache-dependency-path: mobile/package-lock.json`), il n'est PAS servi par le `npm ci` racine. ⚠️ **AUCUN filtre de chemin, délibérément** : restreindre à `mobile/**` rouvrirait le trou qu'on ferme — une fixture partagée vit dans `docs/`, pas dans `mobile/`, et ne déclencherait donc pas le job. MESURÉ : install à froid **28 s**, suite **5 s**.
 
 ### ⚠️ Vérification en PROD — trois formes autorisées, pas une de plus
 
@@ -603,12 +603,74 @@ C'est ce qui a fait qu'un correctif de grille **n'atteignait pas l'écran** : la
 juste, l'artefact vide. Même famille que l'ordre des règles du service worker et que le
 `<!--` dans une balise `<meta>` (§ « LA SOURCE EST VALIDE, L'ARTEFACT EST NUL »).
 
-Les utilitaires manquants sont désormais écrits **à la main dans `index.css`**, là où vivent
-déjà `.grid`, `.gap-4`, `.flex` — avec de vraies media queries alignées sur les points de
-rupture tailwind (640 / 1024). ⚠️ **NE PAS « réparer » en ajoutant `@tailwind base`** : le
-reset écraserait toute la feuille de style écrite à la main. ⚠️ Toute nouvelle variante
-responsive doit être **ajoutée là** — l'écrire dans un `className` ne suffit pas, et rien ne
-le signale. Vérifier sur `dist/assets/index-*.css`, jamais sur le source.
+Les utilitaires manquants sont écrits **à la main dans `index.css`**, là où vivent déjà
+`.grid`, `.gap-4`, `.flex` — avec de vraies media queries alignées sur les points de rupture
+tailwind (640 / 1024). ⚠️ **NE PAS « réparer » en ajoutant `@tailwind base`** : le reset
+écraserait toute la feuille écrite à la main. ⚠️ Toute nouvelle variante responsive doit être
+**ajoutée là** — l'écrire dans un `className` ne suffit pas, et rien ne le signale.
+
+**Verrou : `npm run verify:classes --workspace=apps/frontend`** (CI, après le build) — échoue
+si un jeton de classe du code ATTEIGNABLE manque au `dist/` livré. La LOGIQUE est gardée par
+`classesLivrees.test.ts` (16, **4 sabotages vérifiés**), qui REJOUE l'état d'avant depuis des
+fixtures extraites par `git show` : il rougit sur les 17 utilitaires, aux fréquences exactes.
+Le verrou d'artefact ne peut pas vivre dans la suite — **la CI lance `vitest` AVANT `build`**.
+
+⚠️ **CORPUS = TOUT `dist/`, JS COMPRIS.** Les blocs `<style>{`…`}</style>` (LoginPage,
+SubscriptionModal, LandingNav) partent dans le **bundle JS**. En lisant les seuls
+`dist/assets/*.css`, l'audit comptait **89** jetons absents ; corpus élargi, **44**. Un
+corpus trop étroit rend un chiffre faux avec l'air d'un fait — `lp-nav-login` et `login-spin`
+sont ainsi ABSENTS d'`index.css` et pourtant bien livrés.
+
+⚠️ **« Absent de la feuille » ne veut PAS dire « style manquant » — TROIS cas, et écrire du
+CSS n'est le bon geste que dans le troisième.** L'audit initial les confondait, et disait
+d'un message de connexion qu'il était « sans style » alors qu'il était intégralement stylé
+inline (vérifié sur le rendu réel : seul l'attribut `class` changeait).
+
+| Cas | Signe | Geste |
+|---|---|---|
+| **poignée morte** | un `style={{…}}` complet à côté | **retirer la classe** — `login-error`, `lp-btn-ghost`, `dashboard-chart-wide` |
+| **mauvais nom** | la règle existe sous un autre nom | **corriger l'APPEL** — `badge-ok`→`badge-green`, `btn-secondary`→`btn btn-ghost`. En définir un synonyme serait pire |
+| **poignée E2E** | le jeton est cité dans `e2e/` | **ne rien faire** — `sub-modal`, `sub-body` sont des sélecteurs Playwright. Exemption **DÉRIVÉE** des specs, jamais listée |
+| **réellement manquant** | rien ne le porte | **l'écrire** — 17 utilitaires + `form-label` |
+
+Mesuré au passage : `badge-ok` rendait un badge **neutre** à côté d'un « Remboursé » rouge ;
+`btn-secondary` laissait `cursor:auto` sur deux boutons (le pointeur vient de `.btn`, pas de
+`.btn-ghost`) ; `form-label` laissait **7 libellés** de la modale Employé au style par défaut
+du navigateur pendant que la modale Fournisseur voisine stylait les siens.
+
+⚠️ **CINQ angles morts, chacun découvert en se faisant avoir** — les quatre premiers ont
+produit des **faux positifs**, c'est-à-dire un verrou qui accuse du code correct, et qui se
+fait désarmer aussi sûrement qu'un verrou qui laisse passer :
+
+1. **Échappement CSS** — `lg:grid-cols-4` s'écrit `.lg\:grid-cols-4`. N'échapper que le point
+   faisait remonter les **4 variantes responsives sur 12 sites**, pourtant bien livrées.
+2. **Interpolation de gabarit** — le `${` en fin de ligne faisait passer `o.status` et
+   `s.mode` pour des classes. Découpe par appariement, jamais une regex.
+3. **Commentaires** — `skeleton.tsx` documente son usage par `<Skeleton className="h-4 w-20" />`
+   en JSDoc : `h-4` et `w-20` remontaient. `codeSeul()` avant tout scan (même leçon que
+   `ratingDenominator`).
+4. **Code MORT** — 18 modules shadcn jamais importés portaient à eux seuls **253** jetons
+   absents. Périmètre **DÉRIVÉ** du graphe depuis `main.tsx`.
+5. **Faux NÉGATIF, celui-là** — les littéraux **dans** une interpolation
+   (`` `badge ${x ? 'badge-green' : 'badge-red'}` ``, motif très courant) n'étaient pas
+   scannés. Un commentaire affirmait qu'ils étaient « rattrapés par les tours suivants de la
+   boucle » : ils ne l'étaient pas. **Trouvé par le test, pas par la relecture** — encore un
+   commentaire qui invente un repli.
+
+⚠️ **Un sabotage doit VÉRIFIER QUE LE BUILD A RÉUSSI.** Le sabotage « remettre la feuille
+d'avant » est passé **vert** au premier tir : `tsc` échouait (le nouveau test importait un
+`.mjs` sans déclaration, TS7016), donc `npm run build` s'arrêtait et `dist/` restait
+**PÉRIMÉ** — le verrou jugeait l'artefact d'avant le sabotage. C'est le défaut même que ce
+verrou garde, reproduit dans sa propre procédure de validation. D'où `scripts/classAudit.d.mts`,
+et la règle : *un sabotage qui régénère un artefact doit asserter que la régénération a eu lieu.*
+
+✅ **18 modules shadcn supprimés** (`alert-dialog` … `textarea`) — ensemble CLOS, aucune arête
+sortante, aucun import hors de `components/ui/`. ⚠️ **Diff de bundle MESURÉ : ZÉRO octet**
+(`js_total` 3 766 591 o identique, 81 chunks identiques) : le tree-shaking les écartait déjà.
+Le gain est de **clarté**, pas de poids — ils faisaient croire à un système de design branché.
+`tooltip.tsx` est réduit à `TooltipProvider` (importé par `main.tsx:5`, aucune classe rendue) ;
+ses trois autres exports portaient **18 des 20 derniers jetons absents**. L'infobulle réelle du
+produit est `components/ui/FocusTooltip.tsx`.
 
 ### Le LIBELLÉ QUI TRONQUE ⚠️ — corriger la CONTRAINTE, pas la chaîne
 

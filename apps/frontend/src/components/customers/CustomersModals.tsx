@@ -588,10 +588,15 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                             <td style={{ fontSize: 'var(--fs-caption)', color: 'var(--text2)' }}>{p.items} art.</td>
                             <td className="td-mono" style={{ color: p.refunded ? 'var(--text3)' : 'var(--acc2)', fontWeight: 'var(--fw-semibold)', textDecoration: p.refunded ? 'line-through' : undefined }}>{fmt(p.total)}</td>
                             {/* Le statut était le littéral « ✓ Payé » — vrai tant que la table
-                                était vide, faux dès la 1ʳᵉ vente remboursée qui s'y affiche. */}
+                                était vide, faux dès la 1ʳᵉ vente remboursée qui s'y affiche.
+                                ⚠️ Le vert était écrit `badge-ok`, classe qui n'existe dans aucune
+                                feuille livrée : le « Payé » se rendait en badge NEUTRE à côté d'un
+                                « Remboursé » rouge. La classe verte du système s'appelle
+                                `badge-green` — définir `badge-ok` aurait créé un second nom pour
+                                la même règle. */}
                             <td>{p.refunded
                               ? <span className="badge badge-red">{i('Remboursé', 'Refunded', 'Reembolsado', 'Rimborsato')}</span>
-                              : <span className="badge badge-ok">✓ {i('Payé', 'Paid', 'Pagado', 'Pagato')}</span>}</td>
+                              : <span className="badge badge-green">✓ {i('Payé', 'Paid', 'Pagado', 'Pagato')}</span>}</td>
                           </tr>
                         ))}
                       </tbody>

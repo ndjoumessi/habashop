@@ -96,8 +96,11 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
 
         {/* CTAs */}
         <div style={{ display: 'flex', gap: 8 }}>
+          {/* `lp-nav-login` est FONCTIONNELLE (elle porte le masquage < 640px) ; l'ancienne
+              `lp-btn-ghost` qui l'accompagnait n'existait dans aucune feuille — le style de
+              ce bouton est intégralement inline ci-dessous, survol compris. */}
           <button type="button" onClick={() => navigate('/login')}
-            className="lp-btn-ghost lp-nav-login"
+            className="lp-nav-login"
             aria-label={lp.nav_login}
             style={{
               padding: '8px 16px', borderRadius: 10, background: 'transparent',

@@ -636,46 +636,6 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 .px-4 { padding-left:16px; padding-right:16px }
 .py-10 { padding-top:40px; padding-bottom:40px }
 
-/* ══ Utilitaires de compatibilité Tailwind — ÉCRITS À LA MAIN ══════════════════
-   ⚠️ TAILWIND N'ÉMET RIEN dans ce projet : `index.css` ne porte aucune directive
-   `@tailwind` (retirée pour la chaîne critique, cf. l'en-tête de ce fichier), donc
-   `tailwind.config.js` ne génère aucune règle. Toute classe utilitaire écrite dans un
-   `className` est MORTE tant qu'elle n'existe pas ici — et rien ne le signale : ni tsc,
-   ni la suite, ni la revue, qui regardent la SOURCE alors que le défaut naît dans
-   l'ARTEFACT. Mesuré le 2026-08-06 : 0 occurrence de `lg\:grid-cols` dans le CSS livré.
-
-   ⚠️ NE PAS « réparer » en ajoutant `@tailwind base` : le reset écraserait toute la
-   feuille écrite à la main. Toute nouvelle variante s'ajoute ICI, à la main.
-
-   Valeurs = celles de l'échelle Tailwind par défaut (1 unité = 4px), pour qu'un lecteur
-   qui connaît Tailwind ne soit pas surpris par un `mb-5` qui ne vaudrait pas 20px.
-   Verrou : `classesLivrees.test.ts`. ════════════════════════════════════════════ */
-.mb-1 { margin-bottom:4px } .mb-1\.5 { margin-bottom:6px } .mb-2 { margin-bottom:8px }
-.mb-5 { margin-bottom:20px }
-.mt-1 { margin-top:4px } .mt-2 { margin-top:8px } .mt-4 { margin-top:16px } .mt-5 { margin-top:20px }
-.ml-auto { margin-left:auto }
-.py-4 { padding-top:16px; padding-bottom:16px }
-.items-start { align-items:flex-start }
-.space-y-1 > * + * { margin-top:4px }
-.space-y-4 > * + * { margin-top:16px }
-.transition-all { transition:all .15s var(--ease) }
-.cursor-pointer { cursor:pointer }
-/* `@keyframes spin` est déjà défini plus haut — on ne le redéclare pas. */
-.animate-spin { animation:spin 1s linear infinite }
-
-/* Libellé de champ de formulaire.
-   ⚠️ CE N'EST PAS un utilitaire manquant : `form-label` n'a JAMAIS été défini, donc les
-   7 libellés de la modale Employé se rendaient avec le style par défaut du navigateur —
-   taille héritée, pas de capitales, pas d'espace sous le libellé — pendant que la modale
-   Fournisseur voisine stylait les siens à la main. Les valeurs ci-dessous sont COPIÉES de
-   cette convention voisine (`block text-xs font-semibold uppercase tracking-wide mb-1.5`
-   + `color: var(--text3)`), pour ne pas inventer un troisième rendu de libellé. */
-.form-label {
-  display:block; font-size:11px; font-weight:var(--fw-semibold);
-  text-transform:uppercase; letter-spacing:.05em;
-  color:var(--text3); margin-bottom:6px;
-}
-
 /* ── Responsive ── */
 @media (max-width:900px) {
   .app-sidebar,#sidebar,.sidebar { display:none }
