@@ -50,3 +50,21 @@ if (hits.length > 0) {
   process.exit(1)
 }
 console.log(`[verify-demo-flag] OK — build PROD : « ${NEEDLE} » absent des ${files.length} fichiers livrés.`)
+
+/* ═══ HARNAIS DE MESURE — même motif, même exigence ═════════════════════════════
+   `/__dev/table` rend la console Ops SANS la garde `PlatformAdminOnly`, pour mesurer la
+   table dense dans un vrai navigateur. Il est gardé par `import.meta.env.DEV` et son
+   `import()` vit DANS la branche — mais ça, c'est la SOURCE. Le défaut `demo1234` avait
+   précisément une source correcte et un artefact fautif : on vérifie donc le `dist/`.
+   ⚠️ Ce harnais est plus grave qu'un raccourci de connexion s'il fuit : il n'expose aucun
+   secret, mais il rend un écran d'administration plateforme à n'importe qui.
+   ⚠️ Il n'est JAMAIS attendu, même en build démo — contrairement à `demo1234`. */
+const MARQUEUR_HARNAIS = '__habashop_dev_table_harness__'
+const fuites = files.filter(f => readFileSync(f, 'utf8').includes(MARQUEUR_HARNAIS))
+if (fuites.length > 0) {
+  console.error(`[verify-demo-flag] ❌ FUITE — le harnais de mesure « ${MARQUEUR_HARNAIS} » est dans le bundle livré :`)
+  for (const h of fuites) console.error(`   ${h}`)
+  console.error('   Le `import()` doit rester DANS la branche `import.meta.env.DEV ? … : null`.')
+  process.exit(1)
+}
+console.log(`[verify-demo-flag] OK — harnais de mesure absent des ${files.length} fichiers livrés.`)

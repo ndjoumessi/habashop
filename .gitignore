@@ -60,3 +60,6 @@ graphify-out/
 # Config locale Claude Code — à tout niveau (racine + apps/*/.claude, etc.).
 # mobile/.claude/settings.json reste suivi (déjà tracké ; .gitignore ne dé-tracke pas).
 .claude/
+
+# Rapports Playwright de la mesure de densité (harnais de dév)
+apps/frontend/test-results/

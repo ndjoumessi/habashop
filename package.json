@@ -11,7 +11,10 @@
     "dev": "concurrently \"npm run dev --workspace=apps/frontend\" \"npm run dev --workspace=apps/backend\"",
     "build": "npm run build --workspace=apps/frontend && npm run build --workspace=apps/backend",
     "lint": "npm run lint --workspaces",
-    "test": "npm run test --workspaces"
+    "test": "npm run test --workspaces",
+    "sabotage": "node scripts/sabotage.mjs",
+    "sabotage:restore": "node scripts/sabotage.mjs restore",
+    "sabotage:status": "node scripts/sabotage.mjs status"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

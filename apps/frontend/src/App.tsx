@@ -41,6 +41,14 @@ const PaymentCallback = lazy(() => import('@/pages/PaymentCallback'))
 const Privacy        = lazy(() => import('@/pages/Privacy'))
 const PublicCatalog  = lazy(() => import('@/pages/PublicCatalog'))
 
+/**
+ * HARNAIS DE MESURE — DÉV UNIQUEMENT (`/__dev/table`).
+ * ⚠️ Le `import()` DOIT rester DANS la branche : un `lazy()` inconditionnel laisserait Rollup
+ * émettre le chunk, exactement le défaut qui avait livré `demo1234` en production. L'absence
+ * du bundle livré est VÉRIFIÉE par `npm run verify:demo-flag`, pas affirmée par ce ternaire.
+ */
+const DevTableHarness = import.meta.env.DEV ? lazy(() => import('@/pages/DevTableHarness')) : null
+
 function RouteFallback() {
   return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontFamily: 'var(--font)', fontSize: 'var(--fs-body)' }}>
@@ -150,6 +158,10 @@ export default function App() {
     <>
     <Suspense fallback={<RouteFallback />}>
     <Routes>
+      {/* ⚠️ Hors de `ProtectedRoute`/`PlatformAdminOnly` PAR CONSTRUCTION : cette route
+          n'existe qu'en développement. La garde P0 de `/admin` reste INTACTE — on ne
+          desserre pas un garde pour se donner un instrument de mesure. */}
+      {DevTableHarness && <Route path="/__dev/table" element={<DevTableHarness />} />}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />

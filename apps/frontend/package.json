@@ -19,7 +19,8 @@
     "shot:subscriptions": "node e2e/subscriptions-modal.shot.mjs",
     "shot:freshness": "node e2e/pos-freshness.shot.mjs",
     "verify:seo-urls": "node scripts/verify-seo-urls.mjs",
-    "verify:classes": "node scripts/verify-classes.mjs"
+    "verify:classes": "node scripts/verify-classes.mjs",
+    "e2e:density": "playwright test --config playwright.density.config.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",

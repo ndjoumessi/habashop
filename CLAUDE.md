@@ -224,7 +224,14 @@ Helpers : `makeI(lang)` (settings), `pick(lang, obj)`.
 - **Logs** : `logger.log/warn` (`@/lib/logger`, filtre DEV) — pas de `console.*` en commit.
 - **Éditions masse multi-octets/emoji** : script Python ou tsx, pas `sed`.
 - **Édition scriptée d'un fichier** ⚠️ : tout `replace()` doit **asserter que l'ancre existe** (`assert s.count(old) == 1`). Sans ça, une ancre inexacte fait un **no-op silencieux** — le script affiche « ✓ » et rien n'a changé. C'est ainsi que le compteur de tests backend est resté faux pendant 4 PR : l'ancre portait un `- ` que le fichier n'a pas (la mention est en milieu de phrase).
-- **Sabotage d'un verrou** ⚠️ : sauvegarder le fichier par **copie** (`cp f /tmp/f.bak`) et restaurer depuis elle. `git checkout <f>` restaure depuis HEAD — si le correctif n'est pas encore commité, il l'**efface** (arrivé). Committer avant de saboter, ou copier.
+- **Sabotage d'un verrou** ⚠️ — **passe par le script, il n'y a plus de procédure à retenir** :
+  ```bash
+  npm run sabotage -- <fichier…>    # instantané HORS du dépôt, puis on casse librement
+  npm run sabotage:status           # y a-t-il un sabotage en cours ? (code de sortie non nul)
+  npm run sabotage:restore          # restaure DEPUIS LA COPIE + vérifie octet par octet
+  ```
+  Ce qui suit n'est plus une consigne, c'est l'**explication** du script. `git checkout <f>` restaure depuis HEAD : pendant la vérification d'un verrou le correctif n'est PAS commité, donc il est **effacé**. L'instantané vit dans `os.tmpdir()` — invisible pour `git status`, incommitable, et hors d'atteinte d'un `checkout`. Un second instantané est **refusé** (un sabotage interrompu dont on restaurerait la copie plus tard écraserait du travail plus récent). La restauration **vérifie et le DIT** : une restauration silencieuse est une restauration non prouvée.
+  ⚠️ **Pourquoi un script plutôt qu'une règle** : ce piège était écrit **deux fois** dans ce fichier, et il a été commis **trois fois dans la même session par l'auteur de ces deux avertissements** — la troisième en relisant le paragraphe qui l'interdit. **Quand une règle documentée est violée trois fois par le même acteur, ce n'est plus la règle qu'il faut corriger.** Verrou : `sabotageScript.test.ts` (8) — il exécute le vrai script sur de vrais fichiers, compare les octets, et exerce le cas « instantané déjà présent ».
 - **Specs prescriptives** : si instruction ≠ code réel → réconcilie et continue. Questions réservées aux choix irréversibles.
 - **Refactor transverse** ⚠️ : unifier N points d'appel dans un module unique fait perdre ce que chaque appelant distinguait, si le module ne remonte pas TOUTE leur information (statuts, codes d'erreur, détail par élément). Un goulot ne doit pas être un entonnoir. Corollaire éprouvé : **une surface à la fois, revue entre chaque** — trois refactors enchaînés sur le même code ont produit à chaque tour des régressions plus graves que ce qu'ils réparaient.
 - **Test qui grep du texte source** (`expect(src).toContain(…)`) : prouve la SOURCE, pas le comportement. Il passe au rouge sur un simple reformatage et reste vert si le bloc devient inatteignable. Préférer l'injection de la route avec les dépendances mockées et l'assertion sur l'effet (cf. `redactPhone.test.ts`). Tout verrou doit être vérifié **dans les deux sens** : on le casse volontairement pour prouver qu'il détecte.
@@ -941,6 +948,42 @@ qui est à sa droite — invisible à 4 lignes). **3 sabotages vérifiés** : tr
 MRR de fixture rendu comme un montant · couleur d'alerte étendue aux fixtures.
 ⚠️ Les noms du jeu de test sont **générés** (« Boutique 01 »…), jamais empruntés à une maquette
 ni à la production (§ Neutraliser les exemples).
+
+⚠️ **CE VERROU PROUVE LA STRUCTURE, PAS LA GÉOMÉTRIE — jsdom ne fait AUCUNE mise en page.**
+Ni largeur, ni retour à la ligne, ni débordement. La table dense n'avait donc **jamais été
+vue** : on affirmait qu'elle tient à 390 px sans l'avoir mesuré. D'où
+**`npm run e2e:density --workspace=apps/frontend`** — Playwright, vrai moteur de rendu, sur
+un harnais `/__dev/table` qui n'existe qu'en développement.
+
+⚠️ **La garde P0 protège la ROUTE `/admin`, pas le COMPOSANT — et elle reste INTACTE.** Ne pas
+chercher à authentifier Playwright sur `/admin` : le compte E2E est SUPER_ADMIN *de boutique*,
+l'échec d'accès est le BON comportement. Le harnais rend le même composant ailleurs.
+⚠️ **Son absence du bundle livré est VÉRIFIÉE, pas affirmée** : `verify:demo-flag` cherche
+aussi le marqueur `__habashop_dev_table_harness__` (0 occurrence sur les 87 fichiers de
+`dist/`). Le `import()` doit rester DANS la branche `import.meta.env.DEV ? … : null` — même
+motif que `demo1234`, et **l'artefact décide**, pas le ternaire.
+
+**MESURÉ — et la table était innocente :**
+
+| Largeur | `.table-wrap` | Page (avant) | Page (après) |
+|---|---|---|---|
+| 2560 | 2512/2512 — tient | 2560 | 2560 |
+| 1440 | 1392/1392 — tient | 1440 | 1440 |
+| **390** | 1223/**342** — **défile, par dessin** | **421 ❌** | **390 ✅** |
+
+À 390 px la table défile proprement dans son conteneur ; c'est la **rangée d'actions de
+l'en-tête** qui atteignait `right = 431 px` et faisait défiler **la page entière**.
+Un `flexWrap: 'wrap'` a suffi. **La mesure a disculpé la table et trouvé un autre défaut** —
+c'est exactement ce qu'on ne peut pas obtenir en affirmant.
+
+⚠️ **TROIS détecteurs d'enroulement avant le bon, et les deux premiers criaient au loup** :
+(1) hauteur du `<td>` (41 px, padding compris) vs `line-height` (~19 px) → vrai partout ;
+(2) hauteur de contenu ÷ `line-height` → un `<td>` s'étire à la hauteur de SA RANGÉE, donc
+quand le nom de boutique voisin passe à deux lignes (colonne élastique, comportement VOULU)
+toutes les cellules mesurent deux lignes sans qu'aucune ne se soit enroulée. Le bon détecteur
+mesure le **TEXTE** : `Range.getClientRects()` rend un rectangle **par ligne rendue**.
+2 sabotages vérifiés (`nowrap` retiré d'une cellule monétaire → 1 rouge · `overflow-x` retiré
+du conteneur → 3 rouges).
 
 ### La MOYENNE SANS SON DÉNOMINATEUR ⚠️ — `perf` / `rating`
 

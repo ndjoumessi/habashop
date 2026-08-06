@@ -401,7 +401,12 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* ⚠️ `flexWrap` — MESURÉ le 2026-08-06 dans un vrai navigateur : sans lui, à 390 px
+            cette rangée d'actions atteignait `right = 431 px` et faisait DÉFILER LA PAGE
+            entière (421 > 390). Ce n'était pas la table dense — elle défile proprement dans
+            son `.table-wrap` (342 px visibles sur 1223) — c'était l'en-tête. Invisible en
+            jsdom, qui ne fait aucune mise en page. Verrou : `e2e/dev-table-density.spec.ts`. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <IconButton label={i('Actualiser les statistiques', 'Refresh stats', 'Actualizar estadísticas', 'Aggiorna statistiche')} icon={<RefreshCw size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : undefined }} />} onClick={loadStats} disabled={refreshing} variant="surface" />
           <div style={{ padding: '8px 14px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', fontSize: 'var(--fs-label)', color: 'var(--text3)', fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Calendar size={13} /> {new Date().toLocaleDateString(lang, { day: '2-digit', month: 'short', year: 'numeric' })}
