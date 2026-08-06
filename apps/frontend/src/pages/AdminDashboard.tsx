@@ -23,6 +23,7 @@ import OpsInfrastructure from '@/components/integrations/OpsInfrastructure'
 import SecurityEvents from '@/components/admin/SecurityEvents'
 import { Server, Rocket, CheckCircle2 } from 'lucide-react'
 import { planAmountXOF, purchasablePlans } from '@/lib/plans'
+import { DEFAULT_MARKET } from '@/lib/defaultMarket'
 
 // Version PRODUIT = SOURCE UNIQUE injectée au build (package.json racine), jamais un
 // littéral (la garde `versionSource.test.ts` échoue si un semver en dur réapparaît).
@@ -121,7 +122,7 @@ export default function AdminDashboard() {
       toast.error(e?.message || i('Échec de la mise à jour', 'Update failed', 'Error al actualizar', 'Aggiornamento fallito'))
     } finally { setSavingPwd(false) }
   }
-  const [newTenantForm, setNewTenantForm] = useState({ name: '', currency: 'XOF', country: 'SN', plan: 'starter', adminEmail: '', adminPassword: '' })
+  const [newTenantForm, setNewTenantForm] = useState({ name: '', currency: DEFAULT_MARKET.currency as string, country: DEFAULT_MARKET.country as string, plan: 'starter', adminEmail: '', adminPassword: '' })
   const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'requests'>('overview')
   const [planRequests, setPlanRequests] = useState<any[]>([])
 
@@ -698,7 +699,7 @@ export default function AdminDashboard() {
                   setTenants(prev => [created, ...prev])
                   setShowNewTenant(false)
                   toast.success(i(`Boutique "${newTenantForm.name}" créée !`, `Shop "${newTenantForm.name}" created!`, `¡Tienda "${newTenantForm.name}" creada!`, `Negozio "${newTenantForm.name}" creato!`))
-                  setNewTenantForm({ name: '', currency: 'XOF', country: 'SN', plan: 'starter', adminEmail: '', adminPassword: '' })
+                  setNewTenantForm({ name: '', currency: DEFAULT_MARKET.currency, country: DEFAULT_MARKET.country, plan: 'starter', adminEmail: '', adminPassword: '' })
                 } catch {
                   toast.error(i('Erreur création boutique', 'Error creating shop', 'Error al crear tienda', 'Errore creazione negozio'))
                 }

@@ -8,6 +8,7 @@ import { authenticate } from '../middleware/authenticate'
 import { sendWelcomeEmail } from '../services/email'
 import type { LoginBody, RegisterBody } from '../types'
 import { DEFAULT_PLAN_ON_SIGNUP } from '../lib/plans'
+import { DEFAULT_MARKET } from '../lib/defaultMarket'
 
 // ── Schémas de validation (item 6) ──────────────────────────────────────────
 // Login : PERMISSIF (présence seule) — la vérif des identifiants reste un 401 générique.
@@ -165,11 +166,11 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       const tenant = await tx.tenant.create({
         data: {
           name: shopName ?? resolvedName,
-          currency: currency ?? 'XOF',
+          currency: currency ?? DEFAULT_MARKET.currency,
           // ISO-2 canonique. Le repli 'SN' est HISTORIQUE et assumé (colonne non nullable) —
           // mais il ne doit jamais transformer un libellé en pays deviné : `normalizeCountry`
           // rend null sur l'inconnu, et c'est ce null qui retombe sur le défaut, explicitement.
-          country: normalizeCountry(country) ?? 'SN',
+          country: normalizeCountry(country) ?? DEFAULT_MARKET.country,
           plan: DEFAULT_PLAN_ON_SIGNUP,
           status: 'trial',
           isActive: true,

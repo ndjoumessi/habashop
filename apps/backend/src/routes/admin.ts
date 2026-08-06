@@ -7,6 +7,7 @@ import { normalizeCountry } from '../lib/country'
 import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import { planAmountXOF } from '../lib/plans'
+import { DEFAULT_MARKET } from '../lib/defaultMarket'
 import {
   sendUpgradeConfirmation,
   sendWelcomeEmail,
@@ -79,7 +80,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     // il est désormais rejeté 400 { code:'VALIDATION' } avant le handler.
     const { name, currency, country, plan, adminEmail, adminPassword } = request.body as z.infer<typeof ADMIN_CREATE_TENANT>
     const tenant = await prisma.tenant.create({
-      data: { name, currency: currency ?? 'XOF', country: normalizeCountry(country) ?? 'SN', plan: plan ?? 'starter' },
+      data: { name, currency: currency ?? DEFAULT_MARKET.currency, country: normalizeCountry(country) ?? DEFAULT_MARKET.country, plan: plan ?? 'starter' },
     })
     if (adminEmail && adminPassword) {
       await prisma.user.create({

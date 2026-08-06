@@ -5,6 +5,7 @@ import { useAppStore, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCu
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi, paydunyaApi } from '@/lib/api'
 import { normalizeMsisdn } from '@/lib/msisdn'
+import { useTenantDialCode } from '@/hooks/useTenantDialCode'
 import { POS_MSISDN_POLICY, msisdnErrorText } from '@/lib/posMsisdnPolicy'
 import { resolveTierPrice, isPromotionActive } from '@/lib/pricing'
 import { barcodeMatches, matchesScannedCode } from '@/lib/barcode'
@@ -101,7 +102,11 @@ export default function POS() {
   useEffect(() => () => { if (scanIdleRef.current) clearTimeout(scanIdleRef.current) }, [])
   const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mtn'>(() => (posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mtn')
   useEffect(() => { setPayMode((posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mtn') }, [posDefaultPayment])
-  const [waCountryCode, setWaCountryCode]         = useState('+221')
+  // ⚠️ C'était `useState('+221')` : le reçu WhatsApp proposait le Sénégal à tout le monde.
+  // Le corriger en '+237' aurait créé une SEPTIÈME constante — l'indicatif descend du pays
+  // de la boutique. `resolveRecipient` reste seul juge côté serveur ; on corrige la CAUSE.
+  const tenantDialCode = useTenantDialCode()
+  const [waCountryCode, setWaCountryCode]         = useState(tenantDialCode)
   const [waCountryFlag, setWaCountryFlag]         = useState('🇸🇳')
   const [showCountryPicker, setShowCountryPicker] = useState(false)
   const [countrySearch, setCountrySearch]         = useState('')

@@ -9,12 +9,12 @@
 // Doit rester aligné sur `SUPPORTED_COUNTRIES` (backend `lib/country.ts`) : un pays
 // proposé ici mais absent là-bas serait refusé en 400 au moment d'enregistrer.
 export const COUNTRIES: { iso: string; name: string; flag: string }[] = [
+  { iso: 'CM', name: 'Cameroun',      flag: '🇨🇲' },
   { iso: 'SN', name: 'Sénégal',       flag: '🇸🇳' },
   { iso: 'CI', name: "Côte d'Ivoire", flag: '🇨🇮' },
   { iso: 'ML', name: 'Mali',          flag: '🇲🇱' },
   { iso: 'BF', name: 'Burkina Faso',  flag: '🇧🇫' },
   { iso: 'GN', name: 'Guinée',        flag: '🇬🇳' },
-  { iso: 'CM', name: 'Cameroun',      flag: '🇨🇲' },
   { iso: 'CD', name: 'Congo RDC',     flag: '🇨🇩' },
   { iso: 'GA', name: 'Gabon',         flag: '🇬🇦' },
   { iso: 'TG', name: 'Togo',          flag: '🇹🇬' },

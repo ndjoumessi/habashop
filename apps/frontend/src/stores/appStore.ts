@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { translations } from '@/i18n'
 import type { CartItem } from '@/components/pos/posShared'
 import type { FreshnessMap, FreshnessKind } from '@/lib/dataFreshness'
+import { DEFAULT_MARKET } from '@/lib/defaultMarket'
 
 export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD' | 'GBP'
 export type Lang     = 'fr' | 'en' | 'es' | 'it'
@@ -147,7 +148,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   theme: 'dark',
   sidebarCollapsed: false,
 
-  currency: 'XOF',
+  currency: DEFAULT_MARKET.currency as Currency,
   currencyManuallySet: false,
   showCurrencyConverter: true,
 

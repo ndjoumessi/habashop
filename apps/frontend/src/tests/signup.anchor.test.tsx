@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { DEFAULT_MARKET } from '@/lib/defaultMarket'
+import { COUNTRIES } from '@/components/signup/signupShared'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
 const { navigateMock, registerMock, mockState } = vi.hoisted(() => ({
@@ -99,13 +101,25 @@ describe('SignupPage — test d’ancrage (comportement à figer avant/après d�
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/onboarding'))
   })
 
-  it('le sélecteur de pays s’ouvre et filtre par recherche', () => {
+  /**
+   * ⚠️ CE TEST FIGEAIT « Sénégal » EN DUR — il assertait le défaut du jour, pas le
+   * comportement du sélecteur. Le basculement du marché par défaut vers le Cameroun
+   * (2026-08-06) l'a fait rougir alors que RIEN n'était cassé. Il lit désormais le pays
+   * attendu dans `DEFAULT_MARKET` : le jour où la décision produit rebouge, il suit.
+   */
+  it('le sélecteur de pays s’ouvre sur le marché par défaut et filtre par recherche', () => {
     render(<SignupPage />)
-    // ouvre le dropdown pays (bouton affichant le pays sélectionné par défaut, Sénégal)
-    fireEvent.click(screen.getByText('Sénégal'))
+    const attendu = COUNTRIES.find(c => c.code === DEFAULT_MARKET.country)
+    expect(attendu, `pays par défaut absent de la liste : ${DEFAULT_MARKET.country}`).toBeTruthy()
+    fireEvent.click(screen.getByText(attendu!.name))
     const search = screen.getByPlaceholderText('Rechercher un pays…')
     fireEvent.change(search, { target: { value: 'Mali' } })
     expect(screen.getByText('Mali')).toBeInTheDocument()
     expect(screen.queryByText('Burkina Faso')).not.toBeInTheDocument()
+  })
+
+  it('le pays par défaut est PROPOSÉ EN PREMIER dans la liste', () => {
+    // L'ordre n'est pas cosmétique : c'est le premier choix qu'un commerçant voit.
+    expect(COUNTRIES[0].code).toBe(DEFAULT_MARKET.country)
   })
 })

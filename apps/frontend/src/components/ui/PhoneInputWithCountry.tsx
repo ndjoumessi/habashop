@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
+import { dialCodeFor, DEFAULT_MARKET } from '@/lib/defaultMarket'
+import { useTenantCountry } from '@/hooks/useTenantDialCode'
 
 const COUNTRY_CODES = [
+  { code:'+237', flag:'🇨🇲', country:'Cameroun',          region:'Afrique Centrale' },
   { code:'+221', flag:'🇸🇳', country:'Sénégal',          region:'Afrique Ouest'    },
   { code:'+225', flag:'🇨🇮', country:"Côte d'Ivoire",    region:'Afrique Ouest'    },
   { code:'+223', flag:'🇲🇱', country:'Mali',              region:'Afrique Ouest'    },
@@ -16,7 +19,6 @@ const COUNTRY_CODES = [
   { code:'+238', flag:'🇨🇻', country:'Cap-Vert',          region:'Afrique Ouest'    },
   { code:'+234', flag:'🇳🇬', country:'Nigeria',           region:'Afrique Ouest'    },
   { code:'+233', flag:'🇬🇭', country:'Ghana',             region:'Afrique Ouest'    },
-  { code:'+237', flag:'🇨🇲', country:'Cameroun',          region:'Afrique Centrale' },
   { code:'+241', flag:'🇬🇦', country:'Gabon',             region:'Afrique Centrale' },
   { code:'+242', flag:'🇨🇬', country:'Congo',             region:'Afrique Centrale' },
   { code:'+243', flag:'🇨🇩', country:'RD Congo',          region:'Afrique Centrale' },
@@ -52,22 +54,38 @@ interface PhoneInputWithCountryProps {
   label?:       string
   lang?:        string
   disabled?:    boolean
+  /** Pays ISO-2 à pré-sélectionner. Absent → celui de la boutique active. */
+  defaultCountry?: string
 }
 
-function parsePhone(v: string): { code: string; flag: string; number: string } {
-  if (!v) return { code: '+221', flag: '🇸🇳', number: '' }
+/**
+ * ⚠️ Le repli était `{ code: '+221', flag: '🇸🇳' }` EN DUR, aux deux sorties. Il est
+ * désormais DÉRIVÉ du pays de la boutique active : une boutique de Douala propose +237,
+ * une boutique de Dakar +221. `DEFAULT_MARKET` ne sert que si ce pays est absent.
+ */
+function fallbackFor(country: string): { code: string; flag: string } {
+  const code = dialCodeFor(country)
+  const found = COUNTRY_CODES.find(c => c.code === code)
+  return { code, flag: found?.flag ?? DEFAULT_MARKET.flag }
+}
+
+function parsePhone(v: string, country: string): { code: string; flag: string; number: string } {
+  const fb = fallbackFor(country)
+  if (!v) return { ...fb, number: '' }
   // Tri par longueur décroissante pour matcher le plus long en premier
   const sorted = [...COUNTRY_CODES].sort((a, b) => b.code.length - a.code.length)
   const match = sorted.find(c => v.startsWith(c.code))
   if (match) return { code: match.code, flag: match.flag, number: v.slice(match.code.length).trim() }
-  return { code: '+221', flag: '🇸🇳', number: v }
+  return { ...fb, number: v }
 }
 
 export default function PhoneInputWithCountry({
   value, onChange, placeholder,
-  label, lang = 'fr', disabled,
+  label, lang = 'fr', disabled, defaultCountry,
 }: PhoneInputWithCountryProps) {
-  const parsed = parsePhone(value)
+  // Aucun des 8 appelants ne passait de pays : le repli vient du tenant, pas d'eux.
+  const tenantCountry = useTenantCountry()
+  const parsed = parsePhone(value, defaultCountry || tenantCountry)
   const [code,    setCode]    = useState(parsed.code)
   const [flag,    setFlag]    = useState(parsed.flag)
   const [number,  setNumber]  = useState(parsed.number)
@@ -76,12 +94,16 @@ export default function PhoneInputWithCountry({
   const [focused, setFocused] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
 
+  // ⚠️ `defaultCountry` et `tenantCountry` SONT des dépendances : au changement de
+  // boutique, l'indicatif proposé doit suivre. Les omettre laissait le champ figé sur le
+  // pays de la boutique précédente — le défaut qu'on vient justement de supprimer.
+  const fallbackCountry = defaultCountry || tenantCountry
   useEffect(() => {
-    const p = parsePhone(value)
+    const p = parsePhone(value, fallbackCountry)
     setCode(p.code)
     setFlag(p.flag)
     setNumber(p.number)
-  }, [value])
+  }, [value, fallbackCountry])
 
   useEffect(() => {
     if (!open) return

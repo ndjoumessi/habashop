@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { authApi, type AccessibleTenant } from '@/lib/api'
 import { Store, Plus, UserPlus, Check, Loader2, X } from 'lucide-react'
 import { makeI, panel, Head } from '@/components/settings/settingsShared'
+import { DEFAULT_MARKET } from '@/lib/defaultMarket'
 
 const CURRENCIES = ['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP'] as const
 const LANGS = [['fr', 'Français'], ['en', 'English'], ['es', 'Español'], ['it', 'Italiano']] as const
@@ -23,7 +24,7 @@ export default function SectionShops() {
   const [showInvite, setShowInvite] = useState(false)
   const [busy, setBusy] = useState(false)
 
-  const [shop, setShop] = useState({ name: '', currency: 'XOF', lang: 'fr', address: '' })
+  const [shop, setShop] = useState({ name: '', currency: DEFAULT_MARKET.currency as string, lang: 'fr', address: '' })
   const [invite, setInvite] = useState({ tenantId: '', name: '', email: '', password: '', role: 'CASHIER' })
 
   const refresh = () => { authApi.tenants().then(setList).catch(() => {}) }
@@ -38,7 +39,7 @@ export default function SectionShops() {
       const next = [...useAuthStore.getState().tenants, { id: tenant.id, name: tenant.name, currency: tenant.currency, plan: tenant.plan, logo: tenant.logo ?? null, address: tenant.address ?? null, role: 'ADMIN' }]
       useAuthStore.setState({ tenants: next })
       setList(next)
-      setShop({ name: '', currency: 'XOF', lang: 'fr', address: '' })
+      setShop({ name: '', currency: DEFAULT_MARKET.currency, lang: 'fr', address: '' })
       setShowCreate(false)
       toast.success(i('Boutique créée', 'Shop created', 'Tienda creada', 'Negozio creato'))
     } catch (e: any) {

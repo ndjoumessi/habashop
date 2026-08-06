@@ -10,6 +10,7 @@ import { TX, FONT, D } from '@/components/signup/signupShared'
 import SignupBranding from '@/components/signup/SignupBranding'
 import SignupStep1 from '@/components/signup/SignupStep1'
 import SignupStep2 from '@/components/signup/SignupStep2'
+import { DEFAULT_MARKET } from '@/lib/defaultMarket'
 
 export default function SignupPage() {
   const navigate = useNavigate()
@@ -25,8 +26,8 @@ export default function SignupPage() {
     phone:      '+221',
     password:   '',
     confirmPwd: '',
-    currency:   'XOF' as Currency,
-    country:    'SN',
+    currency:   DEFAULT_MARKET.currency as Currency,
+    country:    DEFAULT_MARKET.country,
     acceptTerms: false,
   })
   const [step,        setStep]        = useState<1 | 2>(1)

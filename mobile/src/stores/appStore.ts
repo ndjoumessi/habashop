@@ -5,6 +5,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { fetchRates, convertFromXOF } from '@/services/exchangeRate'
 import { DarkColors, LightColors } from '@/constants/theme'
+import { DEFAULT_MARKET } from '@/lib/defaultMarket'
 
 export type Lang = 'fr' | 'en' | 'es' | 'it'
 export type ThemeMode = 'dark' | 'light' | 'system'
@@ -27,7 +28,7 @@ export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       lang:         'fr',
-      currency:     'XOF',
+      currency:     DEFAULT_MARKET.currency,
       currencyManuallySet: false,
       theme:        'dark',
       kioskMode:    false,

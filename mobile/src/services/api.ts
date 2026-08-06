@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios'
 import * as SecureStore from 'expo-secure-store'
 import { logger } from '@/lib/logger'
+import { DEFAULT_MARKET } from '@/lib/defaultMarket'
 import type {
   LoginResponse, RawLoginResponse, MeResponse,
   TenantSummary, SwitchTenantResponse,
@@ -78,7 +79,7 @@ export const authApi = {
     // Edge : compte sans aucune boutique → tenant minimal pour ne pas crasher l'app.
     return {
       token: raw.token, user: raw.user,
-      tenant: raw.tenant ?? { id: '', name: raw.user?.name ?? 'HabaShop', plan: '', currency: 'XOF', lang: 'fr', status: 'active' },
+      tenant: raw.tenant ?? { id: '', name: raw.user?.name ?? 'HabaShop', plan: '', currency: DEFAULT_MARKET.currency, lang: 'fr', status: 'active' },
     }
   },
   me: (): Promise<MeResponse> =>

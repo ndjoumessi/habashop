@@ -8,6 +8,7 @@ import { tenantApi, productsApi } from '@/lib/api'
 import { suggestedCurrencyForCountry } from '@/utils/countryCurrency'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import LogoMark from '@/components/ui/LogoMark'
+import { DEFAULT_MARKET } from '@/lib/defaultMarket'
 
 /**
  * Onboarding tenant — 1:1 maquette 05-onboarding-wizard.view.html :
@@ -28,8 +29,8 @@ export default function Onboarding() {
   const [currencyTouched, setCurrencyTouched] = useState(false)
   const [form, setForm] = useState({
     shopName: '', ownerName: '', shopType: 'grocery',
-    country: 'SN', city: '', address: '', phone: '',
-    currency: 'XOF' as Currency, language: storeLang as Lang, taxRate: 18,
+    country: DEFAULT_MARKET.country, city: '', address: '', phone: '',
+    currency: DEFAULT_MARKET.currency as Currency, language: storeLang as Lang, taxRate: 18,
     productName: '', productPrice: 0, productStock: 0, skipProduct: false,
   })
 
@@ -167,7 +168,10 @@ export default function Onboarding() {
                   n'accepte que l'ISO-2 — un libellé y devient COUNTRY_UNKNOWN, donc plus aucun
                   WhatsApp ni SMS, en silence. Ne jamais remettre le libellé en `value`.
                   « Autre » est retiré : il ne désigne aucun pays, il ne peut donc rien écrire. */}
-              {[['SN', 'Sénégal', '🇸🇳'], ['CI', "Côte d'Ivoire", '🇨🇮'], ['ML', 'Mali', '🇲🇱'], ['BF', 'Burkina Faso', '🇧🇫'], ['GN', 'Guinée', '🇬🇳'], ['CM', 'Cameroun', '🇨🇲'], ['CD', 'Congo RDC', '🇨🇩'], ['GA', 'Gabon', '🇬🇦'], ['TG', 'Togo', '🇹🇬'], ['BJ', 'Bénin', '🇧🇯'], ['NE', 'Niger', '🇳🇪'], ['TD', 'Tchad', '🇹🇩'], ['FR', 'France', '🇫🇷'], ['BE', 'Belgique', '🇧🇪'], ['CA', 'Canada', '🇨🇦']].map(([iso, c, f]) => <option key={iso} value={iso}>{f} {c}</option>)}
+              {/* ⚠️ SIXIÈME liste de pays du dépôt, en tableau de tableaux : la détection par
+                  forme du verrou cherche `{ iso: … }` et ne l'a PAS vue. Cameroun en tête,
+                  comme les cinq autres — cf. `defaultMarket.test.ts`, limite assumée n°3. */}
+              {[['CM', 'Cameroun', '🇨🇲'], ['SN', 'Sénégal', '🇸🇳'], ['CI', "Côte d'Ivoire", '🇨🇮'], ['ML', 'Mali', '🇲🇱'], ['BF', 'Burkina Faso', '🇧🇫'], ['GN', 'Guinée', '🇬🇳'], ['CD', 'Congo RDC', '🇨🇩'], ['GA', 'Gabon', '🇬🇦'], ['TG', 'Togo', '🇹🇬'], ['BJ', 'Bénin', '🇧🇯'], ['NE', 'Niger', '🇳🇪'], ['TD', 'Tchad', '🇹🇩'], ['FR', 'France', '🇫🇷'], ['BE', 'Belgique', '🇧🇪'], ['CA', 'Canada', '🇨🇦']].map(([iso, c, f]) => <option key={iso} value={iso}>{f} {c}</option>)}
             </select>
 
             <label style={lbl} htmlFor="ob-city">{i('Ville', 'City', 'Ciudad', 'Città')}</label>

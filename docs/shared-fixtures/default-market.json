@@ -1,0 +1,48 @@
+{
+  "_comment": [
+    "MARCHÉ PAR DÉFAUT — cas partagés, lus à l'EXÉCUTION par les tests jumeaux :",
+    "  apps/frontend/src/lib/defaultMarket.ts ← src/tests/defaultMarketShared.test.ts",
+    "  apps/backend/src/lib/defaultMarket.ts  ← src/tests/defaultMarketShared.test.ts",
+    "  mobile/src/lib/defaultMarket.ts        ← src/__tests__/defaultMarketShared.test.ts",
+    "Modifier la valeur d'un seul côté fait rougir les autres.",
+    "",
+    "⚠️ DÉCISION PRODUIT du 2026-08-06 : Cameroun / XAF / +237.",
+    "",
+    "MOTIF MESURÉ — les seuls prestataires câblés ET appelables sont camerounais :",
+    "  Campay      politique 'cm-only', ne dessert que le Cameroun",
+    "  MTN MoMo    opérateur camerounais",
+    "  Wave        SÉNÉGALAIS — aucune clé posée, POST /checkout rend 422",
+    "  Orange      aucune clé posée",
+    "Un commerçant qui s'inscrivait avec les valeurs par défaut obtenait SN + XOF,",
+    "puis se voyait proposer le seul chemin de paiement qui ne fonctionne pas.",
+    "",
+    "⚠️ XOF → XAF N'A AUCUN EFFET SUR LES MONTANTS, vérifié dans le code :",
+    "  TO_XOF_RATES        XOF: 1     XAF: 1      (identité, front ET back)",
+    "  CURRENCY_DECIMALS   XOF: 0     XAF: 0",
+    "  CURRENCY_SYMBOLS    XOF: FCFA  XAF: FCFA   (même symbole affiché)",
+    "`lib/plans.ts` ne dépend pas du code de devise : il stocke des entiers, et `XOF` n'y",
+    "nomme que l'UNITÉ DE BASE. Aucun prix ne bouge, aucun recalcul.",
+    "",
+    "⚠️ CE FICHIER NE DÉCRIT QUE LE DÉFAUT — la valeur attribuée quand personne n'a choisi.",
+    "Il ne dit RIEN des tenants existants : au 2026-08-06 ils sont 4 (SN 2, CI 1, FR 1 ;",
+    "EUR 3, XOF 1), aucun en CM, et le basculement du défaut ne doit en changer AUCUN.",
+    "Empreinte de référence : 0c9bd7a5d9a9d93a4fb1b8cd",
+    "",
+    "⚠️ `dialCode` est un REPLI, pas une constante d'affichage. L'indicatif proposé au",
+    "caissier se DÉRIVE de `tenant.country` ; +237 ne sert que si le pays est absent.",
+    "Une boutique de Dakar ne doit pas plus recevoir +237 qu'une boutique de Douala ne",
+    "devait recevoir +221."
+  ],
+
+  "country": "CM",
+  "currency": "XAF",
+  "dialCode": "+237",
+  "flag": "🇨🇲",
+
+  "_previous": {
+    "_comment": "Le marché par défaut D'AVANT, conservé pour que le verrou sache quoi interdire.",
+    "country": "SN",
+    "currency": "XOF",
+    "dialCode": "+221"
+  }
+}

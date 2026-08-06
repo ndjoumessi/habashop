@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
+import { dialCodeFor } from '@/lib/defaultMarket'
+import { useTenantCountry } from '@/hooks/useTenantDialCode'
 
 const COUNTRY_CODES = [
+  { code:'+237', flag:'🇨🇲', country:'Cameroun',        iso:'CM' },
   { code:'+39',  flag:'🇮🇹', country:'Italia',          iso:'IT' },
   { code:'+33',  flag:'🇫🇷', country:'France',          iso:'FR' },
   { code:'+221', flag:'🇸🇳', country:'Sénégal',         iso:'SN' },
   { code:'+225', flag:'🇨🇮', country:"Côte d'Ivoire",   iso:'CI' },
-  { code:'+237', flag:'🇨🇲', country:'Cameroun',        iso:'CM' },
   { code:'+223', flag:'🇲🇱', country:'Mali',            iso:'ML' },
   { code:'+242', flag:'🇨🇬', country:'Congo',           iso:'CG' },
   { code:'+243', flag:'🇨🇩', country:'RD Congo',        iso:'CD' },
@@ -43,12 +45,18 @@ interface PhoneInputProps {
 export default function PhoneInput({
   value, onChange, placeholder = '77 000 00 00', defaultCountry, readOnly,
 }: PhoneInputProps) {
+  // ⚠️ Le repli était `COUNTRY_CODES[0]` — donc l'ORDRE de la liste décidait du défaut,
+  // silencieusement. Il descend maintenant du pays de la boutique active ; l'ordre de la
+  // liste ne gouverne plus que l'affichage.
+  const tenantCountry = useTenantCountry()
   const getDefaultCode = () => {
-    if (defaultCountry) {
-      const found = COUNTRY_CODES.find(c => c.iso === defaultCountry)
+    for (const iso of [defaultCountry, tenantCountry]) {
+      if (!iso) continue
+      const found = COUNTRY_CODES.find(c => c.iso === iso)
       if (found) return found
     }
-    return COUNTRY_CODES[0]
+    const code = dialCodeFor(tenantCountry)
+    return COUNTRY_CODES.find(c => c.code === code) ?? COUNTRY_CODES[0]
   }
 
   const [selectedCode, setSelectedCode] = useState(getDefaultCode)

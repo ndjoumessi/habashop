@@ -184,11 +184,11 @@ export const TX: Record<Lang, ST> = {
 }
 
 export const COUNTRIES = [
+  { code: 'CM', flag: '🇨🇲', name: 'Cameroun' },
   { code: 'SN', flag: '🇸🇳', name: 'Sénégal' },
   { code: 'CI', flag: '🇨🇮', name: "Côte d'Ivoire" },
   { code: 'ML', flag: '🇲🇱', name: 'Mali' },
   { code: 'BF', flag: '🇧🇫', name: 'Burkina Faso' },
-  { code: 'CM', flag: '🇨🇲', name: 'Cameroun' },
   { code: 'CG', flag: '🇨🇬', name: 'Congo' },
   { code: 'CD', flag: '🇨🇩', name: 'RD Congo' },
   { code: 'GA', flag: '🇬🇦', name: 'Gabon' },

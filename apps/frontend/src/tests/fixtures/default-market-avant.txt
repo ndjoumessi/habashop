@@ -1,0 +1,38 @@
+ÉTAT AVANT LE BASCULEMENT — lignes extraites par `git show HEAD:<fichier>`, 2026-08-06.
+JAMAIS retapées : un sabotage écrit de mémoire hérite des hypothèses du détecteur,
+et les deux tombent ensemble. Sert de calibrage à `defaultMarket.test.ts`.
+
+apps/backend/src/routes/auth.ts:168
+          currency: currency ?? 'XOF',
+apps/backend/src/routes/auth.ts:172
+          country: normalizeCountry(country) ?? 'SN',
+apps/backend/src/routes/tenant.ts:70
+          country: body.country ?? 'SN',
+apps/backend/src/routes/admin.ts:82
+      data: { name, currency: currency ?? 'XOF', country: normalizeCountry(country) ?? 'SN', plan: plan ?? 'starter' },
+apps/frontend/src/pages/SignupPage.tsx:28
+    currency:   'XOF' as Currency,
+apps/frontend/src/pages/SignupPage.tsx:29
+    country:    'SN',
+apps/frontend/src/pages/Onboarding.tsx:31
+    country: 'SN', city: '', address: '', phone: '',
+apps/frontend/src/pages/Onboarding.tsx:32
+    currency: 'XOF' as Currency, language: storeLang as Lang, taxRate: 18,
+apps/frontend/src/pages/AdminDashboard.tsx:124
+  const [newTenantForm, setNewTenantForm] = useState({ name: '', currency: 'XOF', country: 'SN', plan: 'starter', adminEmail: '', adminPassword: '' })
+apps/frontend/src/pages/AdminDashboard.tsx:701
+                  setNewTenantForm({ name: '', currency: 'XOF', country: 'SN', plan: 'starter', adminEmail: '', adminPassword: '' })
+apps/frontend/src/components/settings/SectionShops.tsx:26
+  const [shop, setShop] = useState({ name: '', currency: 'XOF', lang: 'fr', address: '' })
+apps/frontend/src/components/settings/SectionShops.tsx:41
+      setShop({ name: '', currency: 'XOF', lang: 'fr', address: '' })
+apps/frontend/src/stores/appStore.ts:150
+  currency: 'XOF',
+mobile/src/stores/appStore.ts:30
+      currency:     'XOF',
+apps/frontend/src/pages/POS.tsx:104
+  const [waCountryCode, setWaCountryCode]         = useState('+221')
+apps/frontend/src/components/ui/PhoneInputWithCountry.tsx:58
+  if (!v) return { code: '+221', flag: '🇸🇳', number: '' }
+apps/frontend/src/components/ui/PhoneInputWithCountry.tsx:63
+  return { code: '+221', flag: '🇸🇳', number: v }

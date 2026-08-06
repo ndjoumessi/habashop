@@ -124,6 +124,7 @@ export interface CartItem {
 
 // ─── INDICATIFS PAYS ────────────────────────
 export const COUNTRY_CODES = [
+  { code:'+237', flag:'🇨🇲', country:'Cameroun',        region:'Afrique Centrale' },
   { code:'+221', flag:'🇸🇳', country:'Sénégal',        region:'Afrique Ouest'    },
   { code:'+225', flag:'🇨🇮', country:"Côte d'Ivoire",  region:'Afrique Ouest'    },
   { code:'+223', flag:'🇲🇱', country:'Mali',            region:'Afrique Ouest'    },
@@ -139,7 +140,6 @@ export const COUNTRY_CODES = [
   { code:'+238', flag:'🇨🇻', country:'Cap-Vert',        region:'Afrique Ouest'    },
   { code:'+234', flag:'🇳🇬', country:'Nigeria',         region:'Afrique Ouest'    },
   { code:'+233', flag:'🇬🇭', country:'Ghana',           region:'Afrique Ouest'    },
-  { code:'+237', flag:'🇨🇲', country:'Cameroun',        region:'Afrique Centrale' },
   { code:'+241', flag:'🇬🇦', country:'Gabon',           region:'Afrique Centrale' },
   { code:'+242', flag:'🇨🇬', country:'Congo',           region:'Afrique Centrale' },
   { code:'+243', flag:'🇨🇩', country:'RD Congo',        region:'Afrique Centrale' },

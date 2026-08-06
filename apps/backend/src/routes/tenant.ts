@@ -9,6 +9,7 @@ import { authenticate } from '../middleware/authenticate'
 import { getTenantId, getActiveTenantId } from '../lib/tenantId'
 import { blockDemoTenant } from '../middleware/demoTenant'
 import { sendUserInvitationEmail } from '../services/email'
+import { DEFAULT_MARKET } from '../lib/defaultMarket'
 
 const VALID_ROLES = ['ADMIN', 'MANAGER', 'CASHIER', 'ACCOUNTANT', 'HR'] as const
 type Role = typeof VALID_ROLES[number]
@@ -67,7 +68,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       const t = await tx.tenant.create({
         data: {
           name, currency, lang,
-          country: body.country ?? 'SN',
+          country: body.country ?? DEFAULT_MARKET.country,
           address: body.address ?? null,
           phone: body.phone ?? null,
           plan: origin?.plan ?? 'starter',

@@ -77,11 +77,22 @@ async function seedDemo() {
 
   // ── 3. Clients fictifs sénégalais (noms d'enseignes génériques, n° +221 non-attribuables) ──
   // Soldes (totalRevenue) variés non nuls → l'écran ne montre pas "0 FCFA" partout.
+  //
+  // ⚠️ `notes` est renseigné sur une FRACTION des lignes (3 sur 5), pas sur toutes.
+  // La colonne existait et n'était JAMAIS remplie : une colonne toujours vide en
+  // démonstration laisse croire qu'elle ne sert à rien — c'est ce qui avait fait passer
+  // son absence de persistance inaperçue jusqu'à `5013f236`. La remplir PARTOUT serait
+  // l'excès inverse : dans une vraie boutique, la plupart des fiches n'ont pas de note,
+  // et une colonne pleine à 100 % ne montrerait pas l'état « vide » qu'il faut savoir
+  // afficher proprement.
   const customers = [
-    { id: 'demo-dkr-cust-1', name: 'Boutique Teranga', type: 'wholesale', phone: '+221 77 000 01 01', email: 'teranga@demo.sn', address: 'Médina, Dakar',     loyaltyPoints: 480, totalRevenue: 1250000 },
-    { id: 'demo-dkr-cust-2', name: 'Espace Sahel',     type: 'semi-wholesale', phone: '+221 77 000 02 02', email: 'sahel@demo.sn',   address: 'Plateau, Dakar',    loyaltyPoints: 260, totalRevenue: 685000 },
+    { id: 'demo-dkr-cust-1', name: 'Boutique Teranga', type: 'wholesale', phone: '+221 77 000 01 01', email: 'teranga@demo.sn', address: 'Médina, Dakar',     loyaltyPoints: 480, totalRevenue: 1250000,
+      notes: 'Paie à 30 jours. Livraison le mardi matin, quai arrière.' },
+    { id: 'demo-dkr-cust-2', name: 'Espace Sahel',     type: 'semi-wholesale', phone: '+221 77 000 02 02', email: 'sahel@demo.sn',   address: 'Plateau, Dakar',    loyaltyPoints: 260, totalRevenue: 685000,
+      notes: 'Demande toujours une facture PDF. Contact : M. Sow.' },
     { id: 'demo-dkr-cust-3', name: 'Marché Médina',    type: 'wholesale', phone: '+221 77 000 03 03', email: 'medina@demo.sn',  address: 'Médina, Dakar',     loyaltyPoints: 350, totalRevenue: 940000 },
-    { id: 'demo-dkr-cust-4', name: 'Comptoir Baobab',  type: 'retail',    phone: '+221 77 000 04 04', email: 'baobab@demo.sn',  address: 'Sacré-Cœur, Dakar', loyaltyPoints: 120, totalRevenue: 215000 },
+    { id: 'demo-dkr-cust-4', name: 'Comptoir Baobab',  type: 'retail',    phone: '+221 77 000 04 04', email: 'baobab@demo.sn',  address: 'Sacré-Cœur, Dakar', loyaltyPoints: 120, totalRevenue: 215000,
+      notes: 'Prévenir avant rupture sur le riz — commande groupée avec le voisin.' },
     { id: 'demo-dkr-cust-5', name: 'Supérette Yoff',   type: 'retail',    phone: '+221 77 000 05 05', email: 'yoff@demo.sn',    address: 'Yoff, Dakar',       loyaltyPoints: 40,  totalRevenue: 78000 },
   ]
   for (const c of customers) {
