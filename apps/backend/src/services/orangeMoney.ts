@@ -1,16 +1,23 @@
 /**
  * Intégration Orange Money Web Payment API.
- * En l'absence de ORANGE_CLIENT_ID / ORANGE_CLIENT_SECRET, toutes les
- * fonctions basculent en mode sandbox (liens simulés, paiements réussis)
- * — prêt pour la prod dès que les clés sont fournies.
+ *
+ * ⚠️ CHANGEMENT DE COMPORTEMENT (2026-08-06), identique à `wave.ts` : sans
+ * `ORANGE_CLIENT_ID` / `ORANGE_CLIENT_SECRET`, ce module NE FABRIQUE PLUS ni lien
+ * (`https://sandbox.orangemoney.com/pay/<ref>`) ni confirmation `paid: true`. Le refus
+ * passe par `PaymentNotConfiguredError` → 422 côté route. L'artefact simulé exige
+ * `ORANGE_SANDBOX_LINKS=1` et reste impossible en production.
  * Docs : https://developer.orange.com
  */
 
 import crypto from 'crypto'
 
-const OM_CLIENT_ID     = process.env.ORANGE_CLIENT_ID
-const OM_CLIENT_SECRET = process.env.ORANGE_CLIENT_SECRET
-const OM_BASE_URL      = 'https://api.orange.com/orange-money-webpay/dev/v1'
+import { requireProvider } from '../lib/payments/providerConfig'
+
+// ⚠️ Lus À L'APPEL (cf. wave.ts) : des constantes de module rendraient inopérants les
+// tests qui pilotent `process.env`.
+const clientId     = (): string => process.env.ORANGE_CLIENT_ID ?? ''
+const clientSecret = (): string => process.env.ORANGE_CLIENT_SECRET ?? ''
+const OM_BASE_URL  = 'https://api.orange.com/orange-money-webpay/dev/v1'
 
 /**
  * Vérifie l'authenticité d'un webhook Orange Money — HMAC-SHA256 du RAW body
@@ -40,13 +47,13 @@ async function getOMToken(): Promise<string> {
     return omToken.value
   }
 
-  if (!OM_CLIENT_ID || !OM_CLIENT_SECRET) {
-    console.warn('⚠️  ORANGE_CLIENT_ID manquant — mode sandbox')
+  if (requireProvider('orange_money') === 'simulated') {
+    console.warn('⚠️  ORANGE_SANDBOX_LINKS=1 — jeton SIMULÉ (jamais en production)')
     return 'sandbox_token'
   }
 
   const credentials = Buffer.from(
-    `${OM_CLIENT_ID}:${OM_CLIENT_SECRET}`
+    `${clientId()}:${clientSecret()}`
   ).toString('base64')
 
   const res = await fetch(
@@ -87,8 +94,8 @@ export async function createOMPayment(opts: {
   payToken:   string
   status:     string
 }> {
-  if (!OM_CLIENT_ID) {
-    console.warn('⚠️  ORANGE_CLIENT_ID manquant — mode sandbox')
+  if (requireProvider('orange_money') === 'simulated') {
+    console.warn('⚠️  ORANGE_SANDBOX_LINKS=1 — lien SIMULÉ (jamais en production)')
     return {
       paymentUrl: `https://sandbox.orangemoney.com/pay/${opts.reference}`,
       payToken:   `sandbox_${opts.reference}`,
@@ -108,7 +115,7 @@ export async function createOMPayment(opts: {
         'Accept':        'application/json',
       },
       body: JSON.stringify({
-        merchant_key: OM_CLIENT_ID,
+        merchant_key: clientId(),
         currency:     opts.currency ?? 'OUV',
         order_id:     opts.reference,
         amount:       opts.amount,
@@ -142,7 +149,9 @@ export async function verifyOMPayment(
   amount: number
   paid:   boolean
 }> {
-  if (!OM_CLIENT_ID) {
+  // ⚠️ Renvoyait `paid: true` SANS CLÉ — une confirmation de paiement fabriquée.
+  if (requireProvider('orange_money') === 'simulated') {
+    console.warn('⚠️  ORANGE_SANDBOX_LINKS=1 — paiement SIMULÉ réussi (jamais en production)')
     return { status: 'SUCCESS', amount: 0, paid: true }
   }
 
@@ -158,7 +167,7 @@ export async function verifyOMPayment(
       },
       body: JSON.stringify({
         order_id:     orderRef,
-        merchant_key: OM_CLIENT_ID,
+        merchant_key: clientId(),
       }),
     }
   )

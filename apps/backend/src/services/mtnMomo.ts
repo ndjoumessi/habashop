@@ -1,25 +1,32 @@
 import crypto from 'crypto'
+import { requireProvider } from '../lib/payments/providerConfig'
 
 const ENV     = process.env.MTN_MOMO_ENVIRONMENT ?? 'sandbox'
 const BASE_URL = ENV === 'production'
   ? 'https://proxy.momoapi.mtn.com'
   : 'https://sandbox.momodeveloper.mtn.com'
 
-const SUB_KEY = process.env.MTN_MOMO_SUBSCRIPTION_KEY ?? ''
-const USER_ID = process.env.MTN_MOMO_USER_ID ?? ''
-const API_KEY = process.env.MTN_MOMO_API_KEY ?? ''
+// ⚠️ Lus À L'APPEL : figés en constantes, ils rendaient les tests process.env inopérants.
+const subKey = (): string => process.env.MTN_MOMO_SUBSCRIPTION_KEY ?? ''
+const userId = (): string => process.env.MTN_MOMO_USER_ID ?? ''
+const apiKey = (): string => process.env.MTN_MOMO_API_KEY ?? ''
 
 let _token: string | null = null
 let _tokenExp = 0
 
 export async function getAccessToken(): Promise<string> {
   if (_token && Date.now() < _tokenExp) return _token
-  const creds = Buffer.from(`${USER_ID}:${API_KEY}`).toString('base64')
+  // ⚠️ Refus AVANT le réseau. Sans clés, MTN partait quand même chercher un jeton avec des
+  // identifiants vides et remontait « MTN token error: 401 » → 502 côté route : un message
+  // de panne pour un défaut de configuration. MTN n'a AUCUN mode simulé (`sandbox_flag:
+  // null` au registre) : sans clés, il refuse, point.
+  requireProvider('mtn_momo')
+  const creds = Buffer.from(`${userId()}:${apiKey()}`).toString('base64')
   const res = await fetch(`${BASE_URL}/collection/token/`, {
     method:  'POST',
     headers: {
       'Authorization':            `Basic ${creds}`,
-      'Ocp-Apim-Subscription-Key': SUB_KEY,
+      'Ocp-Apim-Subscription-Key': subKey(),
     },
   })
   if (!res.ok) {
@@ -55,7 +62,7 @@ export async function requestToPay(opts: {
       'Authorization':             `Bearer ${token}`,
       'X-Reference-Id':            referenceId,
       'X-Target-Environment':      ENV,
-      'Ocp-Apim-Subscription-Key': SUB_KEY,
+      'Ocp-Apim-Subscription-Key': subKey(),
       'Content-Type':              'application/json',
     },
     body: JSON.stringify({
@@ -90,7 +97,7 @@ export async function getPaymentStatus(
     headers: {
       'Authorization':             `Bearer ${token}`,
       'X-Target-Environment':      ENV,
-      'Ocp-Apim-Subscription-Key': SUB_KEY,
+      'Ocp-Apim-Subscription-Key': subKey(),
     },
   })
 

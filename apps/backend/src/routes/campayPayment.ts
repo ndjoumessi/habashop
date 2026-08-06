@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify'
 import { authenticate } from '../middleware/authenticate'
 import { collect, getStatus, getPaymentLink } from '../services/campay'
 import { prisma } from '../db'
+import { isNotConfigured, notConfiguredBody } from '../lib/payments/providerConfig'
 
 const IS_SANDBOX = (process.env.CAMPAY_ENVIRONMENT ?? 'demo') !== 'production'
 
@@ -90,6 +91,7 @@ export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
     } catch (err: any) {
       // phoneNumber exclu des logs (PII) — le message d'erreur Campay suffit au diagnostic.
       request.log.error({ err, step: 'collect', amount: xafAmount, operator: operator ?? 'unknown' }, 'Campay collect failed')
+      if (isNotConfigured(err)) return reply.code(422).send(notConfiguredBody('campay'))
       return reply.code(502).send({ error: err.message ?? 'Erreur Campay' })
     }
   })
@@ -121,6 +123,7 @@ export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
       return { reference, status }
     } catch (err: any) {
       request.log.error({ err }, 'Campay status failed')
+      if (isNotConfigured(err)) return reply.code(422).send(notConfiguredBody('campay'))
       return reply.code(502).send({ error: 'Erreur Campay status' })
     }
   })
@@ -163,6 +166,7 @@ export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
       return { paymentUrl: result.link, reference: result.reference }
     } catch (err: any) {
       request.log.error({ err, step: 'getPaymentLink', amount: xafAmount }, 'Campay getPaymentLink failed')
+      if (isNotConfigured(err)) return reply.code(422).send(notConfiguredBody('campay'))
       return reply.code(502).send({ error: err.message ?? 'Erreur Campay carte' })
     }
   })

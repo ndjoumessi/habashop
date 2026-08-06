@@ -1,4 +1,5 @@
 import { appUrl } from '../lib/appUrl'
+import { PaymentNotConfiguredError, missingSecrets } from '../lib/payments/providerConfig'
 
 const ENV      = process.env.CAMPAY_ENVIRONMENT ?? 'demo'
 const BASE_URL = ENV === 'production' ? 'https://campay.net' : 'https://demo.campay.net'
@@ -43,7 +44,10 @@ export async function getToken(): Promise<string> {
     return _token
   }
 
-  throw new Error('Campay: impossible d\'obtenir un jeton (CAMPAY_USERNAME/CAMPAY_PASSWORD ou CAMPAY_TOKEN requis)')
+  // ⚠️ Refus TYPÉ, pas une erreur générique : sans identifiants, Campay échouait déjà
+  // fermé (c'est bien), mais la route le rendait en 502 « Erreur Campay » — un message de
+  // PANNE là où c'est un état de configuration. Le client réessayait une porte fermée.
+  throw new PaymentNotConfiguredError('campay', missingSecrets('campay'))
 }
 
 // Réinitialise le cache (utile pour les tests).

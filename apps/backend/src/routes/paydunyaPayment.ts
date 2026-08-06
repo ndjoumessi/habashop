@@ -6,6 +6,7 @@ import {
   IS_TEST, paydunyaConfigured, createInvoice, confirmInvoice, verifyIpnHash, normalizeStatus,
 } from '../services/paydunya'
 import { appBaseUrl } from '../lib/appUrl'
+import { isNotConfigured, notConfiguredBody } from '../lib/payments/providerConfig'
 
 // Lecture unique via `lib/appUrl` (adossée à FRONTEND_URL) — plus de repli local dupliqué.
 const FRONT_URL = appBaseUrl()
@@ -56,6 +57,7 @@ export async function paydunyaPaymentRoutes(app: FastifyInstance): Promise<void>
       return { token, redirectUrl: url }
     } catch (err: any) {
       request.log.error({ err, step: 'createInvoice', amount }, 'PayDunya initiate failed')
+      if (isNotConfigured(err)) return reply.code(422).send(notConfiguredBody('paydunya'))
       return reply.code(502).send({ error: err.message ?? 'Erreur PayDunya' })
     }
   })
@@ -74,6 +76,7 @@ export async function paydunyaPaymentRoutes(app: FastifyInstance): Promise<void>
       return { status }
     } catch (err: any) {
       request.log.error({ err, step: 'confirmInvoice' }, 'PayDunya status failed')
+      if (isNotConfigured(err)) return reply.code(422).send(notConfiguredBody('paydunya'))
       return reply.code(502).send({ error: 'Erreur PayDunya status' })
     }
   }

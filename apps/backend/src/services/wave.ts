@@ -2,14 +2,25 @@ import crypto from 'crypto'
 
 /**
  * Intégration Wave Business API.
- * En l'absence de WAVE_API_KEY, toutes les fonctions basculent en mode
- * sandbox (liens simulés, paiements considérés réussis) — prêt pour la prod
- * dès que les clés sont fournies via les variables d'environnement.
+ *
+ * ⚠️ CHANGEMENT DE COMPORTEMENT (2026-08-06) : sans `WAVE_API_KEY`, ce module NE
+ * FABRIQUE PLUS de lien. Il rendait `https://sandbox.wave.com/pay/<ref>` — un artefact
+ * parfaitement crédible pour le commerçant, adossé à une `PlanRequest` que rien ne pouvait
+ * honorer, puisque le webhook est fail-closed. L'aller ne l'était pas.
+ *
+ * Trois états désormais, arbitrés par `lib/payments/providerConfig` :
+ * clé présente → appel réel · clé absente + `WAVE_SANDBOX_LINKS=1` hors production →
+ * artefact simulé assumé · sinon → `PaymentNotConfiguredError` (routes : 422).
+ *
  * Docs : https://developer.wave.com
  */
+import { requireProvider } from '../lib/payments/providerConfig'
 
-const WAVE_API_KEY = process.env.WAVE_API_KEY
-const BASE_URL     = 'https://api.wave.com/v1'
+const BASE_URL = 'https://api.wave.com/v1'
+
+// ⚠️ Lu À L'APPEL, jamais figé en constante de module : une constante rendrait
+// inopérants les tests qui pilotent `process.env` (convention du dépôt).
+const apiKey = (): string => process.env.WAVE_API_KEY ?? ''
 
 // ── Créer un lien de paiement Wave ───────────
 export async function createWaveCheckout(opts: {
@@ -25,9 +36,9 @@ export async function createWaveCheckout(opts: {
   checkoutId:  string
   status:      string
 }> {
-  if (!WAVE_API_KEY) {
-    // Mode sandbox — retourne un lien simulé
-    console.warn('⚠️  WAVE_API_KEY manquant — mode sandbox')
+  // Lève `PaymentNotConfiguredError` si la clé manque sans opt-in explicite.
+  if (requireProvider('wave') === 'simulated') {
+    console.warn('⚠️  WAVE_SANDBOX_LINKS=1 — lien SIMULÉ (jamais en production)')
     return {
       checkoutUrl: `https://sandbox.wave.com/pay/${opts.reference}`,
       checkoutId:  `sandbox_${opts.reference}`,
@@ -38,7 +49,7 @@ export async function createWaveCheckout(opts: {
   const res = await fetch(`${BASE_URL}/checkout/sessions`, {
     method:  'POST',
     headers: {
-      'Authorization': `Bearer ${WAVE_API_KEY}`,
+      'Authorization': `Bearer ${apiKey()}`,
       'Content-Type':  'application/json',
     },
     body: JSON.stringify({
@@ -74,8 +85,11 @@ export async function verifyWavePayment(
   reference: string
   paid:      boolean
 }> {
-  if (!WAVE_API_KEY) {
-    // Sandbox
+  // ⚠️ Cette branche renvoyait `paid: true` SANS CLÉ : une confirmation de paiement
+  // fabriquée, bien pire qu'un lien mort. Elle exige désormais l'opt-in explicite, et
+  // reste impossible en production.
+  if (requireProvider('wave') === 'simulated') {
+    console.warn('⚠️  WAVE_SANDBOX_LINKS=1 — paiement SIMULÉ réussi (jamais en production)')
     return {
       status:    'succeeded',
       amount:    0,
@@ -88,7 +102,7 @@ export async function verifyWavePayment(
     `${BASE_URL}/checkout/sessions/${checkoutId}`,
     {
       headers: {
-        'Authorization': `Bearer ${WAVE_API_KEY}`,
+        'Authorization': `Bearer ${apiKey()}`,
       },
     }
   )

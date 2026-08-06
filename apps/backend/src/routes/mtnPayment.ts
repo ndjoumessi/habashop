@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify'
 import { authenticate } from '../middleware/authenticate'
 import { requestToPay, getPaymentStatus } from '../services/mtnMomo'
 import { xofToCurrency } from '../lib/currency'
+import { isNotConfigured, notConfiguredBody } from '../lib/payments/providerConfig'
 
 // Sandbox MTN accepte EUR uniquement ; prod Cameroun = XAF (parité 1:1 avec XOF).
 const IS_SANDBOX = (process.env.MTN_MOMO_ENVIRONMENT ?? 'sandbox') === 'sandbox'
@@ -47,6 +48,7 @@ export async function mtnPaymentRoutes(app: FastifyInstance): Promise<void> {
     } catch (err: any) {
       // phoneNumber exclu des logs (PII) — le message d'erreur MTN suffit au diagnostic.
       request.log.error({ err, step: 'requestToPay', amount: mtnAmount, currency }, 'MTN MoMo requestToPay failed')
+      if (isNotConfigured(err)) return reply.code(422).send(notConfiguredBody('mtn_momo'))
       return reply.code(502).send({ error: err.message ?? 'Erreur MTN MoMo' })
     }
   })
@@ -70,6 +72,7 @@ export async function mtnPaymentRoutes(app: FastifyInstance): Promise<void> {
       return { referenceId, status }
     } catch (err: any) {
       request.log.error({ err }, 'MTN MoMo status failed')
+      if (isNotConfigured(err)) return reply.code(422).send(notConfiguredBody('mtn_momo'))
       return reply.code(502).send({ error: 'Erreur MTN MoMo status' })
     }
   })

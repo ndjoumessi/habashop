@@ -15,6 +15,7 @@ import {
 import { sendUpgradeConfirmation } from '../services/email'
 import { appBaseUrl } from '../lib/appUrl'
 import { getPlan, planAmountXOF } from '../lib/plans'
+import { isNotConfigured, notConfiguredBody } from '../lib/payments/providerConfig'
 import type { PlanId, BillingPeriod } from '../lib/plans'
 
 // Lecture unique via `lib/appUrl` (adossée à FRONTEND_URL) — plus de repli local dupliqué.
@@ -207,6 +208,10 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
       }
     } catch (err: any) {
       await prisma.planRequest.delete({ where: { id: planReq.id } }).catch(() => {})
+      // ⚠️ Secret absent ≠ panne. Un 500/502 dit « réessayez » et laisse le commerçant
+      // devant une porte fermée ; 422 dit ce qui est vrai — le moyen de paiement n'est pas
+      // encore actif — et oriente vers le contact. Même motif que PLAN_QUOTE_ONLY.
+      if (isNotConfigured(err)) return reply.code(422).send(notConfiguredBody('wave'))
       return reply.code(500).send({ error: err.message ?? 'Erreur Wave' })
     }
   })
@@ -266,6 +271,10 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
       }
     } catch (err: any) {
       await prisma.planRequest.delete({ where: { id: planReq.id } }).catch(() => {})
+      // ⚠️ Secret absent ≠ panne. Un 500/502 dit « réessayez » et laisse le commerçant
+      // devant une porte fermée ; 422 dit ce qui est vrai — le moyen de paiement n'est pas
+      // encore actif — et oriente vers le contact. Même motif que PLAN_QUOTE_ONLY.
+      if (isNotConfigured(err)) return reply.code(422).send(notConfiguredBody('orange_money'))
       return reply.code(500).send({ error: err.message ?? 'Erreur Orange Money' })
     }
   })

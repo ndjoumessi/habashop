@@ -3,20 +3,22 @@ import { createHash, timingSafeEqual } from 'crypto'
 // PayDunya (Sénégal & UEMOA) — Wave SN, Orange Money SN, Free Money, Expresso, Djamo, Visa/MC.
 // Pas de SDK npm : fetch natif (cohérent avec services/campay.ts & mtnMomo.ts).
 // Mode : PAYDUNYA_MODE=test → sandbox-api ; sinon (live) → api.
+import { requireProvider, missingSecrets } from '../lib/payments/providerConfig'
+
 const MODE     = process.env.PAYDUNYA_MODE ?? 'test'
 export const IS_TEST = MODE !== 'live'
 const BASE     = IS_TEST
   ? 'https://app.paydunya.com/sandbox-api/v1'
   : 'https://app.paydunya.com/api/v1'
 
-/** Les 5 clés requises sont-elles présentes ? (jamais de crash si absentes — fail-soft). */
+/**
+ * Les clés requises sont-elles présentes ?
+ * ⚠️ Délègue au registre `lib/payments/providerConfig` : c'était la SEULE définition
+ * correcte des cinq (PayDunya refusait déjà proprement en 503), et elle vivait ici, hors
+ * de portée des quatre autres. Désormais une seule liste, consommée par tous.
+ */
 export function paydunyaConfigured(): boolean {
-  return Boolean(
-    process.env.PAYDUNYA_MASTER_KEY &&
-    process.env.PAYDUNYA_PRIVATE_KEY &&
-    process.env.PAYDUNYA_PUBLIC_KEY &&
-    process.env.PAYDUNYA_TOKEN,
-  )
+  return missingSecrets('paydunya').length === 0
 }
 
 function headers(): Record<string, string> {
@@ -50,6 +52,8 @@ export async function createInvoice(opts: {
   callbackUrl:  string
   customData?:  Record<string, unknown>
 }): Promise<{ token: string; url: string }> {
+  // Refus TYPÉ avant tout réseau (la route pré-refuse déjà en 503 ; ceinture et bretelles).
+  requireProvider('paydunya')
   const res = await fetch(`${BASE}/checkout-invoice/create`, {
     method:  'POST',
     headers: headers(),
@@ -82,6 +86,7 @@ export async function createInvoice(opts: {
 
 /** Vérifie le statut d'une facture par token (polling). */
 export async function confirmInvoice(token: string): Promise<{ status: ReturnType<typeof normalizeStatus>; raw: any }> {
+  requireProvider('paydunya')
   const res = await fetch(`${BASE}/checkout-invoice/confirm/${encodeURIComponent(token)}`, {
     headers: headers(),
   })
