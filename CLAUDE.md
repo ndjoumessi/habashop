@@ -13,7 +13,7 @@ SaaS de gestion commerciale multi-tenant **et multi-boutiques** (boutiques/super
 Un seul repo `ndjoumessi/habashop` depuis juillet 2026 — fusion de `habashop-mobile` et `habashop-legal` via `git subtree` (historique préservé) :
 
 - `apps/frontend`, `apps/backend` → **web** (workspaces racine `apps/*` + `packages/*`).
-- `mobile/` → **app Expo** (ex-`habashop-mobile`). **Hors workspaces npm** : `package.json` + `package-lock.json` propres → `npm ci` à lancer *dans* `mobile/`. Builds/OTA EAS depuis `mobile/` (`cd mobile && eas update --branch preview`). Projet EAS inchangé (`projectId e7399d7a-…`, canal `preview`). ⚠️ **AVANT de toucher `mobile/`, lire `mobile/CLAUDE.md`** (+ `mobile/AGENTS.md`) : il porte les contraintes propres à la plateforme, invisibles depuis ce fichier — **SDK 54, ne PAS upgrader vers 56** · crash natif Fabric `addViewAt` sur modales empilées (parade : rendu à la demande) · ne pas supprimer `app/index.tsx` · **swap temporaire `app.json` 1.5.0→1.4.3 pour un OTA** vers l'**appareil de TEST** (canal `preview`) — ⚠️ **ne PAS transposer à la prod** : le parc store est en runtime 1.2.0, le canal `production` n'est lié à **aucune** branche, et `main` a franchi des ruptures **natives** qu'une OTA ne porte pas (#187, #188) · polices `@expo-google-fonts` non livrables par OTA · `app/` = routes uniquement, la logique pure va dans `src/lib/`.
+- `mobile/` → **app Expo** (ex-`habashop-mobile`). **Hors workspaces npm** : `package.json` + `package-lock.json` propres → `npm ci` à lancer *dans* `mobile/`. Builds/OTA EAS depuis `mobile/` (`cd mobile && eas update --branch preview`). Projet EAS inchangé (`projectId e7399d7a-…`, canal `preview`). ⚠️ **AVANT de toucher `mobile/`, lire `mobile/CLAUDE.md`** (+ `mobile/AGENTS.md`) : il porte les contraintes propres à la plateforme, invisibles depuis ce fichier — **SDK 54, ne PAS upgrader vers 56** · crash natif Fabric `addViewAt` sur modales empilées (parade : rendu à la demande) · ne pas supprimer `app/index.tsx` · **swap temporaire `app.json` 1.5.0→1.4.3 pour un OTA** vers l'**appareil de TEST** (canal `preview`) — ⚠️ **ne PAS transposer à la prod** : le **seul build store** (`1f6bf56f-…`) est en runtime 1.2.0 — et **AUCUNE installation réelle n'existe** (1 seul `PushToken` en prod, sur `demo-tenant-001`, l'appareil de test ; mesuré 2026-08-06), le canal `production` n'est lié à **aucune** branche, et `main` a franchi des ruptures **natives** qu'une OTA ne porte pas (#187, #188) · polices `@expo-google-fonts` non livrables par OTA · `app/` = routes uniquement, la logique pure va dans `src/lib/`.
 - `docs/modules.md` → **la référence par module** (Produits, Codes-barres, Étiquettes, Abonnements, Facture PDF, Audit, Multi-boutiques, Admin plateforme, RH…) : endpoints, schémas, composants, verrous. Sortie d'ici pour alléger le contexte chargé à chaque session — **à ouvrir dès qu'on touche l'un de ces modules** ; ce fichier n'en garde que les règles transverses (§ Modules — index).
 - `docs/lessons/` → **le POURQUOI des chantiers clos** (raisonnement intégral, mesures, tentatives ratées) sorti de ce fichier pour l'alléger. Ces pages ne sont PAS de l'archive : elles sont citées 📖 depuis la règle correspondante et **sont à lire avant de retoucher la surface concernée**.
 - `legal/` → **pages légales** (ex-`habashop-legal`). Publiées via `.github/workflows/pages.yml` sur **`https://ndjoumessi.github.io/habashop/legal/`** (suppression compte : `.../legal/account-deletion.html`). ⚠️ URL référencée dans Google Play Console.
@@ -492,6 +492,45 @@ binaire ?** Un `x === 'valeur' ? A : B` sur un champ qui vient d'un enum, d'un c
 base est suspect **par construction** — il code une bijection sur un ensemble qui grandira.
 Préférer un `Record<Domaine, T>` ou un `switch` exhaustif : le compilateur rougit alors à la
 cinquième valeur, ce qu'aucun test ne fera.
+
+⚠️ **LA SYNTHÈSE QUI INVENTE UN FAIT — le seul de ces motifs qui vive dans la DOC, pas dans le
+code.** MESURÉ le 2026-08-06, chaîne complète :
+
+| Relais | Texte | État |
+|---|---|---|
+| `mobile/CLAUDE.md:58` | « le seul **BUILD** store est en runtime 1.2.0 » | **vrai** |
+| `CLAUDE.md:16` (racine) | « le **PARC** store est en runtime 1.2.0 » | un parc apparaît |
+| commit du 2026-08-06 | formulation racine recopiée | propagé |
+| analyse de revue | « des utilisateurs voient un badge vert » | amplifié |
+
+⚠️ **Ce tableau est un HISTORIQUE, pas un pointeur** : les trois lignes fautives sont corrigées
+(`CLAUDE.md:16`, `mobile/CLAUDE.md:58` et `:90` nomment désormais « le seul build store » et
+comptent les installations). Ne pas aller les chercher — elles n'y sont plus. Seul le message de
+commit reste tel quel, n'étant pas réécrivable.
+
+⚠️ **Les deux affirmations en litige étaient FAUSSES toutes les deux**, et c'est le point qu'on
+retient mal : « aucun build production, jamais » l'était aussi — **deux AAB `FINISHED` existent**
+(1.0.0/vc2 et 1.2.0/vc3, tous deux Android, artefacts **expirés le 2026-06-26**), et **aucun build
+iOS n'a jamais abouti**. Arbitrer entre deux sources contradictoires en choisissant l'une des deux
+suppose qu'une au moins soit juste : ici il fallait aller mesurer.
+
+Un mot, et des installations existent. Ce n'est ni une omission ni une fabrication : c'est une
+**affirmation vraie compressée jusqu'à présupposer ce qui est faux** — et elle a franchi trois
+relais sans résistance, chacun faisant confiance au précédent parce qu'il était plus récent, pas
+parce qu'il était mieux étayé. La mesure a tranché : **zéro installation réelle** (1 seul
+`PushToken` en prod, sur `demo-tenant-001`, l'appareil de test), donc la réserve « l'application
+mobile n'est pas encore publiée » de la vitrine est EXACTE.
+
+**Règle : une synthèse ne doit introduire AUCUN nom absent de sa source.** `build` → `parc`,
+`une route` → `les routes`, `un tenant` → `les clients` : chaque généralisation d'un singulier
+mesuré vers un collectif crée une population qui n'a jamais été comptée. Quand une phrase de
+`CLAUDE.md` porte un collectif (« le parc », « les utilisateurs », « les boutiques »), remonter à
+la mesure d'origine avant de s'en servir — et si la mesure ne compte pas cette population, la
+réécrire au singulier mesuré.
+
+⚠️ **Corollaire de datation** : entre deux affirmations contradictoires du dépôt, la plus récente
+n'est pas la mieux étayée — elle est souvent la plus compressée. Arbitrer par la PREUVE citée,
+jamais par la date.
 
 ### Injection CSV ⚠️ — convention EXÉCUTOIRE, pas affirmée (#173)
 
