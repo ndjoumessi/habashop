@@ -1,0 +1,104 @@
+name: Densité — table dense
+
+# ─── POURQUOI UN WORKFLOW SÉPARÉ ──────────────────────────────────────────────
+# Cette mesure démarre `vite dev` et pilote un navigateur : elle n'a d'intérêt que si la
+# géométrie de la table dense a pu changer. `paths:` est natif sur un WORKFLOW, pas sur un
+# job — un fichier séparé donne donc un vrai filtrage : sur un commit hors périmètre, aucun
+# run n'est même créé. C'est ce qui rend la seconde direction (« un commit de documentation
+# ne le déclenche pas ») prouvable par GitHub lui-même, et pas seulement par nous.
+#
+# ⚠️ CE FILTRE EST ÉCRIT À LA MAIN, ET ASSUMÉ — il ne PEUT PAS être dérivé. Deux raisons,
+# toutes deux MESURÉES le 2026-08-06, et elles vont en SENS INVERSE :
+#
+#   1. LE GRAPHE SUR-INCLUT. La fermeture transitive de `DevTableHarness` compte 36 fichiers,
+#      dont 15 ne viennent QUE de `lib/api.ts` — un hub de types qui importe `hrShared`,
+#      `posShared`, `stockShared`… Les inclure ferait tourner cette mesure à chaque
+#      changement RH ou POS, sans le moindre rapport avec la mise en page.
+#   2. LE GRAPHE SOUS-INCLUT. `src/index.css` n'apparaît dans AUCUNE fermeture d'import : la
+#      feuille est chargée par `main.tsx`. Or c'est là que vit `.table-wrap { overflow-x }`,
+#      dont le retrait fait rougir 3 cas sur 4. Un filtre purement dérivé raterait le fichier
+#      le PLUS important — dans le sens dangereux.
+#
+# ⚠️ CE QU'IL NE COUVRE PAS, dit plutôt que masqué :
+#   • les 15 modules `*Shared` tirés par le hub `api.ts` — exclusion DÉLIBÉRÉE ;
+#   • `lib/api.ts` lui-même : il change la donnée, pas la géométrie ;
+#   • un fichier DÉPLACÉ hors des chemins listés. C'est la classe de défaut qui a coûté
+#     `signup/` puis `\b8000\b`. La parade n'est pas dans ce YAML : elle est dans
+#     `densityJobScope.test.ts`, qui recalcule le graphe et ROUGIT si un fichier du périmètre
+#     PROPRE de la console cesse d'être couvert ici.
+
+on:
+  push:
+    branches: [main]
+    paths: &perimetre
+      # ── Écrans de la console plateforme
+      - 'apps/frontend/src/pages/AdminDashboard.tsx'
+      - 'apps/frontend/src/pages/Integrations.tsx'
+      # ── Le harnais de mesure lui-même
+      - 'apps/frontend/src/pages/DevTableHarness.tsx'
+      # ── Composants propres à la console
+      - 'apps/frontend/src/components/admin/**'
+      - 'apps/frontend/src/components/integrations/**'
+      # ── Primitives d'interface RÉELLEMENT dans le périmètre — NOMMÉES, pas globées.
+      #    ⚠️ `components/ui/**` a été essayé et MESURÉ trop large : sur 31 fichiers du
+      #    dossier, 7 seulement sont dans la fermeture. Le chantier RH du 2026-08-06
+      #    (`c6f1dc81`) déclenchait la mesure parce qu'il touchait `ValidatedInput`, qui n'y
+      #    est pas. Un filtre qui se déclenche à tort use la patience aussi sûrement qu'un
+      #    filtre qui rate — et il finit désarmé.
+      #    ⚠️ Contrepartie ASSUMÉE : une NOUVELLE primitive utilisée par la console ne serait
+      #    pas couverte. C'est `densityJobScope.test.ts` qui l'attrape — il recalcule la
+      #    fermeture et rougit sur tout fichier du périmètre absent d'ici.
+      - 'apps/frontend/src/components/ui/AppButton.tsx'
+      - 'apps/frontend/src/components/ui/ConfirmModal.tsx'
+      - 'apps/frontend/src/components/ui/EmptyState.tsx'
+      - 'apps/frontend/src/components/ui/IconButton.tsx'
+      - 'apps/frontend/src/components/ui/LogoMark.tsx'
+      - 'apps/frontend/src/components/ui/ResponsiveGrid.tsx'
+      - 'apps/frontend/src/components/ui/skeleton.tsx'
+      - 'apps/frontend/src/hooks/useI18n.ts'
+      - 'apps/frontend/src/hooks/useModalFocus.ts'
+      - 'apps/frontend/src/lib/confirm.tsx'
+      - 'apps/frontend/src/lib/paymentMethods.ts'
+      - 'apps/frontend/src/lib/plans.ts'
+      - 'apps/frontend/src/lib/utils.ts'
+      - 'apps/frontend/src/stores/authStore.ts'
+      # ── ⚠️ LA FEUILLE — invisible du graphe d'imports, et c'est elle que le sabotage vise
+      - 'apps/frontend/src/index.css'
+      # ── L'outillage de la mesure
+      # ⚠️ Le DOSSIER, pas le fichier : `e2e/dev/` est exclu de la suite de production par
+      #    structure (cf. `e2e/dev/README.md`), et tout harnais futur y tombera sans qu'on
+      #    ait à retoucher ce filtre.
+      - 'apps/frontend/e2e/dev/**'
+      - 'apps/frontend/playwright.density.config.ts'
+      - 'apps/frontend/playwright.config.ts'
+      - '.github/workflows/density.yml'
+  pull_request:
+    branches: [main]
+    paths: *perimetre
+
+jobs:
+  density:
+    name: Géométrie réelle — 390 / 1440 / 2560 px
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install (workspaces, depuis la racine)
+        run: npm ci
+      - name: Install Playwright (chromium)
+        run: npx playwright install --with-deps chromium
+      # `playwright.density.config.ts` démarre `vite dev` lui-même (`webServer`) : le harnais
+      # `/__dev/table` n'existe QUE là (`import.meta.env.DEV`). Aucune authentification —
+      # la garde P0 de `/admin` reste intacte, cf. l'en-tête du spec.
+      - name: Mesure de densité
+        run: npm run e2e:density --workspace=apps/frontend
+        timeout-minutes: 8
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: density-report
+          path: apps/frontend/test-results/
+          retention-days: 7
