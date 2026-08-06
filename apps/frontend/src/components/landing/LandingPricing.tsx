@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, ArrowRight } from 'lucide-react'
+import { Check, ArrowRight, AlertTriangle } from 'lucide-react'
 import { PLANS, YEARLY_MONTHS, amountEur } from '@/lib/plans'
 import type { BillingPeriod } from '@/lib/plans'
 import type { LandingT } from './landingShared'
@@ -190,13 +190,22 @@ export default function LandingPricing({ lp, i, navigate }: Props) {
           })}
         </div>
 
-        {/* La première question d'un commerçant — elle n'était nulle part. */}
-        <p style={{
-          maxWidth: 640, margin: '22px auto 0', textAlign: 'center',
-          fontSize: 'var(--fs-sm)', color: 'var(--text3)', lineHeight: 1.6,
+        {/* ⚠️ ENCADRÉ, pas une mention en petits caractères.
+            La première version rendait ce texte en gris sous la grille : vrai, mais illisible
+            pour un lecteur pressé, qui repartait donc en croyant pouvoir payer en ligne. Or
+            c'est précisément la conséquence qu'il doit saisir AVANT de s'inscrire — il la
+            découvrirait sinon au 15ᵉ jour, après avoir saisi son stock et ses clients. */}
+        <div role="note" style={{
+          maxWidth: 660, margin: '24px auto 0',
+          display: 'flex', gap: 11, alignItems: 'flex-start',
+          padding: '13px 16px', borderRadius: 12,
+          background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)',
         }}>
-          {lp.pay_note}
-        </p>
+          <AlertTriangle size={17} strokeWidth={2.3} color="var(--acc3)" style={{ flexShrink: 0, marginTop: 1 }} />
+          <p style={{ margin: 0, fontSize: 'var(--fs-sm)', color: 'var(--text2)', lineHeight: 1.6 }}>
+            {lp.pay_note}
+          </p>
+        </div>
         <p style={{ textAlign: 'center', fontSize: 'var(--fs-caption)', color: 'var(--text4)', margin: '8px 0 0' }}>
           {i(
             `Prix hors taxes, en franc CFA. L’équivalent en euro suit la parité fixe de 655,957. L’abonnement annuel se paie ${YEARLY_MONTHS} mois.`,

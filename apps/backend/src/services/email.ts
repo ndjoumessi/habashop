@@ -82,6 +82,27 @@ function baseTemplate(content: string): string {
 // ════════════════════════════════════════════
 // EMAIL 1 — Bienvenue après inscription
 // ════════════════════════════════════════════
+/**
+ * Mention unique de l'écart de paiement — répétée dans les e-mails de cycle de vie.
+ *
+ * ⚠️ Elle N'EST PAS redondante avec la vitrine : un commerçant arrivé par un lien direct
+ * vers /signup ne voit jamais la page tarifs. Sans elle, il découvrirait au 15ᵉ jour —
+ * après avoir saisi son stock et ses clients — qu'il ne peut pas régler en ligne.
+ * L'apprendre à ce moment-là coûte la confiance ; l'apprendre tôt ne coûte presque rien.
+ *
+ * Ton sobre : on dit ce qui marche (l'essai, le produit) et ce qui ne marche pas encore
+ * (l'encaissement en ligne). Aucune excuse, aucun « bientôt » vague.
+ */
+function paymentNotice(): string {
+  return `
+    <div class="alert" style="background:#FFF7E6;border-left:4px solid #FFB020;">
+      <strong>Le paiement en ligne n'est pas encore actif.</strong>
+      Votre essai est complet et ne demande aucune carte. Pour continuer au-delà,
+      écrivez-nous&nbsp;: nous convenons du règlement (Mobile&nbsp;Money ou virement)
+      et nous activons votre plan.
+    </div>`
+}
+
 export async function sendWelcomeEmail(opts: {
   to:        string
   shopName:  string
@@ -123,6 +144,8 @@ export async function sendWelcomeEmail(opts: {
       ✅ <strong>Conseil :</strong> Commencez par ajouter vos produits
       dans Stock → Nouveau produit, puis ouvrez la caisse dans POS.
     </div>
+
+    ${paymentNotice()}
 
     <p>Des questions ? Répondez directement à cet email —
     nous répondons sous 24h.</p>
@@ -190,6 +213,8 @@ export async function sendTrialReminder7Days(opts: {
       Vos données sont conservées même après l'expiration —
       passez au Pro pour continuer à vendre sans interruption.
     </div>
+
+    ${paymentNotice()}
   `)
 
   return send({
@@ -241,6 +266,8 @@ export async function sendTrialReminder3Days(opts: {
 
     <p>Vous avez des questions sur les tarifs ou les fonctionnalités ?
     Répondez à cet email — nous vous rappelons sous 2h.</p>
+
+    ${paymentNotice()}
   `)
 
   return send({

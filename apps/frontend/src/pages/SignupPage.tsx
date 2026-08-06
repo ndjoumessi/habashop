@@ -162,8 +162,30 @@ export default function SignupPage() {
             />
           )}
 
+          {/* ⚠️ L'écart est annoncé ICI, pas au moment de payer.
+              Un prospect arrivé par un lien direct vers /signup ne voit jamais la page
+              tarifs : sans cette mention, il découvrirait au 15ᵉ jour — après avoir saisi
+              son stock et ses clients — qu'il ne peut pas régler en ligne. L'apprendre à
+              ce moment-là coûte la confiance ; l'apprendre maintenant ne coûte presque rien.
+              L'essai, lui, est RÉEL et complet : le CTA ne bouge pas. */}
+          <div role="note" style={{
+            marginTop: 18, padding: '11px 14px', borderRadius: 10,
+            background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)',
+            fontSize: 12.5, lineHeight: 1.55, color: D.text2,
+          }}>
+            <strong style={{ color: 'var(--acc3)' }}>
+              {i('À savoir', 'Good to know', 'A tener en cuenta', 'Da sapere')}
+            </strong>{' — '}
+            {i(
+              "l'essai de 14 jours est complet et ne demande aucune carte. Le paiement en ligne n'est pas encore actif : pour continuer au-delà, le règlement se convient directement avec notre équipe.",
+              'the 14-day trial is complete and needs no card. Online payment is not live yet: to continue beyond it, the payment is agreed directly with our team.',
+              'la prueba de 14 días es completa y no requiere tarjeta. El pago en línea aún no está activo: para continuar después, el pago se acuerda directamente con nuestro equipo.',
+              'la prova di 14 giorni è completa e non richiede carta. Il pagamento online non è ancora attivo: per continuare oltre, il pagamento si concorda direttamente con il nostro team.',
+            )}
+          </div>
+
           {/* Footer link */}
-          <div style={{ marginTop: 22, textAlign: 'center', fontSize: 'var(--fs-sm)', color: D.text3 }}>
+          <div style={{ marginTop: 18, textAlign: 'center', fontSize: 'var(--fs-sm)', color: D.text3 }}>
             {step === 1 ? (
               <>
                 {tx.login_q}{' '}

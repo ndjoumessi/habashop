@@ -197,10 +197,10 @@ export default function LoginPage() {
           </h1>
           <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--text2)', margin: '10px 0 0', maxWidth: '42ch' }}>
             {i(
-              'Ventes, stock et encaissement Mobile Money. Sur mobile, la vente est enregistrée sur l\'appareil et rejouée au retour du réseau.',
-              'Sales, stock and Mobile Money payments. On mobile, the sale is recorded on the device and replayed when the network returns.',
-              'Ventas, stock y cobro Mobile Money. En móvil, la venta se registra en el dispositivo y se reenvía al volver la red.',
-              'Vendite, magazzino e incassi Mobile Money. Su mobile la vendita è registrata sul dispositivo e rigiocata al ritorno della rete.',
+              'Ventes, stock et encaissement. Le mode hors-ligne vit dans l\'application mobile, qui n\'est pas encore publiée — aujourd\'hui HabaShop s\'utilise depuis le navigateur.',
+              'Sales, stock and payments. Offline mode lives in the mobile app, which is not published yet — today HabaShop runs in the browser.',
+              'Ventas, stock y cobro. El modo sin conexión vive en la aplicación móvil, que aún no está publicada — hoy HabaShop se usa desde el navegador.',
+              'Vendite, magazzino e incassi. La modalità offline vive nell\'app mobile, non ancora pubblicata — oggi HabaShop si usa dal browser.',
             )}
           </p>
         </div>
@@ -281,6 +281,17 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
+
+        {/* ⚠️ La maquette montre l'app MOBILE, qui n'est pas publiée. Sans cette légende,
+            l'aperçu se lit comme une capture de ce qu'on obtient en s'inscrivant. */}
+        <p style={{ margin: '-14px 0 0', fontSize: 11.5, color: 'var(--text3)' }}>
+          {i(
+            'Aperçu de l’application mobile — Android, publication en préparation.',
+            'Preview of the mobile app — Android, release in preparation.',
+            'Vista previa de la aplicación móvil — Android, publicación en preparación.',
+            'Anteprima dell’app mobile — Android, pubblicazione in preparazione.',
+          )}
+        </p>
 
         {/* Capacités FACTUELLES — chaque ligne pointe un fichier du dépôt. */}
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>

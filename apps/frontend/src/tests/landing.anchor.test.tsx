@@ -26,7 +26,16 @@ describe('LandingPage — test d’ancrage (comportement à figer avant/après d
     // ⚠️ L'accroche hors-ligne A ÉTÉ PROMUE de la page de connexion au H1 de la vitrine
     // (2026-08) : c'est le seul argument qu'un concurrent ne copie pas en un sprint.
     expect(screen.getByText("réseau s'arrête")).toBeInTheDocument()
-    expect(screen.getByText(/rejoue à la reconnexion/)).toBeInTheDocument()
+    // ⚠️ Le sous-titre porte désormais la DISPONIBILITÉ : la capacité hors-ligne est vraie
+    // mais vit dans une application mobile non publiée (aucun build `production`, dernier
+    // APK interne 1.4.3 du 2026-06-13). Une capacité qu'on ne peut pas se procurer se dit
+    // au futur — sinon le visiteur clique et atterrit dans l'app web, que POS.tsx déclare
+    // incapable d'enregistrer une vente hors ligne.
+    // Elle doit apparaître PARTOUT où le hors-ligne est promis — hero, pilier, FAQ — et
+    // pas seulement à un endroit : c'est ce qui empêche un lecteur pressé de retenir la
+    // capacité sans sa condition. `getAllBy` ici est l'assertion, pas un contournement.
+    const dispo = screen.getAllByText(/pas encore publiée/)
+    expect(dispo.length, 'la disponibilité doit accompagner chaque mention du hors-ligne').toBeGreaterThanOrEqual(3)
     // liens nav (présents en double : nav desktop + ancres) → getAllByText
     expect(screen.getAllByText('Fonctionnalités').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Tarifs').length).toBeGreaterThan(0)
