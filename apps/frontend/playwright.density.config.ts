@@ -12,6 +12,22 @@ import { defineConfig } from '@playwright/test'
  * réponses en cache — piège déjà documenté (§ Pièges E2E). Ici le harnais stubbe `fetch`
  * lui-même, mais le SW pourrait intercepter le chargement des chunks.
  */
+/**
+ * ⚠️ MARQUEUR D'IDENTITÉ DU SERVEUR — `reuseExistingServer: false` empêche de se BRANCHER sur
+ * un serveur existant ; il ne prouve pas que celui auquel on parle est celui qu'on a démarré.
+ * Un port n'est pas une identité. On injecte donc un jeton unique par exécution : le harnais
+ * le rend, et le spec l'assert AVANT la première mesure.
+ * C'est la leçon du `dist/` rassis — un sabotage passé vert parce que l'artefact n'avait pas
+ * été régénéré — appliquée à un serveur de développement.
+ *
+ * ⚠️ Posé dans `process.env` : les workers Playwright sont des processus ENFANTS de celui qui
+ * lit cette config, donc ils en héritent. Le passer par `webServer.env` seul ne le rendrait
+ * pas visible au spec.
+ */
+const JETON = process.env.HARNESS_NONCE
+  ?? `run-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+process.env.HARNESS_NONCE = JETON
+
 export default defineConfig({
   // ⚠️ Pointe le DOSSIER, pas un nom : le prochain harnais y tombera sans qu'on touche
   // à cette config, et sans risque qu'il parte dans la suite de production.
@@ -29,7 +45,17 @@ export default defineConfig({
   webServer: process.env.HARNESS_BASE ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:5173',
-    reuseExistingServer: true,
-    timeout: 90_000,
+    // ⚠️ `true` EN LOCAL SEULEMENT. Sur un runner, réutiliser « un serveur déjà là » est un
+    // vert qui décrit un monde inexistant : si le port 5173 est occupé par autre chose,
+    // Playwright s'y branche sans rien dire. En CI on exige un serveur DÉMARRÉ PAR NOUS.
+    reuseExistingServer: !process.env.CI,
+    // Le jeton traverse jusqu'à Vite, qui l'inline dans le harnais (préfixe `VITE_`).
+    env: { VITE_HARNESS_NONCE: JETON },
+    // ⚠️ Un runner froid doit installer les deps de Vite avant de servir : 90 s suffisaient
+    // en local, pas nécessairement là-bas. On laisse de la marge plutôt qu'un échec qui
+    // ressemblerait à un défaut de la mesure.
+    timeout: process.env.CI ? 180_000 : 90_000,
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 })

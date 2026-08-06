@@ -27,9 +27,40 @@ const LARGEURS = [
   { nom: '390 px — téléphone',    w: 390,  h: 844 },
 ]
 
+/**
+ * ⚠️ IDENTITÉ DU SERVEUR, AVANT LA PREMIÈRE MESURE.
+ * `reuseExistingServer: false` empêche de se BRANCHER sur un serveur existant ; il ne prouve
+ * pas que celui auquel on parle est celui qu'on a démarré. Un port n'est pas une identité.
+ * La config injecte un jeton unique par exécution ; le harnais le rend. S'il ne correspond
+ * pas, on échoue ICI avec un message qui le DIT — pas par un timeout de sélecteur trente
+ * secondes plus tard, qui ressemblerait à un défaut de la table.
+ */
+async function verifierIdentite(page: Page) {
+  const attendu = process.env.HARNESS_NONCE
+  const racine = page.locator('[data-harness-nonce]')
+  // ⚠️ On ATTEND le marqueur — le harnais rend `null` jusqu'à son `useEffect`, donc un
+  // `count()` immédiat après `goto` vaut 0 même sur le bon serveur (mesuré : 4 rouges).
+  // Délai court et VOLONTAIREMENT inférieur au timeout de sélecteur qu'il remplace : la
+  // question « est-ce le bon serveur ? » doit trancher vite, pas après trente secondes.
+  await racine.first().waitFor({ state: 'attached', timeout: 15_000 }).catch(() => {
+    throw new Error([
+      'Le harnais /__dev/table n’a rendu AUCUN marqueur d’identité en 15 s.',
+      'Le serveur qui répond sur ce port n’est pas celui qu’on a démarré,',
+      'ou le harnais n’est pas chargé (build de production ? autre application ?).',
+    ].join('\n'))
+  })
+  const vu = await racine.first().getAttribute('data-harness-nonce')
+  expect(vu, [
+    `Marqueur d’identité DIFFÉRENT — attendu « ${attendu} », vu « ${vu} ».`,
+    'Un autre serveur écoute sur le port attendu : les mesures qui suivraient',
+    'porteraient sur une page qui n’est pas la nôtre.',
+  ].join('\n')).toBe(attendu)
+}
+
 async function ouvrir(page: Page, w: number, h: number) {
   await page.setViewportSize({ width: w, height: h })
   await page.goto('/__dev/table?n=50')
+  await verifierIdentite(page)
   // ⚠️ L'onglet « Boutiques » est un `role="tab"`, pas un `button` — premier essai raté sur
   // ce détail : la table n'était jamais rendue, et les quatre cas échouaient sur un timeout
   // qui ressemblait à un défaut de données. On l'atteint par son libellé, jamais par un index.

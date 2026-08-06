@@ -84,5 +84,12 @@ export default function DevTableHarness() {
     return defaire
   }, [])
   if (!pret) return null
-  return <div data-testid={HARNESS_MARKER}><AdminDashboard /></div>
+  return (
+    // ⚠️ `data-harness-nonce` — l'IDENTITÉ du serveur, pas seulement sa présence. Le spec le
+    // compare au jeton qu'il a injecté : un serveur tiers écoutant sur le même port rendrait
+    // une page sans ce marqueur, et l'échec le DIT au lieu d'attendre un timeout de sélecteur.
+    <div data-testid={HARNESS_MARKER} data-harness-nonce={import.meta.env.VITE_HARNESS_NONCE ?? ''}>
+      <AdminDashboard />
+    </div>
+  )
 }
