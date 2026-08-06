@@ -227,7 +227,11 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
         marginTop: 6,
       }}>{p.name}</div>
 
-      {/* Prix : montant or (--acc) + suffixe devise discret (maquette) */}
+      {/* Prix : montant or (--acc) + SYMBOLE DE DEVISE à la même échelle.
+          ⚠️ Le symbole était à 10 px dans un `color-mix` qui le délavait à 55 % — sur une
+          tuile de CAISSE, où le caissier annonce un montant à voix haute. XOF et EUR
+          diffèrent d'un facteur 656 : le symbole est ce qui rend le nombre interprétable,
+          pas une décoration. Il suit la couleur et la taille du chiffre. */}
       <div style={{ marginTop: 3 }}>
         {showStrike && (
           <span style={{ fontSize: 10, color: 'var(--text3)', textDecoration: 'line-through', fontFamily: 'var(--mono)', marginRight: 5 }}>
@@ -239,7 +243,10 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
           color: isPromoRetail ? 'var(--danger)' : 'var(--acc)',
           fontFamily: 'var(--mono)',
         }}>{amount}</span>{' '}
-        <span style={{ fontSize: 10, color: 'color-mix(in srgb, var(--acc) 55%, var(--text3))' }}>{suffix}</span>
+        <span style={{
+          fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)',
+          color: isPromoRetail ? 'var(--danger)' : 'var(--acc)',
+        }}>{suffix}</span>
       </div>
 
       {/* Stock — pill sémantique ancrée en bas à droite (vert OK / orange bas / rouge rupture) */}

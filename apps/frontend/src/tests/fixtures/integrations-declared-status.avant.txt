@@ -1,0 +1,12 @@
+export const INTEGRATIONS_LIST: Integration[] = [
+  {
+    id:'anthropic', name:'Anthropic Claude',
+    desc:'Assistant IA et analyses intelligentes',
+    color:'#FF6B35', status:'connected',
+    endpoint:'api.anthropic.com', lastCall:'Il y a 2 min', calls:1847,
+    docs:'https://docs.anthropic.com',
+    uptime:'99.9%', pingUrl:'https://api.anthropic.com',
+    features:['Analyses IA temps réel', 'Recommandations personnalisées', 'Chat assistant intégré'],
+    IconSvg: IconAnthropicSvg,
+  },
+  {

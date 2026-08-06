@@ -138,6 +138,20 @@ export default function Customers() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
   }).length
 
+  /**
+   * DÉPENSE PAR ACHAT (estimée) — ⚠️ CE N'EST PAS le « panier moyen » de Rapports.
+   *
+   * MESURÉ le 2026-08-06 : les deux écrans affichaient « Panier moyen » sous deux formules
+   * sans rapport. `Reports.tsx` fait `CA ÷ nombre de tickets` — un ticket moyen RÉEL, sur
+   * une période. Ici on divise le CA cumulé d'un client par une fréquence d'achat
+   * PROJETÉE sur douze mois, puis on moyenne ces ratios entre clients : dénominateur
+   * estimé, et moyenne de moyennes (qui n'égale pas la moyenne globale).
+   *
+   * Les deux grandeurs sont légitimes ; c'est le MOT unique qui mentait. Elles portent
+   * désormais deux libellés distincts (`customers_avg_cart` vs `reports_avg_cart`).
+   * Ne pas les « réconcilier » en changeant l'une des formules — elles ne répondent pas
+   * à la même question.
+   */
   const avgCart = customers.length > 0
     ? Math.round(customers.reduce((s, c) => s + c.totalCA / Math.max(1, c.purchasesPerMonth * 12), 0) / customers.length)
     : 0
@@ -291,11 +305,18 @@ export default function Customers() {
         {[
           { label: t('customers_total'),     value: customers.length.toString(), hex: 'var(--p)', icon: <Users size={18} /> },
           { label: t('customers_active'),    value: activeThisMonth.toString(),  hex: 'var(--acc2)', icon: <UserCheck size={18} /> },
-          { label: t('customers_avg_cart'),  value: hasSales ? <AmountCur xof={avgCart} suffixSize={12} /> : '—', hex: 'var(--acc)', icon: <ShoppingCart size={18} /> },
+          // ⚠️ `hint` : la formule est une ESTIMATION (fréquence projetée), distincte du
+          // ticket moyen de Rapports. Un indicateur dont on ne peut pas dire ce qu'il
+          // mesure finit par être comparé à un autre qui mesure autre chose.
+          { label: t('customers_avg_cart'),  value: hasSales ? <AmountCur xof={avgCart} /> : '—', hex: 'var(--acc)', icon: <ShoppingCart size={18} />,
+            hint: lang === 'en' ? 'Estimated: revenue per customer ÷ projected yearly purchases. Not the average ticket in Reports.'
+                : lang === 'es' ? 'Estimado: ingresos por cliente ÷ compras anuales proyectadas. No es el ticket medio de Informes.'
+                : lang === 'it' ? 'Stimato: fatturato per cliente ÷ acquisti annui previsti. Non è lo scontrino medio dei Report.'
+                : 'Estimation : CA par client ÷ achats annuels projetés. Ce n’est pas le panier moyen des Rapports.' },
           { label: t('customers_retention'), value: hasSales ? `${retentionRate}%` : '—',        hex: 'var(--acc3)', icon: <TrendingUp size={18} /> },
-        ].map(k => (
+        ].map((k: { label: string; value: React.ReactNode; hex: string; icon: React.ReactNode; hint?: string }) => (
           /* KPI compact (icône + label + valeur sur une ligne) — densité dashboard NKONI, sans espace mort */
-          <div key={k.label} className="kpi-card" style={{ display:'flex', alignItems:'center', gap:12, background:'var(--bg2)', border:'1px solid var(--border2)', borderRadius:12, padding:'12px 14px', cursor:'default' }}>
+          <div key={k.label} className="kpi-card" title={k.hint} style={{ display:'flex', alignItems:'center', gap:12, background:'var(--bg2)', border:'1px solid var(--border2)', borderRadius:12, padding:'12px 14px', cursor:'default' }}>
             <div style={{ width:36, height:36, borderRadius:10, flexShrink:0, color:k.hex, background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center' }}>{k.icon}</div>
             <div style={{ minWidth:0 }}>
               <div className="kpi-label" style={{ marginBottom:2 }}>{k.label}</div>

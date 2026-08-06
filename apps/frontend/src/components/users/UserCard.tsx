@@ -1,6 +1,11 @@
 import { useConfig } from '@/stores/appStore'
 import { Archive, Trash2 } from 'lucide-react'
-import { ROLE_CONFIG, AVATAR_COLORS, initials, isOnlineNow, buildRoleLabels } from './usersShared'
+// ⚠️ `fmtDate` CANONIQUE (§ Dates AFFICHÉES). Ce fichier en portait une COPIE locale bâtie
+// sur `new Date(iso).toLocaleDateString()` — exactement la forme que `lib/formatDate.ts`
+// existe pour remplacer : elle lit une date-seule comme minuit UTC et recule le jour d'un
+// cran en fuseau négatif (le 05 s'affichait « 04 »). Jumeau non traité, trouvé en éditant.
+import { fmtDate } from '@/lib/formatDate'
+import { ROLE_CONFIG, AVATAR_COLORS, initials, loggedInRecently, lastLoginLabel, buildRoleLabels } from './usersShared'
 import type { User } from './usersShared'
 
 interface Props {
@@ -17,23 +22,20 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
   const { lang } = useConfig()
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
-  const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
-  const fmtDate = (iso: string) => {
-    if (!iso) return ''
-    const d = new Date(iso)
-    return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
-  }
   const ROLE_LABELS = buildRoleLabels()
 
   const cfg      = ROLE_CONFIG[user.role]
   const RoleIcon = cfg.Icon
-  const online   = isOnlineNow(user)
+  // ⚠️ « récemment connecté », PAS « en ligne » — cf. `loggedInRecently` : on mesure une
+  // authentification, jamais une présence. Le nom du local porte la nuance pour que le
+  // prochain rendu ne la reperde pas.
+  const recent   = loggedInRecently(user)
   const avatarColor = AVATAR_COLORS[user.role]
 
   return (
     <div style={{
       background:'var(--card)',
-      border:`1px solid ${online ? 'rgba(0,208,132,.18)' : 'var(--border)'}`,
+      border:`1px solid ${recent ? 'rgba(0,208,132,.18)' : 'var(--border)'}`,
       borderRadius:18, overflow:'hidden',
       transition:'transform .2s, box-shadow .2s',
     }}
@@ -68,14 +70,20 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
             }}>
               {initials(user.name)}
             </div>
-            {/* Status dot */}
-            <div style={{
-              position:'absolute', bottom:-2, right:-2,
-              width:14, height:14, borderRadius:'50%',
-              background: online ? '#00D084' : '#55556A',
-              border:'2px solid var(--card)',
-              boxShadow: online ? '0 0 8px rgba(0,208,132,.6)' : 'none',
-            }} />
+            {/* Pastille — connexion RÉCENTE, pas présence (cf. `loggedInRecently`).
+                `title` obligatoire : une couleur seule ne dit pas ce qu'elle mesure, et
+                c'est exactement ce qui avait rendu la pastille de santé Ops trompeuse. */}
+            <div
+              title={recent
+                ? i('Connecté il y a moins de 5 min', 'Signed in less than 5 min ago', 'Conectado hace menos de 5 min', 'Connesso da meno di 5 min')
+                : i('Pas de connexion récente', 'No recent sign-in', 'Sin conexión reciente', 'Nessun accesso recente')}
+              style={{
+                position:'absolute', bottom:-2, right:-2,
+                width:14, height:14, borderRadius:'50%',
+                background: recent ? '#00D084' : '#55556A',
+                border:'2px solid var(--card)',
+                boxShadow: recent ? '0 0 8px rgba(0,208,132,.6)' : 'none',
+              }} />
           </div>
 
           <div style={{ flex:1, minWidth:0 }}>
@@ -141,10 +149,12 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
             <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>
               {lang === 'en' ? 'Last login' : lang === 'es' ? 'Último acceso' : lang === 'it' ? 'Ultimo accesso' : 'Connexion'}
             </div>
-            <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', color: online ? 'var(--acc2)' : 'var(--text2)' }}>
-              {online
-                ? (lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne')
-                : (user.lastLogin ? fmtDate(user.lastLogin) : i('Jamais', 'Never', 'Nunca', 'Mai'))}
+            {/* ⚠️ Plus de « En ligne » : ce libellé promettait une présence que la donnée
+                ne porte pas (cf. `lastLoginLabel`). On rend l'ancienneté de la connexion,
+                et l'absence de trace se dit « Aucune trace » — pas « Jamais », qui
+                affirmerait un fait sur la personne au lieu d'un trou dans nos mesures. */}
+            <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', color: recent ? 'var(--acc2)' : user.lastLogin ? 'var(--text2)' : 'var(--text3)' }}>
+              {lastLoginLabel(user, lang)}
             </div>
           </div>
           <div style={{
@@ -155,7 +165,7 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
               {lang === 'en' ? 'Member since' : lang === 'es' ? 'Miembro desde' : lang === 'it' ? 'Membro dal' : 'Membre depuis'}
             </div>
             <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', color:'var(--text2)' }}>
-              {fmtDate(user.createdAt) || '—'}
+              {fmtDate(user.createdAt)}
             </div>
           </div>
         </div>

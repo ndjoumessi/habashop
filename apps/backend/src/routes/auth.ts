@@ -107,6 +107,29 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     if (!user.isActive) return reply.code(403).send({ error: 'Compte désactivé' })
 
+    /**
+     * DERNIÈRE CONNEXION — la colonne existait, personne ne l'écrivait.
+     *
+     * MESURÉ le 2026-08-06 : `lastLoginAt` est déclaré depuis toujours (`schema.prisma:158`)
+     * et renseigné sur **0 des 8 comptes** de production. L'écran Utilisateurs affichait donc
+     * « Connexion : Jamais » pour tout le monde, y compris pour celui qui venait de se
+     * connecter — un champ qui ne peut rien dire, même famille que la pastille de santé Ops.
+     *
+     * ⚠️ Posé APRÈS les trois refus (mot de passe, compte actif) : une tentative refusée
+     * n'est pas une connexion. Et posé AVANT le choix de boutique, parce que le compte s'est
+     * authentifié même si le sélecteur multi-boutiques s'affiche ensuite.
+     *
+     * ⚠️ `catch` silencieux VOLONTAIRE — fail-open : un incident d'écriture sur une colonne
+     * d'affichage ne doit pas refuser une authentification par ailleurs valide. Le refus
+     * appartient aux gardes ci-dessus, pas à une statistique.
+     */
+    const loginAt = new Date()
+    try {
+      await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: loginAt } })
+    } catch (err) {
+      request.log.warn({ err }, 'lastLoginAt non enregistré')
+    }
+
     const tenants = await accessibleTenants(user.id, user.tenantId, user.role)
 
     const baseUser = { id: user.id, name: user.name, email: user.email }

@@ -270,6 +270,19 @@ export const paydunyaApi = {
     api.get<{ status: 'completed' | 'pending' | 'cancelled' | 'failed' }>(`/api/payments/paydunya/status/${encodeURIComponent(token)}`),
 }
 
+/**
+ * État RÉEL des intégrations commerçant, dérivé de l'environnement SERVEUR.
+ *
+ * ⚠️ Remplace le `status:'connected'` écrit en dur dans `pages/Integrations.tsx` — cf.
+ * `apps/backend/src/lib/integrationStatus.ts` pour le pourquoi. `sandbox` n'est pas une
+ * nuance de `live` : c'est la différence entre encaisser et simuler.
+ */
+export type IntegrationState = 'live' | 'sandbox' | 'unconfigured'
+export type MerchantIntegrationId = 'twilio' | 'resend' | 'mtnmomo' | 'campay' | 'paydunya'
+export const integrationStatusApi = {
+  get: () => api.get<{ states: Record<MerchantIntegrationId, IntegrationState> }>('/api/integrations/status'),
+}
+
 export interface ProviderStat { count: number; amountXof: number; lastAt: string | null }
 export const paymentStatsApi = {
   // Transactions MTN MoMo + Campay du jour (montants en XOF base → convertir à l'affichage).

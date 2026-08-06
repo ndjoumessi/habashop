@@ -233,7 +233,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                   {/* MÉTRIQUES : 3 blocs */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1, background: 'var(--border)', borderTop: '1px solid var(--border)' }}>
                     {[
-                      { label: i('CA', 'Rev.', 'Ing.', 'Fatt.'), value: <AmountCur xof={c.totalCA ?? 0} suffixSize={9} />, color: '#FF9500' },
+                      { label: i('CA', 'Rev.', 'Ing.', 'Fatt.'), value: <AmountCur xof={c.totalCA ?? 0} />, color: '#FF9500' },
                       { label: i('Cmds', 'Orders', 'Ped.', 'Ord.'), value: purchaseRateLabel(c.purchasesPerMonth, lang), color: tc.h },
                       { label: 'Pts', value: String(c.loyaltyPoints ?? 0), color: '#00D084' },
                     ].map((m, idx) => (

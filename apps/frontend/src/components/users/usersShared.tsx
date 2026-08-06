@@ -2,6 +2,7 @@ import {
   Crown, Target, ShoppingCart, Calculator, UserCog,
 } from 'lucide-react'
 import { t } from '@/stores/appStore'
+import { fmtDate } from '@/lib/formatDate'
 import type { LucideIcon } from 'lucide-react'
 
 export type Role = 'ADMIN' | 'MANAGER' | 'CASHIER' | 'ACCOUNTANT' | 'HR'
@@ -90,12 +91,59 @@ export function initials(name: string) {
   return name.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase()
 }
 
-// En ligne = actif ET dernière activité < 5 min
-export function isOnlineNow(u: User) {
+export const RECENT_LOGIN_MS = 5 * 60 * 1000
+
+/**
+ * Connexion RÉCENTE — mesure un ÉVÉNEMENT D'AUTHENTIFICATION, pas une présence.
+ *
+ * ⚠️ NE PAS rebaptiser « en ligne » : c'était le nom précédent (`isOnlineNow`) et il
+ * promettait ce qu'aucune donnée ne porte. Nous n'observons pas d'activité — seulement
+ * l'instant où le mot de passe a été validé. Quelqu'un qui se connecte puis ferme
+ * l'onglet reste « connecté il y a 2 min », ce qui est VRAI ; il n'est pas « en ligne »,
+ * ce qui serait FAUX. Même famille que la pastille de santé Ops : le signal doit dire ce
+ * qu'il mesure, pas ce qu'on aimerait qu'il mesure.
+ *
+ * ⚠️ La fonction était par ailleurs INATTEIGNABLE : `lastLoginAt` n'était écrit nulle part
+ * (0/8 comptes en production, mesuré le 2026-08-06), donc elle rendait `false` par
+ * construction. Elle est vivante depuis que `POST /api/auth/login` pose la colonne.
+ *
+ * `now` injecté (convention du dépôt : jamais de `new Date()` figé dans un test).
+ */
+export function loggedInRecently(u: User, now: number = Date.now()) {
   if (!u.active || !u.lastLogin) return false
   const ts = new Date(u.lastLogin).getTime()
   if (Number.isNaN(ts)) return false
-  return Date.now() - ts < 5 * 60 * 1000
+  return now - ts < RECENT_LOGIN_MS
+}
+
+/**
+ * Ce que la carte affiche sous « Connexion ».
+ *
+ * ⚠️ TROIS états, jamais deux — l'absence de trace n'est pas un fait sur la personne.
+ * « Jamais » affirmait que le compte ne s'était jamais connecté ; la vérité est que nous
+ * n'avons rien enregistré (la colonne n'a commencé à être écrite qu'au déploiement de ce
+ * correctif, et les 8 comptes existants sont à `null`). Un écran ne doit pas transformer
+ * son propre trou de mesure en jugement sur l'utilisateur.
+ */
+export function lastLoginLabel(
+  u: User,
+  lang: string,
+  now: number = Date.now(),
+): string {
+  const i = (fr: string, en: string, es: string, it: string) =>
+    lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+
+  if (!u.lastLogin) return i('Aucune trace', 'No record', 'Sin registro', 'Nessuna traccia')
+  const ts = new Date(u.lastLogin).getTime()
+  if (Number.isNaN(ts)) return i('Aucune trace', 'No record', 'Sin registro', 'Nessuna traccia')
+
+  const elapsed = now - ts
+  if (elapsed < 60_000) return i('À l’instant', 'Just now', 'Ahora mismo', 'Proprio ora')
+  if (elapsed < 3_600_000) {
+    const min = Math.floor(elapsed / 60_000)
+    return i(`il y a ${min} min`, `${min} min ago`, `hace ${min} min`, `${min} min fa`)
+  }
+  return fmtDate(u.lastLogin)
 }
 
 // Libellés de rôle (t() reactif sur la langue via getState)

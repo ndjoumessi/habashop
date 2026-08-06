@@ -524,6 +524,68 @@ un écran** : vérifier sur le rendu.
 Verrou : `adminConsoleTruth.test.tsx` (7) — monte le VRAI `AdminDashboard` et exerce les
 trois états, le double compteur, le badge de carte et l'exclusion des fixtures de la file.
 
+### Le CHAMP DÉCLARÉ QUI SE FAIT PASSER POUR UNE MESURE ⚠️
+
+**Un signal qui ne peut pas être faux ne prouve rien**, et il coûte plus cher qu'un signal
+absent : on s'y fie. MESURÉ le 2026-08-06 sur les écrans applicatifs — trois formes, et la
+troisième n'est visible depuis aucune des deux autres.
+
+| Forme | Exemple mesuré | Ce qui trahit |
+|---|---|---|
+| **littéral dans un catalogue** | `INTEGRATIONS_LIST` portait `status:'connected'` ×11/12, plus `uptime:'99.9%'`, `calls:1847`, `lastCall:'Il y a 2 min'` | le NOM affirme une observation, la valeur est du texte dans un fichier |
+| **colonne déclarée, JAMAIS écrite** | `lastLoginAt` (`schema.prisma:158`) — **0/8 comptes** en prod | rien n'est faux dans le code : c'est une **absence**, elle n'a pas de forme |
+| **clé étrangère dans un compteur** | `okCount`/`allChecked` calculés sur `Object.keys(pingStatus)` | l'arithmétique naît à l'exécution, la source est valide |
+
+- **Le NOM est la moitié du correctif.** `status` → **`declared: 'configured' \| 'absent'`**
+  (`pages/Integrations.tsx`). Un champ qui dit sa nature ne se relit pas trois fois sans
+  qu'on voie le défaut. L'état RÉEL vient de **`GET /api/integrations/status`**
+  (`lib/integrationStatus.ts`, adossé au `providerMode()` **déjà existant** — ne pas en
+  écrire un second). `sandbox` n'est **pas** une nuance de `live` : c'est la différence
+  entre encaisser et simuler.
+- ⚠️ **Tant que la sonde n'a pas répondu, on n'est pas optimiste** : `status` reste
+  `disconnected`, la pastille est GRISE, le compteur dit « Vérification… ». Un défaut
+  réseau doit rendre l'écran muet, jamais rassurant.
+- ⚠️ **Une sonde vit avec sa carte.** `checkSentryBackend()` était appelée depuis la page
+  COMMERÇANT dont Sentry avait été retiré : elle écrivait une clé de plus que de cartes
+  affichées → **« 3/2 OK »** (numérateur > dénominateur), `allChecked` = `3 === 2` **faux
+  pour toujours**, « Joignables » figé sur `…` et la barre sur « Vérification en cours… ».
+  Trois symptômes, une ligne. La sonde n'était pas manquante, elle était **au mauvais
+  endroit** (déplacée dans `OpsInfrastructure`, où elle rend enfin une pastille capable de
+  rougir). **Un compteur se dérive de ce qui est AFFICHÉ**, jamais des clés d'une map.
+- ⚠️ **Vérité vacante, encore** : `pingableList` vide ⇒ `allChecked` vrai et `anyError`
+  faux ⇒ barre **verte « Tous les services opérationnels » sur ZÉRO sonde**. Et le titre
+  disait « tous les services » alors que 3 prestataires sur 5 ne sont pas sondables — un
+  quantificateur universel sur un sous-ensemble présenté comme le tout.
+- **`lastLoginAt` est ÉCRIT** par `POST /api/auth/login`, **après** les refus (mot de passe,
+  compte actif) et en **fail-open tracé** (une colonne d'affichage ne refuse pas une
+  authentification). ⚠️ `isOnlineNow` → **`loggedInRecently`** : on mesure une
+  AUTHENTIFICATION, pas une présence — « En ligne » promettait ce qu'aucune donnée ne
+  porte. L'absence de trace se dit **« Aucune trace »**, jamais « Jamais » : un trou de
+  mesure n'est pas un fait sur la personne.
+
+**Verrous** : `measuredNotDeclared.test.ts` (front, 5 — périmètre DÉRIVÉ de l'arborescence,
+assertion de couverture ≥ 200 fichiers, sabotage COPIÉ par `git show`, **3 sabotages
+vérifiés**) · `lastLoginWritten.test.ts` (back, 6, sabotage vérifié) ·
+`integrationsRendered.test.tsx` (front, 8, **DOM rendu**, 3 sabotages).
+
+⚠️ **Le premier critère du scanner était FAUX, et le calibrage l'a dit** : « une clé dont
+toutes les entrées portent la même valeur » ne trouvait pas `status` — il valait
+`'connected'` onze fois et `'disconnected'` une fois (PayDunya). *Un critère qui laisse
+passer le cas qui l'a motivé est faux, pas prudent.* La règle retenue vise le
+**VOCABULAIRE** (`status`, `uptime`, `calls`, `latency`, `online`…) dans un catalogue de
+≥ 3 entrées : **64 correspondances avant, 2 fichiers, zéro faux positif ailleurs**.
+⚠️ Et la **première version du scanner rendait 2 correspondances sur 254 fichiers** en
+paraissant propre : sa regex de tableau s'arrêtait au premier `]` d'un sous-tableau
+`features:[…]`. **Analyse par appariement de délimiteurs, jamais par regex sur la
+structure.**
+
+⚠️ **Deux tests VERTS pour la mauvaise raison, attrapés par le sabotage** — et c'est le
+rappel le plus utile de ce chantier : (a) `integrationsRendered` faisait échouer `fetch`
+(jsdom n'a pas de réseau), donc `anyError` court-circuitait la branche testée et les
+**8 cas restaient verts sous sabotage** ; (b) le mock `bcrypt.compare` comparait le HASH et
+ignorait le mot de passe en clair, donc le cas « mot de passe faux » **ne produisait jamais
+d'échec**. Un test qui ne peut pas atteindre le chemin fautif ne garde rien.
+
 ### Console Ops ⚠️ — les FIXTURES ne sont pas des clients
 
 `lib/fixtureTenant.ts` (backend) décide par **PROPRIÉTÉ** : `isPlatform` · `isDemo` ·
@@ -898,7 +960,7 @@ l'exercer, et être vérifié **dans les deux sens**.
 ### 🟡 Medium
 - ✅ **Paie statuts : RÉSOLU** — modèle `Payroll` (instantané GELÉ) + routes `GET /api/payroll?month=YYYY-MM`, `POST /api/payroll/generate`, `PATCH /api/payroll/:id`. Cf. § Paie.
 - **Bundle recharts ~105KB gz** : lazy + hors precache. Remplacer visx = **L**.
-- **Console Ops — densité + table dense = UN SEUL lot** ⚠️ : les deux touchent la même structure, les séparer ferait le travail deux fois. Défauts MESURÉS sur captures — bandeau MRR ~1 400 px entre le chiffre et la note de droite · onglet Boutiques ~700 px de vide sous trois cartes · tiroir de détail ~700 px de vide en bas.
+- **Densité — UN SEUL lot avec la table dense** ⚠️ : tout touche la même structure, séparer ferait le travail plusieurs fois. Défauts MESURÉS sur captures — **console Ops** : bandeau MRR ~1 400 px entre le chiffre et la note de droite · onglet Boutiques ~700 px de vide sous trois cartes · tiroir de détail ~700 px de vide en bas. **Écrans applicatifs** (2026-08-06) : Rapports/RH deux cartes pleine largeur pour deux valeurs · `select-shop` deux lignes dans un écran vide · Planning légende du bas redondante avec la barre du haut.
   - ⚠️ **NE PAS chercher à authentifier Playwright sur `/admin`.** Le compte E2E est SUPER_ADMIN **de boutique** ; la console plateforme lui est masquée **PAR CONCEPTION** (garde P0 : `App.tsx:97` `isPlatformAdmin !== true` → redirection, `Sidebar.tsx:255` masque l'entrée, `e2e/smoke.spec.ts:78` fige l'absence). L'échec d'accès est le **bon comportement** — ne pas l'affaiblir pour mesurer une marge. C'est le motif du § Vérification en PROD appliqué à l'UI : on ne desserre pas un garde pour se donner un instrument.
   - **Boucle de mesure — Nelson EST la session authentifiée** : (1) Claude propose la mise en page avec les **valeurs visées écrites** (largeur max, gouttières, hauteur de tiroir) ; (2) Nelson envoie une capture de `/admin` à 2560 et 1440 ; (3) la mesure se fait **sur l'image**, avant et après. Un chantier de densité sans les deux captures n'a pas de mesure, donc pas de résultat.
 - ✅ **A11y résiduel : FAIT** — SectionCatalog (4 champs `aria-label` : catalogue/slug/description/WhatsApp), POSModals sélecteur pays devenu vrai `role="listbox"` (+ `role="group"` par région, `role="option"`+`aria-selected` sur `CountryItem`), Stock vue grille en `role="list"`/`role="listitem"` (via props A11y additives de `ResponsiveGrid`).
@@ -908,6 +970,8 @@ l'exercer, et être vérifié **dans les deux sens**.
 ⚠️ **`demo-tenant-001` et `demo-tenant-002` portent `isDemo = true`** depuis 2026-07-22 : toute action à coût externe ou destructive y est refusée côté serveur (403 `DEMO_TENANT_FORBIDDEN`, cf. § Garde de dépense). Le mot de passe démo est PUBLIC — c'est ce flag qui protège, pas la discrétion.
 
 `demo1234` — `admin@`/`manager@`/`cashier@`/`accountant@`/`hr@habashop.com`, tenant principal `demo-tenant-001` (« HabaShop — Dakar Central »). 5 employés (`demo-emp-${name}`). Données hors seed : `currency='EUR'`, `requireCashier=false`, `ownerPhone='+221771234567'`. Si reseed → repasser `requireCashier=false`.
+
+⚠️ **L'EUR de `demo-tenant-001` n'est PAS un bug de seed — MESURÉ le 2026-08-06.** `prisma/seed.ts:34` **et** `prisma/fix-demo001.ts:50` posent tous deux `XOF` ; le tenant est créé le 16/06 et modifié le **26/07**, six semaines plus tard. L'EUR vient donc d'un `PATCH /api/tenant` manuel, ce que la ligne « données hors seed » ci-dessus enregistrait déjà sans en dire la raison. **Répartition réelle : EUR 3 / XOF 1** — l'inverse de ce que la vitrine promet (« des prix en Franc CFA »), et toutes les captures montrent « € » sur une boutique de Dakar. ⚠️ `e2e-tenant` en EUR est **délibéré et utile** (en XOF, 0 décimale et taux 1, tous les défauts de conversion sont INVISIBLES — cf. les cas dorés de paie) ; `HabaShop Ops` est un tenant interne. **Seul `demo-tenant-001` est incohérent.** Correctif PROPOSÉ, non appliqué (muter un tenant existant exige une validation explicite) : `currency: 'XOF'`, pays inchangé.
 **Multi-boutiques** : `admin@` et `manager@` sont liés à une 2ᵉ boutique `demo-tenant-002` (« Alimentation Koné — Abidjan », XOF) via `UserTenant` → login déclenche le sélecteur. `admin@` = SUPER_ADMIN/ADMIN, `manager@` = MANAGER/MANAGER. Les 3 autres restent mono-boutique.
 
 ## Env vars

@@ -37,6 +37,7 @@ import { mtnPaymentRoutes }    from './routes/mtnPayment'
 import { campayPaymentRoutes } from './routes/campayPayment'
 import { paydunyaPaymentRoutes } from './routes/paydunyaPayment'
 import { paymentStatsRoutes }  from './routes/paymentStats'
+import { integrationStatusRoutes } from './routes/integrationStatus'
 import { adminRoutes }        from './routes/admin'
 import { notificationRoutes } from './routes/notifications'
 import { whatsappRoutes }     from './routes/whatsapp'
@@ -269,6 +270,7 @@ async function start() {
   await app.register(mtnPaymentRoutes)
   await app.register(campayPaymentRoutes)
   await app.register(paydunyaPaymentRoutes)
+  await app.register(integrationStatusRoutes)
   await app.register(paymentStatsRoutes)
   await app.register(adminRoutes)
   await app.register(notificationRoutes)

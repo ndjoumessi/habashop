@@ -155,6 +155,10 @@ export default function Reports() {
     const agg = (arr: any[]) => {
       const ca = arr.reduce((s, x) => s + (x.total ?? 0), 0)
       const margin = arr.reduce((s, x) => s + (x.items ?? []).reduce((m: number, it: any) => m + (((it.unitPrice ?? 0) - (it.product?.buyPrice ?? 0)) * (it.qty ?? 0)), 0), 0)
+      // `avgCart` ici = TICKET MOYEN réel (CA ÷ nombre de ventes de la période).
+      // ⚠️ À ne pas confondre avec `Customers.tsx` `avgCart`, qui estime une dépense par
+      // achat à partir d'une fréquence PROJETÉE. Les deux portaient le même libellé
+      // « Panier moyen » ; ils portent désormais deux noms distincts.
       return { ca, margin, transactions: arr.length, avgCart: arr.length ? Math.round(ca / arr.length) : 0 }
     }
     const c = agg(cur), p = agg(prev)

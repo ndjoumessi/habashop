@@ -4,7 +4,7 @@ import { ExternalLink, RotateCw, Globe, Zap, Settings2, X, KeyRound } from 'luci
 import Button from '@/components/ui/AppButton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useModalFocus } from '@/hooks/useModalFocus'
-import { paymentStatsApi, paydunyaApi, sentryStatusApi, type ProviderStat } from '@/lib/api'
+import { paymentStatsApi, paydunyaApi, integrationStatusApi, type ProviderStat, type IntegrationState, type MerchantIntegrationId } from '@/lib/api'
 import toast from 'react-hot-toast'
 import ResendMonitor from '@/components/integrations/ResendMonitor'
 
@@ -12,9 +12,22 @@ type PingState = 'checking' | 'ok' | 'slow' | 'error'
 
 export interface Integration {
   id: string; name: string; desc: string
-  color: string; status: 'connected' | 'disconnected'
-  endpoint: string; lastCall: string; calls: number; docs: string
-  uptime: string
+  color: string
+  /**
+   * ⚠️ `declared`, PAS `status` — et le nom est le correctif.
+   *
+   * Ce champ est un LITTÉRAL du dépôt : il dit ce que l'équipe a câblé, jamais ce qui
+   * fonctionne. Il s'appelait `status: 'connected'` et alimentait une bande verte, un
+   * compteur « connectées » et une pastille de santé — trois affirmations sur le monde
+   * tirées d'un fichier TypeScript. Un nom qui ment est plus coûteux qu'une valeur fausse :
+   * il fait relire le code sans y voir le défaut.
+   *
+   * L'état RÉEL vient de `GET /api/integrations/status` (secrets posés côté serveur) et
+   * de la sonde de joignabilité. Ne jamais rendre `declared` comme un état vérifié :
+   * `OpsInfrastructure` l'affiche en gris, sous une légende qui dit ce que c'est.
+   */
+  declared: 'configured' | 'absent'
+  endpoint: string; docs: string
   pingUrl: string
   features: string[]
   IconSvg: () => JSX.Element
@@ -22,6 +35,15 @@ export interface Integration {
   paymentStatus?: 'sandbox' | 'production' | 'unconfigured'
   countries?: string   // drapeaux + noms pays, affiché sous la description
   noPing?: boolean     // sauter le ping auto (pas d'endpoint public testable)
+}
+
+/**
+ * Carte COMMERÇANT : la déclaration du dépôt + l'état MESURÉ côté serveur.
+ * `status`/`paymentStatus` n'existent que sur cette forme dérivée — jamais dans le catalogue.
+ */
+export type MerchantCard = Integration & {
+  status: 'connected' | 'disconnected'
+  paymentStatus: 'sandbox' | 'production' | 'unconfigured'
 }
 
 // ── Répartition par PUBLIC (étape 1bis) ──────────────────────────────────────
@@ -155,80 +177,72 @@ export const INTEGRATIONS_LIST: Integration[] = [
   {
     id:'anthropic', name:'Anthropic Claude',
     desc:'Assistant IA et analyses intelligentes',
-    color:'#FF6B35', status:'connected',
-    endpoint:'api.anthropic.com', lastCall:'Il y a 2 min', calls:1847,
-    docs:'https://docs.anthropic.com',
-    uptime:'99.9%', pingUrl:'https://api.anthropic.com',
+    color:'#FF6B35', declared:'configured',
+    endpoint:'api.anthropic.com',
+    docs:'https://docs.anthropic.com', pingUrl:'https://api.anthropic.com',
     features:['Analyses IA temps réel', 'Recommandations personnalisées', 'Chat assistant intégré'],
     IconSvg: IconAnthropicSvg,
   },
   {
     id:'twilio', name:'Twilio WhatsApp',
     desc:'Envoi de tickets et marketing WhatsApp',
-    color:'#25D366', status:'connected',
-    endpoint:'api.twilio.com', lastCall:'Il y a 15 min', calls:342,
-    docs:'https://twilio.com/docs',
-    uptime:'99.9%', pingUrl:'https://api.twilio.com',
+    color:'#25D366', declared:'configured',
+    endpoint:'api.twilio.com',
+    docs:'https://twilio.com/docs', pingUrl:'https://api.twilio.com',
     features:['Tickets de caisse par WhatsApp', 'Campagnes marketing', 'Notifications clients'],
     IconSvg: IconTwilioSvg,
   },
   {
     id:'resend', name:'Resend',
     desc:'Emails transactionnels — bienvenue, rappels, rapports',
-    color:'#6C47FF', status:'connected',
-    endpoint:'api.resend.com', lastCall:'Il y a 1h', calls:156,
-    docs:'https://resend.com/docs',
-    uptime:'99.8%', pingUrl:'https://api.resend.com',
+    color:'#6C47FF', declared:'configured',
+    endpoint:'api.resend.com',
+    docs:'https://resend.com/docs', pingUrl:'https://api.resend.com',
     features:['Email de bienvenue à l\'inscription', 'Rappels d\'essai J-7 / J-3', 'Rapport hebdomadaire automatique'],
     IconSvg: IconResendSvg,
   },
   {
     id:'googlemaps', name:'Google Maps',
     desc:'Autocomplete adresses et carte clients',
-    color:'#4285F4', status:'connected',
-    endpoint:'maps.googleapis.com', lastCall:'Il y a 5 min', calls:2103,
-    docs:'https://developers.google.com/maps',
-    uptime:'99.9%', pingUrl:'https://maps.googleapis.com',
+    color:'#4285F4', declared:'configured',
+    endpoint:'maps.googleapis.com',
+    docs:'https://developers.google.com/maps', pingUrl:'https://maps.googleapis.com',
     features:['Autocomplete d\'adresses', 'Géocodage des clients', 'Carte interactive'],
     IconSvg: IconGoogleMapsSvg,
   },
   {
     id:'railway', name:'Railway',
     desc:'Hébergement backend PostgreSQL + Node.js',
-    color:'#8E2DFF', status:'connected',
-    endpoint:'habashop-production.up.railway.app', lastCall:'Continu', calls:999999,
-    docs:'https://railway.app',
-    uptime:'99.9%', pingUrl:'https://habashop-production.up.railway.app',
+    color:'#8E2DFF', declared:'configured',
+    endpoint:'habashop-production.up.railway.app',
+    docs:'https://railway.app', pingUrl:'https://habashop-production.up.railway.app',
     features:['PostgreSQL managé', 'Backend Node.js', 'Déploiement continu'],
     IconSvg: IconRailwaySvg,
   },
   {
     id:'vercel', name:'Vercel',
     desc:'Déploiement frontend React + CDN global',
-    color:'#E0E0E0', status:'connected',
-    endpoint:'habashop.vercel.app', lastCall:'Continu', calls:999999,
-    docs:'https://vercel.com',
-    uptime:'99.99%', pingUrl:'https://habashop.vercel.app',
+    color:'#E0E0E0', declared:'configured',
+    endpoint:'habashop.vercel.app',
+    docs:'https://vercel.com', pingUrl:'https://habashop.vercel.app',
     features:['CDN global', 'Déploiements preview', 'HTTPS automatique'],
     IconSvg: IconVercelSvg,
   },
   {
     id:'prisma', name:'Prisma ORM',
     desc:'Accès base de données PostgreSQL',
-    color:'#5A67D8', status:'connected',
-    endpoint:'yamanote.proxy.rlwy.net', lastCall:'Continu', calls:8942,
-    docs:'https://prisma.io',
-    uptime:'99.9%', pingUrl:'https://habashop-production.up.railway.app',
+    color:'#5A67D8', declared:'configured',
+    endpoint:'yamanote.proxy.rlwy.net',
+    docs:'https://prisma.io', pingUrl:'https://habashop-production.up.railway.app',
     features:['ORM type-safe', 'Migrations versionnées', 'Requêtes optimisées'],
     IconSvg: IconPrismaSvg,
   },
   {
     id:'redis', name:'Redis',
     desc:'Cache rapports comptables et sessions',
-    color:'#DC382D', status:'connected',
-    endpoint:'redis.railway.internal', lastCall:'Continu', calls:99999,
-    docs:'https://redis.io/docs',
-    uptime:'99.9%', pingUrl:'',
+    color:'#DC382D', declared:'configured',
+    endpoint:'redis.railway.internal',
+    docs:'https://redis.io/docs', pingUrl:'',
     features:['Cache rapports', 'Sessions', 'Faible latence'],
     IconSvg: IconRedisSvg,
     noPing: true,
@@ -236,10 +250,9 @@ export const INTEGRATIONS_LIST: Integration[] = [
   {
     id:'sentry', name:'Sentry',
     desc:'Suivi des erreurs front + back temps réel',
-    color:'#8E5CD9', status:'connected',
-    endpoint:'haba-76.sentry.io', lastCall:'Il y a 12 min', calls:0,
-    docs:'https://haba-76.sentry.io/projects/habashop-web/',
-    uptime:'99.9%', pingUrl:'',
+    color:'#8E5CD9', declared:'configured',
+    endpoint:'haba-76.sentry.io',
+    docs:'https://haba-76.sentry.io/projects/habashop-web/', pingUrl:'',
     features:['Erreurs front', 'Erreurs back', 'Source maps au build'],
     IconSvg: IconSentrySvg,
     noPing: true,
@@ -247,10 +260,9 @@ export const INTEGRATIONS_LIST: Integration[] = [
   {
     id:'mtnmomo', name:'MTN MoMo',
     desc:'Paiement mobile USSD push — 40+ pays MTN',
-    color:'#FFCC00', status:'connected',
-    endpoint:'sandbox.momodeveloper.mtn.com', lastCall:'Il y a 3 min', calls:47,
-    docs:'https://momodeveloper.mtn.com',
-    uptime:'99.5%', pingUrl:'',
+    color:'#FFCC00', declared:'configured',
+    endpoint:'sandbox.momodeveloper.mtn.com',
+    docs:'https://momodeveloper.mtn.com', pingUrl:'',
     features:['USSD push', 'Polling statut', 'Cameroun · CIV · Bénin'],
     IconSvg: IconMtnSvg,
     paymentStatus: 'sandbox',
@@ -260,10 +272,9 @@ export const INTEGRATIONS_LIST: Integration[] = [
   {
     id:'campay', name:'Campay',
     desc:'Orange Money + Visa/Mastercard — Cameroun & Gabon',
-    color:'#FF6B00', status:'connected',
-    endpoint:'demo.campay.net', lastCall:'Il y a 1 min', calls:23,
-    docs:'https://docs.campay.net',
-    uptime:'99.2%', pingUrl:'',
+    color:'#FF6B00', declared:'configured',
+    endpoint:'demo.campay.net',
+    docs:'https://docs.campay.net', pingUrl:'',
     features:['Orange Money USSD', 'Carte Visa/Mastercard', 'QR code hébergé'],
     IconSvg: IconCampaySvg,
     paymentStatus: 'sandbox',
@@ -273,10 +284,9 @@ export const INTEGRATIONS_LIST: Integration[] = [
   {
     id:'paydunya', name:'PayDunya',
     desc:'Wave · Orange Money · Visa — Sénégal, CIV, Mali',
-    color:'#1B4DFF', status:'disconnected',
-    endpoint:'app.paydunya.com', lastCall:'—', calls:0,
-    docs:'https://paydunya.com/docs',
-    uptime:'—', pingUrl:'',
+    color:'#1B4DFF', declared:'absent',
+    endpoint:'app.paydunya.com',
+    docs:'https://paydunya.com/docs', pingUrl:'',
     features:['Wave', 'Orange Money', 'Carte Visa/Mastercard'],
     IconSvg: IconPayDunyaSvg,
     paymentStatus: 'unconfigured',
@@ -324,29 +334,49 @@ export default function Integrations() {
   const [payDunyaOpen, setPayDunyaOpen] = useState(false)
   const [txStats, setTxStats] = useState<{ mtn: ProviderStat; campay: ProviderStat; paydunya: ProviderStat } | null>(null)
   const [paydunyaCfg, setPaydunyaCfg] = useState<{ configured: boolean; mode: 'test' | 'live'; methods: string[] } | null>(null)
+  const [states, setStates] = useState<Record<MerchantIntegrationId, IntegrationState> | null>(null)
 
   // Transactions paiement du jour (MTN MoMo + Campay) — données réelles backend.
   useEffect(() => {
     paymentStatsApi.today().then(setTxStats).catch(() => setTxStats(null))
   }, [])
 
-  // État réel de configuration PayDunya (backend) → statut connecté/déconnecté de la carte.
+  // Méthodes PayDunya réellement proposées (liste renvoyée par le backend).
   useEffect(() => {
     paydunyaApi.config().then(setPaydunyaCfg).catch(() => setPaydunyaCfg(null))
   }, [])
 
-  // Liste d'affichage : la carte PayDunya reflète l'état réel (configuré → connecté + sandbox/production).
+  /**
+   * ÉTAT RÉEL des intégrations — dérivé de l'environnement serveur, jamais du dépôt.
+   *
+   * ⚠️ MESURÉ le 2026-08-06 : `INTEGRATIONS_LIST` portait `declared:'configured'` en LITTÉRAL
+   * sur 11 des 12 entrées. Le commerçant lisait « connectées » en vert sur des prestataires
+   * dont aucun secret n'est posé — la pastille de santé de la console Ops, un écran plus loin.
+   * Seul PayDunya sondait vraiment. `/api/integrations/status` est désormais la source des CINQ.
+   */
+  useEffect(() => {
+    integrationStatusApi.get().then(r => setStates(r.states)).catch(() => setStates(null))
+  }, [])
+
   // Page COMMERÇANT : uniquement ses paiements + canaux. L'infrastructure (OPS) est
   // exclue ici et vit dans la console opérateur (cf. OpsInfrastructure). Ne publie pas la stack.
+  //
+  // ⚠️ Tant que la sonde n'a pas répondu, `status` reste `'disconnected'` et `paymentStatus`
+  // `'unconfigured'` : on ne PRÉSUME pas connecté. Un défaut réseau doit rendre l'écran muet,
+  // jamais optimiste — c'est ce qui distingue « je ne sais pas » de « tout va bien ».
   const displayList = useMemo(() => INTEGRATIONS_LIST
     .filter(itg => MERCHANT_CATS.has(CATEGORY_OF[itg.id]))
-    .map(itg => itg.id !== 'paydunya' ? itg : {
-      ...itg,
-      status:        paydunyaCfg?.configured ? 'connected' as const : 'disconnected' as const,
-      paymentStatus: paydunyaCfg
-        ? (paydunyaCfg.configured ? (paydunyaCfg.mode === 'live' ? 'production' as const : 'sandbox' as const) : 'unconfigured' as const)
-        : itg.paymentStatus,
-    }), [paydunyaCfg])
+    .map(itg => {
+      const st = states?.[itg.id as MerchantIntegrationId]
+      return {
+        ...itg,
+        status: st === 'live' || st === 'sandbox' ? 'connected' as const : 'disconnected' as const,
+        paymentStatus:
+          st === 'live'    ? 'production' as const :
+          st === 'sandbox' ? 'sandbox' as const :
+                             'unconfigured' as const,
+      }
+    }), [states])
 
   // Heure courte locale d'un ISO (dernière transaction réussie). null → '—'.
   const shortTime = (iso: string | null) =>
@@ -369,32 +399,8 @@ export default function Integrations() {
     }
   }
 
-  // Sentry : vérification côté backend (CORS infiable en no-cors multi-browser)
-  const checkSentryBackend = async (showToast = false): Promise<PingState> => {
-    setPingStatus(s => ({ ...s, sentry: 'checking' }))
-    try {
-      const r = await sentryStatusApi.check()
-      const st: PingState = r.connected ? (r.ms >= 500 ? 'slow' : 'ok') : 'error'
-      setPingStatus(s => ({ ...s, sentry: st }))
-      setPingLatency(p => ({ ...p, sentry: r.ms }))
-      if (showToast) {
-        if (st === 'error') {
-          toast.error(lang === 'en' ? '✗ Sentry unreachable — check SENTRY_AUTH_TOKEN' : lang === 'es' ? '✗ Sentry inaccesible — revisa SENTRY_AUTH_TOKEN' : lang === 'it' ? '✗ Sentry irraggiungibile — controlla SENTRY_AUTH_TOKEN' : '✗ Sentry injoignable — vérifiez SENTRY_AUTH_TOKEN')
-        } else {
-          toast.success(lang === 'en' ? `✓ Sentry — Connection OK (${r.ms}ms)` : lang === 'es' ? `✓ Sentry — Conexión OK (${r.ms}ms)` : lang === 'it' ? `✓ Sentry — Connessione OK (${r.ms}ms)` : `✓ Sentry — Connexion OK (${r.ms}ms)`)
-        }
-      }
-      return st
-    } catch {
-      setPingStatus(s => ({ ...s, sentry: 'error' }))
-      if (showToast) toast.error(lang === 'en' ? '✗ Sentry check failed' : lang === 'es' ? '✗ Error al verificar Sentry' : lang === 'it' ? '✗ Verifica Sentry fallita' : '✗ Vérification Sentry échouée')
-      return 'error'
-    }
-  }
-
   // Bouton "Tester la connexion" : ping live + toast résultat
   const testConnection = async (itg: Integration) => {
-    if (itg.id === 'sentry') { checkSentryBackend(true); return }
     const { status, ms } = await pingIntegration(itg.id, itg.pingUrl)
     if (status === 'error') {
       toast.error(lang === 'en' ? '✗ Connection failed — check your configuration' : lang === 'es' ? '✗ Conexión fallida — verifique su configuración' : lang === 'it' ? '✗ Connessione fallita — verifica la configurazione' : '✗ Connexion échouée — vérifiez votre configuration')
@@ -403,9 +409,20 @@ export default function Integrations() {
     }
   }
 
+  /**
+   * ⚠️ NE PLUS sonder Sentry ici. `checkSentryBackend()` écrivait `pingStatus.sentry`, or
+   * `sentry` est en catégorie `monitoring` : il a été SORTI de la page commerçant lors de
+   * l'extraction d'`OpsInfrastructure`, mais sa sonde était restée. Une clé de plus dans la
+   * map que de cartes affichées, et les trois symptômes mesurés le 2026-08-06 tombent :
+   *
+   *   okCount comptait sentry              → « 3/2 OK », numérateur > dénominateur
+   *   allChecked testait 3 === 2           → FAUX POUR TOUJOURS
+   *   → « Joignables » figé sur « … », barre figée sur « Vérification en cours… »
+   *
+   * La sonde Sentry vit désormais avec la carte Sentry, dans `OpsInfrastructure`.
+   */
   useEffect(() => {
     displayList.filter(itg => !itg.noPing).forEach(itg => { pingIntegration(itg.id, itg.pingUrl) })
-    checkSentryBackend() // vérifie Sentry via backend (pas de ping no-cors direct)
   }, [])
 
   function PaymentStatusBadge({ status }: { status: 'sandbox' | 'production' | 'unconfigured' }) {
@@ -445,14 +462,25 @@ export default function Integrations() {
     toast.success(lang === 'fr' ? `${itg.name} est géré automatiquement par HabaShop` : lang === 'es' ? `${itg.name} es gestionado automáticamente por HabaShop` : lang === 'it' ? `${itg.name} è gestito automaticamente da HabaShop` : `${itg.name} is managed automatically by HabaShop`)
   }
 
+  /**
+   * ⚠️ Les compteurs se dérivent des cartes AFFICHÉES, jamais des clés de `pingStatus`.
+   *
+   * `Object.keys(pingStatus)` faisait entrer dans le calcul toute intégration qui avait
+   * écrit dans la map — y compris une, `sentry`, que cette page n'affiche plus. Un
+   * numérateur pouvait donc dépasser son dénominateur, et `allChecked` être faux pour
+   * toujours. Partir de `pingableList` rend l'arithmétique vraie PAR CONSTRUCTION : le
+   * prochain qui écrira une clé étrangère ne cassera plus l'écran.
+   */
   const pingableList = displayList.filter(itg => !itg.noPing)
-  const pingedIds    = Object.keys(pingStatus)
+  const pingedIds    = pingableList.map(itg => itg.id).filter(id => pingStatus[id] !== undefined)
   const okCount      = pingedIds.filter(id => pingStatus[id] === 'ok' || pingStatus[id] === 'slow').length
   const anyError     = pingedIds.some(id => pingStatus[id] === 'error')
   const allChecked   = pingedIds.length === pingableList.length && pingedIds.every(id => pingStatus[id] !== 'checking')
   const allOk        = allChecked && !anyError
 
-  const totalConnected = displayList.filter(itg => itg.status === 'connected').length
+  // ⚠️ « configurées », pas « connectées » : `status` dérive désormais de l'environnement
+  // serveur (secrets posés), pas d'une sonde. Le mot doit dire ce qu'il mesure.
+  const totalConfigured = displayList.filter(itg => itg.status === 'connected').length
 
   const EMAIL_FLOWS = [
     { trigger: lang === 'en' ? '🎉 Signup' : lang === 'es' ? '🎉 Registro' : lang === 'it' ? '🎉 Iscrizione' : '🎉 Inscription',                   email: lang === 'en' ? 'Welcome email' : lang === 'es' ? 'Email de bienvenida' : lang === 'it' ? 'Email di benvenuto' : 'Email de bienvenue',   delay: lang === 'en' ? 'Immediate' : lang === 'es' ? 'Inmediato' : lang === 'it' ? 'Immediato' : 'Immédiat' },
@@ -463,10 +491,10 @@ export default function Integrations() {
     { trigger: lang === 'en' ? '📊 Monday 8am' : lang === 'es' ? '📊 Lunes 8h' : lang === 'it' ? '📊 Lunedì 8' : '📊 Lundi 8h',                   email: lang === 'en' ? 'Weekly report' : lang === 'es' ? 'Informe semanal' : lang === 'it' ? 'Report settimanale' : 'Rapport hebdomadaire',  delay: lang === 'en' ? 'Weekly cron' : lang === 'es' ? 'Cron semanal' : lang === 'it' ? 'Cron settimanale' : 'Cron hebdo' },
   ]
 
-  const renderCard = (itg: Integration) => {
+  const renderCard = (itg: MerchantCard) => {
     const isActive = itg.status === 'connected'
     const { IconSvg } = itg
-    const sv = (itg.noPing && itg.id !== 'sentry')
+    const sv = itg.noPing
       ? itg.paymentStatus === 'production' ? { border:'var(--acc2)',   glow:'color-mix(in srgb, var(--acc2) 15%, transparent)' }
       : itg.paymentStatus === 'sandbox'     ? { border:'var(--warn)',   glow:'color-mix(in srgb, var(--warn) 12%, transparent)' }
       :                                      { border:'var(--border)',  glow:'transparent' }
@@ -479,7 +507,7 @@ export default function Integrations() {
     // Transactions du jour (cartes paiement MTN MoMo / Campay) — données réelles.
     const tx: ProviderStat | undefined = itg.id === 'mtnmomo' ? txStats?.mtn : itg.id === 'campay' ? txStats?.campay : itg.id === 'paydunya' ? txStats?.paydunya : undefined
     // Taux d'erreur : signal réel uniquement (un ping joignable = 0 erreur) ; sinon non mesuré.
-    const errorRate = (itg.noPing && itg.id !== 'sentry') ? '—' : pingStatus[itg.id] === 'error' ? '100%' : (pingStatus[itg.id] === 'ok' || pingStatus[itg.id] === 'slow') ? '0%' : '—'
+    const errorRate = itg.noPing ? '—' : pingStatus[itg.id] === 'error' ? '100%' : (pingStatus[itg.id] === 'ok' || pingStatus[itg.id] === 'slow') ? '0%' : '—'
 
     return (
       <div key={itg.id} style={{
@@ -506,13 +534,19 @@ export default function Integrations() {
             </div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:5 }}>{itg.name}</div>
-              {itg.paymentStatus
-                ? <PaymentStatusBadge status={itg.paymentStatus} />
-                : <PingBadge id={itg.id} />}
+              {/* DEUX badges, DEUX questions distinctes — les fondre est ce qui rendait
+                  l'écran trompeur : « Actif » disait la configuration, le ping dit la
+                  joignabilité de l'hôte du tiers. Un hôte joignable ne prouve pas que NOTRE
+                  compte est configuré, et une configuration posée ne prouve pas que l'hôte
+                  répond. Le second n'apparaît que là où un ping existe. */}
+              <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                {itg.paymentStatus && <PaymentStatusBadge status={itg.paymentStatus} />}
+                {!itg.noPing && <PingBadge id={itg.id} />}
+              </div>
             </div>
-            {(!itg.noPing || itg.id === 'sentry') && (
+            {!itg.noPing && (
               <button type="button"
-                onClick={() => itg.id === 'sentry' ? checkSentryBackend() : pingIntegration(itg.id, itg.pingUrl)}
+                onClick={() => pingIntegration(itg.id, itg.pingUrl)}
                 title={lang === 'fr' ? 'Rafraîchir le statut' : lang === 'es' ? 'Actualizar el estado' : lang === 'it' ? 'Aggiorna lo stato' : 'Refresh status'}
                 aria-label={`${lang === 'fr' ? 'Rafraîchir' : lang === 'es' ? 'Actualizar' : lang === 'it' ? 'Aggiorna' : 'Refresh'} ${itg.name}`}
                 style={{ width:28, height:28, borderRadius:8, flexShrink:0, background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -579,7 +613,7 @@ export default function Integrations() {
           {/* Métriques mesurées en direct — latence + erreurs du ping réel.
               Masqué pour les services sans endpoint public testable (paiements, cache) :
               on n'affiche aucune valeur qui ne soit pas mesurée. */}
-          {(!itg.noPing || itg.id === 'sentry') && (
+          {!itg.noPing && (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:6, marginBottom:10 }}>
               {[
                 { label: lang === 'en' ? 'Latency' : lang === 'es' ? 'Latencia' : lang === 'it' ? 'Latenza' : 'Latence', value: pingLatency[itg.id] ? `${pingLatency[itg.id]}ms` : '—', color: 'var(--text)' },
@@ -613,10 +647,10 @@ export default function Integrations() {
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text2)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text3)' }}
           >
-            <ExternalLink size={11} /> {itg.id === 'sentry' ? 'Dashboard' : 'Docs'}
+            <ExternalLink size={11} /> Docs
           </a>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            {(!itg.noPing || itg.id === 'sentry') && (
+            {!itg.noPing && (
               <Button
                 variant="ghost"
                 className="btn-sm"
@@ -765,34 +799,46 @@ export default function Integrations() {
       {/* ── Header ── */}
       <div className="page-header">
         <div>
+          {/* ⚠️ Le titre disait « API & Intégrations » — le MÊME libellé que l'entrée de menu
+              de /app/api-docs, qui est une autre page. Cette page-ci ne parle pas d'API : elle
+              parle de moyens de paiement et de canaux d'envoi. Cf. § ⑤ du chantier. */}
           <h1 className="page-title">
-            {lang === 'fr' ? 'API & Intégrations' : lang === 'en' ? 'API & Integrations' : lang === 'es' ? 'Integraciones API' : 'Integrazioni API'}
+            {lang === 'en' ? 'Payments & channels' : lang === 'es' ? 'Pagos y canales' : lang === 'it' ? 'Pagamenti e canali' : 'Paiements & canaux'}
           </h1>
           <p className="page-subtitle">
-            {lang === 'en' ? 'Connected services and real-time status' : lang === 'es' ? 'Servicios conectados y estados en tiempo real' : lang === 'it' ? 'Servizi connessi e stati in tempo reale' : 'Services connectés et statuts en temps réel'}
+            {lang === 'en' ? 'What is configured on the server, and what responds' : lang === 'es' ? 'Lo que está configurado en el servidor y lo que responde' : lang === 'it' ? 'Cosa è configurato sul server e cosa risponde' : 'Ce qui est configuré côté serveur, et ce qui répond'}
           </p>
         </div>
-        <div style={{
-          display:'flex', alignItems:'center', gap:8,
-          padding:'8px 14px', borderRadius:12,
-          background:'rgba(0,208,132,.08)', border:'1px solid rgba(0,208,132,.2)',
-        }}>
-          <div style={{
-            width:8, height:8, borderRadius:'50%',
-            background:'var(--acc2)',
-            animation:'pulse 2s infinite',
-          }} />
-          <span style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:'var(--acc2)' }}>
-            {totalConnected}/{displayList.length} {lang === 'en' ? 'connected' : lang === 'es' ? 'conectadas' : lang === 'it' ? 'connesse' : 'connectées'}
-          </span>
-        </div>
+        {/* ⚠️ NEUTRE tant que la sonde n'a pas répondu, et JAMAIS vert par défaut : la pastille
+            pulsée verte s'affichait avant même que le serveur ait dit quoi que ce soit. Le vert
+            est réservé au cas où tout est réellement configuré — sinon ambre, sinon gris. */}
+        {(() => {
+          const pending  = states === null
+          const complete = !pending && totalConfigured === displayList.length && displayList.length > 0
+          const tone = pending ? 'var(--text3)' : complete ? 'var(--acc2)' : 'var(--warn)'
+          return (
+            <div style={{
+              display:'flex', alignItems:'center', gap:8,
+              padding:'8px 14px', borderRadius:12,
+              background: `color-mix(in srgb, ${tone} 8%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${tone} 22%, transparent)`,
+            }}>
+              <div style={{ width:8, height:8, borderRadius:'50%', background: tone }} />
+              <span style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color: tone }}>
+                {pending
+                  ? (lang === 'en' ? 'Checking…' : lang === 'es' ? 'Verificando…' : lang === 'it' ? 'Verifica…' : 'Vérification…')
+                  : `${totalConfigured}/${displayList.length} ${lang === 'en' ? 'configured' : lang === 'es' ? 'configuradas' : lang === 'it' ? 'configurate' : 'configurées'}`}
+              </span>
+            </div>
+          )
+        })()}
       </div>
 
       {/* ── KPIs (réels uniquement) ── */}
       <div className="kpi-grid">
         {[
           { label:lang === 'en' ? 'Integrations' : lang === 'es' ? 'Integraciones' : lang === 'it' ? 'Integrazioni' : 'Intégrations', value:displayList.length, color:'var(--text)'  },
-          { label:lang === 'en' ? 'Connected' : lang === 'es' ? 'Conectadas' : lang === 'it' ? 'Connesse' : 'Connectées',    value:totalConnected,            color:'var(--acc)'   },
+          { label:lang === 'en' ? 'Configured' : lang === 'es' ? 'Configuradas' : lang === 'it' ? 'Configurate' : 'Configurées', value: states === null ? '…' : totalConfigured, color:'var(--acc)'   },
           { label:lang === 'en' ? 'Reachable' : lang === 'es' ? 'Accesibles' : lang === 'it' ? 'Raggiungibili' : 'Joignables',   value:allChecked ? `${okCount}/${pingableList.length}` : '…', color:'var(--acc2)' },
           { label:lang === 'en' ? 'Transactions today' : lang === 'es' ? 'Transacciones hoy' : lang === 'it' ? 'Transazioni oggi' : 'Transactions du jour', value: txStats ? (txStats.mtn.count + txStats.campay.count) : '—', color:'var(--p)' },
         ].map(k => (
@@ -803,24 +849,41 @@ export default function Integrations() {
         ))}
       </div>
 
-      {/* ── Barre de santé globale ── */}
-      <div style={{
-        display:'flex', alignItems:'center', gap:10, padding:'12px 16px', borderRadius:12,
-        background: allOk ? 'rgba(0,208,132,.06)' : anyError ? 'rgba(255,59,92,.06)' : 'var(--bg3)',
-        border: `1px solid ${allOk ? 'rgba(0,208,132,.2)' : anyError ? 'rgba(255,59,92,.2)' : 'var(--border)'}`,
-      }}>
-        <div style={{ width:8, height:8, borderRadius:'50%', flexShrink:0, background: allOk ? 'var(--acc2)' : anyError ? 'var(--danger)' : 'var(--acc)', boxShadow: allOk ? '0 0 8px var(--acc2)' : 'none' }} />
-        <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>
-          {allOk
-            ? (lang === 'fr' ? 'Tous les services opérationnels' : lang === 'es' ? 'Todos los servicios operativos' : lang === 'it' ? 'Tutti i servizi operativi' : 'All services operational')
-            : anyError
-            ? (lang === 'fr' ? 'Certains services sont injoignables' : lang === 'es' ? 'Algunos servicios no responden' : lang === 'it' ? 'Alcuni servizi non rispondono' : 'Some services are unreachable')
-            : (lang === 'fr' ? 'Vérification en cours...' : lang === 'es' ? 'Verificando...' : lang === 'it' ? 'Verifica in corso...' : 'Checking...')}
-        </span>
-        <span style={{ marginLeft:'auto', fontSize:'var(--fs-caption)', color:'var(--text3)', fontFamily:'var(--mono)' }}>
-          {okCount}/{pingableList.length} OK
-        </span>
-      </div>
+      {/* ── Joignabilité des hôtes sondables ──────────────────────────────────────
+          ⚠️ LA VÉRITÉ VACANTE, dans sa forme exacte : si `pingableList` est vide,
+          `allChecked` vaut vrai (`0 === 0` et `.every()` sur le vide) et `anyError` faux,
+          donc `allOk` était VRAI — barre verte, « Tous les services opérationnels », sur
+          ZÉRO sonde. C'est la coche « toutes vos boutiques ont démarré » sous « 0 inscrites ».
+          TROIS états, et l'état vide est NEUTRE : on constate, on ne rassure pas.
+
+          ⚠️ Et le titre ne dit plus « tous les services » : trois prestataires sur cinq ne
+          sont PAS sondables (`noPing`). Un quantificateur universel sur un sous-ensemble
+          présenté comme le tout est le même défaut, en plus discret. */}
+      {(() => {
+        const aucune = pingableList.length === 0
+        const tone = aucune ? 'var(--text3)' : allOk ? 'var(--acc2)' : anyError ? 'var(--danger)' : 'var(--acc)'
+        return (
+          <div style={{
+            display:'flex', alignItems:'center', gap:10, padding:'12px 16px', borderRadius:12,
+            background: aucune ? 'var(--bg3)' : `color-mix(in srgb, ${tone} 6%, transparent)`,
+            border: `1px solid ${aucune ? 'var(--border)' : `color-mix(in srgb, ${tone} 20%, transparent)`}`,
+          }}>
+            <div style={{ width:8, height:8, borderRadius:'50%', flexShrink:0, background: tone, boxShadow: !aucune && allOk ? '0 0 8px var(--acc2)' : 'none' }} />
+            <span style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>
+              {aucune
+                ? (lang === 'en' ? 'No host can be probed from the browser' : lang === 'es' ? 'Ningún host verificable desde el navegador' : lang === 'it' ? 'Nessun host verificabile dal browser' : 'Aucun hôte n’est vérifiable depuis le navigateur')
+                : allOk
+                ? (lang === 'en' ? 'Every probed host responds' : lang === 'es' ? 'Todos los hosts verificados responden' : lang === 'it' ? 'Tutti gli host verificati rispondono' : 'Les hôtes sondés répondent tous')
+                : anyError
+                ? (lang === 'en' ? 'Some hosts are unreachable' : lang === 'es' ? 'Algunos hosts no responden' : lang === 'it' ? 'Alcuni host non rispondono' : 'Certains hôtes sont injoignables')
+                : (lang === 'en' ? 'Probing…' : lang === 'es' ? 'Verificando…' : lang === 'it' ? 'Verifica…' : 'Vérification en cours…')}
+            </span>
+            <span style={{ marginLeft:'auto', fontSize:'var(--fs-caption)', color:'var(--text3)', fontFamily:'var(--mono)' }}>
+              {aucune ? '—' : `${okCount}/${pingableList.length} OK`}
+            </span>
+          </div>
+        )
+      })()}
 
       {/* ── Grids par catégorie ── */}
       {CATEGORIES.map(cat => {

@@ -4,15 +4,32 @@ import { useAppStore, isThemeLight, useCurrencyInfo, useConvertFromXOF } from '@
 import { customersApi } from '@/lib/api'
 import { normalizeClientType, type ClientTypeValue } from '@/lib/clientType'
 
-/** Montant avec suffixe devise DISCRET (pattern tuiles POS item 11) : chiffre
- *  proéminent, symbole plus petit et atténué — au lieu du fmt() d'un seul tenant. */
-export function AmountCur({ xof, suffixSize = 10, suffixColor = 'var(--text3)' }: { xof: number; suffixSize?: number; suffixColor?: string }) {
+/**
+ * Montant + SYMBOLE DE DEVISE — le symbole est une PARTIE DU NOMBRE, pas un ornement.
+ *
+ * ─── POURQUOI IL N'EST PLUS ATTÉNUÉ ──────────────────────────────────────────
+ * Il était rendu à 10 px en `var(--text3)` (#8E96AA, le plus faible des trois tokens de
+ * texte) pendant que le chiffre s'affichait en taille courante. Or ce produit sert des
+ * boutiques en XOF/XAF et des comptes en EUR, et l'écart entre les deux est d'un facteur
+ * **656**. C'est exactement l'ordre de grandeur qui a produit « 280 000,00 € au lieu de
+ * 426,86 € » sur un bulletin de paie : quand une erreur de conversion coûte 656×, le
+ * symbole est la seule chose qui permet de la voir. Le réduire et le griser, c'est
+ * effacer le repère au moment précis où il sert.
+ *
+ * ⚠️ NE PAS y remettre `fontSize` réduit ni `--text3`/`--text4`. Le symbole hérite de la
+ * taille du chiffre (`fontSize: 'inherit'`) et se distingue par la GRAISSE et l'espace,
+ * pas par l'effacement.
+ *
+ * `suffixColor` reste ouvert pour les rares surfaces qui teintent le montant entier
+ * (le suffixe doit alors suivre la couleur du chiffre, pas s'en détacher).
+ */
+export function AmountCur({ xof, suffixColor = 'var(--text2)' }: { xof: number; suffixColor?: string }) {
   const { symbol, locale, decimals } = useCurrencyInfo()
   const fromXOF = useConvertFromXOF()
   return (
     <>
       {fromXOF(xof ?? 0).toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}
-      <span style={{ fontSize: suffixSize, color: suffixColor, marginLeft: 4, fontWeight: 'var(--fw-semibold)' }}>{symbol}</span>
+      <span style={{ fontSize: 'inherit', color: suffixColor, marginLeft: 4, fontWeight: 'var(--fw-semibold)' }}>{symbol}</span>
     </>
   )
 }
