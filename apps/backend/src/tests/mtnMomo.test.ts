@@ -208,3 +208,59 @@ describe('mtnMomo service (via mock fetch)', () => {
     // Un statut inconnu doit mapper sur PENDING (voir implementation).
   })
 })
+
+/**
+ * NORMALISATION SERVEUR — ce que la route ENVOIE réellement à MTN.
+ *
+ * ⚠️ Assertions sur l'argument reçu par `requestToPay`, pas sur la fonction pure : la
+ * normalisation existait côté client seulement, et un appel direct à l'API partait tel
+ * quel. Prouver que `normalizeMsisdn` marche ne prouvait rien de la route.
+ */
+describe('POST /api/payments/mtn/request — le numéro est normalisé CÔTÉ SERVEUR', () => {
+  const post = async (phoneNumber: string) => {
+    const app = await makeApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/payments/mtn/request',
+      payload: { amount: 5000, phoneNumber, saleId: 's1' },
+    })
+    await app.close()
+    return res
+  }
+
+  it('un numéro local est préfixé 237 AVANT le départ chez MTN', async () => {
+    mtnRequest.mockResolvedValue('ref-1')
+    const res = await post('6 99 00 00 01')
+    expect(res.statusCode).toBe(200)
+    expect(mtnRequest).toHaveBeenCalledWith(expect.objectContaining({ phoneNumber: '237699000001' }))
+  })
+
+  it('la ponctuation est retirée (points compris — la divergence corrigée)', async () => {
+    mtnRequest.mockResolvedValue('ref-2')
+    await post('+237.699.000.001')
+    expect(mtnRequest).toHaveBeenCalledWith(expect.objectContaining({ phoneNumber: '237699000001' }))
+  })
+
+  it('un numéro ÉTRANGER passe : le bac à sable MTN en dépend', async () => {
+    mtnRequest.mockResolvedValue('ref-3')
+    await post('46733123453')
+    expect(mtnRequest).toHaveBeenCalledWith(expect.objectContaining({ phoneNumber: '46733123453' }))
+  })
+
+  it('un numéro invalide → 400 PHONE_INVALID, et MTN n’est JAMAIS appelé', async () => {
+    const res = await post('677abc000')
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).code).toBe('PHONE_INVALID')
+    expect(mtnRequest).not.toHaveBeenCalled()
+  })
+
+  it('trop court → 400, aucun appel (la garde du navigateur n’est pas une garde)', async () => {
+    const res = await post('1234567')
+    expect(res.statusCode).toBe(400)
+    expect(mtnRequest).not.toHaveBeenCalled()
+  })
+
+  it('⚠️ le message d’erreur ne CONTIENT PAS le numéro (PII)', async () => {
+    const res = await post('677abc000')
+    expect(res.body).not.toContain('677abc000')
+  })
+})

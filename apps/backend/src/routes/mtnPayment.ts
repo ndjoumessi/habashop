@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify'
 import { authenticate } from '../middleware/authenticate'
 import { requestToPay, getPaymentStatus } from '../services/mtnMomo'
 import { xofToCurrency } from '../lib/currency'
+import { normalizeMsisdn } from '../lib/msisdn'
 import { isNotConfigured, notConfiguredBody } from '../lib/payments/providerConfig'
 
 // Sandbox MTN accepte EUR uniquement ; prod Cameroun = XAF (parité 1:1 avec XOF).
@@ -27,6 +28,26 @@ export async function mtnPaymentRoutes(app: FastifyInstance): Promise<void> {
   }, async (request: any, reply: any) => {
     const { amount, phoneNumber, saleId } = request.body as { amount: number; phoneNumber: string; saleId?: string }
 
+    /**
+     * ⚠️ NORMALISATION SERVEUR — elle n'existait PAS ici.
+     * `POS.tsx` normalisait côté client et le zod ne vérifiait que `min(1)` : un appel
+     * direct à l'API avec « 677 abc » ou un numéro à 3 chiffres partait tel quel chez MTN.
+     * Campay, lui, normalisait déjà côté serveur (`campayPayment.ts:64`) — c'était une
+     * asymétrie sur un chemin d'ARGENT : la garde du navigateur n'est pas une garde.
+     *
+     * Politique `international` : le bac à sable MTN utilise des numéros ÉTRANGERS
+     * (46733123453 = Suède), donc restreindre au Cameroun tuerait le flux de test.
+     * Même politique que le point d'appel client, et c'est vérifié par `msisdnShared.test.ts`.
+     */
+    const normalizedPhone = normalizeMsisdn(phoneNumber, 'international')
+    if (!normalizedPhone) {
+      // ⚠️ Le numéro N'EST PAS renvoyé dans le message (PII) — cf. redactPhone.
+      return reply.code(400).send({
+        error: 'Numéro de téléphone invalide (8 à 15 chiffres attendus)',
+        code:  'PHONE_INVALID',
+      })
+    }
+
     const externalId = saleId ?? crypto.randomUUID()
 
     // Sandbox MTN : devise EUR uniquement (min 1 €).
@@ -40,7 +61,7 @@ export async function mtnPaymentRoutes(app: FastifyInstance): Promise<void> {
       const referenceId = await requestToPay({
         amount:      mtnAmount,
         currency,
-        phoneNumber,
+        phoneNumber: normalizedPhone,
         externalId,
         note:        `HabaShop ${externalId}`,
       })

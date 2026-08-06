@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'fs'
+import { readFileSync, readdirSync } from 'fs'
 import { join, resolve } from 'path'
 import { normalizeMsisdn } from '../lib/msisdn'
 import type { MsisdnPolicy } from '../lib/msisdn'
@@ -67,11 +67,32 @@ describe('les points d’appel déclarent la BONNE politique', () => {
     .replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ')
 
-  it("campayPayment.ts (Campay) exige 'cm-only' — Campay ne dessert que le Cameroun", () => {
-    const src = read(resolve(__dirname, '..', 'routes', 'campayPayment.ts'))
-    const calls = [...src.matchAll(/normalizeMsisdn\([^)]*\)/g)].map(m => m[0])
-    expect(calls.length, 'aucun appel trouvé : le scan ou le fichier a bougé').toBe(1)
-    expect(calls[0]).toContain("'cm-only'")
-    expect(calls[0]).not.toContain("'international'")
+  /**
+   * ⚠️ CHAQUE route de paiement est listée NOMMÉMENT avec sa politique attendue.
+   * Ajouter la normalisation dans `mtnPayment.ts` sans l'ajouter ici aurait laissé le
+   * nouveau point d'appel libre de basculer — le trou S20, reproduit à l'identique.
+   */
+  const SITES: { file: string; policy: string; other: string; why: string }[] = [
+    { file: 'campayPayment.ts', policy: "'cm-only'", other: "'international'",
+      why: 'Campay ne dessert que le Cameroun' },
+    { file: 'mtnPayment.ts', policy: "'international'", other: "'cm-only'",
+      why: 'le bac à sable MTN utilise des numéros étrangers' },
+  ]
+
+  it('toutes les routes de paiement qui prennent un numéro sont listées', () => {
+    // Un 3ᵉ prestataire qui normaliserait sans entrer dans SITES ferait échouer CE test.
+    const routes = readdirSync(resolve(__dirname, '..', 'routes'))
+      .filter(f => f.endsWith('.ts') && /normalizeMsisdn/.test(read(resolve(__dirname, '..', 'routes', f))))
+    expect(new Set(routes)).toEqual(new Set(SITES.map(s => s.file)))
   })
+
+  for (const site of SITES) {
+    it(`${site.file} exige ${site.policy} — ${site.why}`, () => {
+      const src = read(resolve(__dirname, '..', 'routes', site.file))
+      const calls = [...src.matchAll(/normalizeMsisdn\([^)]*\)/g)].map(m => m[0])
+      expect(calls.length, 'aucun appel trouvé : le scan ou le fichier a bougé').toBe(1)
+      expect(calls[0]).toContain(site.policy)
+      expect(calls[0]).not.toContain(site.other)
+    })
+  }
 })
