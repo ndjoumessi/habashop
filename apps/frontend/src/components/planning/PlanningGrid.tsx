@@ -361,27 +361,20 @@ export default function PlanningGrid(props: Props) {
         </table>
       </div>
 
-      {/* Footer : légende */}
+      {/* Pied — l'ASTUCE DE CLIC, et elle seule.
+          ⚠️ La légende des six types de poste a été RETIRÉE : elle répétait à l'identique la
+          barre « ASSIGNER : » du haut — mêmes six entrées, mêmes couleurs, et jusqu'aux mêmes
+          HORAIRES (`ShiftSelector.tsx:52-56` les affiche déjà). Deux fois la même information
+          sur un écran, c'est deux endroits à maintenir et un lecteur qui cherche la différence
+          entre les deux. On garde le CONTRÔLE en haut, pas la légende en bas.
+          Ce qui reste ici est le seul élément que la barre du haut ne porte pas. */}
       <div style={{
-        padding:'10px 16px',
+        padding:'8px 16px',
         borderTop:'1px solid var(--border)',
         background:'var(--bg3)',
-        display:'flex', gap:14, flexWrap:'wrap',
-        alignItems:'center',
+        display:'flex', alignItems:'center', justifyContent:'flex-end',
       }}>
-        {(Object.entries(SHIFT_TYPES) as [ShiftType,any][]).map(([key,s])=>(
-          <div key={key} style={{
-            display:'flex', alignItems:'center', gap:4,
-            fontSize:'var(--fs-caption)',
-          }}>
-            <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>
-            <span style={{color:s.color,fontWeight:'var(--fw-semibold)'}}>{shiftLabel(key, lang)}</span>
-            {s.hours&&<span style={{
-              color:'var(--text3)',fontFamily:'var(--mono)',fontSize:'var(--fs-caption)',
-            }}>{s.hours}</span>}
-          </div>
-        ))}
-        <div style={{marginLeft:'auto',fontSize:'var(--fs-caption)',color:'var(--text3)', display:'flex', alignItems:'center', gap:4}}>
+        <div style={{fontSize:'var(--fs-caption)',color:'var(--text3)', display:'flex', alignItems:'center', gap:4}}>
           <MousePointer2 size={9}/> {T.clearTip}
         </div>
       </div>

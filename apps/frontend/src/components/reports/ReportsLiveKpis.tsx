@@ -93,7 +93,13 @@ export function HrKpis({ fmt, i }: { fmt: (n: number) => string; i: L4 }) {
   const active = rows.filter(isActive)
   const payroll = active.reduce((s, e) => s + (e.salary ?? 0), 0)
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    /* ⚠️ MÊME grille que les autres onglets (`lg:grid-cols-4`), pas `lg:grid-cols-2`.
+       Deux valeurs occupaient deux cartes DEMI-LARGEUR empilées, hautes de toute la zone,
+       pendant que Stock et Clients tenaient en cellules de quart. Ce n'est pas la place qui
+       manquait : c'est la grille qui différait d'un onglet à l'autre, ce qui fait sauter la
+       taille des cartes quand on change d'onglet. Deux cellules sur quatre restent vides —
+       c'est le bon résultat : on n'invente pas deux indicateurs pour remplir. */
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <KpiCard color="var(--p2)" label={i('Effectif total', 'Total staff', 'Plantilla total', 'Organico totale')}
         value={String(active.length)} sub={i('collaborateurs actifs', 'active employees', 'colaboradores activos', 'collaboratori attivi')} />
       <KpiCard color="var(--acc)" label={i('Masse salariale', 'Payroll', 'Masa salarial', 'Costo del personale')}

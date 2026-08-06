@@ -586,6 +586,59 @@ rappel le plus utile de ce chantier : (a) `integrationsRendered` faisait échoue
 ignorait le mot de passe en clair, donc le cas « mot de passe faux » **ne produisait jamais
 d'échec**. Un test qui ne peut pas atteindre le chemin fautif ne garde rien.
 
+### DENSITÉ ⚠️ — un écran vide n'est un défaut que s'il devait porter de l'information
+
+**La distinction, et elle a été prise à l'envers une fois** : `select-shop` avait été rangé
+dans les défauts de densité (« deux lignes dans un écran vide »). **À tort.** Un sélecteur à
+deux entrées est CENSÉ être calme et centré : ce n'est pas un écran de données, c'est un
+**choix**. Le vide y est du repos, pas du gaspillage — **ne pas le « corriger »**.
+
+| L'écran doit… | Le vide est… |
+|---|---|
+| porter des **données à comparer** (console Ops, rapports, planning) | un **défaut** — de la place qu'on n'a pas donnée à l'information |
+| porter une **décision** (select-shop, confirmation, onboarding) | du **repos** — il isole le choix, il ne le dilue pas |
+
+- **Table dense de la console Ops** (`AdminDashboard`, onglet Boutiques) : une ligne par
+  boutique, colonnes fixes (908 px) + colonne Boutique élastique (min 240 px), lignes 40 px,
+  en-tête **sticky** 38 px, `tabular-nums` sur toute colonne chiffrée, `.table-wrap` /
+  `.data-table` / `.td-num` **existants** — pas une seconde table.
+  ⚠️ **Le MRR est une COLONNE** : il ne vivait que dans le tiroir, alors que c'est le chiffre
+  pour lequel cette console existe. Au TRI, le MRR d'une fixture vaut **0** — sinon les
+  démos remontent en tête d'un classement de revenus qu'elles n'alimentent pas.
+  ⚠️ **Une seule cellule colorée**, l'activité, et **seulement quand elle appelle une action**
+  (cliente sans vente depuis 14 j). Une fixture inactive n'appelle rien : la couleur signale,
+  elle ne décore pas.
+  ⚠️ **Le tri est un `<button>` dans le `<th>`**, avec `aria-sort` — un en-tête cliquable qui
+  n'est pas un bouton est inatteignable au clavier et muet pour un lecteur d'écran.
+- ⚠️ **HONNÊTETÉ SUR LE GAIN, mesurée** : à 2560 la galerie de cartes était large et courte
+  (≈ 7 par rangée, **≈ 1 620 px** pour 50 boutiques) ; la table en fait **≈ 2 040 px** — elle
+  est donc **PLUS HAUTE à 2560**. Le gain vertical est à 1440 (≈ 2 626 → ≈ 2 040 px, **−22 %**) ;
+  le gain réel est la comparabilité et le MRR. Ne pas revendiquer une compacité que la mesure
+  ne donne pas.
+- **`marginLeft:auto` dans un bandeau large** = la note part au bord droit. Mesuré : **~1 400 px**
+  entre le MRR et la note qui le commente. Bandeau borné à `maxWidth: 1180`.
+- **Un tiroir en `height: 100vh` sur un contenu court** produit un vide **structurel**, pas
+  accidentel (~700 px). `height: auto` + `maxHeight: calc(100vh - 32px)`. ⚠️ On le raccourcit ;
+  on ne le **remplit pas** de mesures inventées pour justifier sa taille.
+- **Même grille d'un onglet à l'autre** : `ReportsLiveKpis` RH était en `lg:grid-cols-2` quand
+  Stock/Clients tenaient en 3-4 → la taille des cartes sautait au changement d'onglet. Passé en
+  `lg:grid-cols-4` ; **deux cellules restent vides, c'est le bon résultat** — on n'invente pas
+  deux indicateurs pour remplir.
+- **Planning** : la légende du pied répétait la barre « ASSIGNER : » à l'identique — mêmes six
+  entrées, mêmes couleurs, **mêmes horaires** (`ShiftSelector.tsx:52-56` les affiche déjà).
+  Retirée ; seule l'astuce de clic, absente du haut, reste.
+
+⚠️ **VÉRIFIER À L'ÉCHELLE, PAS SUR LE JEU DE DÉMONSTRATION.** La galerie « marchait » — à 3
+boutiques. Un test à 4 lignes reproduit exactement la situation qui a laissé passer le défaut.
+Verrou : **`adminTableDense.test.tsx`** (10) monte le VRAI `AdminDashboard` sur **50 clientes
++ 3 fixtures**, avec une **assertion de couverture** (`lignes === 53`) pour qu'un `slice`
+silencieux ne rende pas les autres cas verts sur un sous-ensemble, et une vérification que
+chaque ligne a autant de cellules que la table a de colonnes (une ligne courte décale tout ce
+qui est à sa droite — invisible à 4 lignes). **3 sabotages vérifiés** : troncature muette ·
+MRR de fixture rendu comme un montant · couleur d'alerte étendue aux fixtures.
+⚠️ Les noms du jeu de test sont **générés** (« Boutique 01 »…), jamais empruntés à une maquette
+ni à la production (§ Neutraliser les exemples).
+
 ### La MOYENNE SANS SON DÉNOMINATEUR ⚠️ — `perf` / `rating`
 
 `Employee.perf` et `Supplier.rating` étaient `Int NOT NULL DEFAULT 3`. Un employé jamais

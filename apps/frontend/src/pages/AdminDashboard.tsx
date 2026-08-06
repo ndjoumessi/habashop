@@ -13,10 +13,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import {
-  Store, CreditCard, Wallet,
+  Store, CreditCard,
   Search, X, Plus, ChevronRight,
-  LayoutDashboard, Inbox, Check, RefreshCw, Mail, Calendar,
-  Clock, Globe, LogOut, Settings, Lock,
+  LayoutDashboard, Inbox, Check, RefreshCw, Mail, Calendar, Globe, LogOut, Settings, Lock,
 } from 'lucide-react'
 import LogoMark from '@/components/ui/LogoMark'
 import OpsInfrastructure from '@/components/integrations/OpsInfrastructure'
@@ -65,10 +64,26 @@ const PLAN_COLOR: Record<string, string> = {
 }
 const planKey = (p?: string) => (p || 'free').toLowerCase()
 const planPrice = (p?: string) => PLAN_PRICE[planKey(p)] ?? 0
+
+/**
+ * Clés de tri de la table des boutiques. ⚠️ `mrr` en fait partie : c'est le chiffre pour
+ * lequel cette console existe, et il n'était nulle part hors du tiroir.
+ */
+export type SortKey = 'name' | 'plan' | 'status' | 'users' | 'products' | 'sales' | 'createdAt' | 'revenue' | 'mrr' | 'lastActivityAt'
+
+/**
+ * Largeurs FIXES des colonnes chiffrées ; la colonne « Boutique » absorbe le reste.
+ * Somme = 908 px. En dessous de ~1 148 px, c'est `.table-wrap` qui défile — jamais la page
+ * (§ Vérifications : aucun débordement horizontal à 390).
+ */
+const COL: Record<string, number> = {
+  plan: 96, statut: 124, users: 68, produits: 84, ventes: 80,
+  ca: 132, mrr: 132, activite: 156, chevron: 36,
+}
+
 const planColor = (p?: string) => PLAN_COLOR[planKey(p)] ?? 'var(--text3)'
 // Teinte translucide dérivée d'une couleur (token CSS) — respecte les 7 thèmes.
 const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`
-const darken = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, #000)`
 // Temps relatif compact (4 langues) pour la dernière activité d'une boutique.
 function relTime(iso: string | null | undefined, i: (fr: string, en: string, es: string, it: string) => string): string {
   if (!iso) return i('jamais', 'never', 'nunca', 'mai')
@@ -98,7 +113,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [query, setQuery] = useState('')
-  const [sortKey, setSortKey] = useState<'name' | 'plan' | 'users' | 'products' | 'sales' | 'createdAt' | 'revenue' | 'lastActivityAt'>('createdAt')
+  const [sortKey, setSortKey] = useState<SortKey>('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [selected, setSelected] = useState<Tenant | null>(null)
   const [showNewTenant, setShowNewTenant] = useState(false)
@@ -240,12 +255,40 @@ export default function AdminDashboard() {
     window.location.href = `mailto:${t.email}?subject=${subject}&body=${body}`
   }
 
+  /**
+   * En-tête de colonne TRIABLE. Un clic trie ; recliquer la même colonne inverse le sens.
+   *
+   * ⚠️ `<button>` dans le `<th>`, pas un `onClick` sur le `<th>` : le tri doit être
+   * atteignable au clavier et annoncé (`aria-sort`). Un en-tête cliquable qui n'est pas un
+   * bouton est invisible pour un lecteur d'écran — même famille que la pastille sans `title`.
+   */
+  const Th = ({ k, label, num }: { k: SortKey; label: string; num?: boolean }) => {
+    const actif = sortKey === k
+    return (
+      <th scope="col" className={num ? 'th-num' : undefined}
+        aria-sort={actif ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+        style={{ padding: '8px 12px', position: 'sticky', top: 0, background: 'var(--bg2)', zIndex: 1 }}>
+        <button type="button"
+          onClick={() => { if (actif) setSortDir(d => (d === 'asc' ? 'desc' : 'asc')); else { setSortKey(k); setSortDir('desc') } }}
+          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: actif ? 'var(--text)' : 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 4, width: num ? '100%' : 'auto', justifyContent: num ? 'flex-end' : 'flex-start' }}>
+          {label}<span aria-hidden="true" style={{ opacity: actif ? 1 : 0, fontSize: 10 }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
+        </button>
+      </th>
+    )
+  }
+
   const view = useMemo(() => {
     let arr = tenants
     const q = query.trim().toLowerCase()
     if (q) arr = arr.filter(t => [t.name, t.country, t.plan].some(v => String(v || '').toLowerCase().includes(q)))
     const val = (t: Tenant): string | number => {
       switch (sortKey) {
+        // ⚠️ Le MRR d'une FIXTURE vaut 0 au tri, pas son prix de plan : trier par MRR ne doit
+        // pas remonter des boutiques de démonstration en tête, elles n'encaissent rien.
+        case 'mrr': return t.isFixture ? 0 : planPrice(t.plan)
+        // ⚠️ `tsc` a exigé cette branche en ajoutant la colonne : un `switch` exhaustif
+        // sur un domaine typé rougit à la valeur suivante, ce qu'aucun test ne ferait.
+        case 'status': return String(t.status || '').toLowerCase()
         case 'name': return String(t.name || '').toLowerCase()
         case 'plan': return String(t.plan || '').toLowerCase()
         case 'users': return t._count?.users ?? 0
@@ -409,7 +452,10 @@ export default function AdminDashboard() {
                pas une carte d'alerte avec un zéro géant. Le compte à rebours n'apparaît qu'≥1. */}
           {/* ══ MRR — le chiffre pour lequel cette console existe, et qui n'y était pas ══ */}
           <div className="panel" style={{ marginBottom: 14 }}>
-            <div style={{ padding: 16, display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'baseline' }}>
+            {/* ⚠️ `maxWidth` + PAS de `marginLeft:auto` : à 2560 le `auto` collait la note
+                des fixtures au bord droit, ~1 400 px après le chiffre qu'elle commente. Une
+                note qu'il faut traverser l'écran pour relier à son sujet n'est pas lue. */}
+            <div style={{ padding: '14px 16px', display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'baseline', maxWidth: 1180 }}>
               <div>
                 <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text3)' }}>MRR</div>
                 {/* ⚠️ XOF, jamais converti — console PLATEFORME (cf. § Règles devise). */}
@@ -433,7 +479,7 @@ export default function AdminDashboard() {
               {/* ⚠️ Les fixtures sont DITES, pas masquées : un écran vide sans explication
                   ferait croire à une base vide alors qu'elle contient des démos. */}
               {!!stats?.fixtureTenants && (
-                <span style={{ marginLeft: 'auto', fontSize: 'var(--fs-caption)', color: 'var(--text3)', maxWidth: '38ch', lineHeight: 1.5 }}>
+                <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', maxWidth: '38ch', lineHeight: 1.5 }}>
                   {i(`${stats.fixtureTenants} boutique(s) de démonstration / test exclues de tous les chiffres de cet écran.`,
                      `${stats.fixtureTenants} demo / test shop(s) excluded from every figure on this screen.`,
                      `${stats.fixtureTenants} tienda(s) de demo / prueba excluidas de todas las cifras.`,
@@ -609,95 +655,100 @@ export default function AdminDashboard() {
                 <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
                 <input className="input" style={{ paddingLeft: 32, width: 200, height: 38 }} aria-label={i('Rechercher', 'Search', 'Buscar', 'Cerca')} placeholder={i('Rechercher…', 'Search…', 'Buscar…', 'Cerca…')} value={query} onChange={e => setQuery(e.target.value)} />
               </div>
-              <select aria-label={i('Trier par', 'Sort by', 'Ordenar por', 'Ordina per')} className="input" style={{ width: 'auto', height: 38 }} value={sortKey} onChange={e => setSortKey(e.target.value as any)}>
-                <option value="createdAt">{i('Date', 'Date', 'Fecha', 'Data')}</option>
-                <option value="lastActivityAt">{i('Dernière activité', 'Last activity', 'Última actividad', 'Ultima attività')}</option>
-                <option value="revenue">{i('CA', 'Revenue', 'Ingresos', 'Fatturato')}</option>
-                <option value="name">{i('Nom', 'Name', 'Nombre', 'Nome')}</option>
-                <option value="plan">Plan</option>
-                <option value="sales">{i('Ventes', 'Sales', 'Ventas', 'Vendite')}</option>
-                <option value="products">{i('Produits', 'Products', 'Productos', 'Prodotti')}</option>
-                <option value="users">{i('Users', 'Users', 'Usuarios', 'Utenti')}</option>
-              </select>
-              <button className="mini-btn" aria-label={i('Inverser le tri', 'Toggle sort direction', 'Invertir orden', 'Inverti ordine')} title={sortDir === 'asc' ? 'A→Z' : 'Z→A'} onClick={() => setSortDir(d => (d === 'asc' ? 'desc' : 'asc'))} style={{ width: 38, height: 38, justifyContent: 'center' }}>{sortDir === 'asc' ? '↑' : '↓'}</button>
             </div>
           </div>
 
           {loading ? (
-            <ResponsiveGrid min={320} gap={12}>
-              <Skeleton height={150} /><Skeleton height={150} /><Skeleton height={150} /><Skeleton height={150} />
-            </ResponsiveGrid>
+            <div className="table-wrap"><div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {Array.from({ length: 8 }, (_, k) => <Skeleton key={k} height={40} />)}
+            </div></div>
           ) : view.length === 0 ? (
             <EmptyState icon="🏪" title={query ? i('Aucun résultat', 'No results', 'Sin resultados', 'Nessun risultato') : i('Aucune boutique', 'No shops', 'Sin tiendas', 'Nessun negozio')} message={query ? i('Aucune boutique ne correspond à votre recherche.', 'No shop matches your search.', 'Ninguna tienda coincide con tu búsqueda.', 'Nessun negozio corrisponde alla ricerca.') : i('Aucun tenant inscrit pour le moment.', 'No tenants registered yet.', 'Ningún inquilino registrado todavía.', 'Nessun tenant registrato.')} />
           ) : (
-            <ResponsiveGrid min={320} gap={12}>
-              {view.map(t => {
-                const pc = planColor(t.plan)
-                const sc = statusCfg(t)
-                const initials = (t.name || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
-                const open = () => setSelected(t)
-                return (
-                  <div key={t.id} role="button" tabIndex={0} aria-label={`${t.name} — ${planKey(t.plan)}`}
-                    onClick={open}
-                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open() } }}
-                    style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer', transition: 'all .15s ease' }}
-                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 24px rgba(0,0,0,.2)'; el.style.borderColor = mix(pc, 50) }}
-                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = ''; el.style.borderColor = 'var(--border)' }}>
-                    <div style={{ height: 3, background: `linear-gradient(90deg,${pc},${mix(pc, 40)})` }} />
-                    <div style={{ padding: '14px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, marginBottom: 12 }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg,${pc},${darken(pc, 70)})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: '#fff', flexShrink: 0, boxShadow: `0 4px 10px ${mix(pc, 35)}` }}>{initials}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 5 }}>{t.name}</div>
-                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                            <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', background: mix(pc, 12), color: pc, border: `1px solid ${mix(pc, 22)}` }}>{planKey(t.plan)}</span>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 99, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', background: mix(sc.h, 14), color: sc.h, border: `1px solid ${mix(sc.h, 28)}` }}>
-                              <span style={{ width: 4, height: 4, borderRadius: '50%', background: sc.h, boxShadow: sc.label === i('Actif', 'Active', 'Activo', 'Attivo') ? `0 0 5px ${sc.h}` : 'none' }} />
-                              {sc.label}
-                            </span>
-                            {/* ⚠️ Le badge est SUR LA CARTE, pas seulement dans une phrase
-                                d'un autre onglet : c'est là que l'opérateur lit le chiffre. */}
+            /* ══ TABLE DENSE ═══════════════════════════════════════════════════════
+               ⚠️ La galerie de cartes tenait à 3 boutiques et cassait à 50 : comparer une
+               métrique entre boutiques imposait de sauter d'une carte à l'autre, et le MRR
+               n'avait de place nulle part (il ne vivait que dans le tiroir).
+
+               ⚠️ HONNÊTETÉ SUR LA DENSITÉ, mesurée et non supposée : à 2560 la grille était
+               large et courte (≈ 7 cartes par rangée, ≈ 1 620 px pour 50 boutiques) ; la
+               table en fait ≈ 2 040 px. Elle est donc PLUS HAUTE à 2560. Le gain vertical
+               est à 1440 (≈ 2 626 px → ≈ 2 040 px, −22 %) ; le gain réel est ailleurs —
+               colonnes alignées, tri par colonne, MRR visible.
+
+               ⚠️ `.table-wrap` / `.data-table` / `.td-num` sont les classes EXISTANTES du
+               dépôt (`index.css`) — pas une seconde table. */
+            <div className="table-wrap">
+              <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto' }}>
+                <colgroup>
+                  <col style={{ minWidth: 240 }} />
+                  {(['plan', 'statut', 'users', 'produits', 'ventes', 'ca', 'mrr', 'activite', 'chevron'] as const)
+                    .map(k => <col key={k} style={{ width: COL[k] }} />)}
+                </colgroup>
+                <thead>
+                  <tr>
+                    <Th k="name"           label={i('Boutique', 'Shop', 'Tienda', 'Negozio')} />
+                    <Th k="plan"           label="Plan" />
+                    <Th k="status"         label={i('Statut', 'Status', 'Estado', 'Stato')} />
+                    <Th k="users"          label={i('Users', 'Users', 'Usuarios', 'Utenti')} num />
+                    <Th k="products"       label={i('Produits', 'Products', 'Productos', 'Prodotti')} num />
+                    <Th k="sales"          label={i('Ventes', 'Sales', 'Ventas', 'Vendite')} num />
+                    <Th k="revenue"        label={i('CA', 'Revenue', 'Ingresos', 'Fatturato')} num />
+                    <Th k="mrr"            label="MRR" num />
+                    <Th k="lastActivityAt" label={i('Dernière activité', 'Last activity', 'Última actividad', 'Ultima attività')} />
+                    <th aria-label={i('Ouvrir', 'Open', 'Abrir', 'Apri')} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {view.map(t => {
+                    const sc = statusCfg(t)
+                    const open = () => setSelected(t)
+                    const stale = !!t.lastActivityAt && Date.now() - new Date(t.lastActivityAt).getTime() > 14 * 86400000
+                    return (
+                      /* ⚠️ Les fixtures sont ATTÉNUÉES, pas masquées : les retirer ferait
+                         croire à une base vide, les compter mentirait. Elles restent
+                         cliquables — un opérateur doit pouvoir ouvrir la démo. */
+                      <tr key={t.id} role="button" tabIndex={0} aria-label={`${t.name} — ${planKey(t.plan)}`}
+                        onClick={open}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open() } }}
+                        style={{ cursor: 'pointer', opacity: t.isFixture ? 0.62 : 1, borderBottom: '1px solid var(--border)' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg3)' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '' }}>
+                        <td style={{ padding: '9px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                            <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
                             <FixtureBadge t={t} />
                           </div>
-                        </div>
-                        <ChevronRight size={16} style={{ color: 'var(--text4)', flexShrink: 0 }} />
-                      </div>
-
-                      <div style={{ height: 1, background: 'var(--border)', margin: '0 0 10px' }} />
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1, background: 'var(--border)', borderRadius: 9, overflow: 'hidden', marginBottom: 10 }}>
-                        {[
-                          { lbl: i('Ventes', 'Sales', 'Ventas', 'Vendite'), val: String(t._count?.sales ?? 0), color: 'var(--acc)' },
-                          { lbl: i('Produits', 'Products', 'Productos', 'Prodotti'), val: String(t._count?.products ?? 0), color: 'var(--p3)' },
-                          { lbl: i('Users', 'Users', 'Usuarios', 'Utenti'), val: String(t._count?.users ?? 0), color: 'var(--acc2)' },
-                        ].map((m, idx) => (
-                          <div key={idx} style={{ background: 'var(--card)', padding: '7px 8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', color: m.color, fontFamily: 'var(--mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.val}</div>
-                            <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 1 }}>{m.lbl}</div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* CA boutique (refunded exclu) — donnée réelle via /api/admin/tenants */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '7px 10px', borderRadius: 8, background: mix('var(--acc3)', 8), marginBottom: 10 }}>
-                        <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', display: 'flex', alignItems: 'center', gap: 5 }}><Wallet size={11} /> {i('CA', 'Revenue', 'Ingresos', 'Fatturato')}</span>
-                        <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--acc3)', fontFamily: 'var(--mono)' }}>{fmtXOF(t.revenue ?? 0)}</span>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <Clock size={10} style={{ color: 'var(--text4)', flexShrink: 0 }} />
-                          {i('Activité', 'Activity', 'Actividad', 'Attività')} {relTime(t.lastActivityAt, i)}
-                        </div>
-                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
-                          {new Date(t.createdAt).toLocaleDateString(lang, { day: '2-digit', month: 'short', year: '2-digit' })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </ResponsiveGrid>
+                        </td>
+                        <td style={{ padding: '9px 12px' }}><PlanBadge plan={planKey(t.plan)} /></td>
+                        <td style={{ padding: '9px 12px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: sc.h }}>
+                            <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.h, flexShrink: 0 }} />{sc.label}
+                          </span>
+                        </td>
+                        <td className="td-num" style={{ padding: '9px 12px', fontVariantNumeric: 'tabular-nums' }}>{t._count?.users ?? 0}</td>
+                        <td className="td-num" style={{ padding: '9px 12px', fontVariantNumeric: 'tabular-nums' }}>{t._count?.products ?? 0}</td>
+                        <td className="td-num" style={{ padding: '9px 12px', fontVariantNumeric: 'tabular-nums' }}>{t._count?.sales ?? 0}</td>
+                        {/* ⚠️ `fmtXOF` rend UNE chaîne : le suffixe « FCFA » est à la même
+                            taille que le chiffre, par construction (règle de 2.14.0). */}
+                        <td className="td-num" style={{ padding: '9px 12px', fontVariantNumeric: 'tabular-nums' }}>{fmtXOF(t.revenue ?? 0)}</td>
+                        {/* ⚠️ MRR d'une fixture = « — », jamais un montant : il n'entre dans
+                            aucun agrégat, et un faux montant se retient. */}
+                        <td className="td-num" style={{ padding: '9px 12px', fontVariantNumeric: 'tabular-nums', color: t.isFixture ? 'var(--text3)' : 'var(--text)' }}>
+                          {t.isFixture ? '—' : fmtXOF(planPrice(t.plan))}
+                        </td>
+                        {/* ⚠️ LA SEULE cellule colorée de la table, et seulement quand elle
+                            appelle une action. Une couleur qui décore n'est plus un signal. */}
+                        <td style={{ padding: '9px 12px', fontSize: 'var(--fs-caption)', color: stale && !t.isFixture ? 'var(--warn)' : 'var(--text3)', whiteSpace: 'nowrap' }}>
+                          {relTime(t.lastActivityAt, i)}
+                        </td>
+                        <td style={{ padding: '9px 12px', textAlign: 'right' }}><ChevronRight size={15} style={{ color: 'var(--text4)' }} /></td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
@@ -760,7 +811,11 @@ export default function AdminDashboard() {
       {/* Detail drawer */}
       {selected && (
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={selected.name} onClick={e => e.target === e.currentTarget && setSelected(null)}>
-          <div ref={detailBoxRef} style={{ position: 'fixed', top: 0, right: 0, height: '100vh', width: 'min(420px,100vw)', background: 'var(--card,#fff)', borderLeft: '1px solid var(--border,rgba(0,0,0,.08))', boxShadow: '-20px 0 60px rgba(0,0,0,.3)', padding: 24, overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+          {/* ⚠️ `height: auto`, pas `100vh`. Le vide de ~700 px sous le contenu n'était pas
+              un accident de mise en page : le panneau était collé à la hauteur de la fenêtre
+              quel que soit son contenu. Il se dimensionne désormais à ce qu'il porte — et on
+              ne le remplit PAS de mesures inventées pour justifier sa taille. */}
+          <div ref={detailBoxRef} style={{ position: 'fixed', top: 16, right: 16, height: 'auto', maxHeight: 'calc(100vh - 32px)', width: 'min(420px,calc(100vw - 32px))', background: 'var(--card,#fff)', border: '1px solid var(--border,rgba(0,0,0,.08))', borderRadius: 14, boxShadow: '-20px 0 60px rgba(0,0,0,.3)', padding: 24, overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
                 <h3 style={{ fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0 }}>{selected.name}</h3>
