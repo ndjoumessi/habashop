@@ -305,7 +305,10 @@ export async function reportsRoutes(app: any) {
       custs.forEach(c => custMap.set(c.id, c.name))
     }
 
-    const vatRate = tenant?.vatRate ?? 18
+    // ⚠️ Repli à 0, PAS à 18. Un tenant introuvable n'a pas « la TVA sénégalaise » : il n'a
+    // pas de TVA connue. Écrire 18 ici, c'était le même défaut que le `@default(18)` du
+    // schéma — le taux d'une zone appliqué à tout le monde, dans un RAPPORT de TVA.
+    const vatRate = tenant?.vatRate ?? 0
     const posVatIncluded = tenant?.posVatIncluded ?? true
     const calcVat = (total: number) => {
       if (posVatIncluded) {
@@ -347,7 +350,10 @@ export async function reportsRoutes(app: any) {
       }),
       prisma.tenant.findUnique({ where: { id: tenantId }, select: { vatRate: true, posVatIncluded: true, currency: true } }),
     ])
-    const vatRate = tenant?.vatRate ?? 18
+    // ⚠️ Repli à 0, PAS à 18. Un tenant introuvable n'a pas « la TVA sénégalaise » : il n'a
+    // pas de TVA connue. Écrire 18 ici, c'était le même défaut que le `@default(18)` du
+    // schéma — le taux d'une zone appliqué à tout le monde, dans un RAPPORT de TVA.
+    const vatRate = tenant?.vatRate ?? 0
     const posVatIncluded = tenant?.posVatIncluded ?? true
     const currency = tenant?.currency ?? 'XOF'
 

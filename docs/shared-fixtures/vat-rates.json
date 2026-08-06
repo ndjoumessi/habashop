@@ -1,0 +1,69 @@
+{
+  "_comment": [
+    "TAUX DE TVA STANDARD PAR PAYS — cas partagés, lus à l'EXÉCUTION par les tests jumeaux :",
+    "  apps/frontend/src/lib/vatRate.ts ← src/tests/vatRateShared.test.ts",
+    "  apps/backend/src/lib/vatRate.ts  ← src/tests/vatRateShared.test.ts",
+    "Modifier un taux d'un seul côté fait rougir l'autre.",
+    "",
+    "⚠️ POURQUOI CE FICHIER EXISTE — MESURÉ le 2026-08-06.",
+    "Il n'existait AUCUN mapping pays → TVA. Le taux venait d'un `@default(18)` au schéma",
+    "Prisma, et AUCUN des trois chemins de création de tenant (POST /auth/register,",
+    "POST /api/tenant, POST /api/admin/tenants) n'écrivait `vatRate`. Or 18 % est le taux",
+    "UEMOA : depuis que le marché par défaut est le Cameroun, toute inscription camerounaise",
+    "recevait 18 % au lieu de 19,25 % — silencieusement, sur des factures.",
+    "",
+    "⚠️ CE N'EST PAS UNE AFFIRMATION FISCALE, C'EST UNE VALEUR DE DÉPART.",
+    "Le taux est ÉDITABLE par le commerçant (Réglages → POS). Ce fichier ne prétend pas dire",
+    "le droit : il propose un point de départ mieux informé que « 18 pour tout le monde ».",
+    "Un pays ABSENT de cette table rend `null` — jamais un taux inventé. C'est au commerçant",
+    "de le saisir, et un champ vide se voit ; un taux faux ne se voit pas.",
+    "",
+    "⚠️ LE TAUX STANDARD N'EST PAS LE TAUX APPLICABLE À CHAQUE PRODUIT.",
+    "Au Cameroun, les produits alimentaires de base sont EXONÉRÉS — une supérette vendant",
+    "riz, sucre, huile et lait n'applique pas 19,25 % sur l'essentiel de son catalogue. Le",
+    "produit ne modélise pas la TVA par ligne (un seul `tenant.vatRate`) : cette limite est",
+    "ASSUMÉE et écrite, pas masquée par un chiffre qui aurait l'air précis.",
+    "",
+    "SOURCES — les taux sont des faits juridiques, ils ne se déduisent pas du code :",
+    "  UEMOA  directive d'harmonisation, taux standard 18 % (BCEAO)",
+    "  CM     19,25 % = 17,5 % + 10 % de centimes additionnels communaux (PwC Tax Summaries)",
+    "  CG     18,9 % = 18 % + 5 % de surtaxe",
+    "  GA     18 %",
+    "  FR     20 % — présent parce qu'un tenant de production est en FR",
+    "",
+    "⚠️ LES PAYS NON LISTÉS LE SONT DÉLIBÉRÉMENT. `SUPPORTED_COUNTRIES` en compte 29 ; on",
+    "n'en documente que 11, ceux dont le taux a été sourcé. Compléter la table au jugé",
+    "reviendrait à écrire du droit fiscal de mémoire — exactement ce que ce dépôt refuse",
+    "ailleurs (cf. « mesurer d'abord, coder ensuite »). Ajouter un pays = citer sa source ici."
+  ],
+
+  "rates": {
+    "SN": 18,
+    "CI": 18,
+    "ML": 18,
+    "BF": 18,
+    "NE": 18,
+    "TG": 18,
+    "BJ": 18,
+    "GW": 18,
+
+    "CM": 19.25,
+    "GA": 18,
+    "CG": 18.9,
+
+    "FR": 20
+  },
+
+  "_cas": [
+    { "pays": "CM", "attendu": 19.25, "pourquoi": "le marché par défaut — le défaut qui a motivé ce fichier" },
+    { "pays": "SN", "attendu": 18, "pourquoi": "UEMOA — les deux tenants de démo y sont, leur taux est déjà juste" },
+    { "pays": "CI", "attendu": 18, "pourquoi": "UEMOA" },
+    { "pays": "CG", "attendu": 18.9, "pourquoi": "CEMAC n'est PAS homogène : 18,9 ≠ 18 ≠ 19,25" },
+    { "pays": "FR", "attendu": 20, "pourquoi": "un tenant de production est en FR" },
+    { "pays": "US", "attendu": null, "pourquoi": "pas de TVA fédérale — une taxe d'État qui varie par juridiction ne se résume pas à un taux national" },
+    { "pays": "CA", "attendu": null, "pourquoi": "TPS fédérale + taxes provinciales — même raison" },
+    { "pays": "TD", "attendu": null, "pourquoi": "CEMAC mais taux non sourcé — l'absence est un état légitime" },
+    { "pays": "XX", "attendu": null, "pourquoi": "pays inconnu" },
+    { "pays": "", "attendu": null, "pourquoi": "pays absent" }
+  ]
+}

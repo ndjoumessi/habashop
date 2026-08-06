@@ -584,6 +584,61 @@ balayer après coup : `if (/^import\s/.test(l) && /^import (type )?\{\s*$/.test(
 identique avant et après le parcours réel sur tenant jetable (`verif-market-tmp`, détruit,
 orphelins 0).
 
+### ⚠️ TVA — le taux se DÉRIVE du pays, il n'a pas de valeur par défaut
+
+**MESURÉ le 2026-08-06 : il n'existait AUCUN mapping pays → TVA.** Le taux venait d'un
+`vatRate Float @default(18)` du schéma Prisma — le taux **UEMOA** — et **aucun** des trois
+chemins de création de tenant n'écrivait le champ : `POST /api/auth/register`,
+`POST /api/tenant`, `POST /api/admin/tenants`. Depuis que le marché par défaut est le
+Cameroun, **toute inscription camerounaise recevait 18 % au lieu de 19,25 %**, silencieusement,
+sur des factures. Deux `?? 18` de plus vivaient dans `reports.ts` — dans un **rapport de TVA** —
+et un dans `SectionPOS`.
+
+Source unique : `docs/shared-fixtures/vat-rates.json` + **deux jumeaux**
+(`apps/{frontend,backend}/src/lib/vatRate.ts`). ⚠️ **Pas de jumeau mobile** : `mobile/` ne crée
+aucun tenant et ne porte aucun repli — un troisième serait du code mort.
+
+⚠️ **CEMAC n'est PAS homogène**, contrairement à l'UEMOA. C'est tout le piège : traiter « zone
+franc » comme un bloc est exactement l'erreur qu'encodait le `@default(18)`.
+
+| | Taux |
+|---|---|
+| UEMOA (SN CI ML BF NE TG BJ GW) | **18** — directive d'harmonisation |
+| **CM** | **19,25** = 17,5 % + 10 % de centimes additionnels communaux |
+| GA | 18 |
+| CG | **18,9** = 18 % + 5 % de surtaxe |
+| FR | 20 — présent parce qu'un tenant de production est en FR |
+
+⚠️ **Un pays non documenté rend `null`, et l'écriture vaut `0` — JAMAIS 18.** Sous-facturer
+**bruyamment** vaut mieux que facturer faux en silence : un 0 se voit au POS dès le premier
+encaissement, un 18 erroné part sur des factures sans que personne ne le remarque. Même
+raisonnement que `ratingSummary` (→ `null`) et `resolvePosPayMode` (→ pas de prestataire deviné).
+
+⚠️ **Table volontairement INCOMPLÈTE — 11 pays sur les 29 de `SUPPORTED_COUNTRIES`.** On
+n'inscrit que les taux SOURCÉS. La compléter au jugé reviendrait à écrire du droit fiscal de
+mémoire ; **ajouter un pays impose d'en citer la source dans la fixture.**
+
+⚠️ **Ce module ne dit pas le droit, il propose une VALEUR DE DÉPART** — le taux reste éditable
+(Réglages → POS). Et **le taux standard n'est pas le taux de chaque produit** : au Cameroun les
+produits alimentaires de base sont **exonérés**, donc une supérette n'applique pas 19,25 % sur
+l'essentiel de son catalogue. Le produit ne modélise pas la TVA par ligne (un seul
+`tenant.vatRate`) : limite **assumée et écrite**, pas masquée par un chiffre d'apparence précise.
+
+⚠️ **Le `@default(18)` du schéma RESTE en place, et c'est délibéré** : le changer imposerait une
+migration DDL sur la PROD pour un défaut qui ne doit plus jamais se déclencher. On le rend
+**inatteignable** en exigeant que chaque `tenant.create` pose la valeur — vérifiable par un test,
+sans toucher la base. *Un `@default` qui ne se déclenche jamais ne peut plus mentir.*
+
+Verrous : `vatRateShared.test.ts` **des deux côtés** (back 10 / front 7, **5 sabotages**, dont
+les deux sens du jumelage) — le back porte en plus les deux règles structurelles « aucun
+`tenant.create` sans `vatRate` » et « plus aucun `?? 18` dans les routes », à périmètre DÉRIVÉ.
+
+✅ **Aucun tenant existant n'est touché** (décision : option 1 — les démos restent telles
+quelles, cf. § Comptes démo). Empreinte pays/TVA après chantier : **`ebb3d856df1c7bb45cc1fe4b`**
+— 4 tenants, tous à 18 %. ⚠️ Dont le tenant **FR à 18 %** alors que la France est à 20 % :
+valeur héritée de l'ancien défaut, sur un tenant existant, **non mutée**. Un nouveau tenant FR
+recevrait désormais 20.
+
 ### Le COMMENTAIRE QUI INVENTE UN REPLI ⚠️ — règle exécutoire
 
 **Un commentaire qui affirme qu'une alternative existe DOIT citer le `fichier:ligne` de
@@ -1348,6 +1403,12 @@ l'exercer, et être vérifié **dans les deux sens**.
 ⚠️ **`demo-tenant-001` est en XOF depuis le 2026-08-06 — corrigé, plus rien à faire.** Il portait `EUR`, et ce n'était **pas** un bug de seed : `prisma/seed.ts:34` **et** `prisma/fix-demo001.ts:50` posent tous deux `XOF` ; le tenant est créé le 16/06 et modifié le **26/07**, six semaines plus tard — l'EUR venait d'un `PATCH /api/tenant` manuel. Une boutique nommée « Dakar Central » s'affichait en € pendant que la vitrine promet le Franc CFA, et **les deux fixtures E2E écrivaient déjà `currency:'XOF'`** (`e2e/customers-uiux.shot.mjs:28`, `e2e/__ops.mjs:22`) : la production était seule à diverger. Mutation appliquée sur validation explicite de Nelson, **un seul champ** (diff de l'instantané complet : `currency` + `updatedAt` automatique, rien d'autre) ; **aucun montant n'a bougé** — tout est stocké en XOF de base, `tenant.currency` n'est qu'une préférence d'AFFICHAGE (§ Règles devise). Répartition **EUR 2 / XOF 2**.
 
 ⚠️ **`e2e-tenant` reste en EUR, et c'est DÉLIBÉRÉ — ne pas « harmoniser ».** En XOF (0 décimale, taux 1), convertir zéro, une ou deux fois donne le **même affichage** : tous les défauts de conversion y sont invisibles. C'est exactement la raison pour laquelle les cas dorés de paie doublent chaque cas XOF d'un cas EUR (§ Paie). `HabaShop Ops` est un tenant interne, pas une boutique.
+⚠️ **LES DÉMOS RESTENT OUEST-AFRICAINES — décision du 2026-08-06, ne pas « aligner » sur le marché par défaut.** Mesuré avant de décider : `demo-001` est ancré au Sénégal sur **16 lignes** (tenant, 5 employés, 6 fournisseurs, 3 libellés de dépense « Senelec ») et `demo-002` à la Côte d'Ivoire sur 16 autres — dont **5 clients sénégalais dans la démo ivoirienne**, délibérés et documentés (`seed-demo.ts:78`). Les **12 produits sont neutres** (sucre, riz, huile…), l'indicatif dérive déjà de `tenant.country`, et **la TVA à 18 % est CORRECTE pour SN et CI**. Une démo sénégalaise sous un défaut produit camerounais est la meilleure preuve que le multi-pays fonctionne — la basculer coûterait un UPDATE manuel sur 16 lignes d'un tenant existant, pour un gain nul.
+
+⚠️ **Et « re-seeder » ne ferait RIEN** : tous les `upsert` du seed ont `update: {}` (seules exceptions : `lang` sur le tenant, `role`/`name` sur les users). Le seed a d'ailleurs **déjà dérivé** — il écrit « HabaShop — Boutique Centrale » depuis la neutralisation des exemples, quand la base porte toujours « Dakar Central ». Un re-seed ne réconcilierait pas cet écart : il ne réécrit aucune ligne existante.
+
+⚠️ **L'unique client de `demo-001` n'est pas une fixture** : nom réel, mobile `+336`, adresse à Marseille — dans un tenant dont le mot de passe est **public**. Point de confidentialité, sans rapport avec le pays.
+
 **Multi-boutiques** : `admin@` et `manager@` sont liés à une 2ᵉ boutique `demo-tenant-002` (« Alimentation Koné — Abidjan », XOF) via `UserTenant` → login déclenche le sélecteur. `admin@` = SUPER_ADMIN/ADMIN, `manager@` = MANAGER/MANAGER. Les 3 autres restent mono-boutique.
 
 ## Env vars

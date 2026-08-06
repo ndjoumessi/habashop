@@ -9,6 +9,7 @@ import { sendWelcomeEmail } from '../services/email'
 import type { LoginBody, RegisterBody } from '../types'
 import { DEFAULT_PLAN_ON_SIGNUP } from '../lib/plans'
 import { DEFAULT_MARKET } from '../lib/defaultMarket'
+import { vatRateOrZero } from '../lib/vatRate'
 
 // ── Schémas de validation (item 6) ──────────────────────────────────────────
 // Login : PERMISSIF (présence seule) — la vérif des identifiants reste un 401 générique.
@@ -194,6 +195,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
           // mais il ne doit jamais transformer un libellé en pays deviné : `normalizeCountry`
           // rend null sur l'inconnu, et c'est ce null qui retombe sur le défaut, explicitement.
           country: normalizeCountry(country) ?? DEFAULT_MARKET.country,
+          // ⚠️ La TVA se DÉRIVE du pays. Sans cette ligne, le `@default(18)` du schéma —
+          // le taux UEMOA — s'appliquait à toute inscription, Cameroun compris (19,25 %).
+          // Pays non documenté → 0, jamais un taux inventé : cf. `lib/vatRate.ts`.
+          vatRate: vatRateOrZero(normalizeCountry(country) ?? DEFAULT_MARKET.country),
           plan: DEFAULT_PLAN_ON_SIGNUP,
           status: 'trial',
           isActive: true,

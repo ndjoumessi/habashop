@@ -10,6 +10,7 @@ import { getTenantId, getActiveTenantId } from '../lib/tenantId'
 import { blockDemoTenant } from '../middleware/demoTenant'
 import { sendUserInvitationEmail } from '../services/email'
 import { DEFAULT_MARKET } from '../lib/defaultMarket'
+import { vatRateOrZero } from '../lib/vatRate'
 
 const VALID_ROLES = ['ADMIN', 'MANAGER', 'CASHIER', 'ACCOUNTANT', 'HR'] as const
 type Role = typeof VALID_ROLES[number]
@@ -69,6 +70,9 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         data: {
           name, currency, lang,
           country: body.country ?? DEFAULT_MARKET.country,
+          // ⚠️ Même dérivation qu'à l'inscription : une 2ᵉ boutique dans un autre pays doit
+          // partir de SON taux, pas de celui de la boutique d'origine ni du `@default(18)`.
+          vatRate: vatRateOrZero(body.country ?? DEFAULT_MARKET.country),
           address: body.address ?? null,
           phone: body.phone ?? null,
           plan: origin?.plan ?? 'starter',

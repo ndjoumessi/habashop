@@ -8,6 +8,7 @@ import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import { planAmountXOF } from '../lib/plans'
 import { DEFAULT_MARKET } from '../lib/defaultMarket'
+import { vatRateOrZero } from '../lib/vatRate'
 import { CLIENT_TENANTS_WHERE, FIXTURE_TENANTS_WHERE, VIA_CLIENT_TENANT, isFixtureTenant } from '../lib/fixtureTenant'
 import {
   sendUpgradeConfirmation,
@@ -117,8 +118,19 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     // un POST sans `name` atteignait `prisma.tenant.create` (Tenant.name requis) → 500 ;
     // il est désormais rejeté 400 { code:'VALIDATION' } avant le handler.
     const { name, currency, country, plan, adminEmail, adminPassword } = request.body as z.infer<typeof ADMIN_CREATE_TENANT>
+    // ⚠️ Le pays est résolu UNE fois : il sert au champ `country` ET au taux de TVA. Le
+    // calculer deux fois laisserait les deux diverger au premier changement de repli.
+    const pays = normalizeCountry(country) ?? DEFAULT_MARKET.country
     const tenant = await prisma.tenant.create({
-      data: { name, currency: currency ?? DEFAULT_MARKET.currency, country: normalizeCountry(country) ?? DEFAULT_MARKET.country, plan: plan ?? 'starter' },
+      data: {
+        name,
+        currency: currency ?? DEFAULT_MARKET.currency,
+        country: pays,
+        // ⚠️ Troisième et dernier chemin de création. Sans lui, une boutique créée depuis la
+        // console plateforme héritait du `@default(18)` du schéma — le taux UEMOA.
+        vatRate: vatRateOrZero(pays),
+        plan: plan ?? 'starter',
+      },
     })
     if (adminEmail && adminPassword) {
       await prisma.user.create({

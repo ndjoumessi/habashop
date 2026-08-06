@@ -45,7 +45,10 @@ export default function SectionPOS() {
         requireCashier: t.requireCashier ?? false,
         enableScanner:  t.enableScanner  ?? false,
         priceMode:      (t.priceMode === 'HT' ? 'HT' : 'TTC') as 'TTC' | 'HT',
-        posTaxRate:     t.vatRate        ?? 18,
+        // ⚠️ 0 et non 18 : `vatRate` est non nullable, ce repli ne sert donc qu'à une réponse
+        // tronquée. Y écrire 18 afficherait le taux UEMOA dans le champ d'un commerçant
+        // camerounais, qui l'enregistrerait sans le voir.
+        posTaxRate:     t.vatRate        ?? 0,
         posDefaultFund: t.posDefaultFund ?? 0,
       } as any)
       const lc = {
