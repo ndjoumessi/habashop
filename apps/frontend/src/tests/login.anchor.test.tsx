@@ -53,13 +53,24 @@ describe('LoginPage — formulaire héros', () => {
     expect(submit()).toBeInTheDocument()
   })
 
-  it('le CTA est désactivé tant qu’un champ est vide, puis actif', () => {
+  /**
+   * ⚠️ CE TEST FIGEAIT LE DÉFAUT — il exigeait un CTA désactivé par la VALIDATION.
+   * Un bouton éteint gronde avant toute erreur, ne dit pas ce qui manque, et n'affiche
+   * aucune infobulle au toucher : sur mobile, il n'explique rien. Le CTA est désormais
+   * actif et NOMME les champs manquants au clic. Il ne se désactive que pendant l'envoi,
+   * ce qui est légitime (anti double-soumission) et dure une seconde.
+   * Trouvé par la méta-règle de `landingClaims.test.ts`, qui balaie toutes les routes
+   * publiques — je n'avais corrigé que /signup.
+   */
+  it('le CTA est TOUJOURS actif et nomme ce qui manque', () => {
     render(<LoginPage />)
-    expect(submit()).toBeDisabled()
+    expect(submit()).toBeEnabled()
+
+    fireEvent.click(submit())
+    expect(screen.getByText(/Il manque encore/)).toBeInTheDocument()
+    expect(loginMock).not.toHaveBeenCalled()
 
     fireEvent.change(emailField(), { target: { value: 'a@b.com' } })
-    expect(submit()).toBeDisabled() // mot de passe encore vide
-
     fireEvent.change(pwdField(), { target: { value: 'secret12' } })
     expect(submit()).toBeEnabled()
   })

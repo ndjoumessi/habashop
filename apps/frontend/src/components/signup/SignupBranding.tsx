@@ -21,10 +21,13 @@ interface Props {
  *   2. ce que contiennent les 14 jours ;
  *   3. comment on paie ensuite.
  *
- * ⚠️ La mention « le paiement en ligne n'est pas actif » N'EST PAS ici mais dans la
- * colonne du formulaire : ce panneau est `display:none` sous 880 px, donc l'y placer
- * l'aurait fait disparaître sur mobile — c'est-à-dire là où la majorité des commerçants
- * ouvrent la page.
+ * ⚠️ La mention « le paiement en ligne n'est pas actif » N'EST PAS ici, pour DEUX raisons :
+ *  • ce panneau est `display:none` sous 880 px — l'y placer la ferait disparaître sur
+ *    mobile, c'est-à-dire là où la majorité des commerçants ouvrent la page ;
+ *  • elle était énoncée TROIS fois sur le même écran (bandeau + « 14 jours » + « Et pour
+ *    continuer »). Une divulgation répétée cesse de rassurer et devient une excuse. Elle
+ *    vit une seule fois, en entier, dans le bandeau ; ces trois items ne portent plus que
+ *    ce qu'ils ont d'unique — le délai, le périmètre, les prix.
  *
  * ⚠️ UN SEUL ACCENT. Le panneau opposait « HabaShop » en or et « Votre boutique » en or
  * sur un fond violet : deux accents concurrents, le défaut déjà corrigé sur la grille
@@ -56,9 +59,16 @@ export default function SignupBranding({ tx, navigate }: Props) {
     <aside className="su-left" style={{
       position: 'relative', overflow: 'hidden',
       display: 'flex', flexDirection: 'column', justifyContent: 'center',
-      padding: 'clamp(32px,4vw,56px)',
+      // Le contenu se colle à la marge INTÉRIEURE (côté séparation), pas au bord de
+      // l'écran : à 2560 px il y avait 1 318 px de vide entre le titre et le formulaire.
+      alignItems: 'flex-end',
+      padding: 'clamp(28px,3vw,48px) clamp(32px,4vw,72px)',
       background: 'linear-gradient(158deg,var(--bg) 0%,var(--bg2) 58%,var(--bg) 100%)',
-      borderRight: '1px solid var(--border)',
+      // ⚠️ Séparation LISIBLE : --public-bg (#0A0C14) et --public-bg2 (#0D1019) sont deux
+      // gris sombres presque identiques ; un filet --border ne se voyait pas. Filet plus
+      // net + ombre portée, pour que l'œil sache où finit un panneau.
+      borderRight: '1px solid var(--border2)',
+      boxShadow: '10px 0 40px -12px rgba(0,0,0,.6)',
     }}>
       <div aria-hidden="true" style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
@@ -69,10 +79,10 @@ export default function SignupBranding({ tx, navigate }: Props) {
       }}/>
       <div aria-hidden="true" style={{ position: 'absolute', top: '-6%', left: '-4%', width: 340, height: 340, borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb,var(--p) 20%,transparent),transparent 70%)', filter: 'blur(56px)', pointerEvents: 'none' }}/>
 
-      {/* Colonne bornée, alignée à gauche — même construction que la page de connexion,
-          pour que les deux portes d'entrée publiques se répondent au lieu de diverger. */}
+      {/* Colonne bornée, poussée vers la SÉPARATION (alignItems: flex-end sur l'aside).
+          Le texte reste aligné à gauche à l'intérieur du bloc. */}
       <div style={{
-        position: 'relative', zIndex: 1, width: '100%', maxWidth: 440, marginRight: 'auto',
+        position: 'relative', zIndex: 1, width: '100%', maxWidth: 460,
         display: 'flex', flexDirection: 'column', gap: 26,
       }}>
         <button type="button" onClick={() => navigate('/')}

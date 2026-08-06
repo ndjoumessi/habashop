@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Lock, Eye, EyeOff, Check, AlertCircle, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react'
 import { D, FONT, MONO, getStrength, inputBase, focusOn, focusOff, Label } from './signupShared'
 import type { ST, Currency } from './signupShared'
@@ -24,6 +25,26 @@ interface Props {
 }
 
 export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd, showConfirm, setShowConfirm, step2Valid, loading, error, onSubmit, onBack }: Props) {
+  const [showMissing, setShowMissing] = useState(false)
+
+  /**
+   * Champs manquants, NOMMÉS — `step2Valid` reste la source de vérité de la validité,
+   * cette liste ne fait que l'expliquer.
+   */
+  const missing: string[] = []
+  if (form.password.length < 8)            missing.push(tx.password)
+  else if (form.password !== form.confirmPwd) missing.push(tx.confirm)
+
+  const handleSubmit = () => {
+    if (!step2Valid) {
+      setShowMissing(true)
+      document.getElementById(form.password.length < 8 ? 'su-password' : 'su-confirm')?.focus()
+      return
+    }
+    setShowMissing(false)
+    onSubmit()
+  }
+
   const strength = getStrength(form.password)
   const strengthColors = ['', D.danger, D.warn, D.acc2, D.acc]
   const strengthLabel = ['', tx.pwd_weak, tx.pwd_fair, tx.pwd_good, tx.pwd_excellent][strength]
@@ -61,6 +82,7 @@ export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd,
                 <div style={{ position: 'relative' }}>
                   <Lock size={15} color={D.text3} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}/>
                   <input type={showPwd ? 'text' : 'password'} placeholder={tx.password_ph}
+                    id="su-password"
                     value={form.password}
                     onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                     onFocus={focusOn} onBlur={focusOff}
@@ -95,6 +117,7 @@ export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd,
                 <div style={{ position: 'relative' }}>
                   <Lock size={15} color={D.text3} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}/>
                   <input type={showConfirm ? 'text' : 'password'} placeholder={tx.confirm_ph}
+                    id="su-confirm"
                     value={form.confirmPwd}
                     onChange={e => setForm(f => ({ ...f, confirmPwd: e.target.value }))}
                     onFocus={focusOn} onBlur={focusOff}
@@ -155,22 +178,39 @@ export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd,
                 </div>
               )}
 
-              {/* Submit */}
-              <button type="button" disabled={!step2Valid || loading}
-                onClick={onSubmit}
+              {/* Ce qui manque, annoncé — jamais un bouton muet. */}
+              <div role="status" aria-live="polite">
+                {showMissing && missing.length > 0 && (
+                  <div style={{
+                    marginTop: 4, padding: '10px 13px', borderRadius: 10,
+                    background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)',
+                    color: 'var(--text2)', fontSize: 'var(--fs-sm)', lineHeight: 1.5,
+                    display: 'flex', alignItems: 'flex-start', gap: 8,
+                  }}>
+                    <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 2 }} color="var(--acc3)"/>
+                    <span>{tx.missing_prefix} <strong>{missing.join(', ')}</strong></span>
+                  </div>
+                )}
+              </div>
+
+              {/* ⚠️ ACTIF sauf pendant l'envoi. `disabled={loading}` est légitime — il
+                  empêche la double soumission et dure une seconde ; `disabled={!step2Valid}`
+                  ne l'était pas : il éteignait le bouton sans dire ce qui manquait. */}
+              <button type="button" disabled={loading}
+                onClick={handleSubmit}
                 style={{
                   width: '100%', padding: '14px', marginTop: 4,
-                  background: step2Valid && !loading ? `linear-gradient(135deg,${D.p},${D.p2})` : 'rgba(255,255,255,.05)',
-                  border: 'none', borderRadius: 12,
-                  color: step2Valid && !loading ? '#fff' : D.text4,
+                  background: `linear-gradient(135deg,${D.p},${D.p2})`,
+                  border: 'none', borderRadius: 12, color: '#fff',
                   fontSize: 'var(--fs-body)', fontWeight: 800,
-                  cursor: step2Valid && !loading ? 'pointer' : 'not-allowed',
+                  cursor: loading ? 'wait' : 'pointer',
+                  opacity: loading ? .6 : 1,
                   fontFamily: FONT,
-                  boxShadow: step2Valid && !loading ? '0 6px 20px rgba(124,58,237,.4)' : 'none',
+                  boxShadow: '0 6px 20px rgba(124,58,237,.4)',
                   transition: 'all .2s',
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
-                onMouseEnter={e => { if (step2Valid && !loading) (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
+                onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'none'}
               >
                 {loading

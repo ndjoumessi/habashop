@@ -59,7 +59,20 @@ export default function LoginPage() {
   const [error,    setError]    = useState('')
 
   const busy    = loading || !!demoRole
-  const canSubmit = email.trim().length > 0 && password.length > 0 && !busy
+
+  /**
+   * ⚠️ Le CTA n'est plus désactivé par la VALIDATION — seulement pendant l'envoi.
+   * Il l'était (`disabled={!canSubmit}`) et affichait un fond atténué : un contrôle sans
+   * contraste, qui gronde avant toute erreur, ne dit pas CE QUI manque, et n'affiche
+   * aucune infobulle au toucher — donc sur mobile il n'explique rien. Au clic à vide, on
+   * NOMME les champs manquants et on donne le focus au premier.
+   * C'est le même correctif que /signup ; la méta-règle `landingClaims.test.ts` l'a
+   * trouvé ici alors que je ne l'y avais pas cherché.
+   */
+  const missing = [
+    ...(email.trim() ? [] : [i('adresse e-mail','email address','correo electrónico','indirizzo email')]),
+    ...(password ? [] : [i('mot de passe','password','contraseña','password')]),
+  ]
 
   const doLogin = async (mail: string, pwd: string) => {
     setError('')
@@ -93,7 +106,11 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email.trim() || !password) return
+    if (!email.trim() || !password) {
+      setError(`${i('Il manque encore :','Still missing:','Todavía falta:','Manca ancora:')} ${missing.join(', ')}`)
+      ;(email.trim() ? document.getElementById('login-password') : emailRef.current)?.focus()
+      return
+    }
     setLoading(true)
     try {
       await doLogin(email, password)
@@ -437,7 +454,7 @@ export default function LoginPage() {
               type="submit"
               data-testid="login-submit"
               className="login-cta"
-              disabled={!canSubmit}
+              disabled={busy}
               aria-busy={loading}
             >
               {loading ? (

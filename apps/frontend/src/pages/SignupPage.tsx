@@ -87,34 +87,14 @@ export default function SignupPage() {
       {/* ════ RIGHT: Form ════ */}
       <div className="su-right" style={{
         display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        padding: '40px clamp(20px,4vw,56px)',
+        // `flex-start` et non `center` : le formulaire se colle lui aussi à la séparation.
+        // Centré dans une demi-page de 1 280 px, il partait à x=1720 sur un écran 2560.
+        alignItems: 'flex-start', justifyContent: 'center',
+        padding: 'clamp(28px,3vw,48px) clamp(20px,4vw,72px)',
         background: 'var(--public-bg2)',
         overflowY: 'auto',
       }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
-
-          {/* ⚠️ La mention du paiement non actif est AU-DESSUS du formulaire et rendue à
-              TOUTES les largeurs. Elle a d'abord été placée dans le panneau gauche — qui
-              est `display:none` sous 880 px : elle aurait disparu précisément sur mobile,
-              là où la majorité des commerçants ouvrent la page. Un visiteur arrivé par un
-              lien direct vers /signup ne voit jamais la page tarifs ; il l'apprendrait
-              sinon au 15ᵉ jour, après avoir saisi son stock et ses clients. */}
-          <div role="note" style={{
-            display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 20,
-            padding: '11px 14px', borderRadius: 10,
-            background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)',
-          }}>
-            <AlertTriangle size={15} strokeWidth={2.3} color="var(--acc3)" style={{ flexShrink: 0, marginTop: 1 }} />
-            <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.55, color: 'var(--text2)' }}>
-              {i(
-                "L'essai de 14 jours est complet et sans carte. Le paiement en ligne n'est pas encore actif : pour continuer ensuite, le règlement se convient directement avec notre équipe.",
-                'The 14-day trial is complete and needs no card. Online payment is not live yet: to continue afterwards, the payment is agreed directly with our team.',
-                'La prueba de 14 días es completa y sin tarjeta. El pago en línea aún no está activo: para continuar después, el pago se acuerda directamente con nuestro equipo.',
-                "La prova di 14 giorni è completa e senza carta. Il pagamento online non è ancora attivo: per continuare dopo, il pagamento si concorda direttamente con il nostro team.",
-              )}
-            </p>
-          </div>
 
           {/* Steps indicator */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 22 }}>
@@ -164,6 +144,29 @@ export default function SignupPage() {
             </h2>
             <p style={{ fontSize: 13.5, color: D.text2 }}>
               {step === 1 ? tx.step1_sub : tx.step2_sub}
+            </p>
+          </div>
+
+          {/* ⚠️ La mention du paiement non actif est sous le titre d'étape, AVANT les champs,
+              et rendue à TOUTES les largeurs. En tête de page, elle ouvrait l'écran sur une
+              RÉSERVE ; la seule exigence est qu'elle précède la soumission. Elle a d'abord été placée dans le panneau gauche — qui
+              est `display:none` sous 880 px : elle aurait disparu précisément sur mobile,
+              là où la majorité des commerçants ouvrent la page. Un visiteur arrivé par un
+              lien direct vers /signup ne voit jamais la page tarifs ; il l'apprendrait
+              sinon au 15ᵉ jour, après avoir saisi son stock et ses clients. */}
+          <div role="note" style={{
+            display: 'flex', gap: 10, alignItems: 'flex-start', margin: '0 0 20px',
+            padding: '11px 14px', borderRadius: 10,
+            background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)',
+          }}>
+            <AlertTriangle size={15} strokeWidth={2.3} color="var(--acc3)" style={{ flexShrink: 0, marginTop: 1 }} />
+            <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.55, color: 'var(--text2)' }}>
+              {i(
+                "L'essai de 14 jours est complet et sans carte. Le paiement en ligne n'est pas encore actif : pour continuer ensuite, le règlement se convient directement avec notre équipe.",
+                'The 14-day trial is complete and needs no card. Online payment is not live yet: to continue afterwards, the payment is agreed directly with our team.',
+                'La prueba de 14 días es completa y sin tarjeta. El pago en línea aún no está activo: para continuar después, el pago se acuerda directamente con nuestro equipo.',
+                "La prova di 14 giorni è completa e senza carta. Il pagamento online non è ancora attivo: per continuare dopo, il pagamento si concorda direttamente con il nostro team.",
+              )}
             </p>
           </div>
 

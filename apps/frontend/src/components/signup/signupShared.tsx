@@ -55,9 +55,9 @@ export const TX: Record<Lang, ST> = {
     after_title: 'Dans deux minutes',
     after_body: 'Votre boutique est créée et vous êtes dedans. Devise, langue et TVA se règlent à la première ouverture — rien à installer.',
     trial_title: '14 jours, tout compris',
-    trial_body: 'Caisse, stock, clients, RH et rapports, sans restriction et sans carte bancaire. Vos données restent les vôtres si vous vous arrêtez.',
+    trial_body: 'Caisse, stock, clients, fournisseurs, RH et rapports — sans restriction ni quota. Vos données restent les vôtres si vous vous arrêtez.',
     pay_title: 'Et pour continuer',
-    pay_body: 'Starter 8 000 F CFA par mois, Business 25 000. Le règlement se convient avec notre équipe (Mobile Money ou virement).',
+    pay_body: 'Starter 8 000 F CFA par mois, Business 25 000. Sans engagement, résiliable à tout moment.',
   },
   en: {
     brand_title: 'Join HabaShop',
@@ -88,9 +88,9 @@ export const TX: Record<Lang, ST> = {
     after_title: 'Two minutes from now',
     after_body: 'Your shop is created and you are inside it. Currency, language and VAT are set on first open — nothing to install.',
     trial_title: '14 days, everything included',
-    trial_body: 'Till, stock, customers, HR and reports, unrestricted and with no card. Your data stays yours if you stop.',
+    trial_body: 'Till, stock, customers, suppliers, HR and reports — unrestricted, no quotas. Your data stays yours if you stop.',
     pay_title: 'And to carry on',
-    pay_body: 'Starter 8,000 CFA per month, Business 25,000. Payment is agreed with our team (Mobile Money or transfer).',
+    pay_body: 'Starter 8,000 CFA per month, Business 25,000. No commitment, cancel at any time.',
   },
   es: {
     brand_title: 'Únete a HabaShop',
@@ -121,9 +121,9 @@ export const TX: Record<Lang, ST> = {
     after_title: 'Dentro de dos minutos',
     after_body: 'Tu tienda está creada y ya estás dentro. Divisa, idioma e IVA se configuran al abrir — nada que instalar.',
     trial_title: '14 días, todo incluido',
-    trial_body: 'Caja, stock, clientes, RRHH e informes, sin restricciones y sin tarjeta. Tus datos siguen siendo tuyos si lo dejas.',
+    trial_body: 'Caja, stock, clientes, proveedores, RRHH e informes — sin restricciones ni cuotas. Tus datos siguen siendo tuyos si lo dejas.',
     pay_title: 'Y para continuar',
-    pay_body: 'Starter 8 000 F CFA al mes, Business 25 000. El pago se acuerda con nuestro equipo (Mobile Money o transferencia).',
+    pay_body: 'Starter 8 000 F CFA al mes, Business 25 000. Sin compromiso, cancela cuando quieras.',
   },
   it: {
     brand_title: 'Unisciti a HabaShop',
@@ -154,9 +154,9 @@ export const TX: Record<Lang, ST> = {
     after_title: 'Tra due minuti',
     after_body: 'Il tuo negozio è creato e ci sei dentro. Valuta, lingua e IVA si impostano alla prima apertura — niente da installare.',
     trial_title: '14 giorni, tutto incluso',
-    trial_body: 'Cassa, magazzino, clienti, HR e report, senza limiti e senza carta. I tuoi dati restano tuoi se ti fermi.',
+    trial_body: 'Cassa, magazzino, clienti, fornitori, HR e report — senza limiti né quote. I tuoi dati restano tuoi se ti fermi.',
     pay_title: 'E per continuare',
-    pay_body: 'Starter 8 000 F CFA al mese, Business 25 000. Il pagamento si concorda con il nostro team (Mobile Money o bonifico).',
+    pay_body: 'Starter 8 000 F CFA al mese, Business 25 000. Nessun vincolo, disdici quando vuoi.',
   },
 }
 

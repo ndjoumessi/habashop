@@ -397,6 +397,85 @@ describe('contre-preuve : les règles détectent bien ce qu’elles prétendent'
   })
 })
 
+/**
+ * MÉTA-RÈGLE — aucun CTA de soumission désactivé sur une route publique.
+ *
+ * Un bouton `disabled` est un contrôle SANS CONTRASTE : il gronde avant toute erreur, ne
+ * dit pas ce qui manque, et n'affiche aucune infobulle au toucher — donc sur mobile il
+ * n'explique rien du tout. `/signup` en portait un, libellé « Remplissez tous les champs ».
+ *
+ * ⚠️ Elle réutilise le GRAPHE de routes publiques déjà calculé plus haut : pas de seconde
+ * liste à maintenir. Une page publique ajoutée demain y entre d'elle-même.
+ *
+ * ─── RAPPORT AVEC `signup.anchor.test.tsx` : ils se COMPLÈTENT, ils ne se recouvrent pas ───
+ * Celui-ci lit la SOURCE de toutes les pages publiques et interdit la construction.
+ * `signup.anchor.test.tsx` MONTE le composant et prouve le comportement voulu : un clic à
+ * vide nomme les champs manquants et n'avance pas. L'un empêche la régression partout,
+ * l'autre prouve que le remplacement fonctionne ici. C'est le couple source/comportement
+ * déjà employé pour l'injection CSV (`csvInjection` + `csvInjectionBehaviour`).
+ * Ne pas supprimer l'un en croyant que l'autre couvre : le méta-test ne clique sur rien,
+ * l'ancre ne voit qu'une page.
+ */
+describe('aucun CTA de soumission désactivé sur une surface publique', () => {
+  /** Fichiers du corpus qui contiennent un bouton (les seuls à examiner). */
+  const withButtons = CORPUS.filter(c => /<button/i.test(c.copy))
+
+  it('des boutons existent dans le corpus (sinon la règle ne garde rien)', () => {
+    expect(withButtons.length, 'aucun <button> trouvé : le corpus ou le filtre est cassé').toBeGreaterThanOrEqual(5)
+  })
+
+  /**
+   * ⚠️ TOUT `disabled` n'est pas le défaut. Désactiver un bouton PENDANT une requête est
+   * correct — c'est ce qui empêche la double soumission, et l'état dure une seconde. Le
+   * défaut visé est la désactivation par la VALIDATION : un bouton éteint tant que le
+   * formulaire est incomplet, qui n'explique rien et gronde avant toute erreur.
+   * Sont donc ignorés : les drapeaux de requête en vol, les sélecteurs CSS `:disabled`,
+   * et les déclarations de type (`disabled: boolean`).
+   */
+  const IN_FLIGHT = /^!?\s*(loading|busy|saving|submitting|pending|isSaving|isLoading)\b/
+  function offendingDisabled(line: string): boolean {
+    if (!/\bdisabled\b/.test(line)) return false
+    if (/:disabled|:not\(:disabled\)/.test(line)) return false          // CSS
+    if (/disabled\s*:\s*boolean/.test(line)) return false               // type
+    if (/^\s*(export default )?function .*\bdisabled\b/.test(line)) return false  // destructuration
+    // Les champs de saisie ne sont pas des CTA : un `<input disabled>` est une donnée
+    // non modifiable, pas un bouton qui refuse d'être cliqué.
+    if (/<(input|select|textarea)\b/.test(line)) return false
+    const expr = /disabled=\{([^}]*)\}/.exec(line)?.[1]?.trim()
+    if (expr === undefined) return false
+    if (IN_FLIGHT.test(expr)) return false                              // requête en vol
+    // Simple RELAIS de prop (`disabled={disabled}`) : la décision appartient à l'appelant,
+    // et l'appelant est lui-même dans le corpus, donc lui-même scanné. Exempter ici ne
+    // crée pas de trou — le déplacer, oui, et c'est ce que la règle vérifie chez lui.
+    if (expr === 'disabled') return false
+    return true
+  }
+
+  it('aucun CTA désactivé par la VALIDATION sur une route publique', () => {
+    const hits: string[] = []
+    for (const { file, copy } of withButtons) {
+      copy.split('\n').forEach((line, idx) => {
+        if (offendingDisabled(line)) hits.push(`${file.replace(FRONTEND + '/', '')}:${idx + 1} → ${line.trim().slice(0, 100)}`)
+      })
+    }
+    expect(hits, 'CTA désactivé par la validation sur une surface publique').toEqual([])
+  })
+
+  it('… et la règle distingue bien les deux cas (contre-preuve, dans les deux sens)', () => {
+    // Interdit : désactivation par la validation.
+    expect(offendingDisabled('  <button type="button" disabled={!step1Valid} onClick={onNext}>')).toBe(true)
+    expect(offendingDisabled('  <button disabled={!canSubmit}>')).toBe(true)
+    // Autorisé : requête en vol, CSS, type, bouton sain.
+    expect(offendingDisabled('  <button onClick={next} disabled={loading}>')).toBe(false)
+    expect(offendingDisabled('  <button disabled={isSaving}>')).toBe(false)
+    expect(offendingDisabled('  .login-cta:disabled { opacity: .5 }')).toBe(false)
+    expect(offendingDisabled('  disabled: boolean')).toBe(false)
+    expect(offendingDisabled('  <button type="button" onClick={handleNext}>')).toBe(false)
+    expect(offendingDisabled('  <button disabled={disabled}>')).toBe(false)      // relais
+    expect(offendingDisabled('  <input disabled={!editable} />')).toBe(false)    // champ
+  })
+})
+
 describe('auto-exclusion : le scanneur survit à son propre scan', () => {
   const SELF = join(SRC, 'tests', 'landingClaims.test.ts')
 
@@ -433,7 +512,14 @@ describe('limites assumées (à relire avant de faire confiance à ce verrou)', 
       'verite-hors-des-cinq-familles-non-couverte',
       // 5 — Les images (og-image.webp, captures) ne sont pas inspectées.
       'contenu-des-images-non-inspecte',
+      // 6 — La règle « aucun CTA désactivé » voit le jeton `disabled` dans la source :
+      //     l'attribut littéral et les props booléennes évidentes. Elle NE voit PAS une
+      //     désactivation calculée à plusieurs niveaux d'indirection — un composant maison
+      //     qui recevrait `inactive` et poserait `disabled` en interne, un `pointerEvents:
+      //     none`, un `aria-disabled`, ou un handler qui ne fait rien. Le comportement
+      //     réel de /signup est prouvé ailleurs, par `signup.anchor.test.tsx`.
+      'cta-desactive-detecte-par-le-jeton-disabled-pas-par-indirection',
     ]
-    expect(LIMITES).toHaveLength(5)
+    expect(LIMITES).toHaveLength(6)
   })
 })

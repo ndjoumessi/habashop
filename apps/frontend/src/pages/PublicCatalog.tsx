@@ -339,19 +339,31 @@ export default function PublicCatalog() {
               {formatPrice(cartTotal, t.currency)}
             </div>
           </div>
+          {/* ⚠️ Sans numéro WhatsApp, le bouton n'est PAS éteint : il n'est pas rendu.
+              Un bouton grisé promet une action puis la refuse, sans dire pourquoi ; ici la
+              boutique n'a simplement pas renseigné de numéro, et c'est ce qu'on affiche. */}
+          {!t.whatsappPhone && (
+            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)' }}>
+              {lang === 'en' ? 'This shop has not set a WhatsApp number yet.'
+               : lang === 'es' ? 'Esta tienda aún no ha indicado un número de WhatsApp.'
+               : lang === 'it' ? 'Questo negozio non ha ancora indicato un numero WhatsApp.'
+               : 'Cette boutique n’a pas encore renseigné de numéro WhatsApp.'}
+            </span>
+          )}
+          {t.whatsappPhone && (
           <button
             onClick={orderViaWhatsApp}
-            disabled={!t.whatsappPhone}
             style={{
               padding:'12px 20px', borderRadius:10,
-              background: t.whatsappPhone ? 'linear-gradient(135deg, #25D366, #128C7E)' : 'var(--bg4)',
-              border:'none', color: t.whatsappPhone ? '#fff' : 'var(--text3)',
-              fontSize:'var(--fs-body)', fontWeight:800, cursor: t.whatsappPhone ? 'pointer' : 'not-allowed',
+              background: 'linear-gradient(135deg, #25D366, #128C7E)',
+              border:'none', color: '#fff',
+              fontSize:'var(--fs-body)', fontWeight:800, cursor: 'pointer',
               fontFamily:'inherit', display:'flex', alignItems:'center', gap:8,
-              boxShadow: t.whatsappPhone ? '0 4px 14px rgba(37,211,102,.4)' : 'none',
+              boxShadow: '0 4px 14px rgba(37,211,102,.4)',
             }}>
             <MessageCircle size={16} /> {i(lang, 'Commander', 'Order', 'Pedir', 'Ordina')}
           </button>
+          )}
         </div>
       )}
 
