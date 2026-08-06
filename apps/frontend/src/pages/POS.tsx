@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, lazy, Suspense, useCallback } from 'react'
 import QRCode from 'qrcode'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAppStore, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useCashierIsOpen, t, formatInCurrency } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useCashierIsOpen, t, formatInCurrency, type PosPayMode } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi, paydunyaApi } from '@/lib/api'
 import { normalizeMsisdn } from '@/lib/msisdn'
@@ -100,8 +100,11 @@ export default function POS() {
   const clearScanIdle = () => { if (scanIdleRef.current) { clearTimeout(scanIdleRef.current); scanIdleRef.current = null } }
   const resetTyping = () => { firstKeyAtRef.current = null; clearScanIdle() }
   useEffect(() => () => { if (scanIdleRef.current) clearTimeout(scanIdleRef.current) }, [])
-  const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mtn'>(() => (posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mtn')
-  useEffect(() => { setPayMode((posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mtn') }, [posDefaultPayment])
+  // ⚠️ Plus aucun cast : le store porte désormais le domaine RÉEL des tuiles (`PosPayMode`),
+  // et une valeur persistée obsolète — `'mobile'`, réellement écrivable en mai 2026 — est
+  // ramenée à `'cash'` par le garde de réhydratation, jamais laissée traverser jusqu'ici.
+  const [payMode, setPayMode]     = useState<PosPayMode>(() => posDefaultPayment ?? 'cash')
+  useEffect(() => { setPayMode(posDefaultPayment ?? 'cash') }, [posDefaultPayment])
   // ⚠️ C'était `useState('+221')` : le reçu WhatsApp proposait le Sénégal à tout le monde.
   // Le corriger en '+237' aurait créé une SEPTIÈME constante — l'indicatif descend du pays
   // de la boutique. `resolveRecipient` reste seul juge côté serveur ; on corrige la CAUSE.

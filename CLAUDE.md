@@ -419,12 +419,38 @@ un scanner naïf s'y trompe :
 | `lang as 'fr'\|'en'\|'es'\|'it'` (planningShared) | rétrécit, mais **gardé** par un `?? [repli]` |
 | `contractForm.type as 'CDI'\|'CDD'` | **LE DÉFAUT** — supprimé |
 
-⚠️ **Reste UN cas latent, enregistré et NON corrigé** : `POS.tsx:103-104` rétrécit
-`posDefaultPayment` (typé `'cash' \| 'card' \| 'mobile'` dans `appStore`) vers
-`'cash'\|'card'\|'wave'\|'orange'\|'mtn'` — **`'mobile'` n'appartient pas à la cible**.
-Inatteignable aujourd'hui (aucun écran n'écrit ce champ, il vaut toujours `'cash'`), mais
-c'est le même motif exactement. Le corriger suppose de décider vers quel mode `'mobile'`
-se résout : **décision produit, pas un nettoyage.**
+✅ **Le cas `posDefaultPayment` est TRAITÉ — et « inatteignable » était FAUX.** Premier
+diagnostic : « aucun écran n'écrit ce champ, il vaut toujours `'cash'` ». L'historique dit
+l'inverse — `Settings.tsx:646` (commit `1e519fca`, **2026-05-20 → 05-24**) offrait un
+sélecteur à CINQ options sous un `as 'cash'|'card'|'mobile'` :
+
+```
+déclaré au type     cash · card · mobile
+offert à l'écran    cash · card · wave · orange · mobile      ← le cast mentait DANS LES DEUX SENS
+accepté par le POS  cash · card · wave · orange · mtn
+```
+
+⚠️ **Et `appStore` est PERSISTÉ en localStorage** (`partialize` garde ce champ dans `...rest`) :
+un commerçant ayant choisi « 📱 Mobile » pendant ces quatre jours l'a **toujours dans son
+navigateur**, et le POS lui pré-sélectionnait une tuile inexistante. L'écran a disparu quatre
+jours plus tard — la valeur est devenue inatteignable **en écriture**, jamais **en lecture**.
+**Un champ persisté n'a pas de domaine « actuel » : il a l'union de tous ceux qu'il a eus.**
+Chercher qui écrit AUJOURD'HUI ne suffit pas ; il faut `git log -S` sur le champ.
+
+Corrigé : `POS_PAY_MODES` / `PosPayMode` dans `appStore`, les deux casts de `POS.tsx`
+supprimés, et **`resolvePosPayMode(raw: unknown)` appelée par `merge`** — même forme de
+repli gracieux que `VALID_THEMES`. **DÉCISION PRODUIT : `'mobile'` → `'cash'`, jamais vers un
+prestataire** ; le commerçant a choisi « Mobile » quand l'écran ne demandait pas lequel, en
+désigner un à sa place inventerait sa décision, et la disponibilité réelle dépend de la config
+SERVEUR du tenant, pas de l'appareil. ⚠️ Domaine tenu **DISTINCT** de `PaymentMethodId`
+(paiement d'ABONNEMENT : `wave|orange_money|mtn_money|virement|card`) — se ressemblent,
+diffèrent, et les fondre perdrait ce que chacun distingue.
+
+Verrou : `posPayModeDomain.test.ts` (6, **5 sabotages**), périmètre DÉRIVÉ des tuiles rendues.
+⚠️ **Son sabotage décisif est passé VERT au premier tir** : le test rejouait la règle de repli
+à l'identique au lieu d'appeler celle du store, donc « `'mobile'` → `'wave'` » ne le touchait
+pas. D'où l'extraction en fonction NOMMÉE, exercée telle quelle — *une règle réécrite dans un
+test ne prouve rien de ce que le code fait.*
 
 **Règle : élargir le type, jamais caster.** Un `as` vers une union de littéraux n'est
 acceptable que (a) pour ÉLARGIR un littéral, ou (b) immédiatement après une garde runtime

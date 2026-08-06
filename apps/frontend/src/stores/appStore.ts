@@ -91,7 +91,8 @@ export interface AppConfig {
   showCurrencyConverter: boolean
 
   // POS
-  posDefaultPayment: 'cash' | 'card' | 'mobile'
+  /** Tuile d'encaissement pré-sélectionnée. Domaine = celui des tuiles RÉELLES du POS. */
+  posDefaultPayment: PosPayMode
   posShowStockOnTile: boolean
   posAutoprint: boolean
   posVatIncluded: boolean
@@ -237,6 +238,43 @@ export function isThemeLight(theme: string): boolean {
 
 // Thèmes valides du set réduit — sert au fallback gracieux d'une préférence persistée obsolète.
 export const VALID_THEMES = new Set<Theme>(['dark', 'light', 'system'])
+
+/**
+ * MODES DE PAIEMENT DU POS — le domaine des tuiles d'encaissement.
+ *
+ * ⚠️ DISTINCT de `PaymentMethodId` (`lib/paymentMethods.ts`), qui énumère les moyens de payer
+ * un ABONNEMENT (`wave | orange_money | mtn_money | virement | card`). Deux domaines voisins
+ * et volontairement séparés : les fondre ferait perdre ce que chacun distingue — l'un désigne
+ * une tuile de caisse, l'autre une marque acceptée pour la facturation de la plateforme.
+ *
+ * ⚠️ Ce champ était typé `'cash' | 'card' | 'mobile'` et POS le castait vers ce domaine-ci.
+ * Le cast mentait DANS LES DEUX SENS, et c'est mesuré : le sélecteur de `Settings.tsx:646`
+ * (présent du 2026-05-20 au 2026-05-24) offrait CINQ options — `cash`, `card`, `wave`,
+ * `orange` et `mobile` — sous un `as 'cash'|'card'|'mobile'`. Donc `wave` et `orange`
+ * s'écrivaient hors du type déclaré, et `mobile` s'écrivait hors du domaine du POS.
+ */
+export const POS_PAY_MODES = ['cash', 'card', 'wave', 'orange', 'mtn'] as const
+export type PosPayMode = typeof POS_PAY_MODES[number]
+export const VALID_POS_PAY_MODES = new Set<string>(POS_PAY_MODES)
+
+/**
+ * Résout une préférence PERSISTÉE en un mode réellement affichable par le POS.
+ *
+ * ⚠️ `raw: unknown`, pas `PosPayMode` : la valeur vient du localStorage, la typer serait une
+ * AFFIRMATION, pas une garantie (même raison que `dialCodeFor(unknown)` et `resolvePlanId`).
+ *
+ * ⚠️ DÉCISION PRODUIT — `'mobile'` retombe sur `'cash'` et n'est JAMAIS résolu vers Wave,
+ * Orange ou MTN. Le commerçant a choisi « Mobile » quand l'écran ne demandait pas lequel :
+ * en désigner un à sa place inventerait une décision qu'il n'a pas prise, et le prestataire
+ * réellement disponible dépend de la configuration SERVEUR du tenant, pas de cet appareil.
+ * Un repli neutre vaut mieux qu'un repli qui affirme.
+ *
+ * ⚠️ Fonction NOMMÉE et exportée pour être exercée telle quelle par le verrou : une règle
+ * réécrite à l'identique dans un test ne prouve rien de ce que le store fait vraiment.
+ */
+export function resolvePosPayMode(raw: unknown): PosPayMode {
+  return (typeof raw === 'string' && VALID_POS_PAY_MODES.has(raw)) ? raw as PosPayMode : 'cash'
+}
 
 // Options du sélecteur d'apparence (Sombre / Clair / Système), dans l'ordre d'affichage.
 export const THEME_OPTIONS: { key: Theme; emoji: string; label: Record<string, string> }[] = [
@@ -593,6 +631,19 @@ export const useAppStore = create<AppStore>()(
           // ocean/sunset/gold/soleil…) n'existe plus → on retombe sur « Sombre » plutôt que de
           // laisser un utilisateur bloqué sur un thème inconnu (sélecteur sans option active).
           theme: (p.theme && VALID_THEMES.has(p.theme)) ? p.theme : 'dark',
+          // ⚠️ MÊME fallback gracieux pour le mode de paiement par défaut, et il n'est PAS
+          // théorique : ce store est persisté en localStorage, et l'écran de réglages a
+          // réellement pu y écrire `'mobile'` — un mode que le POS ne sait pas afficher.
+          // Un commerçant qui l'avait choisi voyait donc, à chaque encaissement, une tuile
+          // pré-sélectionnée qui n'existe pas.
+          //
+          // DÉCISION PRODUIT : `'mobile'` retombe sur `'cash'`, il n'est PAS résolu vers un
+          // prestataire. Le commerçant avait choisi « Mobile » à une époque où l'application
+          // ne demandait pas lequel ; le convertir en Wave, Orange ou MTN serait INVENTER un
+          // choix qu'il n'a pas fait — et le prestataire disponible dépend de la config
+          // serveur du tenant, pas de cet appareil. Un repli neutre vaut mieux qu'un repli
+          // qui affirme. (Même raisonnement que le thème obsolète → « Sombre ».)
+          posDefaultPayment: resolvePosPayMode(p.posDefaultPayment),
           currencyManuallySet: p.currencyManuallySet ?? (p.currency != null),
           langManuallySet:     p.langManuallySet     ?? (p.lang != null),
         }
