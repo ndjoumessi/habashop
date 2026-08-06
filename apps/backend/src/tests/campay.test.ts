@@ -331,3 +331,56 @@ describe('campay service (mapping statuts)', () => {
     // Un statut inconnu doit mapper sur PENDING (voir implémentation).
   })
 })
+
+/**
+ * REFUS D'UN NUMÉRO INVALIDE — même FORME que la route MTN.
+ *
+ * ⚠️ Les deux routes divergeaient : Campay rendait `{ error }` nu, MTN
+ * `{ error, code: 'PHONE_INVALID' }`. Aucun client ne lisait `code` (mesuré : `POS.tsx`
+ * fait un `catch {}` nu, `lib/api.ts` ne lit que `errJson.error`), donc l'alignement est
+ * purement additif — mais un écart de forme entre deux routes du même domaine finit
+ * toujours par coûter, comme les deux `normalizeCameroonPhone` homonymes.
+ */
+describe('POST /api/payments/campay/request — refus d’un numéro invalide', () => {
+  const post = async (phoneNumber: string) => {
+    const app = await makeApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/payments/campay/request',
+      payload: { amount: 5000, phoneNumber, operator: 'orange' },
+    })
+    await app.close()
+    return res
+  }
+
+  it('400 PHONE_INVALID, et Campay n’est JAMAIS appelé', async () => {
+    const res = await post('677abc000')
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).code).toBe('PHONE_INVALID')
+    expect(campayCollect).not.toHaveBeenCalled()
+  })
+
+  it('un numéro ÉTRANGER est refusé : Campay ne dessert que le Cameroun', async () => {
+    const res = await post('+33612345678')
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).code).toBe('PHONE_INVALID')
+    expect(campayCollect).not.toHaveBeenCalled()
+  })
+
+  it('le message reflète la politique cm-only, et ne contient pas le numéro (PII)', async () => {
+    const res = await post('+33612345678')
+    expect(JSON.parse(res.body).error).toMatch(/Cameroun/)
+    expect(res.body).not.toContain('33612345678')
+  })
+
+  it('un numéro camerounais valide passe, normalisé', async () => {
+    campayCollect.mockResolvedValue({ reference: 'r1', ussd_code: '*126#' })
+    const app = await makeApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/payments/campay/request',
+      payload: { amount: 5000, phoneNumber: '6 99 00 00 01', operator: 'orange' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(campayCollect).toHaveBeenCalledWith(expect.objectContaining({ phone: '237699000001' }))
+    await app.close()
+  })
+})

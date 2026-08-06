@@ -5,7 +5,7 @@ import { authenticate } from '../middleware/authenticate'
 import { requestToPay, getPaymentStatus } from '../services/mtnMomo'
 import { xofToCurrency } from '../lib/currency'
 import { normalizeMsisdn } from '../lib/msisdn'
-import { isNotConfigured, notConfiguredBody } from '../lib/payments/providerConfig'
+import { isNotConfigured, notConfiguredBody, phoneInvalidBody } from '../lib/payments/providerConfig'
 
 // Sandbox MTN accepte EUR uniquement ; prod Cameroun = XAF (parité 1:1 avec XOF).
 const IS_SANDBOX = (process.env.MTN_MOMO_ENVIRONMENT ?? 'sandbox') === 'sandbox'
@@ -40,13 +40,8 @@ export async function mtnPaymentRoutes(app: FastifyInstance): Promise<void> {
      * Même politique que le point d'appel client, et c'est vérifié par `msisdnShared.test.ts`.
      */
     const normalizedPhone = normalizeMsisdn(phoneNumber, 'international')
-    if (!normalizedPhone) {
-      // ⚠️ Le numéro N'EST PAS renvoyé dans le message (PII) — cf. redactPhone.
-      return reply.code(400).send({
-        error: 'Numéro de téléphone invalide (8 à 15 chiffres attendus)',
-        code:  'PHONE_INVALID',
-      })
-    }
+    // ⚠️ Le numéro N'EST PAS renvoyé dans le message (PII) — cf. redactPhone.
+    if (!normalizedPhone) return reply.code(400).send(phoneInvalidBody('international'))
 
     const externalId = saleId ?? crypto.randomUUID()
 

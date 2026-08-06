@@ -36,6 +36,8 @@
  * flag inline des `_SANDBOX_AUTO_SUCCESS`).
  */
 
+import type { MsisdnPolicy } from '../msisdn'
+
 export type ProviderId = 'wave' | 'orange_money' | 'mtn_momo' | 'campay' | 'paydunya'
 
 export type ProviderMode = 'live' | 'simulated' | 'unconfigured'
@@ -170,5 +172,27 @@ export function notConfiguredBody(provider: ProviderId) {
     code: 'PAYMENT_NOT_CONFIGURED' as const,
     provider,
     contactEmail: 'contact@habashop.com',
+  }
+}
+
+/**
+ * Refus d'un numéro irrécupérable — corps UNIQUE des routes de paiement.
+ *
+ * ⚠️ Les deux routes divergeaient sur la FORME du refus : `mtnPayment.ts` rendait
+ * `{ error, code: 'PHONE_INVALID' }`, `campayPayment.ts` un `{ error }` nu. Cosmétique
+ * aujourd'hui — mesuré : `POS.tsx` fait un `catch {}` nu et `lib/api.ts` ne lit que
+ * `errJson.error`, jamais `code` — mais c'est le genre d'écart qui se paie plus tard,
+ * exactement comme les deux `normalizeCameroonPhone` homonymes.
+ *
+ * ⚠️ LE MESSAGE EST DÉRIVÉ DE LA POLITIQUE, pas écrit à la main. Sinon un « format
+ * Cameroun attendu » survivrait à un passage en `international` et dirait au commerçant
+ * l'inverse de ce que la route accepte.
+ */
+export function phoneInvalidBody(policy: MsisdnPolicy) {
+  return {
+    error: policy === 'cm-only'
+      ? 'Numéro de téléphone invalide (format Cameroun attendu)'
+      : 'Numéro de téléphone invalide (8 à 15 chiffres attendus)',
+    code: 'PHONE_INVALID' as const,
   }
 }

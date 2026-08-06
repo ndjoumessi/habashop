@@ -4,7 +4,7 @@ import type { FastifyInstance } from 'fastify'
 import { authenticate } from '../middleware/authenticate'
 import { collect, getStatus, getPaymentLink } from '../services/campay'
 import { prisma } from '../db'
-import { isNotConfigured, notConfiguredBody } from '../lib/payments/providerConfig'
+import { isNotConfigured, notConfiguredBody, phoneInvalidBody } from '../lib/payments/providerConfig'
 import { normalizeMsisdn } from '../lib/msisdn'
 
 const IS_SANDBOX = (process.env.CAMPAY_ENVIRONMENT ?? 'demo') !== 'production'
@@ -63,7 +63,8 @@ export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
 
     const normalizedPhone = normalizeCameroonPhone(phoneNumber)
     if (!normalizedPhone)
-      return reply.code(400).send({ error: 'Numéro de téléphone invalide (format Cameroun attendu)' })
+      // ⚠️ Le numéro n'apparaît PAS dans le message (PII, cf. redactPhone).
+      return reply.code(400).send(phoneInvalidBody('cm-only'))
 
     const externalRef = `HABA-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
 

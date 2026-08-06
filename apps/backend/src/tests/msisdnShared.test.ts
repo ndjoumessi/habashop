@@ -94,5 +94,31 @@ describe('les points d’appel déclarent la BONNE politique', () => {
       expect(calls[0]).toContain(site.policy)
       expect(calls[0]).not.toContain(site.other)
     })
+
+    /**
+     * ⚠️ La FORME du refus est verrouillée aussi. Les deux routes avaient déjà divergé
+     * dessus (`{ error }` nu d'un côté, `{ error, code }` de l'autre) : verrouiller la
+     * politique sans verrouiller le refus laissait l'écart revenir par l'autre bout.
+     */
+    it(`${site.file} refuse via le corps PARTAGÉ, avec la même politique`, () => {
+      const src = read(resolve(__dirname, '..', 'routes', site.file))
+      const bodies = [...src.matchAll(/phoneInvalidBody\([^)]*\)/g)].map(m => m[0])
+      expect(bodies.length, 'refus non partagé : message écrit à la main ?').toBe(1)
+      expect(bodies[0]).toContain(site.policy)
+      // Aucun message de refus recopié : il doit être DÉRIVÉ de la politique.
+      expect(src).not.toMatch(/error:\s*['"`]Numéro de téléphone invalide/)
+    })
   }
+
+  it('le corps de refus est unique et dérive de la politique', async () => {
+    const { phoneInvalidBody } = await import('../lib/payments/providerConfig')
+    expect(phoneInvalidBody('cm-only').code).toBe('PHONE_INVALID')
+    expect(phoneInvalidBody('international').code).toBe('PHONE_INVALID')
+    // Le message SUIT la politique — un « format Cameroun attendu » ne doit pas survivre
+    // à un passage en international et dire l'inverse de ce que la route accepte.
+    expect(phoneInvalidBody('cm-only').error).toMatch(/Cameroun/)
+    expect(phoneInvalidBody('international').error).toMatch(/8 à 15/)
+    // …et il ne divulgue aucun numéro (PII).
+    expect(phoneInvalidBody('cm-only').error).not.toMatch(/\d{6,}/)
+  })
 })
