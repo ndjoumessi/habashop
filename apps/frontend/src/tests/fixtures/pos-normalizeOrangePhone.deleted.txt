@@ -1,0 +1,15 @@
+IMPLÉMENTATION RÉELLEMENT SUPPRIMÉE — apps/frontend/src/pages/POS.tsx, HEAD du 2026-08-06.
+Extraite par `git show`, JAMAIS retapée : un sabotage écrit de mémoire hérite des
+hypothèses du détecteur, et les deux tombent ensemble.
+Sert de contre-épreuve à `msisdnShared.test.ts` — les trois règles de forme doivent
+toutes mordre ici.
+
+  const normalizeOrangePhone = (raw: string): string | null => {
+    const s = raw.replace(/[\s\-\(\)]/g, '')
+    if (/^\+237[0-9]{9}$/.test(s)) return s.slice(1)
+    if (/^237[0-9]{9}$/.test(s))   return s
+    if (/^6[0-9]{8}$/.test(s))     return `237${s}`
+    const d = s.replace(/^\+/, '')
+    if (/^[0-9]{8,15}$/.test(d))   return d
+    return null
+  }

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { LANDING_TRANSLATIONS } from '@/components/landing/landingShared'
 
 /**
  * Page de connexion — test d'ancrage.
@@ -176,5 +177,33 @@ describe('LoginPage — sortie de la page', () => {
     render(<LoginPage />)
     const back = screen.getAllByRole('link').filter(a => a.getAttribute('href') === '/')
     expect(back.length).toBeGreaterThan(0)
+  })
+})
+
+/**
+ * ⚠️ LA RÉSERVE SUR LE PAIEMENT — jumeau non traité du 2026-08-06.
+ *
+ * La vitrine a reçu `pillar1_status` (« Aucun paiement réel ne transite encore… ») ;
+ * `/login` a gardé « MTN MoMo · Orange Money · PayDunya — encaissement intégré à la
+ * caisse » toute nue. Même correction, deux surfaces, une seule traitée — le motif qui
+ * s'est répété quatre fois dans cet enchaînement (témoignages, normalisation, densité).
+ *
+ * On assert l'ÉGALITÉ avec la chaîne de la vitrine, pas sa présence : une réserve
+ * recopiée passerait un test de présence et divergerait au premier ajustement.
+ */
+describe('LoginPage — réserve sur le paiement', () => {
+  it('porte EXACTEMENT la réserve de la vitrine, pas une copie', () => {
+    render(<LoginPage />)
+    const attendu = LANDING_TRANSLATIONS.fr.pillar1_status
+    expect(attendu.length, 'la source est vide : le test ne prouverait rien').toBeGreaterThan(40)
+    expect(screen.getByText(attendu)).toBeInTheDocument()
+  })
+
+  it('la réserve est adjacente aux marques citées, pas reléguée en pied de page', () => {
+    const { container } = render(<LoginPage />)
+    const marque = [...container.querySelectorAll('li')]
+      .find(li => /MTN MoMo · Orange Money · PayDunya/.test(li.textContent ?? ''))
+    expect(marque, 'ligne des moyens de paiement introuvable').toBeTruthy()
+    expect(marque!.textContent).toContain(LANDING_TRANSLATIONS.fr.pillar1_status)
   })
 })

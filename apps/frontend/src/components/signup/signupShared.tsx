@@ -1,6 +1,21 @@
 import React from 'react'
 import type { Lang, Currency } from '@/stores/appStore'
+import { planAmountXOF } from '@/lib/plans'
 export type { Lang, Currency }
+
+/**
+ * ⚠️ PRIX DÉRIVÉS DU CATALOGUE. Ce fichier recopiait « Starter 8 000 F CFA, Business
+ * 25 000 » dans les quatre langues, hors de portée du verrou tarifaire — qui listait ses
+ * fichiers à la main et n'a jamais inclus `components/signup/`, exactement le répertoire
+ * déjà oublié par le verrou des affirmations. Et quand bien même : il cherchait `\b8000\b`
+ * quand la copie écrit « 8 000 ». Deux périmètres faux pour un seul défaut.
+ */
+const groupe = (xof: number, lang: Lang): string =>
+  xof.toLocaleString(lang === 'en' ? 'en-US' : 'fr-FR').replace(/[\u202f\u00a0]/g, ' ')
+const cfa = (xof: number, lang: Lang): string =>
+  lang === 'en' ? `${groupe(xof, lang)} CFA` : `${groupe(xof, lang)} F CFA`
+const starterM  = (lang: Lang) => cfa(planAmountXOF('starter', 'monthly')!, lang)
+const businessM = (lang: Lang) => groupe(planAmountXOF('business', 'monthly')!, lang)
 
 export type ST = {
   brand_title: string; brand_sub: string
@@ -57,7 +72,7 @@ export const TX: Record<Lang, ST> = {
     trial_title: '14 jours, tout compris',
     trial_body: 'Caisse, stock, clients, fournisseurs, RH et rapports — sans restriction ni quota. Vos données restent les vôtres si vous vous arrêtez.',
     pay_title: 'Et pour continuer',
-    pay_body: 'Starter 8 000 F CFA par mois, Business 25 000. Sans engagement, résiliable à tout moment.',
+    pay_body: `Starter ${starterM('fr')} par mois, Business ${businessM('fr')}. Sans engagement, résiliable à tout moment.`,
   },
   en: {
     brand_title: 'Join HabaShop',
@@ -90,7 +105,7 @@ export const TX: Record<Lang, ST> = {
     trial_title: '14 days, everything included',
     trial_body: 'Till, stock, customers, suppliers, HR and reports — unrestricted, no quotas. Your data stays yours if you stop.',
     pay_title: 'And to carry on',
-    pay_body: 'Starter 8,000 CFA per month, Business 25,000. No commitment, cancel at any time.',
+    pay_body: `Starter ${starterM('en')} per month, Business ${businessM('en')}. No commitment, cancel at any time.`,
   },
   es: {
     brand_title: 'Únete a HabaShop',
@@ -123,7 +138,7 @@ export const TX: Record<Lang, ST> = {
     trial_title: '14 días, todo incluido',
     trial_body: 'Caja, stock, clientes, proveedores, RRHH e informes — sin restricciones ni cuotas. Tus datos siguen siendo tuyos si lo dejas.',
     pay_title: 'Y para continuar',
-    pay_body: 'Starter 8 000 F CFA al mes, Business 25 000. Sin compromiso, cancela cuando quieras.',
+    pay_body: `Starter ${starterM('es')} al mes, Business ${businessM('es')}. Sin compromiso, cancela cuando quieras.`,
   },
   it: {
     brand_title: 'Unisciti a HabaShop',
@@ -156,7 +171,7 @@ export const TX: Record<Lang, ST> = {
     trial_title: '14 giorni, tutto incluso',
     trial_body: 'Cassa, magazzino, clienti, fornitori, HR e report — senza limiti né quote. I tuoi dati restano tuoi se ti fermi.',
     pay_title: 'E per continuare',
-    pay_body: 'Starter 8 000 F CFA al mese, Business 25 000. Nessun vincolo, disdici quando vuoi.',
+    pay_body: `Starter ${starterM('it')} al mese, Business ${businessM('it')}. Nessun vincolo, disdici quando vuoi.`,
   },
 }
 

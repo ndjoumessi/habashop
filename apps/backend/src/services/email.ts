@@ -1,5 +1,6 @@
 import { sendTenantEmail, sendPlatformEmail } from '../lib/spend/resendClient'
 import { appUrl, appBaseUrl, appHost } from '../lib/appUrl'
+import { getPlan, purchasablePlans } from '../lib/plans'
 
 /**
  * Envois d'e-mails. Le SDK Resend vit dans `lib/spend/resendClient` (goulot gardé).
@@ -97,10 +98,52 @@ function paymentNotice(): string {
   return `
     <div class="alert" style="background:#FFF7E6;border-left:4px solid #FFB020;">
       <strong>Le paiement en ligne n'est pas encore actif.</strong>
-      Votre essai est complet et ne demande aucune carte. Pour continuer au-delà,
+      Aucune carte ne vous est demandée. Pour activer ou prolonger votre plan,
       écrivez-nous&nbsp;: nous convenons du règlement (Mobile&nbsp;Money ou virement)
-      et nous activons votre plan.
+      et nous l'activons.
     </div>`
+}
+
+/**
+ * ─── PRIX : DÉRIVÉS DU CATALOGUE, JAMAIS ÉCRITS ICI ──────────────────────────
+ *
+ * ⚠️ Ces trois e-mails annonçaient « 24 900 F CFA/mois » — le prix de `pro`, plan qui
+ * n'existe plus, dans une QUATRIÈME grille jamais alignée. Le bouton du même e-mail
+ * pointe vers `/app/upgrade`, qui lit `lib/plans.ts` : le commerçant lisait un prix et en
+ * voyait un autre en cliquant. Un prix envoyé par écrit engage plus qu'un prix affiché.
+ *
+ * Le chantier d'alignement tarifaire (2026-08-06) avait unifié la vitrine, `/pricing`,
+ * le JSON-LD, le tunnel et la console admin — et s'était arrêté à la frontière du
+ * workspace frontend. `services/email.ts` est resté sur l'ancienne grille.
+ *
+ * ⚠️ `lib/plans.ts` vit dans `apps/backend/src/` : il est DANS le contexte Docker
+ * (`COPY src`). Ne jamais atteindre `packages/` ni `docs/` par un `import` depuis ici.
+ */
+
+/** Formate un montant XOF comme le reste des e-mails (`toLocaleString('fr-FR')`). */
+function fmtXof(xof: number): string {
+  return `${xof.toLocaleString('fr-FR')} F CFA`
+}
+
+/**
+ * Prix d'entrée du catalogue — « à partir de ».
+ *
+ * ⚠️ Ces relances partent AVANT que le commerçant ait choisi son plan (l'inscription
+ * attribue `DEFAULT_PLAN_ON_SIGNUP`). Annoncer un plan précis serait décider à sa place ;
+ * c'est ce que faisait « Plan Pro », qui nommait en plus un plan disparu.
+ */
+function entryPriceXof(): number {
+  const prices = purchasablePlans()
+    .map(p => p.monthly)
+    .filter((m): m is number => typeof m === 'number')
+  return Math.min(...prices)
+}
+
+/** Grille achetable, en liste HTML. Un plan ajouté au catalogue apparaît ici seul. */
+function planGridHtml(): string {
+  return purchasablePlans()
+    .map(p => `      <li><strong>${p.label}</strong> — ${fmtXof(p.monthly!)}/mois</li>`)
+    .join('\n')
 }
 
 export async function sendWelcomeEmail(opts: {
@@ -147,8 +190,7 @@ export async function sendWelcomeEmail(opts: {
 
     ${paymentNotice()}
 
-    <p>Des questions ? Répondez directement à cet email —
-    nous répondons sous 24h.</p>
+    <p>Des questions ? Répondez directement à cet email.</p>
   `)
 
   return send({
@@ -179,7 +221,7 @@ export async function sendTrialReminder7Days(opts: {
     <h1>Plus que 7 jours d'essai, ${eFirst}</h1>
     <p>Votre essai gratuit de <strong>${eShop}</strong>
     expire dans <strong>7 jours</strong>. Continuez sans interruption
-    en passant au plan Pro.</p>
+    en choisissant votre plan.</p>
 
     <div class="kpi-row">
       <div class="kpi">
@@ -194,24 +236,20 @@ export async function sendTrialReminder7Days(opts: {
 
     <div class="divider"></div>
 
-    <p><strong>Plan Pro — 24 900 F CFA/mois</strong></p>
+    <p><strong>Nos plans</strong> — l'abonnement annuel se paie 10 mois :</p>
     <ul style="color:#444464;font-size:15px;line-height:2;padding-left:20px;">
-      <li>✅ Ventes illimitées</li>
-      <li>✅ Tous les modules (RH, Paie, Analytics avancés)</li>
-      <li>✅ Support prioritaire sous 4h</li>
-      <li>✅ Paiement par <strong>Wave ou Orange Money</strong></li>
+${planGridHtml()}
     </ul>
 
     <p style="text-align:center;">
       <a href="${upgradeUrl}" class="btn">
-        ⚡ Passer au plan Pro maintenant
+        ⚡ Voir les plans
       </a>
     </p>
 
     <div class="alert">
       ⏰ <strong>Votre essai expire dans 7 jours.</strong>
-      Vos données sont conservées même après l'expiration —
-      passez au Pro pour continuer à vendre sans interruption.
+      Vos données sont conservées même après l'expiration.
     </div>
 
     ${paymentNotice()}
@@ -254,18 +292,14 @@ export async function sendTrialReminder3Days(opts: {
 
     <p style="text-align:center;">
       <a href="${upgradeUrl}" class="btn" style="background:linear-gradient(135deg,#FF3B5C,#dc2626);">
-        🔓 Débloquer mon accès — 24 900 F CFA/mois
+        🔓 Choisir mon plan — à partir de ${fmtXof(entryPriceXof())}/mois
       </a>
-    </p>
-
-    <p style="text-align:center;font-size:13px;color:#8888A8;">
-      Payez par Wave 🌊 · Orange Money 🟠 · MTN Money · Virement bancaire
     </p>
 
     <div class="divider"></div>
 
     <p>Vous avez des questions sur les tarifs ou les fonctionnalités ?
-    Répondez à cet email — nous vous rappelons sous 2h.</p>
+    Répondez à cet email.</p>
 
     ${paymentNotice()}
   `)
@@ -291,7 +325,14 @@ export async function sendUpgradeConfirmation(opts: {
 }): Promise<boolean> {
   const { to, shopName, ownerName, plan, amount, method, ref } = opts
   const firstName  = ownerName.split(' ')[0]
-  const planLabel  = plan === 'pro' ? 'Pro' : 'Enterprise'
+  /**
+   * ⚠️ C'ÉTAIT `plan === 'pro' ? 'Pro' : 'Enterprise'` — une CINQUIÈME grille, de
+   * libellés cette fois. `admin.ts` et `payments.ts` passent ici l'identifiant réel du
+   * `PlanRequest` (`starter` | `business` | `enterprise`), donc toute activation Starter
+   * ou Business annonçait au commerçant « Votre plan Enterprise est activé ». Le
+   * catalogue porte les libellés ; les alias de lecture (`pro`) y sont résolus.
+   */
+  const planLabel  = escHtml(getPlan(plan)?.label ?? plan)
   const loginUrl   = appUrl('/login')
 
   const methodLabels: Record<string,string> = {
@@ -349,7 +390,7 @@ export async function sendUpgradeConfirmation(opts: {
 
   return send({
     to,
-    subject: `✅ Plan ${planLabel} activé — Bienvenue dans HabaShop Pro, ${firstName} !`,
+    subject: `✅ Plan ${planLabel} activé — merci de votre confiance, ${firstName} !`,
     html,
   })
 }
@@ -384,13 +425,11 @@ export async function sendTrialExpired(opts: {
 
     <p style="text-align:center;">
       <a href="${upgradeUrl}" class="btn">
-        🔓 Réactiver ma boutique — 24 900 F CFA/mois
+        🔓 Réactiver ma boutique — à partir de ${fmtXof(entryPriceXof())}/mois
       </a>
     </p>
 
-    <p style="text-align:center;font-size:13px;color:#8888A8;">
-      Wave · Orange Money · MTN Money · Virement
-    </p>
+    ${paymentNotice()}
 
     <div class="divider"></div>
 

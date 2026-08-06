@@ -1,6 +1,37 @@
 import type { Lang, Currency } from '@/stores/appStore'
+import { planAmountXOF, YEARLY_MONTHS } from '@/lib/plans'
 
 export type { Lang, Currency }
+
+/**
+ * ─── PRIX : DÉRIVÉS DU CATALOGUE, JAMAIS ÉCRITS ICI ──────────────────────────
+ *
+ * ⚠️ La réponse FAQ « nos tarifs » recopiait les montants à la main dans les quatre
+ * langues. Le verrou tarifaire ne l'a jamais vu : il cherchait `\b8000\b` quand la copie
+ * écrit « 8 000 » — un séparateur de milliers, donc **zéro correspondance possible**. Le
+ * verrou était vert sur un motif que personne n'emploie, et la version anglaise employait
+ * en plus une virgule (« 8,000 CFA »), une deuxième forme qu'il n'aurait pas vue non plus.
+ *
+ * Les montants descendent maintenant de `lib/plans.ts`. Le rendu reste identique au
+ * caractère près (espace nue, pas l'espace fine de `toLocaleString`).
+ */
+const groupe = (xof: number, lang: Lang): string =>
+  xof.toLocaleString(lang === 'en' ? 'en-US' : 'fr-FR').replace(/[\u202f\u00a0]/g, ' ')
+
+/** « 8 000 F CFA » (fr/es/it) · « 8,000 CFA » (en) — la forme employée par chaque langue. */
+const cfa = (xof: number, lang: Lang): string =>
+  lang === 'en' ? `${groupe(xof, lang)} CFA` : `${groupe(xof, lang)} F CFA`
+
+const tarifs = (lang: Lang) => ({
+  starterM:  cfa(planAmountXOF('starter', 'monthly')!, lang),
+  starterY:  groupe(planAmountXOF('starter', 'yearly')!, lang),
+  businessM: cfa(planAmountXOF('business', 'monthly')!, lang),
+  businessY: groupe(planAmountXOF('business', 'yearly')!, lang),
+  /** Mois payés sur douze, et mois offerts — la règle vit dans le catalogue. */
+  moisPayes:   YEARLY_MONTHS,
+  moisOfferts: 12 - YEARLY_MONTHS,
+})
+const pFR = tarifs('fr'), pEN = tarifs('en'), pES = tarifs('es'), pIT = tarifs('it')
 
 /**
  * Traductions de la vitrine.
@@ -119,7 +150,7 @@ export const LANDING_TRANSLATIONS = {
     faq2_q: "Comment se passe le paiement de l'abonnement ?",
     faq2_a: "Les 14 premiers jours sont gratuits et ne demandent aucune carte bancaire. Ensuite, le paiement en ligne n'étant pas encore actif, le règlement se convient directement avec notre équipe (Mobile Money ou virement) et nous activons votre plan. Les intégrations de paiement sont développées, elles attendent l'ouverture des comptes marchands.",
     faq3_q: 'Combien coûte HabaShop ?',
-    faq3_a: 'Starter 8 000 F CFA par mois (80 000 par an), Business 25 000 F CFA par mois (250 000 par an), Enterprise sur devis. L’abonnement annuel se paie 10 mois : 2 mois offerts. Les 14 jours d’essai valent pour tous les plans.',
+    faq3_a: `Starter ${pFR.starterM} par mois (${pFR.starterY} par an), Business ${pFR.businessM} par mois (${pFR.businessY} par an), Enterprise sur devis. L’abonnement annuel se paie ${pFR.moisPayes} mois : ${pFR.moisOfferts} mois offerts. Les 14 jours d’essai valent pour tous les plans.`,
     faq4_q: 'Puis-je gérer plusieurs boutiques ?',
     faq4_a: "Oui. Un même compte peut être rattaché à plusieurs boutiques — chacune avec ses produits, ses ventes et son équipe. Le sélecteur de boutique apparaît à la connexion.",
     faq5_q: 'Comment ajouter mes produits ?',
@@ -222,7 +253,7 @@ export const LANDING_TRANSLATIONS = {
     faq2_q: 'How does subscription payment work?',
     faq2_a: 'The first 14 days are free and require no card. After that, since online payment is not live yet, the payment is agreed directly with our team (Mobile Money or transfer) and we activate your plan. The payment integrations are built; they are waiting on the merchant accounts.',
     faq3_q: 'How much does HabaShop cost?',
-    faq3_a: 'Starter 8,000 CFA per month (80,000 per year), Business 25,000 CFA per month (250,000 per year), Enterprise on a custom quote. The yearly plan is billed as 10 months: 2 months free. The 14-day trial applies to every plan.',
+    faq3_a: `Starter ${pEN.starterM} per month (${pEN.starterY} per year), Business ${pEN.businessM} per month (${pEN.businessY} per year), Enterprise on a custom quote. The yearly plan is billed as ${pEN.moisPayes} months: ${pEN.moisOfferts} months free. The 14-day trial applies to every plan.`,
     faq4_q: 'Can I manage several shops?',
     faq4_a: 'Yes. One account can be linked to several shops — each with its own products, sales and team. The shop picker appears at sign-in.',
     faq5_q: 'How do I add my products?',
@@ -323,7 +354,7 @@ export const LANDING_TRANSLATIONS = {
     faq2_q: '¿Cómo se paga la suscripción?',
     faq2_a: 'Los primeros 14 días son gratis y no piden tarjeta. Después, como el pago en línea aún no está activo, el pago se acuerda directamente con nuestro equipo (Mobile Money o transferencia) y activamos su plan. Las integraciones de pago están hechas; esperan la apertura de las cuentas de comercio.',
     faq3_q: '¿Cuánto cuesta HabaShop?',
-    faq3_a: 'Starter 8 000 F CFA al mes (80 000 al año), Business 25 000 F CFA al mes (250 000 al año), Enterprise bajo presupuesto. El plan anual se factura 10 meses: 2 meses gratis. La prueba de 14 días vale para todos los planes.',
+    faq3_a: `Starter ${pES.starterM} al mes (${pES.starterY} al año), Business ${pES.businessM} al mes (${pES.businessY} al año), Enterprise bajo presupuesto. El plan anual se factura ${pES.moisPayes} meses: ${pES.moisOfferts} meses gratis. La prueba de 14 días vale para todos los planes.`,
     faq4_q: '¿Puedo gestionar varias tiendas?',
     faq4_a: 'Sí. Una misma cuenta puede estar vinculada a varias tiendas — cada una con sus productos, sus ventas y su equipo. El selector de tienda aparece al iniciar sesión.',
     faq5_q: '¿Cómo añado mis productos?',
@@ -424,7 +455,7 @@ export const LANDING_TRANSLATIONS = {
     faq2_q: "Come funziona il pagamento dell'abbonamento?",
     faq2_a: 'I primi 14 giorni sono gratuiti e non richiedono carta. Poi, non essendo ancora attivo il pagamento online, il pagamento si concorda direttamente con il nostro team (Mobile Money o bonifico) e attiviamo il piano. Le integrazioni di pagamento ci sono; attendono l’apertura degli account commerciante.',
     faq3_q: 'Quanto costa HabaShop?',
-    faq3_a: "Starter 8 000 F CFA al mese (80 000 all'anno), Business 25 000 F CFA al mese (250 000 all'anno), Enterprise su preventivo. Il piano annuale è fatturato 10 mesi: 2 mesi gratis. I 14 giorni di prova valgono per tutti i piani.",
+    faq3_a: `Starter ${pIT.starterM} al mese (${pIT.starterY} all'anno), Business ${pIT.businessM} al mese (${pIT.businessY} all'anno), Enterprise su preventivo. Il piano annuale è fatturato ${pIT.moisPayes} mesi: ${pIT.moisOfferts} mesi gratis. I 14 giorni di prova valgono per tutti i piani.`,
     faq4_q: 'Posso gestire più negozi?',
     faq4_a: "Sì. Uno stesso account può essere collegato a più negozi — ciascuno con i propri prodotti, vendite e team. Il selettore di negozio appare all'accesso.",
     faq5_q: 'Come aggiungo i miei prodotti?',

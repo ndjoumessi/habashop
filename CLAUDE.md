@@ -332,6 +332,73 @@ les règles **transverses** : celles qu'on enfreint sans même travailler sur le
 - **Webhooks** : HMAC-SHA256 raw body, `timingSafeEqual`, **fail-closed partout** (Wave inclus : `wave.ts` `if (!secret) return false`). Reste à poser `WAVE_WEBHOOK_SECRET` en prod.
 - **Tests PDF** : signature `%PDF` + taille >500o.
 
+### Le JUMEAU NON TRAITÉ ⚠️ — le motif le plus coûteux de ce dépôt
+
+**Une correction qui s'arrête au premier fichier trouvé n'est pas une correction, c'est un
+déplacement.** MESURÉ le 2026-08-06 : sur une même journée, **cinq** corrections ont laissé
+un jumeau vivant, dont trois n'étaient pas dans le répertoire voisin.
+
+| Correction | Traité | Oublié |
+|---|---|---|
+| Témoignages fabriqués | `components/landing/` | `components/signup/` |
+| Normalisation MSISDN serveur | `campayPayment.ts` | `mtnPayment.ts` |
+| Grille tarifaire source unique | frontend | **`services/email.ts`** — autre workspace |
+| Réserve « paiement inactif » | vitrine | `/login` |
+| Densité de colonne | `/signup` | `/login` |
+
+⚠️ **Chercher au répertoire voisin n'attrape que la moitié.** Les deux jumeaux les plus
+graves se cachaient **dans un fichier déjà traité** :
+- **sous un autre NOM** — `normalizeOrangePhone` vivait quarante lignes au-dessus de l'appel
+  `normalizeMsisdn` déjà fusionné, dans `POS.tsx`. Le verrou assertait `calls.length === 1` :
+  il **prouvait** un site d'appel et était aveugle au second. D'où la règle : **un verrou de
+  normalisation juge la FORME, jamais l'identifiant** (`msisdnShared.test.ts`, 3 règles —
+  quantificateur de chiffres, ancre `^\+`/`^0`, indicatif en dur concaténé ; calibrage mesuré
+  0 correspondance après / 7 avant).
+- **sous une autre FORME** — le verrou tarifaire cherchait `\b8000\b` quand **toute chaîne
+  visible écrit « 8 000 »** (et « 8,000 » en anglais). Zéro correspondance possible : vert par
+  construction, sur un motif que personne n'emploie.
+
+⚠️ **QUATRE séparateurs de milliers coexistent** — U+0020 (copie manuelle), **U+202F**
+(`toLocaleString('fr-FR')`), U+00A0 (gabarits HTML), U+002C (`en-US`). **Normaliser AVANT de
+chercher, jamais l'inverse.** Corollaire eslint : `no-irregular-whitespace` interdit ces
+caractères en littéral — les écrire en `\u202f`, sinon on choisit entre le lint et la
+couverture.
+
+⚠️ **RÈGLE DE SABOTAGE — copier la forme depuis un fichier de PRODUCTION, jamais la retaper.**
+Un sabotage écrit de mémoire hérite des hypothèses du détecteur, et les deux tombent ensemble :
+c'est exactement ce qui a laissé le verrou tarifaire vert. Le sabotage doit être extrait par
+`git show HEAD:<fichier>` ou lu à l'exécution (cf. la fixture `pos-normalizeOrangePhone.deleted.txt`,
+et le séparateur relu dans `index.html` par `planPriceLiterals.test.ts`).
+
+⚠️ **Un périmètre ÉCRIT À LA MAIN est faux dès qu'on ajoute quelque chose**, et l'assertion de
+couverture ne le dira pas : elle prouve qu'on a lu N fichiers, jamais que N était le bon N.
+`landingClaims.test.ts` avait tiré la leçon (périmètre DÉRIVÉ des routes d'`App.tsx`) ; le verrou
+tarifaire écrit trois heures plus tard listait à nouveau ses fichiers, et omettait `signup/` **et**
+tout le backend. Son remplaçant `planPriceLiterals.test.ts` **marche sur les trois cibles**
+(`apps/frontend/src`, `apps/backend/src`, `mobile/src|app`) sans aucune liste, et juge **un nombre
+PRÉSENTÉ COMME DE L'ARGENT** (collé à `F CFA|FCFA|CFA|XOF|XAF`, à `"price":`, ou à `monthly:`/
+`yearly:`) plutôt qu'une suite de chiffres — assez spécifique pour ignorer `setTimeout(8000)`
+(mesuré : 35 occurrences sur 425 fichiers de production). **Deux exemptions NOMMÉES** : `lib/plans.ts`
+(la source) et le JSON-LD d'`index.html` (aucun `<script type="ld+json">` ne peut importer un module
+— vérifié par ALIGNEMENT, pas exempté).
+
+**E-mails de cycle de vie** (`services/email.ts`) : trois d'entre eux annonçaient **24 900 F CFA/mois**,
+prix d'un plan `pro` disparu, pendant que le bouton du même e-mail menait à `/app/upgrade` qui affiche
+8 000 / 25 000. Une **cinquième** grille — de libellés — vivait deux fonctions plus bas
+(`plan === 'pro' ? 'Pro' : 'Enterprise'`), donc toute activation Starter annonçait
+« Votre plan **Enterprise** est activé ». ⚠️ **Un prix envoyé par écrit engage plus qu'un prix
+affiché.** Verrou `lifecycleEmails.test.ts` (27) : monte les vraies fonctions avec Resend mocké et
+lit les **octets envoyés** — prix ∈ catalogue, libellé résolu par `getPlan()`, `paymentNotice()` sur
+les quatre e-mails d'avant-paiement (absente de la confirmation, à raison), **aucune marque de
+paiement inactive** proposée, aucun délai de réponse chiffré. 4 sabotages vérifiés.
+
+**Politique MSISDN du POS** (`lib/posMsisdnPolicy.ts`) : la politique est **MESURÉE sur la route
+atteinte**, et le texte montré au caissier en est **DÉRIVÉ**. Orange passe par Campay ⇒ `cm-only`
+(le champ promettait « 8–15 chiffres » et acceptait un numéro sénégalais que le serveur refusait —
+**6 divergences sur 9 saisies**) ; MTN reste `international` (bac à sable suédois). ⚠️ Une réserve
+ou un refus écrits deux fois divergent : c'est le motif des corps `phoneInvalidBody(policy)`, et
+c'est pourquoi `/login` lit `pillar1_status` **de la vitrine** au lieu de recopier sa propre réserve.
+
 ### Injection CSV ⚠️ — convention EXÉCUTOIRE, pas affirmée (#173)
 
 **Tout producteur de CSV passe par `sanitizeCsv` de `lib/csv.ts`** — `apps/backend/src/lib/csv.ts` et `apps/frontend/src/lib/csv.ts`, **jumeaux à l'identique**, exercés sur les cas partagés `docs/shared-fixtures/csv-injection-cases.json` (modifier la règle d'un seul côté fait rougir l'autre — **vérifié dans les deux sens**). Le garde préfixe d'une apostrophe toute valeur commençant par `=`, `+`, `-` (trait d'union ASCII), `@`, tabulation ou retour chariot.

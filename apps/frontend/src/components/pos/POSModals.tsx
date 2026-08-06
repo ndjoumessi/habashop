@@ -7,6 +7,8 @@ import { salesApi } from '@/lib/api'
 import { printableAmount } from '@/utils/export'
 import { COUNTRY_CODES, CountryItem, type DiscountForm } from '@/components/pos/posShared'
 import POSCashField from '@/components/pos/POSCashField'
+import { msisdnFormatLabel } from '@/lib/posMsisdnPolicy'
+import type { Lang } from '@/i18n'
 import { useModalFocus } from '@/hooks/useModalFocus'
 
 interface POSModalsProps {
@@ -32,7 +34,9 @@ interface POSModalsProps {
   showCountryPicker: boolean; setShowCountryPicker: Dispatch<SetStateAction<boolean>>
   countrySearch: string; setCountrySearch: (v: string) => void
   waNumber: string; setWaNumber: Dispatch<SetStateAction<string>>
-  lang: string
+  // ⚠️ `Lang`, pas `string` : les libellés dérivés de la politique MSISDN sont indexés par
+  // langue. Un `string` laissait passer n'importe quelle valeur jusqu'à l'indexation.
+  lang: Lang
   confirmSale: () => void
   isSaving: boolean; waSending: boolean
   // Dérive de prix détectée AVANT l'encaissement (un tarif a bougé depuis l'ajout au panier).
@@ -809,7 +813,8 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 {(mtnStatus === 'idle' || mtnStatus === 'requesting') && (
                   <div>
                     <label htmlFor="mtn-phone" style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
-                      {lang === 'en' ? 'MTN number (e.g. 677000000)' : lang === 'es' ? 'Número MTN (ej: 677000000)' : lang === 'it' ? 'Numero MTN (es: 677000000)' : 'Numéro MTN (ex: 677000000)'}
+                      {lang === 'en' ? 'MTN number' : lang === 'es' ? 'Número MTN' : lang === 'it' ? 'Numero MTN' : 'Numéro MTN'}
+                      {` (${msisdnFormatLabel('mtn', lang)}, ex. 677 000 000)`}
                     </label>
                     <div style={{ display:'flex', gap:8 }}>
                       <input
@@ -908,7 +913,10 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 {(orangeStatus === 'idle' || orangeStatus === 'requesting') && (
                   <div>
                     <label htmlFor="orange-phone" style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
-                      {lang === 'en' ? 'Orange number (e.g. 699000000)' : lang === 'es' ? 'Número Orange (ej: 699000000)' : lang === 'it' ? 'Numero Orange (es: 699000000)' : 'Numéro Orange (ex: 699000000)'}
+                      {/* ⚠️ Le format annoncé est DÉRIVÉ de la politique de la route (cf. posMsisdnPolicy) :
+                          ce champ promettait « 8–15 chiffres » alors que Campay refuse tout hors Cameroun. */}
+                      {lang === 'en' ? 'Orange number' : lang === 'es' ? 'Número Orange' : lang === 'it' ? 'Numero Orange' : 'Numéro Orange'}
+                      {` (${msisdnFormatLabel('orange', lang)}, ex. 699 000 000)`}
                     </label>
                     <div style={{ display:'flex', gap:8 }}>
                       <input

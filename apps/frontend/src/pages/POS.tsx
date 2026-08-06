@@ -5,6 +5,7 @@ import { useAppStore, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCu
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi, paydunyaApi } from '@/lib/api'
 import { normalizeMsisdn } from '@/lib/msisdn'
+import { POS_MSISDN_POLICY, msisdnErrorText } from '@/lib/posMsisdnPolicy'
 import { resolveTierPrice, isPromotionActive } from '@/lib/pricing'
 import { barcodeMatches, matchesScannedCode } from '@/lib/barcode'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
@@ -534,26 +535,14 @@ export default function POS() {
     setOrangeReference(null)
   }
 
-  const normalizeOrangePhone = (raw: string): string | null => {
-    const s = raw.replace(/[\s\-\(\)]/g, '')
-    if (/^\+237[0-9]{9}$/.test(s)) return s.slice(1)
-    if (/^237[0-9]{9}$/.test(s))   return s
-    if (/^6[0-9]{8}$/.test(s))     return `237${s}`
-    const d = s.replace(/^\+/, '')
-    if (/^[0-9]{8,15}$/.test(d))   return d
-    return null
-  }
-
   const startOrangePayment = async () => {
     setOrangeError('')
-    const phone = normalizeOrangePhone(orangePhone)
+    // Orange Money passe par Campay, qui ne dessert que le Cameroun : la route applique
+    // 'cm-only'. Le champ annonçait « 8–15 chiffres » et acceptait un numéro sénégalais
+    // que le serveur refusait ensuite — 6 divergences mesurées sur 9 saisies.
+    const phone = normalizeMsisdn(orangePhone, POS_MSISDN_POLICY.orange)
     if (!phone) {
-      setOrangeError(
-        lang === 'en' ? 'Enter a valid number (8–15 digits, e.g. 699000000)' :
-        lang === 'es' ? 'Ingrese un número válido (8–15 dígitos, ej: 699000000)' :
-        lang === 'it' ? 'Inserire un numero valido (8–15 cifre, es: 699000000)' :
-        'Saisissez un numéro valide (8–15 chiffres, ex: 699000000)',
-      )
+      setOrangeError(msisdnErrorText('orange', lang))
       return
     }
     setOrangeStatus('requesting')
@@ -576,14 +565,9 @@ export default function POS() {
   const startMtnPayment = async () => {
     setMtnError('')
     // MTN : périmètre INTERNATIONAL — le bac à sable MTN utilise des numéros étrangers.
-    const phone = normalizeMsisdn(mtnPhone, 'international')
+    const phone = normalizeMsisdn(mtnPhone, POS_MSISDN_POLICY.mtn)
     if (!phone) {
-      setMtnError(
-        lang === 'en' ? 'Enter a valid number (8–15 digits, e.g. 677000000)' :
-        lang === 'es' ? 'Ingrese un número válido (8–15 dígitos, ej: 677000000)' :
-        lang === 'it' ? 'Inserire un numero valido (8–15 cifre, es: 677000000)' :
-        'Saisissez un numéro valide (8–15 chiffres, ex: 677000000)',
-      )
+      setMtnError(msisdnErrorText('mtn', lang))
       return
     }
     setMtnStatus('requesting')

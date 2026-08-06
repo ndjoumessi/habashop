@@ -4,6 +4,7 @@ import { useAuthStore, landingFor } from '@/stores/authStore'
 import LogoMark from '@/components/ui/LogoMark'
 import { useI18n } from '@/hooks/useI18n'
 import { copyrightYear } from '@/lib/publicYear'
+import { LANDING_TRANSLATIONS } from '@/components/landing/landingShared'
 import toast from 'react-hot-toast'
 import { Mail, Lock, Eye, EyeOff, AlertCircle, ArrowLeft, Store, WifiOff, RefreshCw } from 'lucide-react'
 
@@ -46,7 +47,17 @@ const DemoRoleLogin = DEMO_MODE ? lazy(() => import('@/components/login/DemoRole
 export default function LoginPage() {
   const navigate              = useNavigate()
   const { login, clearError } = useAuthStore()
-  const { i }                 = useI18n()
+  const { i, lang }           = useI18n()
+
+  /**
+   * ⚠️ RÉSERVE SUR LE PAIEMENT — DÉRIVÉE, PAS RECOPIÉE.
+   * Cette page citait « MTN MoMo · Orange Money · PayDunya — encaissement intégré à la
+   * caisse » sans la réserve que la vitrine porte depuis le 2026-08-06. Or aucun de ces
+   * canaux n'encaisse : Wave et Orange n'ont aucune clé, MTN/Campay/PayDunya tournent en
+   * bac à sable. La chaîne vient du pilier de la vitrine, pour qu'elle ne puisse pas
+   * diverger — c'est le motif des corps de refus Campay/MTN, alignés le même jour.
+   */
+  const paymentStatus = LANDING_TRANSLATIONS[lang].pillar1_status
 
   const emailRef = useRef<HTMLInputElement>(null)
 
@@ -162,9 +173,16 @@ export default function LoginPage() {
       <aside className="login-brand" style={{
         position: 'relative', overflow: 'hidden',
         background: 'linear-gradient(158deg,var(--bg) 0%,var(--bg2) 58%,var(--bg) 100%)',
-        borderRight: '1px solid var(--border)',
         display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        padding: 'clamp(32px,4vw,56px)',
+        // Le contenu se colle à la marge INTÉRIEURE (côté séparation), pas au bord de
+        // l'écran — motif de `SignupBranding`. MESURÉ sur /login à 2560 px : 1 204 px de
+        // vide entre la colonne et le formulaire, contre 56 px à gauche.
+        alignItems: 'flex-end',
+        padding: 'clamp(28px,3vw,48px) clamp(32px,4vw,72px)',
+        // ⚠️ Séparation LISIBLE : --bg et --bg2 sont deux gris sombres presque identiques ;
+        // un filet --border ne se voyait pas. Même correction que sur /signup.
+        borderRight: '1px solid var(--border2)',
+        boxShadow: '10px 0 40px -12px rgba(0,0,0,.6)',
       }}>
         <div aria-hidden="true" style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
@@ -176,10 +194,11 @@ export default function LoginPage() {
         <div aria-hidden="true" style={{ position: 'absolute', top: '-6%', left: '-4%', width: 340, height: 340, borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb,var(--p) 20%,transparent),transparent 70%)', filter: 'blur(56px)', pointerEvents: 'none' }}/>
         <div aria-hidden="true" style={{ position: 'absolute', bottom: '-4%', right: '2%', width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb,var(--acc) 13%,transparent),transparent 70%)', filter: 'blur(56px)', pointerEvents: 'none' }}/>
 
-        {/* Colonne bornée, alignée à GAUCHE (pas centrée) : son bord gauche coïncide avec le
-            padding de l'aside, donc avec le lien « Retour à l'accueil » posé en haut. */}
+        {/* Colonne bornée, poussée vers la CÉSURE par `alignItems:'flex-end'` de l'aside.
+            Elle était collée au bord gauche (`marginRight:'auto'`) : le lecteur devait
+            traverser 1 204 px de vide pour aller du texte au formulaire. */}
         <div style={{
-          position: 'relative', zIndex: 1, width: '100%', maxWidth: 460, marginRight: 'auto',
+          position: 'relative', zIndex: 1, width: '100%', maxWidth: 460,
           display: 'flex', flexDirection: 'column', gap: 26,
         }}>
 
@@ -313,12 +332,21 @@ export default function LoginPage() {
         {/* Capacités FACTUELLES — chaque ligne pointe un fichier du dépôt. */}
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
           {[
-            { b: 'MTN MoMo · Orange Money · PayDunya', t: i('encaissement intégré à la caisse','payments wired into the till','cobro integrado en la caja','incassi integrati in cassa') },
+            { b: 'MTN MoMo · Orange Money · PayDunya', t: i('encaissement intégré à la caisse','payments wired into the till','cobro integrado en la caja','incassi integrati in cassa'), status: paymentStatus },
             { b: 'XOF · XAF · EUR · USD · CAD · GBP',  t: i('français, anglais, espagnol, italien','French, English, Spanish, Italian','francés, inglés, español, italiano','francese, inglese, spagnolo, italiano') },
           ].map(c => (
-            <li key={c.b} style={{ fontSize: 12.5, color: 'var(--text2)', display: 'flex', alignItems: 'center', gap: 9 }}>
-              <span aria-hidden="true" style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--acc2)', flexShrink: 0 }}/>
-              <span><b style={{ color: 'var(--text)', fontWeight: 600 }}>{c.b}</b> — {c.t}</span>
+            <li key={c.b} style={{ fontSize: 12.5, color: 'var(--text2)', display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+              <span aria-hidden="true" style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--acc2)', flexShrink: 0, marginTop: 6 }}/>
+              <span>
+                <b style={{ color: 'var(--text)', fontWeight: 600 }}>{c.b}</b> — {c.t}
+                {/* ⚠️ La réserve n'est PAS recopiée : c'est la chaîne du pilier de la vitrine.
+                    Une réserve écrite deux fois diverge — motif des corps de refus Campay/MTN. */}
+                {c.status && (
+                  <span style={{ display: 'block', marginTop: 3, color: 'var(--warn)', fontSize: 11.5, lineHeight: 1.45 }}>
+                    {c.status}
+                  </span>
+                )}
+              </span>
             </li>
           ))}
         </ul>
