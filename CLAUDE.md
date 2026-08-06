@@ -121,7 +121,31 @@ Corrigé : secret absent → `::error::` **+ `exit 1`**. ⚠️ Le job ne tourne
 
 ⚠️ **Le motif ne se répète PAS ici — vérifié, pas supposé.** `DISCORD_WEBHOOK` est le **seul** `secrets.*` de `ci.yml` et `pages.yml`, et l'unique `exit 0` sur secret absent. Les deux `continue-on-error: true` (npm audit) sont d'une autre nature : **délibérés, nommés « non bloquant », et l'étape reste visiblement en échec**. Ne pas les « corriger » par analogie.
 
-**Règle générale : un garde qui ne peut pas échouer n'est pas un garde.** Tout `exit 0`, `|| true` ou `continue-on-error` sur l'ABSENCE d'une configuration doit soit échouer, soit émettre un `::error::`/`::warning::` — jamais réussir en silence. Et cela vaut d'abord pour les gardes qui surveillent les autres gardes : c'est là que le vert coûte le plus cher. ✅ **`mobile/` est COUVERT** depuis #163 par un job dédié `unit-tests-mobile` (`tsc` + la suite jest) : `mobile/` ayant son propre lockfile, il fait son `npm ci` **dans** `mobile/` (`cache-dependency-path: mobile/package-lock.json`), il n'est PAS servi par le `npm ci` racine. ⚠️ **AUCUN filtre de chemin, délibérément** : restreindre à `mobile/**` rouvrirait le trou qu'on ferme — une fixture partagée vit dans `docs/`, pas dans `mobile/`, et ne déclencherait donc pas le job. MESURÉ : install à froid **28 s**, suite **5 s**.
+**Règle générale : un garde qui ne peut pas échouer n'est pas un garde.** Tout `exit 0`, `|| true` ou `continue-on-error` sur l'ABSENCE d'une configuration doit soit échouer, soit émettre un `::error::`/`::warning::` — jamais réussir en silence. Et cela vaut d'abord pour les gardes qui surveillent les autres gardes : c'est là que le vert coûte le plus cher.
+
+### ⚠️ CI ROUGE ≠ CODE FAUTIF — lire l'exécution AVANT d'accuser le dépôt
+
+Le 2026-08-06, `main` a porté **5 runs rouges**. Deux causes **indépendantes** s'y superposaient, et les confondre a produit deux diagnostics faux d'affilée :
+
+| Runs | Cause | Signe qui la distingue |
+|---|---|---|
+| 2 (`da31e7a9`, `2f510eb4`) | **notre code** — cliquet lint franchi | les étapes ont TOURNÉ, `Lint` en `failure` |
+| 3 (`a5bfb27f`, `702bdf1a`, `9f967714`) | **panne GitHub Actions** | **0 étape exécutée**, annulation après **15 min pile** — aucun runner obtenu |
+
+**Le discriminant est `steps.length`, pas la conclusion.** Un job `cancelled` avec zéro étape n'a rien jugé : il n'a jamais démarré.
+
+```bash
+gh api repos/<o>/<r>/actions/runs/<id>/jobs \
+  -q '.jobs[] | "\(.name) \(.conclusion) étapes=\(.steps|length)"'
+gh api /repos/<o>/<r>/actions/workflows -q '.workflows[].state'   # active ≠ désactivé
+curl -s https://www.githubstatus.com/api/v2/summary.json | jq '.components[]|select(.name=="Actions")'
+```
+
+Incident réel : `Actions · critical`, ouvert **15h22 UTC** — soit **une minute avant** notre dernier run complet. Ses formulations décrivent nos trois symptômes mot pour mot : « *failing to start* » (runs créés, 0 étape), « *queued jobs may time out* » (les 15 min), « *delayed in starting* » (deux pushs sans aucun run créé, sur **aucune branche**).
+
+⚠️ **Ma piste « minutes Actions épuisées » était structurellement IMPOSSIBLE, et je l'ai proposée sans vérifier une ligne de `gh api /repos/…`** : ce dépôt est **PUBLIC**, donc les minutes runner standard y sont **gratuites et illimitées**. Une hypothèse qui envoie chercher dans la facturation coûte le temps de quelqu'un d'autre — **vérifier la visibilité du dépôt AVANT de suspecter un quota**. L'ordre correct est : (1) le run a-t-il exécuté des étapes ? (2) les workflows sont-ils `active` ? (3) githubstatus. La facturation vient en dernier, et seulement sur un dépôt privé.
+
+⚠️ **Pendant une panne Actions, repousser ne sert à rien** — aucun run n'est créé, et un `git push` de plus n'en déclenche pas. Attendre la résolution, puis **relancer les étapes manquées en local et RENDRE le résultat** (§ ci-dessous), plutôt que de supposer qu'elles passent. ✅ **`mobile/` est COUVERT** depuis #163 par un job dédié `unit-tests-mobile` (`tsc` + la suite jest) : `mobile/` ayant son propre lockfile, il fait son `npm ci` **dans** `mobile/` (`cache-dependency-path: mobile/package-lock.json`), il n'est PAS servi par le `npm ci` racine. ⚠️ **AUCUN filtre de chemin, délibérément** : restreindre à `mobile/**` rouvrirait le trou qu'on ferme — une fixture partagée vit dans `docs/`, pas dans `mobile/`, et ne déclencherait donc pas le job. MESURÉ : install à froid **28 s**, suite **5 s**.
 
 ### ⚠️ Vérification en PROD — trois formes autorisées, pas une de plus
 
@@ -1001,6 +1025,9 @@ c'est un texte daté, signé, que `git log` remonte en premier et qu'on relit sa
 |---|---|---|
 | 2026-08-06 (parc mobile) | « le parc store est en runtime 1.2.0 » | **aucun parc** — 1 seul `PushToken`, sur l'appareil de test |
 | `01f37fe5` | « cliquet faux d'un cran **depuis `e076b7aa`**, CI rouge **en continu** » | `e076b7aa` a été poussé avec `0a07d5b5` : leur run est **VERT**, le cliquet à 209 était **JUSTE**. La CI est passée au rouge à `da31e7a9`, **le soir même** — **14 runs** depuis `e076b7aa`, **5 rouges**, fenêtre de **6 h**, **5 commits** poussés dessus. Cause : `da31e7a9`, c'est-à-dire **le même auteur, 3 h plus tôt** |
+| `d73a62d4` | « si les **minutes** Actions sont épuisées, aucun correctif n'y changera rien » ; Billing → Actions renvoyé à Nelson | **impossible** : le dépôt est **PUBLIC**, minutes runner standard gratuites et illimitées. La cause réelle est une **panne Actions** (incident `critical` ouvert 15h22 UTC). Sur les 5 runs rouges, **3 n'ont exécuté aucune étape** — la moitié du « 6 h de rouge » n'était pas notre code |
+
+⚠️ **Les deux lignes ci-dessus ont été écrites à trois heures d'intervalle, par le même auteur, dans deux commits qui prétendaient chacun corriger le précédent.** C'est le vrai enseignement : ce n'est pas une erreur isolée, c'est un RÉFLEXE — désigner une cause plausible avant d'avoir mesuré, puis l'écrire dans un fichier qui fait autorité. Les deux fois, **une seule commande** aurait tranché (`gh run list` pour dater, `gh api /repos/…` pour la visibilité). Les deux fois, elle n'a été lancée qu'APRÈS que Nelson a demandé de mesurer.
 
 ⚠️ Le motif de `01f37fe5` n'est pas la synthèse qui compresse (ci-dessus) mais son symétrique :
 **attribuer à une dette HÉRITÉE ce qu'on vient soi-même d'introduire**. Il naît du même
