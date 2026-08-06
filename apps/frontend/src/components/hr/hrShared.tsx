@@ -237,7 +237,8 @@ export interface ApiEmployee {
   hiredAt: string
   endAt: string | null
   isActive: boolean
-  perf: number
+  /** `null` = pas encore évalué. ⚠️ Ne PAS retyper `number` : ce serait rouvrir la porte au repli `?? 3`. */
+  perf: number | null
   avatar: string
   color: string
   createdAt: string
@@ -263,7 +264,8 @@ export type EmployeeWrite = {
   isActive?: boolean
   color?: string
   hiredAt?: string
-  perf?: number
+  /** `null` = non évalué ; `undefined` = champ non transmis. Les deux sont distincts. */
+  perf?: number | null
   avatar?: string
 }
 
@@ -281,7 +283,8 @@ export interface Employee {
   active: boolean
   phone: string
   email: string
-  perf?: number
+  /** `null` = non évalué ; `undefined` = champ non transmis. Les deux sont distincts. */
+  perf?: number | null
   address?: string
   photoUrl?: string
 }

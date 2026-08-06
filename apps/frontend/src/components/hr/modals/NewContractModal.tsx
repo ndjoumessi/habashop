@@ -102,7 +102,8 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
               endAt: contractForm.type==='CDD'&&contractForm.contractEnd ? new Date(contractForm.contractEnd).toLocaleDateString('fr-FR') : undefined,
               avatar: contractForm.empId.trim().split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase(),
               color: COLORS[employees.length % COLORS.length],
-              active: true, phone:'', email:'', perf:3,
+              // ⚠️ `perf:3` notait 3 un employé créé depuis un contrat. `null` = non évalué.
+              active: true, phone:'', email:'', perf:null,
             }
             setEmployees(prev=>[...prev, newEmp])
             toast.success(lang === 'en' ? 'Contract created!' : lang === 'es' ? '¡Contrato creado!' : lang === 'it' ? 'Contratto creato!' : 'Contrat créé !')

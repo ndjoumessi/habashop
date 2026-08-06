@@ -38,7 +38,9 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
           color:    color    ?? '#6C47FF',
           avatar:   avatar   ?? name.split(' ').map((n: string) => n[0] ?? '').join('').slice(0, 2).toUpperCase(),
           hiredAt:  hiredAt ? new Date(hiredAt) : new Date(),
-          perf:     Number(perf ?? 3),
+          // ⚠️ `Number(perf ?? 3)` NOTAIT 3 tout nouvel employé — une évaluation que
+          // personne n'avait faite, indiscernable d'un vrai 3. `null` = pas encore évalué.
+          perf:     perf == null ? null : Number(perf),
         }
       })
       return emp

@@ -21,7 +21,11 @@ const EMPLOYEE_FIELDS = {
   isActive: z.boolean().optional(),
   color:    z.string().optional(),
   hiredAt:  z.any().optional(),
-  perf:     z.coerce.number().optional(),
+  // ⚠️ `.nullable()` AVANT toute coercition, et jamais `z.coerce.number()` seul :
+  // `Number(null)` vaut **0**, une note impossible (l'échelle est 1..5) qui se serait
+  // affichée « 0/5 » — un jugement là où il n'y a pas d'évaluation. `ZodNullable`
+  // intercepte `null` sans appeler le schéma interne.
+  perf:     z.coerce.number().nullable().optional(),
   avatar:   z.string().optional(),
 }
 export const EMPLOYEE_CREATE = z.object(EMPLOYEE_FIELDS).passthrough()

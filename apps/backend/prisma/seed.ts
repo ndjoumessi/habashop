@@ -87,7 +87,8 @@ async function main() {
     { name: 'CSS',      categories: 'Épicerie',   phone: '+221 33 000 55 66', rating: 4, leadTime: 2 },
     { name: 'UNILEVER', categories: 'Hygiène',    phone: '+221 33 000 77 88', rating: 4, leadTime: 2 },
     { name: 'NESTLÉ',   categories: 'Laitiers',   phone: '+221 33 000 99 00', rating: 5, leadTime: 5 },
-    { name: 'TOMAPOR',  categories: 'Conserves',  phone: '+221 33 111 22 33', rating: 3, leadTime: 2 },
+    // Idem côté fournisseurs : un non évalué dans le jeu de démonstration.
+    { name: 'TOMAPOR',  categories: 'Conserves',  phone: '+221 33 111 22 33', rating: null, leadTime: 2 },
   ]
 
   for (const s of suppliers) {
@@ -103,7 +104,10 @@ async function main() {
     { name: 'Kofi Diallo',      role: 'Magasinier',  dept: 'Stock',     type: 'CDI', salary: 420000, phone: '+221772223344', email: 'kofi@shop.com',    avatar: 'KD', color: '#F59E0B', perf: 4 },
     { name: 'Aminata Touré',    role: 'Comptable',   dept: 'Finance',   type: 'CDD', salary: 280000, phone: '+221773334455', email: 'aminata@shop.com', avatar: 'AT', color: '#10B981', perf: 4 },
     { name: 'Seydou Koné',      role: 'Caissier',    dept: 'Ventes',    type: 'CDI', salary: 310000, phone: '+221774445566', email: 'seydou@shop.com',  avatar: 'SK', color: '#EF4444', perf: 3 },
-    { name: 'Fatoumata Ndiaye', role: 'Responsable', dept: 'Direction', type: 'CDI', salary: 480000, phone: '+221775556677', email: 'fatou@shop.com',   avatar: 'FN', color: '#3B82F6', perf: 5 },
+    // ⚠️ `perf: null` DÉLIBÉRÉ — une démonstration doit montrer l'état « pas encore
+    // évalué », sinon personne ne le voit jamais et le cas vide n'est testé nulle part.
+    // Même raison que les `notes` remplies sur une partie seulement des clients.
+    { name: 'Fatoumata Ndiaye', role: 'Responsable', dept: 'Direction', type: 'CDI', salary: 480000, phone: '+221775556677', email: 'fatou@shop.com',   avatar: 'FN', color: '#3B82F6', perf: null },
   ]
 
   for (const e of employees) {

@@ -111,7 +111,9 @@ async function seedDemo() {
   const employees = [
     { id: 'demo2-emp-1', name: 'Kouadio N\'Guessan', role: 'Caissier',   dept: 'Ventes', type: 'CDI', salary: 130000, phone: '+225 07 00 00 10', avatar: 'KN', color: '#6C3FD6', perf: 4, hiredAt: new Date('2024-02-01') },
     { id: 'demo2-emp-2', name: 'Aya Konan',          role: 'Vendeuse',   dept: 'Ventes', type: 'CDI', salary: 110000, phone: '+225 07 00 00 11', avatar: 'AK', color: '#10B981', perf: 5, hiredAt: new Date('2024-04-15') },
-    { id: 'demo2-emp-3', name: 'Moussa Bamba',       role: 'Magasinier', dept: 'Stock',  type: 'CDD', salary: 120000, phone: '+225 07 00 00 12', avatar: 'MB', color: '#F59E0B', perf: 3, hiredAt: new Date('2024-07-01') },
+    // ⚠️ Dernier embauché → pas encore évalué. Aligné sur l'état appliqué en production
+    // le 2026-08-06 : un reseed ne doit pas réintroduire une note que personne n'a donnée.
+    { id: 'demo2-emp-3', name: 'Moussa Bamba',       role: 'Magasinier', dept: 'Stock',  type: 'CDD', salary: 120000, phone: '+225 07 00 00 12', avatar: 'MB', color: '#F59E0B', perf: null, hiredAt: new Date('2024-07-01') },
   ]
   for (const e of employees) {
     // update applique le salaire → re-run soigne une éventuelle dérive de valeur.
@@ -124,7 +126,7 @@ async function seedDemo() {
   const suppliers = [
     { id: 'demo2-sup-1', name: 'SARL Vivriers CI',     categories: 'Céréales, Vivriers', phone: '+225 27 20 00 01', email: 'contact@vivriers.ci', address: 'Zone Industrielle Yopougon', leadTime: 2, rating: 5, status: 'Actif' },
     { id: 'demo2-sup-2', name: 'Import Corps Gras',    categories: 'Huiles, Corps gras', phone: '+225 27 20 00 02', email: 'info@corpsgras.ci',  address: 'Port Autonome, Abidjan',   leadTime: 3, rating: 4, status: 'Actif' },
-    { id: 'demo2-sup-3', name: 'Distrib. Hygiène CI',  categories: 'Hygiène, Ménage',    phone: '+225 27 20 00 03',                                 address: 'Treichville, Abidjan',     leadTime: 2, rating: 4, status: 'Actif' },
+    { id: 'demo2-sup-3', name: 'Distrib. Hygiène CI',  categories: 'Hygiène, Ménage',    phone: '+225 27 20 00 03',                                 address: 'Treichville, Abidjan',     leadTime: 2, rating: null, status: 'Actif' },
   ]
   for (const s of suppliers) {
     await prisma.supplier.upsert({ where: { id: s.id }, update: {}, create: { tenantId, ...s } })

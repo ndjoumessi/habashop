@@ -48,7 +48,8 @@ export async function exportRoutes(app: FastifyInstance): Promise<void> {
         // exports du même objet annonçaient deux noms différents pour la même donnée.
         headers = exportHeaders('suppliers', lang)
         // `categories` est déjà la chaîne saisie par le commerçant (« Riz, Huile ») : telle quelle.
-        rows = data.map(s => [s.name, s.categories ?? '', s.phone ?? '', s.email ?? '', s.rating, s.leadTime])
+        // ⚠️ `s.rating` est nullable — un `null` brut sortirait « null » dans le CSV.
+        rows = data.map(s => [s.name, s.categories ?? '', s.phone ?? '', s.email ?? '', s.rating ?? '', s.leadTime])
         break
       }
       case 'sales': {

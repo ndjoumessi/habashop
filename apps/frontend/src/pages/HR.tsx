@@ -96,7 +96,9 @@ export default function HR() {
       phone:       emp.phone       ?? '',
       email:       emp.email       ?? '',
       isActive:    emp.active,
-      perf:        emp.perf        ?? 3,
+      // ⚠️ `?? 3` réintroduisait la valeur par défaut du schéma côté ÉCRAN : une note
+      // jamais saisie redevenait 3 après la migration qui l'a rendue nullable.
+      perf:        emp.perf        ?? null,
       color:       emp.color       ?? 'var(--p)',
       photoUrl:    emp.photoUrl    ?? '',
       address:     emp.address     ?? '',

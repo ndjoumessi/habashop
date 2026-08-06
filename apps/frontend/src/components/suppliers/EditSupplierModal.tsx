@@ -12,7 +12,9 @@ import type { Supplier, SupplierStatus } from './suppliersShared'
 
 interface EditSuppForm {
   name: string; categories: string; phone: string; email: string; address: string
-  contact: string; leadTime: number; rating: number; status: SupplierStatus; notes: string
+  // `null` = non évalué. ⚠️ Un formulaire qui démarre à 4 écrit une note que personne
+  // n'a donnée — c'est le `perf ?? 3` du serveur, déplacé dans l'interface.
+  contact: string; leadTime: number; rating: number | null; status: SupplierStatus; notes: string
 }
 
 interface Props {
@@ -84,9 +86,16 @@ export default function EditSupplierModal(props: Props) {
             <input className="input text-sm" type="number" value={editSuppForm.leadTime}
               onChange={e => setEditSuppForm(p => ({...p, leadTime:+e.target.value}))} />
           </ViewField>
-          <ViewField label={i('NOTE', 'RATING', 'VALORACIÓN', 'VALUTAZIONE')} value={`${editSuppForm.rating}/5`} editing={suppEditMode}>
-            <input className="input text-sm" type="number" min={1} max={5} value={editSuppForm.rating}
-              onChange={e => setEditSuppForm(p => ({...p, rating:+e.target.value}))} />
+          {/* ⚠️ Champ VIDE = non évalué, et l'affichage le dit au lieu d'écrire « null/5 ».
+              `+e.target.value` rendait 0 sur un champ vidé — une note impossible (1..5) qui
+              se serait affichée « 0/5 », soit un jugement là où il n'y a pas d'évaluation. */}
+          <ViewField label={i('NOTE', 'RATING', 'VALORACIÓN', 'VALUTAZIONE')}
+            value={editSuppForm.rating == null ? i('Non évalué', 'Not rated', 'Sin evaluar', 'Non valutato') : `${editSuppForm.rating}/5`}
+            editing={suppEditMode}>
+            <input className="input text-sm" type="number" min={1} max={5}
+              placeholder={i('Non évalué', 'Not rated', 'Sin evaluar', 'Non valutato')}
+              value={editSuppForm.rating ?? ''}
+              onChange={e => setEditSuppForm(p => ({...p, rating: e.target.value === '' ? null : +e.target.value}))} />
           </ViewField>
           <ViewField label="STATUT" value={statusLabel(editSuppForm.status, lang)} editing={suppEditMode}>
             <select className="input text-sm" value={editSuppForm.status}
@@ -112,7 +121,7 @@ export default function EditSupplierModal(props: Props) {
           ) : (
             <>
               <button className="btn btn-ghost" onClick={() => {
-                setEditSuppForm(() => ({ name:editSupplier.name, categories:editSupplier.categories.join(', '), phone:editSupplier.phone, email:editSupplier.email??'', address:editSupplier.address??'', contact:editSupplier.contact??'', leadTime:editSupplier.leadTime??3, rating:editSupplier.rating??3, status:editSupplier.status??'Actif', notes:editSupplier.notes??'' }))
+                setEditSuppForm(() => ({ name:editSupplier.name, categories:editSupplier.categories.join(', '), phone:editSupplier.phone, email:editSupplier.email??'', address:editSupplier.address??'', contact:editSupplier.contact??'', leadTime:editSupplier.leadTime??3, rating:editSupplier.rating??null, status:editSupplier.status??'Actif', notes:editSupplier.notes??'' }))
                 setSuppEditMode(false)
               }}>{t('btn_cancel')}</button>
               <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer' }} onClick={onSave}>{i('Enregistrer', 'Save', 'Guardar', 'Salva')}</button>

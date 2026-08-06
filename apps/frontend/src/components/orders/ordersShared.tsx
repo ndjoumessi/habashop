@@ -196,7 +196,7 @@ export interface OrderSupplierOption {
   specialty: string
   phone: string
   leadTime: number
-  rating: number
+  rating: number | null
   status: SupplierStatus
 }
 

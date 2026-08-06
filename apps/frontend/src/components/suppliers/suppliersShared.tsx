@@ -99,7 +99,8 @@ export interface ApiSupplier {
   email: string | null
   address: string | null
   leadTime: number
-  rating: number
+  /** `null` = pas encore évalué (cf. `lib/ratingSummary`). */
+  rating: number | null
   status: string
   notes: string | null
   createdAt: string
@@ -118,7 +119,7 @@ export interface SupplierWrite {
   email?: string | null
   address?: string | null
   leadTime?: number
-  rating?: number
+  rating?: number | null
   status?: string
   notes?: string | null
 }
@@ -137,7 +138,7 @@ export type SupplierCreate = SupplierWrite & { name: string }
 export interface Supplier {
   id: string; name: string; categories: string[]; phone: string
   email: string; address: string; contact: string
-  leadTime: number; rating: number; status: SupplierStatus
+  leadTime: number; rating: number | null; status: SupplierStatus
   notes: string
 }
 
@@ -179,7 +180,18 @@ export const statusLabel = (s: SupplierStatus, lang: string) => STATUS_LABELS[s]
 const SUPP_COLORS = ['#6C47FF','#00D084','#FF9500','#00B8FF','#FF3B5C','#F59E0B','#8B5CF6','#10B981']
 export function supplierColor(name: string) { return SUPP_COLORS[name.charCodeAt(0) % SUPP_COLORS.length] }
 
-export function StarRating({ rating }: { rating: number }) {
+/**
+ * ⚠️ `rating` NULLABLE, et l'absence se DIT — elle ne se dessine pas.
+ *
+ * Avant : `Number(rating) || 0` transformait `null` en 0, donc cinq étoiles éteintes, ce
+ * qui se lit « noté 0/5 » — la pire lecture possible : un jugement négatif là où il n'y a
+ * aucune évaluation. `aria-label` annonçait « 0/5 » aux lecteurs d'écran.
+ */
+export function StarRating({ rating, lang = 'fr' }: { rating: number | null; lang?: string }) {
+  if (rating == null) {
+    const txt = lang === 'en' ? 'Not rated' : lang === 'es' ? 'Sin evaluar' : lang === 'it' ? 'Non valutato' : 'Non évalué'
+    return <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', fontStyle:'italic' }}>{txt}</span>
+  }
   const r = Number(rating) || 0
   return (
     <div role="img" aria-label={`${r}/5`} style={{ display:'flex', alignItems:'center', gap:2 }}>
@@ -201,7 +213,7 @@ export function mapApiSupplier(s: ApiSupplier): Supplier {
     address: s.address || '',
     contact: '',
     leadTime: s.leadTime ?? 3,
-    rating: s.rating ?? 3,
+    rating: s.rating ?? null,
     status: (s.status || 'Actif') as SupplierStatus,
     notes: s.notes || '',
   }

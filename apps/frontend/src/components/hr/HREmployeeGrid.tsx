@@ -164,11 +164,20 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                       {/* Footer card */}
                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                         <span style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', color:'var(--text3)', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:5, padding:'2px 7px' }}>{contractLabel(emp.type, lang)}</span>
-                        <div style={{ display:'flex', gap:1, alignItems:'center' }}>
-                          {[1,2,3,4,5].map(s => (
-                            <Star key={s} size={9} style={{ color:'#F59E0B', opacity: s<=(emp.perf??3) ? 1 : .2, fill: s<=(emp.perf??3) ? '#F59E0B' : 'none' }} />
-                          ))}
-                        </div>
+                        {/* ⚠️ `emp.perf ?? 3` peignait TROIS étoiles pleines à un employé jamais
+                            évalué — la valeur par défaut du schéma repeinte à l'écran. Non évalué
+                            se DIT : une rangée d'étoiles éteintes se lirait « 0/5 », un jugement. */}
+                        {emp.perf == null ? (
+                          <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', fontStyle:'italic' }}>
+                            {lang === 'en' ? 'Not rated' : lang === 'es' ? 'Sin evaluar' : lang === 'it' ? 'Non valutato' : 'Non évalué'}
+                          </span>
+                        ) : (
+                          <div style={{ display:'flex', gap:1, alignItems:'center' }}>
+                            {[1,2,3,4,5].map(s => (
+                              <Star key={s} size={9} style={{ color:'#F59E0B', opacity: s<=emp.perf! ? 1 : .2, fill: s<=emp.perf! ? '#F59E0B' : 'none' }} />
+                            ))}
+                          </div>
+                        )}
                         <button aria-label={lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'} type="button"
                           onClick={e => { e.stopPropagation(); openEditModal(emp) }}
                           style={{

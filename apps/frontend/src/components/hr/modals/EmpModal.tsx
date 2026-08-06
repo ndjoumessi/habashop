@@ -33,7 +33,9 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
   const [email, setEmail]     = useState(emp?.email ?? '')
   const [color, setColor]     = useState(emp?.color ?? COLORS[0])
   const [active, setActive]   = useState(emp?.active ?? true)
-  const [perf, setPerf]       = useState(emp?.perf ?? 3)
+  // ⚠️ `?? 3` NOTAIT 3 tout nouvel employé, sans que personne n'ait cliqué une étoile.
+  // `null` = pas encore évalué, et l'enregistrement transmet cette absence telle quelle.
+  const [perf, setPerf]       = useState<number | null>(emp?.perf ?? null)
 
   const deptColor = DEPT_COLORS[dept] ?? color
   const boxRef = useModalFocus<HTMLDivElement>()
@@ -145,9 +147,15 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
             <label className="form-label">{T('Performance', 'Performance', 'Rendimiento', 'Prestazione')}</label>
             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
               {[1,2,3,4,5].map(star => (
-                <button key={star} onClick={() => setPerf(star)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--fs-display)', color: star <= perf ? '#F59E0B' : 'var(--border2)', padding: '2px 3px', lineHeight: 1 }}>★</button>
+                // Re-cliquer l'étoile courante revient à « non évalué » — sans ce retour,
+                // un clic accidentel serait définitif.
+                <button key={star} type="button" onClick={() => setPerf(p => p === star ? null : star)}
+                  aria-label={`${T('Note', 'Rating', 'Valoración', 'Valutazione')} ${star}/5`}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--fs-display)', color: perf != null && star <= perf ? '#F59E0B' : 'var(--border2)', padding: '2px 3px', lineHeight: 1 }}>★</button>
               ))}
-              <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginLeft: 6 }}>{perf}/5</span>
+              <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginLeft: 6, fontStyle: perf == null ? 'italic' : 'normal' }}>
+                {perf == null ? T('Non évalué', 'Not rated', 'Sin evaluar', 'Non valutato') : `${perf}/5`}
+              </span>
             </div>
           </div>
 

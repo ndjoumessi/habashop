@@ -443,7 +443,11 @@ model Supplier {
   email      String?
   address    String?
   leadTime   Int       @default(3)
-  rating     Int       @default(3)
+  /// NOTE FOURNISSEUR — nullable, SANS défaut : `null` = jamais évalué.
+  /// ⚠️ Ne PAS y remettre `@default(3)`. Un fournisseur non noté valait 3, indiscernable
+  /// d'un fournisseur réellement noté 3, et l'écran en faisait une moyenne — un chiffre
+  /// que personne n'avait saisi. Jumeau exact d'`Employee.perf`, traité en même temps.
+  rating     Int?
   status     String    @default("Actif")
   notes      String?
   createdAt  DateTime  @default(now())
@@ -510,7 +514,13 @@ model Employee {
   hiredAt   DateTime
   endAt     DateTime?
   isActive  Boolean   @default(true)
-  perf      Int       @default(3)
+  /// NOTE DE PERFORMANCE — nullable, SANS défaut : `null` = pas encore évalué.
+  /// ⚠️ Ne PAS y remettre `@default(3)`. Une boutique neuve affichait « Performance moy.
+  /// 3,0/5 » : la valeur par défaut se faisait passer pour une évaluation, et une fois
+  /// posée elle est IRRÉCUPÉRABLE — aucun signal (audit RH inexistant, `updatedAt` pollué
+  /// par les scripts en masse) ne distingue un 3 saisi d'un 3 par défaut.
+  /// Toute surface qui agrège `perf` DOIT écarter `null` ET porter l'effectif évalué.
+  perf      Int?
   avatar    String
   color     String    @default("#6C3FD6")
   createdAt DateTime  @default(now())

@@ -11,7 +11,9 @@ import type { SupplierStatus } from './suppliersShared'
 
 interface NewForm {
   name: string; categories: string; phone: string; email: string; address: string
-  contact: string; leadTime: number; rating: number; status: SupplierStatus; notes: string
+  // `null` = non évalué. ⚠️ Un formulaire qui démarre à 4 écrit une note que personne
+  // n'a donnée — c'est le `perf ?? 3` du serveur, déplacé dans l'interface.
+  contact: string; leadTime: number; rating: number | null; status: SupplierStatus; notes: string
 }
 
 interface Props {
@@ -56,11 +58,18 @@ export default function NewSupplierModal({ form, setForm, onClose, onCreate }: P
             <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>{i('Note (1-5)', 'Rating (1-5)', 'Valoración (1-5)', 'Valutazione (1-5)')}</label>
             <div style={{ display: 'flex', gap: 4, height: 38, alignItems: 'center' }}>
               {[1, 2, 3, 4, 5].map(s => (
-                <button aria-label={`${i('Note', 'Rating', 'Valoración', 'Valutazione')} ${s}/5`} key={s} type="button" onClick={() => setForm(p => ({ ...p, rating: s }))}
+                // ⚠️ Re-cliquer l'étoile courante REMET à « non évalué » : sans ce retour en
+                // arrière, une note posée par erreur serait indéfectible et l'état vide
+                // deviendrait inatteignable dès le premier clic.
+                <button aria-label={`${i('Note', 'Rating', 'Valoración', 'Valutazione')} ${s}/5`} key={s} type="button"
+                  onClick={() => setForm(p => ({ ...p, rating: p.rating === s ? null : s }))}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 1px', display: 'flex' }}>
-                  <Star size={20} style={{ color: s <= form.rating ? '#F0A500' : 'var(--border2)', fill: s <= form.rating ? '#F0A500' : 'none', transition: 'all .15s' }} />
+                  <Star size={20} style={{ color: form.rating != null && s <= form.rating ? '#F0A500' : 'var(--border2)', fill: form.rating != null && s <= form.rating ? '#F0A500' : 'none', transition: 'all .15s' }} />
                 </button>
               ))}
+              <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginLeft: 6, fontStyle: form.rating == null ? 'italic' : 'normal' }}>
+                {form.rating == null ? i('Non évalué', 'Not rated', 'Sin evaluar', 'Non valutato') : `${form.rating}/5`}
+              </span>
             </div>
           </div>
           <div className="col-span-2">

@@ -1,0 +1,4 @@
+24:        { icon: <TrendingUp size={18}/>, label: lang === 'en' ? 'Avg performance' : lang === 'es' ? 'Rendimiento medio' : lang === 'it' ? 'Performance media' : 'Performance moy.', value: `${((employees ?? []).filter(e => e.perf).reduce((s, e) => s + (e.perf ?? 0), 0) / ((employees ?? []).filter(e => e.perf).length || 1)).toFixed(1)}/5`, color: '#FFB020', sub: lang === 'en' ? 'Top team' : lang =
+  const avgRating = suppliers.length > 0
+    ? (suppliers.reduce((s, sup) => s + (Number(sup.rating) || 0), 0) / suppliers.length).toFixed(1)
+    : null

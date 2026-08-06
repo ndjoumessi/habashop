@@ -14,6 +14,7 @@ import {
   type Supplier, type SupplierStatus,
 } from '@/components/suppliers/suppliersShared'
 import SuppliersKpis from '@/components/suppliers/SuppliersKpis'
+import { summarizeRatings } from '@/lib/ratingSummary'
 import SuppliersTable from '@/components/suppliers/SuppliersTable'
 import SupplierViewModal from '@/components/suppliers/SupplierViewModal'
 import EditSupplierModal from '@/components/suppliers/EditSupplierModal'
@@ -59,14 +60,14 @@ export default function Suppliers() {
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({
     name: '', categories: '', phone: '', email: '', address: '',
-    contact: '', leadTime: 5, rating: 4, status: 'Actif' as SupplierStatus, notes: '',
+    contact: '', leadTime: 5, rating: null as number | null, status: 'Actif' as SupplierStatus, notes: '',
   })
   const [editSupplier,     setEditSupplier]     = useState<Supplier | null>(null)
   const [showEditSuppModal, setShowEditSuppModal] = useState(false)
   const [suppEditMode,     setSuppEditMode]     = useState(false)
   const [editSuppForm,     setEditSuppForm]     = useState({
     name: '', categories: '', phone: '', email: '', address: '',
-    contact: '', leadTime: 5, rating: 4, status: 'Actif' as SupplierStatus, notes: '',
+    contact: '', leadTime: 5, rating: null as number | null, status: 'Actif' as SupplierStatus, notes: '',
   })
 
   const allCats = Array.from(new Set(suppliers.flatMap(s => s.categories)))
@@ -81,9 +82,14 @@ export default function Suppliers() {
 
   const actifs    = suppliers.filter(s => s.status === 'Actif').length
   const enCours   = pendingOrders
-  const avgRating = suppliers.length > 0
-    ? (suppliers.reduce((s, sup) => s + (Number(sup.rating) || 0), 0) / suppliers.length).toFixed(1)
-    : null
+  /**
+   * ⚠️ JUMEAU EXACT de la performance RH (`HRStatsBar`) — même défaut, corrigé en même temps.
+   * Avant : `Number(sup.rating) || 0` sur TOUS les fournisseurs, divisé par `suppliers.length`.
+   * Un fournisseur non noté comptait donc pour **0** dans la moyenne (et non « pas compté »),
+   * ce qui tirait le chiffre vers le bas d'autant plus qu'il y avait de non-évalués. Le
+   * dénominateur était l'effectif TOTAL, pas l'effectif ÉVALUÉ.
+   */
+  const ratingSummary = summarizeRatings(suppliers.map(s => s.rating))
 
   const printSuppliersPDF = () => {
     const body = `
@@ -95,7 +101,8 @@ export default function Suppliers() {
           s.categories.join(', '),
           s.phone,
           s.leadTime + ' j',
-          '⭐'.repeat(s.rating) + ' (' + s.rating + '/5)',
+          // ⚠️ Note absente = « Non évalué », jamais 0 étoile ni « null/5 ».
+          s.rating == null ? t('rating_not_rated') : '⭐'.repeat(s.rating) + ' (' + s.rating + '/5)',
           s.status === 'Actif'
             ? `<span class="badge badge-green">${t('status_active')}</span>`
             : s.status === 'Pause'
@@ -110,7 +117,7 @@ export default function Suppliers() {
   const exportSuppliersCSV = () => {
     exportCSV('habashop_fournisseurs',
       [t('col_name'), t('col_category'), t('col_phone'), t('col_delivery'), t('col_rating'), t('col_status')],
-      suppliers.map(s => [s.name, s.categories.join(', '), s.phone, s.leadTime + 'j', s.rating + '/5', statusLabel(s.status, lang)])
+      suppliers.map(s => [s.name, s.categories.join(', '), s.phone, s.leadTime + 'j', s.rating == null ? t('rating_not_rated') : s.rating + '/5', statusLabel(s.status, lang)])
     )
     toast.success(i('Export CSV téléchargé !', 'CSV export downloaded!', 'Exportación CSV descargada!', 'Esportazione CSV scaricata!'))
   }
@@ -133,7 +140,7 @@ export default function Suppliers() {
     }
     setSuppliers(prev => [newS, ...prev])
     setShowCreate(false)
-    setForm({ name: '', categories: '', phone: '', email: '', address: '', contact: '', leadTime: 5, rating: 4, status: 'Actif', notes: '' })
+    setForm({ name: '', categories: '', phone: '', email: '', address: '', contact: '', leadTime: 5, rating: null, status: 'Actif', notes: '' })
     toast.success(i(`Fournisseur ${newS.name} ajouté !`, `Supplier ${newS.name} added!`, `Proveedor ${newS.name} añadido!`, `Fornitore ${newS.name} aggiunto!`))
     announce(i('Fournisseur ajouté', 'Supplier added', 'Proveedor añadido', 'Fornitore aggiunto'))
   }
@@ -161,7 +168,7 @@ export default function Suppliers() {
     setEditSuppForm({
       name: s.name, categories: s.categories.join(', '), phone: s.phone,
       email: s.email ?? '', address: s.address ?? '', contact: s.contact ?? '',
-      leadTime: s.leadTime ?? 3, rating: s.rating ?? 3,
+      leadTime: s.leadTime ?? 3, rating: s.rating ?? null,
       status: s.status ?? 'Actif', notes: s.notes ?? '',
     })
     setSuppEditMode(false)
@@ -199,7 +206,7 @@ export default function Suppliers() {
         </button>
       </div>
 
-      <SuppliersKpis total={suppliers.length} actifs={actifs} enCours={enCours} avgRating={avgRating} />
+      <SuppliersKpis total={suppliers.length} actifs={actifs} enCours={enCours} ratingSummary={ratingSummary} lang={lang} />
 
       <SuppliersTable
         loading={loading}

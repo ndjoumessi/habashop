@@ -586,6 +586,59 @@ rappel le plus utile de ce chantier : (a) `integrationsRendered` faisait échoue
 ignorait le mot de passe en clair, donc le cas « mot de passe faux » **ne produisait jamais
 d'échec**. Un test qui ne peut pas atteindre le chemin fautif ne garde rien.
 
+### La MOYENNE SANS SON DÉNOMINATEUR ⚠️ — `perf` / `rating`
+
+`Employee.perf` et `Supplier.rating` étaient `Int NOT NULL DEFAULT 3`. Un employé jamais
+évalué valait donc **3**, indiscernable d'un employé réellement noté 3 : une boutique neuve
+affichait « Performance moy. **3,0/5** », un chiffre que personne n'avait saisi. Colonnes
+**nullables sans défaut** depuis le 2026-08-06 (`20260806170000_perf_rating_nullable`).
+
+⚠️ **L'information perdue ne se récupère pas** — MESURÉ avant migration : aucun signal ne
+distingue un 3 saisi d'un 3 par défaut (l'audit RH n'existe pas, `routes/employees.ts`
+n'appelle jamais `writeAudit` ; `updatedAt` est pollué par des scripts en masse — 10/10
+lignes « modifiées », Δ de 45 s à 49 jours). La décision sur les lignes existantes est donc
+un **choix assumé**, pas une déduction. Elle a été rendue sûre par une preuve d'un autre
+ordre : les **20 valeurs** de production correspondaient EXACTEMENT à ce que les seeds
+écrivent (0 écart), et **aucun tenant client n'existe** — personne n'avait jamais saisi une
+note, et personne ne le pouvait.
+
+- **Source unique `lib/ratingSummary.ts`** : `summarizeRatings(valeurs) → { total, rated,
+  average }`. `average` est **`null`** quand personne n'est évalué — **jamais `0`**.
+  `ratingValue` rend « — » (ni « 0,0/5 », ni « —/5 » : un dénominateur suggère qu'une note
+  existe), `ratingCaption` porte l'**effectif évalué**.
+- ⚠️ **« 4,2/5 » sur 3 évalués parmi 5 n'est PAS « 4,2/5 »** : sans son effectif, le nombre
+  se lit comme portant sur toute l'équipe. Le dénominateur fait partie de la mesure.
+- ⚠️ **Le filtre `.filter(e => e.perf)` n'écartait QUE `0`** — valeur impossible, l'échelle
+  étant 1..5. Il avait l'air de filtrer et ne filtrait rien. Comparer à `null`.
+- ⚠️ **Côté fournisseurs, le NUMÉRATEUR était faux aussi** : `Number(sup.rating) || 0`
+  divisé par `suppliers.length` faisait compter un non-évalué **pour zéro**. MESURÉ : un
+  unique fournisseur noté 5 sur 3 affichait « **1,7** ».
+- ⚠️ **`z.coerce.number()` transforme `null` en 0.** Poser `.nullable()` AVANT toute
+  coercition (`ZodNullable` intercepte `null` sans appeler le schéma interne) — sinon une
+  note absente redevient un 0 qui s'affiche « 0/5 », soit un jugement.
+- ⚠️ **L'absence se DIT, elle ne se dessine pas.** Cinq étoiles éteintes se lisent « 0/5 ».
+  `StarRating(null)` et la grille RH rendent « Non évalué ». Re-cliquer l'étoile courante
+  **remet à non évalué** : sans ce retour, un clic accidentel serait définitif et l'état
+  vide inatteignable.
+- ⚠️ **Aucun formulaire ne démarre noté.** `perf ?? 3` (serveur), `useState(emp?.perf ?? 3)`,
+  `rating: 4` (création fournisseur), `perf:3` (nouveau contrat) écrivaient tous une note
+  que personne n'avait donnée. Le verrou interdit la FORME `(perf|rating) ?? <chiffre>`.
+- **Le seed laisse une partie NON évaluée** (`Fatoumata Ndiaye`, `TOMAPOR`, `Moussa Bamba`,
+  `Distrib. Hygiène CI`) — même raison que les `notes` remplies sur une partie des clients :
+  une démonstration qui note tout le monde ne montre jamais l'état vide.
+
+**Verrou** : `ratingDenominator.test.tsx` (19) — helper pur, **DOM rendu** des deux écrans,
+et deux règles structurelles à périmètre DÉRIVÉ. **3 sabotages vérifiés.**
+⚠️ **La règle a été EXÉCUTÉE CONTRE SON CAS DÉCLENCHEUR avant d'être gardée**, parce que le
+verrou précédent (« constante à une seule valeur ») ratait PayDunya, donc ratait le défaut
+qui l'avait motivé : *un critère qui laisse passer son propre déclencheur est faux, pas
+prudent*. Les deux formules d'origine sont rejouées depuis `fixtures/rating-average.avant.txt`
+(extrait par `git show`) et le test prouve qu'elles rendent « 0.0/5 » et « 1.7 ».
+⚠️ Le scanner a rougi au premier tir **sur ses propres commentaires** — ceux qui citent la
+forme interdite pour l'expliquer. `codeSeul()` retire commentaires avant de conclure : un
+scanner qui lit les commentaires interdit d'expliquer ce qu'il interdit. Il a par ailleurs
+trouvé un site que j'avais classé « correct » à la lecture (`NewOrderModal` `rating ?? 0`).
+
 ### Console Ops ⚠️ — les FIXTURES ne sont pas des clients
 
 `lib/fixtureTenant.ts` (backend) décide par **PROPRIÉTÉ** : `isPlatform` · `isDemo` ·

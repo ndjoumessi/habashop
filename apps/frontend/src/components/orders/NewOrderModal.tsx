@@ -337,7 +337,16 @@ export default function NewOrderModal({
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
-                        <div style={{ display:'flex', gap:2 }}>{Array.from({ length: supplier.rating ?? 0 }, (_, i) => <Star key={i} size={10} style={{ fill:'var(--acc)', color:'var(--acc)' }}/>)}</div>
+                        {/* ⚠️ `rating ?? 0` peignait ZÉRO étoile pour un fournisseur non
+                            évalué — indiscernable d'un fournisseur réellement noté 0, donc
+                            lu comme un mauvais fournisseur. L'absence se DIT. */}
+                        {supplier.rating == null ? (
+                          <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', fontStyle:'italic' }}>
+                            {i('Non évalué', 'Not rated', 'Sin evaluar', 'Non valutato')}
+                          </span>
+                        ) : (
+                          <div style={{ display:'flex', gap:2 }}>{Array.from({ length: supplier.rating }, (_, k) => <Star key={k} size={10} style={{ fill:'var(--acc)', color:'var(--acc)' }}/>)}</div>
+                        )}
                         {supplier.phone && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{supplier.phone}</div>}
                       </div>
                       {isSel && (

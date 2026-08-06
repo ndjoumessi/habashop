@@ -19,7 +19,11 @@ const SUPPLIER_FIELDS = {
   email:      z.string().nullish(),
   address:    z.string().nullish(),
   leadTime:   z.coerce.number().optional(),
-  rating:     z.coerce.number().optional(),
+  // ⚠️ `.nullable()` AVANT toute coercition, et jamais `z.coerce.number()` seul :
+  // `Number(null)` vaut **0**, une note impossible (l'échelle est 1..5) qui se serait
+  // affichée « 0/5 » — un jugement là où il n'y a pas d'évaluation. `ZodNullable`
+  // intercepte `null` sans appeler le schéma interne.
+  rating:     z.coerce.number().nullable().optional(),
   status:     z.string().optional(),
   notes:      z.string().nullish(),
 }

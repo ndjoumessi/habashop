@@ -257,19 +257,26 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               <div style={{ display:'flex', gap:4 }}>
                 {[1,2,3,4,5].map(s => (
                   <button aria-label={`${lang === 'en' ? 'Rating' : lang === 'es' ? 'Valoración' : lang === 'it' ? 'Valutazione' : 'Note'} ${s}/5`} key={s} type="button"
-                    onClick={() => setEditEmpForm((f:any) => ({ ...f, perf:s }))}
-                    style={{ background:'none', border:'none', cursor:'pointer', padding:'2px', color: s<=(editEmpForm.perf??3) ? 'var(--warn)' : 'var(--border)', display:'flex', alignItems:'center' }}>
-                    <Star size={22} fill={s<=(editEmpForm.perf??3) ? 'var(--warn)' : 'none'} />
+                    onClick={() => setEditEmpForm((f:any) => ({ ...f, perf: f.perf === s ? null : s }))}
+                    style={{ background:'none', border:'none', cursor:'pointer', padding:'2px', color: editEmpForm.perf != null && s<=editEmpForm.perf ? 'var(--warn)' : 'var(--border)', display:'flex', alignItems:'center' }}>
+                    <Star size={22} fill={editEmpForm.perf != null && s<=editEmpForm.perf ? 'var(--warn)' : 'none'} />
                   </button>
                 ))}
               </div>
             ) : (
+              // ⚠️ `?? 3` peignait trois étoiles pleines à un employé jamais évalué.
+              editEmpForm.perf == null ? (
+                <span style={{ fontSize:'var(--fs-label)', color:'var(--text3)', fontStyle:'italic' }}>
+                  {lang === 'en' ? 'Not rated yet' : lang === 'es' ? 'Sin evaluar' : lang === 'it' ? 'Non ancora valutato' : 'Pas encore évalué'}
+                </span>
+              ) : (
               <div style={{ display:'flex', gap:2, alignItems:'center' }}>
                 {[1,2,3,4,5].map(s => (
-                  <Star key={s} size={16} style={{ color: s<=(editEmpForm.perf??3) ? 'var(--warn)' : 'var(--border)' }} fill={s<=(editEmpForm.perf??3) ? 'var(--warn)' : 'none'} />
+                  <Star key={s} size={16} style={{ color: s<=editEmpForm.perf! ? 'var(--warn)' : 'var(--border)' }} fill={s<=editEmpForm.perf! ? 'var(--warn)' : 'none'} />
                 ))}
-                <span style={{ fontSize:'var(--fs-label)', color:'var(--text3)', marginLeft:6 }}>{editEmpForm.perf??3}/5</span>
+                <span style={{ fontSize:'var(--fs-label)', color:'var(--text3)', marginLeft:6 }}>{editEmpForm.perf}/5</span>
               </div>
+              )
             )}
           </div>
 
