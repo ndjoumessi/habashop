@@ -275,7 +275,8 @@ export interface Employee {
   role: string
   dept: string
   salary: number
-  type: 'CDI' | 'CDD'
+  /** Libellé de contrat — `string` OUVERT, pas `ContractType` : la colonne est libre en base. */
+  type: string
   hiredAt: string
   endAt?: string
   avatar: string
@@ -386,6 +387,31 @@ export const DEPT_LABELS: Record<string, Record<string, string>> = {
 }
 export const deptLabel = (d: string, lang: string): string =>
   DEPT_LABELS[d]?.[lang] ?? d
+
+/**
+ * LES TYPES DE CONTRAT — source unique. Les trois formulaires la consomment, aucun ne réénumère.
+ *
+ * ⚠️ MESURÉ le 2026-08-06 : le domaine était énuméré à TROIS endroits et les trois divergeaient —
+ * `EmpModal` n'offrait que CDI/CDD, `EditEmployeeModal` et `NewContractModal` les cinq. Un employé
+ * créé en « Stage » depuis un écran devenait inéditable depuis l'autre.
+ *
+ * ⚠️ `Employee.type` reste un `string`, PAS `ContractType` — et c'est délibéré. La colonne est un
+ * `String` libre en base (`schema.prisma`, aucun enum) et le zod backend est `z.string().optional()` :
+ * typer le domaine en union FERMÉE serait une nouvelle affirmation que la donnée ne garantit pas,
+ * exactement le motif qu'on vient de retirer. `ContractType` ne type que l'état de FORMULAIRE, où le
+ * `<select>` rend l'ensemble réellement clos. `contractLabel` retombe déjà sur la valeur brute pour
+ * l'inconnu — un type non prévu doit rester visible, jamais assimilé (cf. `Tenant.status`).
+ */
+export const CONTRACT_TYPES = ['CDI', 'CDD', 'Temps partiel', 'Stage', 'Freelance'] as const
+export type ContractType = typeof CONTRACT_TYPES[number]
+
+/**
+ * Seul « CDI » est à durée INDÉTERMINÉE. Les quatre autres peuvent porter une fin de contrat.
+ *
+ * ⚠️ NE PAS s'en servir pour décider qu'un contrat EXPIRE : c'est `endAt` qui le dit, pas le
+ * libellé. Un Stage ou un Freelance daté expire tout autant qu'un CDD — cf. `HRContractsTab`.
+ */
+export const isOpenEnded = (type: string): boolean => type === 'CDI'
 
 export const CONTRACT_LABELS: Record<string, Record<string, string>> = {
   'CDI':       { fr:'CDI',       en:'Permanent',  es:'Indefinido', it:'Indeterminato' },

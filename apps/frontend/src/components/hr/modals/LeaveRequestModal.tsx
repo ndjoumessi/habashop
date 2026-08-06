@@ -90,7 +90,7 @@ export default function LeaveRequestModal({ lang, employees, leaveForm, setLeave
               onSubmitLeave(leaveForm)
               setShowLeaveModal(false)
             }}>
-            ✅ {lang === 'en' ? 'Submit' : lang === 'es' ? 'Enviar' : lang === 'it' ? 'Invia' : 'Soumettre'}
+            {lang === 'en' ? 'Submit' : lang === 'es' ? 'Enviar' : lang === 'it' ? 'Invia' : 'Soumettre'}
           </button>
         </div>
       </div>

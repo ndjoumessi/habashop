@@ -1,7 +1,7 @@
 import { Search, LayoutGrid, AlignJustify, Star, Pencil } from 'lucide-react'
 import Pagination from '@/components/ui/Pagination'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
-import { type Employee, DEPT_COLORS, EmpAvatar, Stars, calcAnciennete, roleLabel, deptLabel, contractLabel } from '@/components/hr/hrShared'
+import { type Employee, DEPT_COLORS, EmpAvatar, Stars, calcAnciennete, roleLabel, deptLabel, contractLabel, isOpenEnded } from '@/components/hr/hrShared'
 
 interface HREmployeeGridProps {
   search: string; setSearch: (v: string) => void
@@ -248,8 +248,8 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                           <span style={{
                             display: 'inline-flex', alignItems: 'center',
                             fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)',
-                            background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
-                            color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
+                            background: isOpenEnded(emp.type) ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
+                            color: isOpenEnded(emp.type) ? 'var(--p2)' : 'var(--acc2)',
                           }}>{contractLabel(emp.type, lang)}</span>
                         </td>
                         <td style={{ fontSize: 'var(--fs-label)', color: 'var(--text2)' }}>{calcAnciennete(emp.hiredAt, lang)}</td>

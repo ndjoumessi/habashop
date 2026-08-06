@@ -1,8 +1,8 @@
-import { X } from 'lucide-react'
+import { FileText, X } from 'lucide-react'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
-import { type Employee, type ContractForm, COLORS, DEPT_COLORS, labelStyle, deptLabel, contractLabel } from '@/components/hr/hrShared'
+import { type Employee, type ContractForm, COLORS, CONTRACT_TYPES, DEPT_COLORS, labelStyle, deptLabel, contractLabel, isOpenEnded } from '@/components/hr/hrShared'
 // ⚠️ Taux et calcul importés de la SOURCE UNIQUE (`payrollShared`). Ces fichiers codaient
 // `0.08`/`0.05`/`0.87` en dur — le `0.87` étant le pire : un net magique qui devient
 // silencieusement faux dès qu'un taux change.
@@ -35,7 +35,7 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={lang === 'en' ? 'New contract' : lang === 'es' ? 'Nuevo contrato' : lang === 'it' ? 'Nuovo contratto' : 'Nouveau contrat'} onClick={e => e.target===e.currentTarget&&setShowNewContractModal(false)}>
       <div ref={boxRef} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, padding:28, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto', boxShadow:'var(--sh-xl)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:22 }}>
-          <h3 style={{ margin:0, fontSize:17, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>📄 {lang === 'en' ? 'New contract' : lang === 'es' ? 'Nuevo contrato' : lang === 'it' ? 'Nuovo contratto' : 'Nouveau contrat'}</h3>
+          <h3 style={{ margin:0, fontSize:17, fontWeight:'var(--fw-semibold)', color:'var(--text)', display:'flex', alignItems:'center', gap:8 }}><FileText size={16} />{lang === 'en' ? 'New contract' : lang === 'es' ? 'Nuevo contrato' : lang === 'it' ? 'Nuovo contratto' : 'Nouveau contrat'}</h3>
           <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={()=>setShowNewContractModal(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)' }}><X size={18}/></button>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
@@ -57,14 +57,14 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
             <div>
               <label style={labelStyle}>{lang === 'en' ? 'CONTRACT TYPE' : lang === 'es' ? 'TIPO CONTRATO' : lang === 'it' ? 'TIPO CONTRATTO' : 'TYPE CONTRAT'}</label>
               <select aria-label={lang === 'en' ? 'CONTRACT TYPE' : lang === 'es' ? 'TIPO CONTRATO' : lang === 'it' ? 'TIPO CONTRATTO' : 'TYPE CONTRAT'} className="input" value={contractForm.type} onChange={e=>setContractForm(f=>({...f,type:e.target.value}))}>
-                {['CDI','CDD','Temps partiel','Stage','Freelance'].map(t=><option key={t} value={t}>{contractLabel(t, lang)}</option>)}
+                {CONTRACT_TYPES.map(t=><option key={t} value={t}>{contractLabel(t, lang)}</option>)}
               </select>
             </div>
             <div>
               <label style={labelStyle}>{lang === 'en' ? 'START DATE' : lang === 'es' ? 'FECHA INICIO' : lang === 'it' ? 'DATA INIZIO' : 'DATE DÉBUT'}</label>
               <input aria-label={lang === 'en' ? 'START DATE' : lang === 'es' ? 'FECHA INICIO' : lang === 'it' ? 'DATA INIZIO' : 'DATE DÉBUT'} className="input" type="date" value={contractForm.hiredAt} onChange={e=>setContractForm(f=>({...f,hiredAt:e.target.value}))}/>
             </div>
-            {contractForm.type==='CDD'&&(
+            {!isOpenEnded(contractForm.type)&&(
               <div style={{ gridColumn:'1/-1' }}>
                 <label style={labelStyle}>{lang === 'en' ? 'CONTRACT END DATE' : lang === 'es' ? 'FECHA FIN CONTRATO' : lang === 'it' ? 'DATA FINE CONTRATTO' : 'DATE FIN CONTRAT'}</label>
                 <input aria-label={lang === 'en' ? 'CONTRACT END DATE' : lang === 'es' ? 'FECHA FIN CONTRATO' : lang === 'it' ? 'DATA FINE CONTRATTO' : 'DATE FIN CONTRAT'} className="input" type="date" value={contractForm.contractEnd} onChange={e=>setContractForm(f=>({...f,contractEnd:e.target.value}))}/>
@@ -97,9 +97,11 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
               role: contractForm.role,
               dept: contractForm.dept,
               salary: toXOF(contractForm.salary || 0),  // saisi en devise d'affichage → stocké en XOF (base)
-              type: contractForm.type as 'CDI'|'CDD',
+              type: contractForm.type,
               hiredAt: contractForm.hiredAt ? new Date(contractForm.hiredAt).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR'),
-              endAt: contractForm.type==='CDD'&&contractForm.contractEnd ? new Date(contractForm.contractEnd).toLocaleDateString('fr-FR') : undefined,
+              // ⚠️ La date de fin était JETÉE pour tout type autre que CDD — un Stage saisi avec sa
+              // date de fin était enregistré sans elle, en silence. La borne est `isOpenEnded`.
+              endAt: !isOpenEnded(contractForm.type)&&contractForm.contractEnd ? new Date(contractForm.contractEnd).toLocaleDateString('fr-FR') : undefined,
               avatar: contractForm.empId.trim().split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase(),
               color: COLORS[employees.length % COLORS.length],
               // ⚠️ `perf:3` notait 3 un employé créé depuis un contrat. `null` = non évalué.
@@ -108,7 +110,7 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
             setEmployees(prev=>[...prev, newEmp])
             toast.success(lang === 'en' ? 'Contract created!' : lang === 'es' ? '¡Contrato creado!' : lang === 'it' ? 'Contratto creato!' : 'Contrat créé !')
             setShowNewContractModal(false)
-          }}>✅ {lang === 'en' ? 'Create contract' : lang === 'es' ? 'Crear el contrato' : lang === 'it' ? 'Crea il contratto' : 'Créer le contrat'}</button>
+          }}>{lang === 'en' ? 'Create contract' : lang === 'es' ? 'Crear el contrato' : lang === 'it' ? 'Crea il contratto' : 'Créer le contrat'}</button>
         </div>
       </div>
     </div>

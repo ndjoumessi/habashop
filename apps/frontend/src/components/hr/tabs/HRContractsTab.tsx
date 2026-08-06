@@ -1,5 +1,5 @@
 import { FileText, Plus, AlertTriangle } from 'lucide-react'
-import { type Employee, DEPT_COLORS, EmpAvatar, displayDate, toInputDate, roleLabel, deptLabel, contractLabel } from '@/components/hr/hrShared'
+import { type Employee, DEPT_COLORS, EmpAvatar, displayDate, toInputDate, roleLabel, deptLabel, contractLabel, isOpenEnded } from '@/components/hr/hrShared'
 
 interface Props {
   employees: Employee[]
@@ -34,7 +34,12 @@ export default function HRContractsTab({ employees, fmt, lang, setSelectedContra
           <tbody>
             {(employees ?? []).map(emp => {
               const deptColor = DEPT_COLORS[emp.dept] ?? emp.color
-              const isExpiringSoon = emp.type === 'CDD' && emp.endAt
+              // ⚠️ L'ALERTE D'ÉCHÉANCE SE DÉRIVE DE `endAt`, PAS DU LIBELLÉ. Elle testait
+              // `emp.type === 'CDD'` : un Stage, un Freelance ou un Temps partiel portant une
+              // date de fin — les trois sont proposés à la saisie — n'était JAMAIS signalé
+              // comme arrivant à échéance, alors que sa date de fin s'affichait juste à côté.
+              // Une date de fin est un FAIT ; le libellé n'est qu'une classification.
+              const isExpiringSoon = emp.endAt
                 ? (() => {
                     const iso = toInputDate(emp.endAt)
                     if (!iso) return false
@@ -63,15 +68,15 @@ export default function HRContractsTab({ employees, fmt, lang, setSelectedContra
                     <span style={{
                       display: 'inline-flex', alignItems: 'center',
                       fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)',
-                      background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
-                      color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
+                      background: isOpenEnded(emp.type) ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
+                      color: isOpenEnded(emp.type) ? 'var(--p2)' : 'var(--acc2)',
                     }}>{contractLabel(emp.type, lang)}</span>
                   </td>
                   <td style={{ fontSize: 'var(--fs-label)', color: 'var(--text2)' }}>
                     {displayDate(emp.hiredAt, lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')}
                   </td>
                   <td style={{ fontSize: 'var(--fs-label)' }}>
-                    {emp.type === 'CDI' ? (
+                    {isOpenEnded(emp.type) ? (
                       <span style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)' }}>{lang === 'en' ? 'Permanent' : lang === 'es' ? 'Indefinido' : lang === 'it' ? 'Indeterminato' : 'Indéterminé'}</span>
                     ) : emp.endAt ? (
                       <span style={{ color: isExpiringSoon ? 'var(--danger)' : 'var(--text2)', fontWeight: isExpiringSoon ? 'var(--fw-semibold)' : 'var(--fw-regular)' }}>

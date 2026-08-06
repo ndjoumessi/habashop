@@ -143,6 +143,21 @@ export default function ValidatedInput({
 
   const [touched, setTouched] = useState(false)
   const [focused, setFocused] = useState(false)
+  /**
+   * L'utilisateur a-t-il RÉELLEMENT saisi quelque chose dans ce champ ?
+   *
+   * ⚠️ Sans cette distinction, « Ce champ est requis » s'affiche sur un champ que
+   * l'utilisateur n'a jamais choisi de visiter : les modales autofocusent leur premier
+   * champ, donc le simple fait de cliquer ailleurs déclenchait un `blur` sur un champ VIDE
+   * et le reproche partait. MESURÉ le 2026-08-06 sur `EmpModal` — au montage le message est
+   * absent, mais il apparaît dès qu'on quitte le champ autofocusé sans avoir rien tapé.
+   *
+   * C'est la suite directe du chantier « bouton désactivé » : on avait retiré l'EMPÊCHEMENT,
+   * pas le REPROCHE ANTICIPÉ. Un formulaire ne gronde pas avant qu'on ait agi.
+   *
+   * La soumission reste couverte : les modales valident et refusent avec un message explicite.
+   */
+  const [saisi, setSaisi] = useState(false)
   const error = touched ? validate(value, type, !!required, min, max, lang) : null
 
   const icons: Partial<Record<InputType, string>> = {
@@ -194,6 +209,7 @@ export default function ValidatedInput({
         break
     }
 
+    setSaisi(true)
     onChange(val)
   }, [type, onChange, decimals])
 
@@ -246,7 +262,10 @@ export default function ValidatedInput({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onFocus={() => setFocused(true)}
-          onBlur={() => { setFocused(false); setTouched(true) }}
+          // Le champ n'est « visité » que si l'utilisateur y a saisi quelque chose, ou s'il
+          // portait déjà une valeur. Quitter un champ vide qu'on n'a jamais rempli ne vaut pas
+          // une faute — c'est souvent l'application qui y avait mis le curseur.
+          onBlur={() => { setFocused(false); if (saisi || value.trim() !== '') setTouched(true) }}
           placeholder={placeholder}
           disabled={disabled}
           autoFocus={autoFocus}

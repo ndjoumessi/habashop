@@ -125,8 +125,12 @@ describe('HRModals — modale ajout employé (EmpModal)', () => {
     const p = makeProps({ showModal: true })
     render(<HRModals {...p} />)
     expect(screen.getByText(/Nouvel employé/)).toBeInTheDocument()
-    fireEvent.change(screen.getByLabelText('Nom complet *'), { target: { value: 'Jean Test' } })
-    fireEvent.change(screen.getByLabelText('Poste *'), { target: { value: 'Vendeur' } })
+    // ⚠️ Le libellé se cherche SANS le marqueur de champ requis : celui-ci est rendu par
+    // `ValidatedInput` lui-même. Ce test nommait « Nom complet * » en dur — il figeait donc le
+    // DOUBLE marqueur (« NOM COMPLET * * ») et serait devenu un frein à sa correction. Même
+    // motif que `signup.anchor` figeant « Sénégal » : un test qui nomme le défaut le protège.
+    fireEvent.change(screen.getByLabelText(/^Nom complet/), { target: { value: 'Jean Test' } })
+    fireEvent.change(screen.getByLabelText(/^Poste/), { target: { value: 'Vendeur' } })
     fireEvent.click(screen.getByText(/Ajouter/))
     expect(p.setEmployees).toHaveBeenCalled()
   })

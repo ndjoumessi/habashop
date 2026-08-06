@@ -62,7 +62,7 @@ export default function BonusForm({ emp, employees, lang, fmt, onConfirm, onClos
           if (!amountInput || +amountInput <= 0) return
           onConfirm(targetEmpId, amountXOF, type)
         }}>
-          ✅ {lang === 'en' ? 'Add bonus' : lang === 'es' ? 'Agregar prima' : lang === 'it' ? 'Aggiungi premio' : 'Ajouter la prime'}
+          {lang === 'en' ? 'Add bonus' : lang === 'es' ? 'Agregar prima' : lang === 'it' ? 'Aggiungi premio' : 'Ajouter la prime'}
         </button>
         <button className="btn" style={{ padding:'10px 14px' }} onClick={onClose}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
       </div>

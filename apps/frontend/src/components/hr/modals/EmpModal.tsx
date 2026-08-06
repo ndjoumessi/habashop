@@ -7,7 +7,7 @@ import ValidatedInput from '@/components/ui/ValidatedInput'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
-import { type Employee, COLORS, DEPT_COLORS, deptLabel } from '@/components/hr/hrShared'
+import { type Employee, COLORS, CONTRACT_TYPES, DEPT_COLORS, deptLabel, contractLabel, isOpenEnded, toInputDate } from '@/components/hr/hrShared'
 
 export default function EmpModal({ emp, onClose, onSave, onDelete }: {
   emp: Employee | null
@@ -26,9 +26,14 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
   const [role, setRole]       = useState(emp?.role ?? '')
   const [dept, setDept]       = useState(emp?.dept ?? '')
   const [salary, setSalary]   = useState(emp?.salary != null ? fromXOF(emp.salary).toFixed(decimals) : '')
-  const [type, setType]       = useState<'CDI'|'CDD'>(emp?.type ?? 'CDI')
-  const [hiredAt, setHiredAt] = useState(emp?.hiredAt ?? '')
-  const [endAt, setEndAt]     = useState(emp?.endAt ?? '')
+  // ⚠️ `string`, pas une union fermée : cet écran n'offrait QUE CDI/CDD quand les deux autres
+  // formulaires en offraient cinq — un employé en Stage devenait inéditable ici.
+  const [type, setType]       = useState<string>(emp?.type ?? 'CDI')
+  // ⚠️ Normalisées en ISO pour `<input type="date">`. Ces deux champs étaient du TEXTE LIBRE
+  // (placeholder « JJ/MM/AAAA ») quand les deux autres modales offrent un sélecteur natif :
+  // une date saisie « 5 janvier » y était acceptée puis rendue « — » à l'affichage.
+  const [hiredAt, setHiredAt] = useState(toInputDate(emp?.hiredAt) ?? '')
+  const [endAt, setEndAt]     = useState(toInputDate(emp?.endAt) ?? '')
   const [phone, setPhone]     = useState(emp?.phone ?? '')
   const [email, setEmail]     = useState(emp?.email ?? '')
   const [color, setColor]     = useState(emp?.color ?? COLORS[0])
@@ -66,7 +71,7 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
             )}
             <div>
               <h3 style={{ margin: 0, fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
-                {emp ? emp.name : `➕ ${T('Nouvel employé', 'New employee', 'Nuevo empleado', 'Nuovo dipendente')}`}
+                {emp ? emp.name : T('Nouvel employé', 'New employee', 'Nuevo empleado', 'Nuovo dipendente')}
               </h3>
               {emp && <div style={{ fontSize: 'var(--fs-caption)', color: deptColor, fontWeight: 'var(--fw-regular)', marginTop: 1 }}>{deptLabel(dept || emp.dept, lang)}</div>}
             </div>
@@ -85,9 +90,9 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
         <div style={{ overflowY: 'auto', flex: 1, padding: '20px 24px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <ResponsiveGrid min={160} gap={12}>
-            <ValidatedInput type="name" required autoFocus label={T('Nom complet *', 'Full name *', 'Nombre completo *', 'Nome completo *')}
+            <ValidatedInput type="name" required autoFocus label={T('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')}
               value={name} onChange={setName} placeholder={T('Prénom Nom', 'First Last', 'Nombre Apellido', 'Nome Cognome')} />
-            <ValidatedInput type="text" required label={T('Poste *', 'Position *', 'Puesto *', 'Posizione *')}
+            <ValidatedInput type="text" required label={T('Poste', 'Position', 'Puesto', 'Posizione')}
               value={role} onChange={setRole} placeholder={T('Ex: Caissière', 'Ex: Cashier', 'Ej: Cajera', 'Es: Cassiera')} />
           </ResponsiveGrid>
 
@@ -98,9 +103,8 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
             </div>
             <div>
               <label className="form-label">{T('Contrat', 'Contract', 'Contrato', 'Contratto')}</label>
-              <select aria-label={T('Contrat', 'Contract', 'Contrato', 'Contratto')} className="input" value={type} onChange={e => setType(e.target.value as 'CDI'|'CDD')} style={{ width: '100%' }}>
-                <option value="CDI">{T('CDI', 'Permanent', 'Indefinido', 'Indeterminato')}</option>
-                <option value="CDD">{T('CDD', 'Fixed-term', 'Temporal', 'Determinato')}</option>
+              <select aria-label={T('Contrat', 'Contract', 'Contrato', 'Contratto')} className="input" value={type} onChange={e => setType(e.target.value)} style={{ width: '100%' }}>
+                {CONTRACT_TYPES.map(t => <option key={t} value={t}>{contractLabel(t, lang)}</option>)}
               </select>
             </div>
           </ResponsiveGrid>
@@ -123,12 +127,12 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
           <ResponsiveGrid min={160} gap={12}>
             <div>
               <label className="form-label">{T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')}</label>
-              <input aria-label={T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')} className="input" value={hiredAt} onChange={e => setHiredAt(e.target.value)} placeholder={T('JJ/MM/AAAA', 'DD/MM/YYYY', 'DD/MM/AAAA', 'GG/MM/AAAA')} style={{ width: '100%', boxSizing: 'border-box' }} />
+              <input aria-label={T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')} className="input" type="date" value={hiredAt} onChange={e => setHiredAt(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
             </div>
-            {type === 'CDD' && (
+            {!isOpenEnded(type) && (
               <div>
                 <label className="form-label">{T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')}</label>
-                <input aria-label={T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')} className="input" value={endAt} onChange={e => setEndAt(e.target.value)} placeholder={T('JJ/MM/AAAA', 'DD/MM/YYYY', 'DD/MM/AAAA', 'GG/MM/AAAA')} style={{ width: '100%', boxSizing: 'border-box' }} />
+                <input aria-label={T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')} className="input" type="date" value={endAt} onChange={e => setEndAt(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
               </div>
             )}
           </ResponsiveGrid>
@@ -196,7 +200,7 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
               if (!name.trim() || !role.trim()) { toast.error(T('Nom et poste requis', 'Name and position required', 'Nombre y puesto requeridos', 'Nome e posizione richiesti')); return }
               onSave({ name, role, dept, salary: toXOF(Number(salary) || 0), type, hiredAt, endAt: endAt || undefined, phone, email, color, active, perf })
             }}>
-            {emp ? `💾 ${T('Enregistrer', 'Save', 'Guardar', 'Salva')}` : `➕ ${T('Ajouter', 'Add', 'Agregar', 'Aggiungi')}`}
+            {emp ? T('Enregistrer', 'Save', 'Guardar', 'Salva') : T('Ajouter', 'Add', 'Agregar', 'Aggiungi')}
           </button>
         </div>
       </div>

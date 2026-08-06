@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { DollarSign, FileText, Pencil, Star, Trash2, User, Eye, MapPin } from 'lucide-react'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import toast from 'react-hot-toast'
@@ -17,7 +18,7 @@ import { useConfig } from '@/stores/appStore'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
-import { type Employee, DEPT_COLORS, displayDate, roleLabel, deptLabel, contractLabel } from '@/components/hr/hrShared'
+import { type Employee, CONTRACT_TYPES, DEPT_COLORS, displayDate, roleLabel, deptLabel, contractLabel, isOpenEnded } from '@/components/hr/hrShared'
 
 interface Props {
   lang: string
@@ -37,6 +38,17 @@ interface Props {
 export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm, setEditEmpForm, empEditMode, setEmpEditMode, salaryInput, setSalaryInput, toXOF, currencySymbol, setEmployees, setShowEditEmpModal, openEditModal }: Props) {
   const { currency: curEmp } = useConfig()
   const boxRef = useModalFocus<HTMLDivElement>()
+
+  // Instantané du formulaire à l'ENTRÉE en mode édition — la seule référence permettant de
+  // dire si quelque chose a réellement changé. Pris ici plutôt qu'en amont : `HR.tsx` construit
+  // `editEmpForm`, cette modale est la seule à savoir quand l'édition commence.
+  const depart = useRef<string>('')
+  useEffect(() => {
+    if (empEditMode) depart.current = JSON.stringify({ f: editEmpForm, s: salaryInput })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empEditMode])
+  const modifie = empEditMode && depart.current !== '' &&
+    JSON.stringify({ f: editEmpForm, s: salaryInput }) !== depart.current
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true"
       aria-label={lang === 'en' ? 'Employee details' : lang === 'es' ? 'Detalle del empleado' : lang === 'it' ? 'Dettaglio dipendente' : "Détail de l'employé"}
@@ -99,10 +111,15 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                   {lang === 'en' ? 'View mode — click Edit to make changes' : lang === 'es' ? 'Modo visualización — haz clic en Editar para modificar' : lang === 'it' ? 'Modalità visualizzazione — clicca su Modifica per modificare' : 'Mode visualisation — cliquez sur Modifier pour éditer'}
                 </span>
               </div>
-            : <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', marginBottom:16, background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
-                <Pencil size={14} style={{ color:'var(--warn)', flexShrink:0 }} />
-                <span style={{ fontSize:'var(--fs-label)', color:'var(--warn)', fontWeight:'var(--fw-regular)' }}>
-                  {lang === 'en' ? 'Edit mode — unsaved changes' : lang === 'es' ? 'Modo edición — cambios no guardados' : lang === 'it' ? 'Modalità modifica — modifiche non salvate' : 'Mode édition — modifications non sauvegardées'}
+            : <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', marginBottom:16, background: modifie ? 'rgba(240,165,0,.08)' : 'rgba(108,71,255,.07)', border:`1px solid ${modifie ? 'rgba(240,165,0,.22)' : 'rgba(108,71,255,.20)'}`, borderRadius:10 }}>
+                <Pencil size={14} style={{ color: modifie ? 'var(--warn)' : 'var(--p2)', flexShrink:0 }} />
+                <span style={{ fontSize:'var(--fs-label)', color: modifie ? 'var(--warn)' : 'var(--p2)', fontWeight:'var(--fw-regular)' }}>
+                  {/* ⚠️ « modifications non sauvegardées » s'affichait DÈS L'OUVERTURE, avant
+                      toute modification — une affirmation fausse, et qui banalise l'avertissement
+                      pour le moment où il devient vrai. Deux états distincts, pas un. */}
+                  {modifie
+                    ? (lang === 'en' ? 'Edit mode — unsaved changes' : lang === 'es' ? 'Modo edición — cambios no guardados' : lang === 'it' ? 'Modalità modifica — modifiche non salvate' : 'Mode édition — modifications non sauvegardées')
+                    : (lang === 'en' ? 'Edit mode' : lang === 'es' ? 'Modo edición' : lang === 'it' ? 'Modalità modifica' : 'Mode édition')}
                 </span>
               </div>
           }
@@ -140,13 +157,13 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               </ViewField>
               <ViewField label={lang === 'en' ? 'CONTRACT TYPE' : lang === 'es' ? 'TIPO CONTRATO' : lang === 'it' ? 'TIPO CONTRATTO' : 'TYPE CONTRAT'} value={editEmpForm.type??'CDI'} editing={empEditMode}>
                 <select className="input" value={editEmpForm.type??'CDI'} onChange={e => setEditEmpForm((f:any) => ({ ...f, type:e.target.value }))}>
-                  {['CDI','CDD','Temps partiel','Stage','Freelance'].map(t => <option key={t} value={t}>{contractLabel(t, lang)}</option>)}
+                  {CONTRACT_TYPES.map(t => <option key={t} value={t}>{contractLabel(t, lang)}</option>)}
                 </select>
               </ViewField>
               <ViewField label={lang === 'en' ? 'HIRE DATE' : lang === 'es' ? 'FECHA CONTRATACIÓN' : lang === 'it' ? 'DATA ASSUNZIONE' : 'DATE EMBAUCHE'} value={displayDate(editEmpForm.hiredAt)} editing={empEditMode}>
                 <input className="input" type="date" value={editEmpForm.hiredAt ?? ''} onChange={e => setEditEmpForm((f:any) => ({ ...f, hiredAt:e.target.value }))} />
               </ViewField>
-              {editEmpForm.type === 'CDI' ? (
+              {isOpenEnded(editEmpForm.type ?? 'CDI') ? (
                 <ViewField label={lang === 'en' ? 'CONTRACT END' : lang === 'es' ? 'FIN DE CONTRATO' : lang === 'it' ? 'FINE CONTRATTO' : 'FIN DE CONTRAT'} value={lang === 'en' ? '∞ Permanent' : lang === 'es' ? '∞ Indefinido' : lang === 'it' ? '∞ Indeterminato' : '∞ Indéterminé'} color="var(--acc2)" editing={empEditMode}>
                   <div style={{ padding:'10px 14px', background:'rgba(0,208,132,.06)', border:'1px solid var(--c-green-bg)', borderRadius:12, fontSize:'var(--fs-sm)', color:'var(--acc2)', fontWeight:'var(--fw-regular)' }}>
                     ∞ {lang === 'en' ? 'Permanent contract' : lang === 'es' ? 'Contrato indefinido' : lang === 'it' ? 'Contratto a tempo indeterminato' : 'Contrat à durée indéterminée'}
@@ -334,8 +351,14 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                   setEmpEditMode(false)
                   setShowEditEmpModal(false)
                 }}
-                style={{ flex:1, padding:'12px', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'},${editEmpForm.color??'var(--p)'}BB)`, border:'none', borderRadius:12, color:'#fff', fontSize:'var(--fs-body)', fontWeight:'var(--fw-bold)', cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-                ✅ {lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : lang === 'it' ? 'Salva' : 'Sauvegarder'}
+                /* ⚠️ Le bouton primaire empruntait sa couleur à `editEmpForm.color` — la couleur
+                    d'AVATAR de l'employé. « Enregistrer » virait donc au vert, au violet ou à
+                    l'orange selon la personne affichée, alors que les deux autres modales rendent
+                    un `btn btn-primary`. Une action a une couleur, pas une personne : un attribut
+                    décoratif ne doit pas piloter la hiérarchie visuelle des actions. */
+                className="btn btn-primary"
+                style={{ flex:1 }}>
+                {lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : lang === 'it' ? 'Salva' : 'Sauvegarder'}
               </button>
               <button onClick={() => { openEditModal(selectedEmp!) }}
                 style={{ padding:'12px 16px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:'var(--fs-sm)', fontFamily:'var(--font)', fontWeight:'var(--fw-regular)' }}>

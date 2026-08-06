@@ -61,7 +61,7 @@ export default function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: 
           if (!newSalaryInput || +newSalaryInput <= 0) return
           onConfirm(newSalaryXOF, reason || '')
         }}>
-          ✅ {lang === 'en' ? 'Confirm' : lang === 'es' ? 'Confirmar' : lang === 'it' ? 'Conferma' : 'Confirmer'}
+          {lang === 'en' ? 'Confirm' : lang === 'es' ? 'Confirmar' : lang === 'it' ? 'Conferma' : 'Confirmer'}
         </button>
         <button className="btn" style={{ padding:'10px 14px' }} onClick={onClose}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
       </div>
