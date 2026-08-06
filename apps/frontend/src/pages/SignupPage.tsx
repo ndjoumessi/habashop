@@ -5,7 +5,7 @@ import type { Currency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n } from '@/hooks/useI18n'
 import toast from 'react-hot-toast'
-import { Check, Shield } from 'lucide-react'
+import { Check, Shield, AlertTriangle } from 'lucide-react'
 import { TX, FONT, D } from '@/components/signup/signupShared'
 import SignupBranding from '@/components/signup/SignupBranding'
 import SignupStep1 from '@/components/signup/SignupStep1'
@@ -82,7 +82,7 @@ export default function SignupPage() {
     <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--public-bg)', fontFamily: FONT }} className="public-scope su-grid">
 
       {/* ════ LEFT: Branding ════ */}
-      <SignupBranding tx={tx} i={i} navigate={navigate} />
+      <SignupBranding tx={tx} navigate={navigate} />
 
       {/* ════ RIGHT: Form ════ */}
       <div className="su-right" style={{
@@ -92,7 +92,29 @@ export default function SignupPage() {
         background: 'var(--public-bg2)',
         overflowY: 'auto',
       }}>
-        <div style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{ width: '100%', maxWidth: 400 }}>
+
+          {/* ⚠️ La mention du paiement non actif est AU-DESSUS du formulaire et rendue à
+              TOUTES les largeurs. Elle a d'abord été placée dans le panneau gauche — qui
+              est `display:none` sous 880 px : elle aurait disparu précisément sur mobile,
+              là où la majorité des commerçants ouvrent la page. Un visiteur arrivé par un
+              lien direct vers /signup ne voit jamais la page tarifs ; il l'apprendrait
+              sinon au 15ᵉ jour, après avoir saisi son stock et ses clients. */}
+          <div role="note" style={{
+            display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 20,
+            padding: '11px 14px', borderRadius: 10,
+            background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)',
+          }}>
+            <AlertTriangle size={15} strokeWidth={2.3} color="var(--acc3)" style={{ flexShrink: 0, marginTop: 1 }} />
+            <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.55, color: 'var(--text2)' }}>
+              {i(
+                "L'essai de 14 jours est complet et sans carte. Le paiement en ligne n'est pas encore actif : pour continuer ensuite, le règlement se convient directement avec notre équipe.",
+                'The 14-day trial is complete and needs no card. Online payment is not live yet: to continue afterwards, the payment is agreed directly with our team.',
+                'La prueba de 14 días es completa y sin tarjeta. El pago en línea aún no está activo: para continuar después, el pago se acuerda directamente con nuestro equipo.',
+                "La prova di 14 giorni è completa e senza carta. Il pagamento online non è ancora attivo: per continuare dopo, il pagamento si concorda direttamente con il nostro team.",
+              )}
+            </p>
+          </div>
 
           {/* Steps indicator */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 22 }}>
@@ -113,7 +135,7 @@ export default function SignupPage() {
                   }}>
                     {done ? <Check size={15} strokeWidth={3}/> : s}
                   </div>
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: active ? D.p3 : D.text4, transition: 'color .3s' }}>
+                  <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: active ? 'var(--p3)' : 'var(--text3)', transition: 'color .3s', whiteSpace: 'nowrap' }}>
                     {s === 1 ? tx.step1_label : tx.step2_label}
                   </span>
                   {s < 2 && (
@@ -130,9 +152,13 @@ export default function SignupPage() {
 
           {/* Header */}
           <div style={{ marginBottom: 24 }}>
-            <h2 className="gold-text" style={{
-              fontSize: 30, fontWeight: 900,
-              letterSpacing: '-.8px', marginBottom: 6, lineHeight: 1.1,
+            {/* ⚠️ UN SEUL ACCENT : `gold-text` opposait un titre ORANGE au violet du
+                panneau et du bouton — deux accents concurrents, exactement le défaut
+                corrigé sur la grille tarifaire. Le titre est neutre, l'accent reste au
+                violet (progression d'étape, CTA). */}
+            <h2 style={{
+              fontSize: 27, fontWeight: 800, color: 'var(--text)',
+              letterSpacing: '-.025em', marginBottom: 6, lineHeight: 1.12,
             }}>
               {step === 1 ? tx.step1_head : tx.step2_head}
             </h2>
@@ -162,28 +188,9 @@ export default function SignupPage() {
             />
           )}
 
-          {/* ⚠️ L'écart est annoncé ICI, pas au moment de payer.
-              Un prospect arrivé par un lien direct vers /signup ne voit jamais la page
-              tarifs : sans cette mention, il découvrirait au 15ᵉ jour — après avoir saisi
-              son stock et ses clients — qu'il ne peut pas régler en ligne. L'apprendre à
-              ce moment-là coûte la confiance ; l'apprendre maintenant ne coûte presque rien.
-              L'essai, lui, est RÉEL et complet : le CTA ne bouge pas. */}
-          <div role="note" style={{
-            marginTop: 18, padding: '11px 14px', borderRadius: 10,
-            background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)',
-            fontSize: 12.5, lineHeight: 1.55, color: D.text2,
-          }}>
-            <strong style={{ color: 'var(--acc3)' }}>
-              {i('À savoir', 'Good to know', 'A tener en cuenta', 'Da sapere')}
-            </strong>{' — '}
-            {i(
-              "l'essai de 14 jours est complet et ne demande aucune carte. Le paiement en ligne n'est pas encore actif : pour continuer au-delà, le règlement se convient directement avec notre équipe.",
-              'the 14-day trial is complete and needs no card. Online payment is not live yet: to continue beyond it, the payment is agreed directly with our team.',
-              'la prueba de 14 días es completa y no requiere tarjeta. El pago en línea aún no está activo: para continuar después, el pago se acuerda directamente con nuestro equipo.',
-              'la prova di 14 giorni è completa e non richiede carta. Il pagamento online non è ancora attivo: per continuare oltre, il pagamento si concorda direttamente con il nostro team.',
-            )}
-          </div>
-
+          {/* La mention sur le paiement non actif vit dans le panneau gauche
+              (SignupBranding) : elle y est visible AVANT la soumission, et sur mobile le
+              panneau se replie au-dessus du formulaire — donc elle reste lue en premier. */}
           {/* Footer link */}
           <div style={{ marginTop: 18, textAlign: 'center', fontSize: 'var(--fs-sm)', color: D.text3 }}>
             {step === 1 ? (
@@ -195,8 +202,11 @@ export default function SignupPage() {
                 </button>
               </>
             ) : (
+              /* ⚠️ « Inscription sécurisée SSL/TLS » retirée : tout site en a un, ça ne
+                 rassure personne et ça occupait une ligne. Même motif que les badges
+                 SSL/TLS déjà retirés de la page de connexion. */
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: D.text4 }}>
-                <Shield size={11}/>{tx.secure}
+                <Shield size={11}/>{i('Vos données restent les vôtres', 'Your data stays yours', 'Tus datos siguen siendo tuyos', 'I tuoi dati restano tuoi')}
               </span>
             )}
           </div>

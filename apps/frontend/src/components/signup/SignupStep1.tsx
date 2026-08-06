@@ -24,6 +24,27 @@ interface Props {
 }
 
 export default function SignupStep1({ tx, i, lang, form, setForm, currencyTouched, setCurrencyTouched, step1Valid, error, onNext }: Props) {
+  const [showMissing, setShowMissing] = useState(false)
+
+  /**
+   * Champs manquants, NOMMÉS. `step1Valid` reste la source de vérité de la validité —
+   * cette liste ne fait que l'expliquer, elle ne la remplace pas.
+   */
+  const missing: string[] = []
+  if (!form.shopName?.trim())  missing.push(tx.shopName)
+  if (!form.ownerName?.trim()) missing.push(tx.ownerName)
+
+  const handleNext = () => {
+    if (!step1Valid) {
+      setShowMissing(true)
+      // Focus au premier champ manquant : l'utilisateur n'a pas à le chercher.
+      const first = !form.shopName?.trim() ? 'su-shopName' : 'su-ownerName'
+      document.getElementById(first)?.focus()
+      return
+    }
+    setShowMissing(false)
+    onNext()
+  }
   const [showCountry, setShowCountry] = useState(false)
   const [countrySearch, setCountrySearch] = useState('')
   const countryRef = useRef<HTMLDivElement>(null)
@@ -51,6 +72,7 @@ export default function SignupStep1({ tx, i, lang, form, setForm, currencyTouche
                 <Label icon={Store}>{tx.shopName} *</Label>
                 <div style={{ position: 'relative' }}>
                   <input type="text" placeholder={tx.shop_ph}
+                    id="su-shopName"
                     value={form.shopName}
                     onChange={e => setForm(f => ({ ...f, shopName: e.target.value }))}
                     onFocus={focusOn} onBlur={focusOff}
@@ -67,6 +89,7 @@ export default function SignupStep1({ tx, i, lang, form, setForm, currencyTouche
               <div>
                 <Label icon={User}>{tx.ownerName} *</Label>
                 <input type="text" placeholder={tx.owner_ph}
+                  id="su-ownerName"
                   value={form.ownerName}
                   onChange={e => setForm(f => ({ ...f, ownerName: e.target.value }))}
                   onFocus={focusOn} onBlur={focusOff}
@@ -207,27 +230,44 @@ export default function SignupStep1({ tx, i, lang, form, setForm, currencyTouche
                 </div>
               )}
 
-              {/* Next */}
-              <button type="button" disabled={!step1Valid}
-                onClick={onNext}
+              {/* ⚠️ BOUTON TOUJOURS ACTIF, libellé invariable « Continuer ».
+                  L'ancien était désactivé et affichait « Remplissez tous les champs » en
+                  gris : un contrôle sans contraste, qui gronde avant toute erreur et ne dit
+                  pas CE QUI manque — au toucher, il n'affiche même pas d'infobulle.
+                  Au clic, on NOMME les champs manquants et on donne le focus au premier. */}
+              <button type="button"
+                onClick={handleNext}
+                aria-describedby={missing.length ? 'su-missing' : undefined}
                 style={{
                   width: '100%', padding: '14px', marginTop: 4,
-                  background: step1Valid ? `linear-gradient(135deg,${D.p},${D.p2})` : 'rgba(255,255,255,.05)',
-                  border: step1Valid ? 'none' : `1px solid ${D.border}`,
-                  borderRadius: 12,
-                  color: step1Valid ? '#fff' : D.text4,
+                  background: `linear-gradient(135deg,${D.p},${D.p2})`,
+                  border: 'none', borderRadius: 12, color: '#fff',
                   fontSize: 'var(--fs-body)', fontWeight: 800,
-                  cursor: step1Valid ? 'pointer' : 'not-allowed',
-                  fontFamily: FONT,
-                  boxShadow: step1Valid ? '0 6px 20px rgba(124,58,237,.4)' : 'none',
+                  cursor: 'pointer', fontFamily: FONT,
+                  boxShadow: '0 6px 20px rgba(124,58,237,.4)',
                   transition: 'all .2s',
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
-                onMouseEnter={e => { if (step1Valid) (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'none'}
               >
-                {step1Valid ? <>{tx.next_btn}<ArrowRight size={15}/></> : tx.next_disabled}
+                {tx.next_btn}<ArrowRight size={15}/>
               </button>
+
+              {/* Ce qui manque, annoncé — jamais un bouton muet. */}
+              <div id="su-missing" role="status" aria-live="polite">
+                {showMissing && missing.length > 0 && (
+                  <div style={{
+                    marginTop: 10, padding: '10px 13px', borderRadius: 10,
+                    background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)',
+                    color: 'var(--text2)', fontSize: 'var(--fs-sm)', lineHeight: 1.5,
+                    display: 'flex', alignItems: 'flex-start', gap: 8,
+                  }}>
+                    <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 2 }} color="var(--acc3)"/>
+                    <span>{tx.missing_prefix} <strong>{missing.join(', ')}</strong></span>
+                  </div>
+                )}
+              </div>
             </div>
   )
 }

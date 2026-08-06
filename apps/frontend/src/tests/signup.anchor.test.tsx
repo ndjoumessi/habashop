@@ -44,19 +44,41 @@ describe('SignupPage — test d’ancrage (comportement à figer avant/après d�
     expect(navigateMock).toHaveBeenCalledWith('/login')
   })
 
-  it('le bouton Continuer est désactivé tant que l’étape 1 est invalide, puis passe à l’étape 2', () => {
+  /**
+   * ⚠️ CE TEST FIGEAIT LE DÉFAUT. Il exigeait « Remplissez tous les champs » — c'est-à-dire
+   * un bouton DÉSACTIVÉ, gris, qui gronde avant toute erreur et ne dit pas CE QUI manque
+   * (et n'affiche aucune infobulle au toucher). Le bouton est désormais toujours actif,
+   * porte un libellé invariable, et NOMME les champs manquants au clic.
+   */
+  it('le bouton Continuer est TOUJOURS actif et nomme ce qui manque', () => {
     render(<SignupPage />)
-    expect(screen.getByText('Remplissez tous les champs')).toBeInTheDocument()
-    fillStep1()
-    const next = screen.getByText('Continuer')
+    const next = screen.getByRole('button', { name: /Continuer/ })
+    expect(next).toBeEnabled()
+    expect(screen.queryByText('Remplissez tous les champs')).not.toBeInTheDocument()
+
+    // Clic à vide : on reste à l'étape 1, et les champs manquants sont énoncés.
     fireEvent.click(next)
+    expect(screen.getByText(/Il manque encore/)).toBeInTheDocument()
+    expect(screen.queryByText('Sécurisez votre compte')).not.toBeInTheDocument()
+  })
+
+  it('étape 1 valide → le clic fait avancer', () => {
+    render(<SignupPage />)
+    fillStep1()
+    fireEvent.click(screen.getByRole('button', { name: /Continuer/ }))
     expect(screen.getByText('Sécurisez votre compte')).toBeInTheDocument()
+  })
+
+  it('la mention sur le paiement non actif est visible AVANT la soumission', () => {
+    // Un visiteur arrivé par un lien direct vers /signup ne voit jamais la page tarifs.
+    const { container } = render(<SignupPage />)
+    expect(container.textContent).toMatch(/paiement en ligne n'est pas encore actif|paiement en ligne n’est pas encore actif/)
   })
 
   it('étape 2 : indique la non-correspondance puis la correspondance des mots de passe', () => {
     render(<SignupPage />)
     fillStep1()
-    fireEvent.click(screen.getByText('Continuer'))
+    fireEvent.click(screen.getByRole('button', { name: /Continuer/ }))
     fireEvent.change(screen.getByPlaceholderText('8 caractères minimum'), { target: { value: 'secret12' } })
     fireEvent.change(screen.getByPlaceholderText('Répétez le mot de passe'), { target: { value: 'different' } })
     expect(screen.getByText('Les mots de passe ne correspondent pas')).toBeInTheDocument()
@@ -67,7 +89,7 @@ describe('SignupPage — test d’ancrage (comportement à figer avant/après d�
   it('soumission valide → register puis navigate(/onboarding)', async () => {
     render(<SignupPage />)
     fillStep1()
-    fireEvent.click(screen.getByText('Continuer'))
+    fireEvent.click(screen.getByRole('button', { name: /Continuer/ }))
     fireEvent.change(screen.getByPlaceholderText('8 caractères minimum'), { target: { value: 'secret12' } })
     fireEvent.change(screen.getByPlaceholderText('Répétez le mot de passe'), { target: { value: 'secret12' } })
     // accepter les CGU (la checkbox est masquée → cliquer le label)

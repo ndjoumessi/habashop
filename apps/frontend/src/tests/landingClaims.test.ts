@@ -35,28 +35,100 @@ import { join, resolve } from 'path'
 
 const SRC = resolve(__dirname, '..')
 const FRONTEND = resolve(SRC, '..')
+const APP = join(SRC, 'App.tsx')
 
-/** Répertoires dont TOUS les fichiers sont des surfaces publiques. */
-const PUBLIC_DIRS = [join(SRC, 'components', 'landing')]
+/**
+ * ⚠️ LE PÉRIMÈTRE EST DÉRIVÉ, PLUS ÉCRIT À LA MAIN — et c'est la leçon la plus chère de
+ * ce chantier.
+ *
+ * La version précédente scannait `components/landing/` plus cinq fichiers listés en dur.
+ * `components/signup/` n'y a JAMAIS figuré. Résultat : le verrou était vert, ses huit
+ * sabotages rougissaient correctement, son assertion de couverture affirmait lire 14
+ * fichiers — et un QUATRIÈME témoignage fabriqué (« Aminata Koné · Superette Dakar »)
+ * était en ligne sur /signup, avec « 500+ boutiques » et « 12 pays ».
+ *
+ *   Une assertion de couverture prouve qu'on a lu N fichiers.
+ *   Elle ne prouve pas que N était le bon N.
+ *   Un périmètre faux passe tous les contrôles de PROFONDEUR.
+ *
+ * Le corpus se calcule donc en deux temps :
+ *   1. les routes PUBLIQUES sont extraites d'`App.tsx` — celles de premier niveau dont
+ *      l'élément ne passe par aucun composant de garde ;
+ *   2. on suit les imports TRANSITIVEMENT depuis chaque composant de route.
+ * Une page publique ajoutée demain entre d'elle-même dans le corpus. C'est la seule
+ * construction qui aurait attrapé le défaut ci-dessus.
+ */
 
-/** Surfaces publiques isolées (les autres pages sont derrière l'authentification). */
-const PUBLIC_FILES = [
-  join(SRC, 'pages', 'LandingPage.tsx'),
-  join(SRC, 'pages', 'LoginPage.tsx'),
-  join(SRC, 'pages', 'SignupPage.tsx'),
-  join(SRC, 'pages', 'Pricing.tsx'),
-  join(SRC, 'pages', 'Privacy.tsx'),
-  join(FRONTEND, 'index.html'),
-]
+/** Composants qui rendent une route NON publique. */
+const GUARDS = /Protected|AdminOnly|RoleRoute|PlatformAdmin/
 
-function walk(dir: string): string[] {
-  const out: string[] = []
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry)
-    if (statSync(full).isDirectory()) out.push(...walk(full))
-    else if (/\.(tsx?|html)$/.test(entry)) out.push(full)
+export interface PublicRoute { path: string; component: string }
+
+/**
+ * Routes publiques déclarées par `App.tsx`.
+ * On ne lit que les `<Route …/>` de PREMIER niveau : tout ce qui est imbriqué sous
+ * `/app` est derrière `ProtectedRoute` par construction.
+ */
+export function publicRoutes(source = readFileSync(APP, 'utf8')): PublicRoute[] {
+  const block = source.slice(source.indexOf('<Routes>'), source.indexOf('</Routes>'))
+  const out: PublicRoute[] = []
+  for (const line of block.split('\n')) {
+    // Premier niveau = 6 espaces d'indentation, et balise auto-fermante sur la ligne.
+    const m = /^ {6}<Route\s+path="([^"]+)"\s+element=\{<(\w+)\s*\/>\}\s*\/>/.exec(line)
+    if (!m) continue
+    if (GUARDS.test(m[2])) continue
+    out.push({ path: m[1], component: m[2] })
   }
   return out
+}
+
+/** Fichier source d'un composant de route (import statique OU `lazy(() => import(…))`). */
+export function componentFile(name: string, source = readFileSync(APP, 'utf8')): string | null {
+  const lazyRe = new RegExp(`const\\s+${name}\\s*=\\s*lazy\\(\\s*\\(\\)\\s*=>\\s*import\\(['"]([^'"]+)['"]\\)`)
+  const staticRe = new RegExp(`import\\s+${name}\\s+from\\s+['"]([^'"]+)['"]`)
+  const spec = (lazyRe.exec(source) ?? staticRe.exec(source))?.[1]
+  return spec ? resolveSpec(spec, APP) : null
+}
+
+/** Résout un spécifieur d'import vers un fichier de `src/`, ou `null` (paquet externe). */
+function resolveSpec(spec: string, fromFile: string): string | null {
+  let base: string
+  if (spec.startsWith('@/')) base = join(SRC, spec.slice(2))
+  else if (spec.startsWith('.')) base = resolve(fromFile, '..', spec)
+  else return null                                  // dépendance npm : hors périmètre
+  for (const cand of [base, `${base}.tsx`, `${base}.ts`, join(base, 'index.tsx'), join(base, 'index.ts')]) {
+    if (existsSync(cand) && statSync(cand).isFile()) return cand
+  }
+  return null
+}
+
+/** Tous les imports résolus d'un fichier (statiques et dynamiques). */
+function importsOf(file: string): string[] {
+  const src = readFileSync(file, 'utf8')
+  const specs = [
+    ...[...src.matchAll(/from\s+['"]([^'"]+)['"]/g)].map(m => m[1]),
+    ...[...src.matchAll(/import\(\s*['"]([^'"]+)['"]\s*\)/g)].map(m => m[1]),
+  ]
+  return specs.map(sp => resolveSpec(sp, file)).filter((f): f is string => f !== null)
+}
+
+/** Fermeture transitive des imports depuis les composants de route publics. */
+export function publicCorpusFiles(): { files: string[]; byRoute: Record<string, string | null> } {
+  const byRoute: Record<string, string | null> = {}
+  const seen = new Set<string>()
+  const queue: string[] = []
+  for (const r of publicRoutes()) {
+    const f = componentFile(r.component)
+    byRoute[r.path] = f
+    if (f && !seen.has(f)) { seen.add(f); queue.push(f) }
+  }
+  while (queue.length) {
+    const f = queue.shift()!
+    for (const dep of importsOf(f)) {
+      if (!seen.has(dep)) { seen.add(dep); queue.push(dep) }
+    }
+  }
+  return { files: [...seen], byRoute }
 }
 
 /**
@@ -174,13 +246,12 @@ export const FORBIDDEN: Rule[] = [
   },
 ]
 
-function collectFiles(): string[] {
-  const files = [...PUBLIC_FILES.filter(f => existsSync(f))]
-  for (const dir of PUBLIC_DIRS) files.push(...walk(dir))
-  return files
-}
-
-const FILES = collectFiles()
+/**
+ * `index.html` est ajouté explicitement : il porte les métadonnées et le JSON-LD, et
+ * aucun import ne mène à lui. C'est la SEULE entrée écrite à la main, et elle est nommée.
+ */
+const { files: GRAPH_FILES, byRoute: ROUTE_FILE } = publicCorpusFiles()
+const FILES = [...GRAPH_FILES, join(FRONTEND, 'index.html')].filter(existsSync)
 const CORPUS = FILES.map(f => ({ file: f, copy: stripNonCopy(readFileSync(f, 'utf8')) }))
 
 /** Toutes les violations, fichier par fichier, avec la ligne fautive. */
@@ -195,17 +266,52 @@ function violations(rule: Rule): string[] {
 }
 
 describe('couverture du scan (sans ça, un walk cassé passerait au vert)', () => {
-  it('lit les surfaces publiques attendues', () => {
-    // 10 composants de landing + 5 pages + index.html au moment de l'écriture.
-    expect(FILES.length).toBeGreaterThanOrEqual(14)
-    for (const f of PUBLIC_FILES) expect(FILES).toContain(f)
+  it('le périmètre est DÉRIVÉ des routes publiques d’App.tsx', () => {
+    const routes = publicRoutes()
+    // Le parseur voit-il quelque chose de plausible ? (sinon il « couvrirait » zéro route)
+    expect(routes.length, 'aucune route publique détectée : le parseur est cassé').toBeGreaterThanOrEqual(6)
+    const paths = routes.map(r => r.path)
+    expect(paths).toContain('/')
+    expect(paths).toContain('/signup')
+    // …et exclut-il bien le protégé ? Une liste qui contiendrait /app ne prouverait rien.
+    expect(paths).not.toContain('/app')
+    expect(paths).not.toContain('/admin')
+    expect(paths).not.toContain('/select-shop')
+  })
+
+  /**
+   * ⚠️ L'ASSERTION QUI AURAIT ATTRAPÉ LE DÉFAUT.
+   * `/signup` était déclaré public dans App.tsx et aucun de ses fichiers n'entrait dans
+   * le corpus : le verrou lisait 14 fichiers, tous les mauvais pour cette page.
+   */
+  it('CHAQUE route publique contribue au corpus', () => {
+    for (const [path, file] of Object.entries(ROUTE_FILE)) {
+      expect(file, `route publique ${path} : composant introuvable dans App.tsx`).not.toBeNull()
+      expect(FILES, `route publique ${path} : aucun fichier dans le corpus`).toContain(file)
+    }
+  })
+
+  it('le graphe descend dans les COMPOSANTS des pages, pas seulement les pages', () => {
+    // Contre-preuve de profondeur : ces fichiers ne sont atteignables que transitivement.
+    for (const rel of [
+      'components/landing/LandingPricing.tsx',
+      'components/signup/SignupBranding.tsx',   // ← absent du périmètre écrit à la main
+      'lib/plans.ts',
+    ]) {
+      expect(FILES, `${rel} hors corpus`).toContain(join(SRC, rel))
+    }
+    expect(FILES.length).toBeGreaterThanOrEqual(20)
   })
 
   it('lit du texte, pas des fichiers vides', () => {
     const chars = CORPUS.reduce((n, c) => n + c.copy.length, 0)
     expect(chars).toBeGreaterThan(40_000)
+    // ⚠️ Seuil par fichier ABAISSÉ à 40 : le corpus dérivé contient désormais de petits
+    // modules légitimes (`lib/publicYear.ts` fait 196 caractères une fois les commentaires
+    // retirés). Ce que l'assertion garde, c'est qu'aucun fichier ne soit VIDE — un lecteur
+    // cassé rendrait des chaînes nulles ; le volume global (40 000) porte le reste.
     for (const { file, copy } of CORPUS) {
-      expect(copy.length, `fichier vide après nettoyage : ${file}`).toBeGreaterThan(200)
+      expect(copy.length, `fichier vide après nettoyage : ${file}`).toBeGreaterThan(40)
     }
   })
 

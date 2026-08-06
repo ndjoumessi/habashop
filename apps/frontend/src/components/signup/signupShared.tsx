@@ -12,17 +12,17 @@ export type ST = {
   password: string; confirm: string
   shop_ph: string; owner_ph: string; email_ph: string
   password_ph: string; confirm_ph: string
-  next_btn: string; next_disabled: string
+  next_btn: string; missing_prefix: string
   back: string; submit: string; loading: string
   terms_pre: string; terms_a: string; terms_and: string; terms_b: string
   pwd_weak: string; pwd_fair: string; pwd_good: string; pwd_excellent: string
   pwd_match: string; pwd_nomatch: string
-  login_q: string; login_link: string; secure: string
+  login_q: string; login_link: string
   search_country: string; no_country: string
   errRequired: string; errPassword: string; errPasswordLen: string; errTerms: string
-  adv_free: string; adv_secure: string; adv_whatsapp: string; adv_countries: string
-  stat_shops: string; stat_countries: string
-  testimonial: string
+  after_title: string; after_body: string
+  trial_title: string; trial_body: string
+  pay_title:   string; pay_body: string
 }
 
 export const TX: Record<Lang, ST> = {
@@ -40,25 +40,24 @@ export const TX: Record<Lang, ST> = {
     shop_ph: 'Ex: Boutique Aminata', owner_ph: 'Ex: Aminata Koné',
     email_ph: 'vous@exemple.com',
     password_ph: '8 caractères minimum', confirm_ph: 'Répétez le mot de passe',
-    next_btn: 'Continuer', next_disabled: 'Remplissez tous les champs',
+    next_btn: 'Continuer', missing_prefix: 'Il manque encore :',
     back: 'Retour', submit: 'Créer mon compte HabaShop', loading: 'Création du compte…',
     terms_pre: "J'accepte les ", terms_a: 'Conditions Générales',
     terms_and: ' et la ', terms_b: 'Politique de confidentialité',
     pwd_weak: 'Faible', pwd_fair: 'Moyen', pwd_good: 'Bon', pwd_excellent: 'Excellent',
     pwd_match: 'Les mots de passe correspondent', pwd_nomatch: 'Les mots de passe ne correspondent pas',
     login_q: 'Déjà un compte ?', login_link: 'Se connecter',
-    secure: 'Inscription sécurisée SSL/TLS',
     search_country: 'Rechercher un pays…', no_country: 'Aucun pays trouvé',
     errRequired: 'Veuillez remplir tous les champs obligatoires',
     errPassword: 'Les mots de passe ne correspondent pas',
     errPasswordLen: 'Le mot de passe doit contenir au moins 8 caractères',
     errTerms: 'Vous devez accepter les CGU',
-    adv_free: '14 jours gratuits sans carte bancaire',
-    adv_secure: 'Données sécurisées SSL/TLS',
-    adv_whatsapp: 'Support WhatsApp inclus',
-    adv_countries: '150+ pays, 6 devises supportées',
-    stat_shops: 'boutiques actives', stat_countries: 'pays',
-    testimonial: "HabaShop a transformé ma boutique. Je gère tout depuis mon téléphone.",
+    after_title: 'Dans deux minutes',
+    after_body: 'Votre boutique est créée et vous êtes dedans. Devise, langue et TVA se règlent à la première ouverture — rien à installer.',
+    trial_title: '14 jours, tout compris',
+    trial_body: 'Caisse, stock, clients, RH et rapports, sans restriction et sans carte bancaire. Vos données restent les vôtres si vous vous arrêtez.',
+    pay_title: 'Et pour continuer',
+    pay_body: 'Starter 8 000 F CFA par mois, Business 25 000. Le règlement se convient avec notre équipe (Mobile Money ou virement).',
   },
   en: {
     brand_title: 'Join HabaShop',
@@ -74,25 +73,24 @@ export const TX: Record<Lang, ST> = {
     shop_ph: 'Ex: Aminata Store', owner_ph: 'Ex: Aminata Koné',
     email_ph: 'you@example.com',
     password_ph: '8 characters minimum', confirm_ph: 'Repeat the password',
-    next_btn: 'Continue', next_disabled: 'Fill in all fields',
+    next_btn: 'Continue', missing_prefix: 'Still missing:',
     back: 'Back', submit: 'Create my HabaShop account', loading: 'Creating account…',
     terms_pre: 'I accept the ', terms_a: 'Terms of Service',
     terms_and: ' and the ', terms_b: 'Privacy Policy',
     pwd_weak: 'Weak', pwd_fair: 'Fair', pwd_good: 'Good', pwd_excellent: 'Excellent',
     pwd_match: 'Passwords match', pwd_nomatch: 'Passwords do not match',
     login_q: 'Already have an account?', login_link: 'Sign in',
-    secure: 'Secure SSL/TLS signup',
     search_country: 'Search a country…', no_country: 'No country found',
     errRequired: 'Please fill in all required fields',
     errPassword: 'Passwords do not match',
     errPasswordLen: 'Password must be at least 8 characters',
     errTerms: 'You must accept the terms',
-    adv_free: '14 days free, no credit card',
-    adv_secure: 'Secure SSL/TLS data',
-    adv_whatsapp: 'WhatsApp support included',
-    adv_countries: '150+ countries, 6 currencies',
-    stat_shops: 'active shops', stat_countries: 'countries',
-    testimonial: "HabaShop transformed my shop. I manage everything from my phone.",
+    after_title: 'Two minutes from now',
+    after_body: 'Your shop is created and you are inside it. Currency, language and VAT are set on first open — nothing to install.',
+    trial_title: '14 days, everything included',
+    trial_body: 'Till, stock, customers, HR and reports, unrestricted and with no card. Your data stays yours if you stop.',
+    pay_title: 'And to carry on',
+    pay_body: 'Starter 8,000 CFA per month, Business 25,000. Payment is agreed with our team (Mobile Money or transfer).',
   },
   es: {
     brand_title: 'Únete a HabaShop',
@@ -108,25 +106,24 @@ export const TX: Record<Lang, ST> = {
     shop_ph: 'Ej: Tienda Aminata', owner_ph: 'Ej: Aminata Koné',
     email_ph: 'tu@ejemplo.com',
     password_ph: '8 caracteres mínimo', confirm_ph: 'Repite la contraseña',
-    next_btn: 'Continuar', next_disabled: 'Rellena todos los campos',
+    next_btn: 'Continuar', missing_prefix: 'Todavía falta:',
     back: 'Atrás', submit: 'Crear mi cuenta HabaShop', loading: 'Creando cuenta…',
     terms_pre: 'Acepto los ', terms_a: 'Términos y Condiciones',
     terms_and: ' y la ', terms_b: 'Política de Privacidad',
     pwd_weak: 'Débil', pwd_fair: 'Regular', pwd_good: 'Buena', pwd_excellent: 'Excelente',
     pwd_match: 'Las contraseñas coinciden', pwd_nomatch: 'Las contraseñas no coinciden',
     login_q: '¿Ya tienes cuenta?', login_link: 'Iniciar sesión',
-    secure: 'Registro seguro SSL/TLS',
     search_country: 'Buscar un país…', no_country: 'Ningún país encontrado',
     errRequired: 'Por favor completa todos los campos obligatorios',
     errPassword: 'Las contraseñas no coinciden',
     errPasswordLen: 'La contraseña debe tener al menos 8 caracteres',
     errTerms: 'Debes aceptar los términos',
-    adv_free: '14 días gratis sin tarjeta',
-    adv_secure: 'Datos seguros SSL/TLS',
-    adv_whatsapp: 'Soporte WhatsApp incluido',
-    adv_countries: '150+ países, 6 divisas',
-    stat_shops: 'tiendas activas', stat_countries: 'países',
-    testimonial: "HabaShop transformó mi tienda. Lo gestiono todo desde mi teléfono.",
+    after_title: 'Dentro de dos minutos',
+    after_body: 'Tu tienda está creada y ya estás dentro. Divisa, idioma e IVA se configuran al abrir — nada que instalar.',
+    trial_title: '14 días, todo incluido',
+    trial_body: 'Caja, stock, clientes, RRHH e informes, sin restricciones y sin tarjeta. Tus datos siguen siendo tuyos si lo dejas.',
+    pay_title: 'Y para continuar',
+    pay_body: 'Starter 8 000 F CFA al mes, Business 25 000. El pago se acuerda con nuestro equipo (Mobile Money o transferencia).',
   },
   it: {
     brand_title: 'Unisciti a HabaShop',
@@ -142,25 +139,24 @@ export const TX: Record<Lang, ST> = {
     shop_ph: 'Es: Negozio Aminata', owner_ph: 'Es: Aminata Koné',
     email_ph: 'tu@esempio.com',
     password_ph: '8 caratteri minimo', confirm_ph: 'Ripeti la password',
-    next_btn: 'Continua', next_disabled: 'Compila tutti i campi',
+    next_btn: 'Continua', missing_prefix: 'Manca ancora:',
     back: 'Indietro', submit: 'Crea il mio account HabaShop', loading: 'Creazione account…',
     terms_pre: 'Accetto i ', terms_a: 'Termini di Servizio',
     terms_and: ' e la ', terms_b: 'Privacy Policy',
     pwd_weak: 'Debole', pwd_fair: 'Discreto', pwd_good: 'Buono', pwd_excellent: 'Eccellente',
     pwd_match: 'Le password corrispondono', pwd_nomatch: 'Le password non corrispondono',
     login_q: 'Hai già un account?', login_link: 'Accedi',
-    secure: 'Registrazione sicura SSL/TLS',
     search_country: 'Cerca un paese…', no_country: 'Nessun paese trovato',
     errRequired: 'Compila tutti i campi obbligatori',
     errPassword: 'Le password non corrispondono',
     errPasswordLen: 'La password deve contenere almeno 8 caratteri',
     errTerms: 'Devi accettare i termini',
-    adv_free: '14 giorni gratis senza carta',
-    adv_secure: 'Dati sicuri SSL/TLS',
-    adv_whatsapp: 'Supporto WhatsApp incluso',
-    adv_countries: '150+ paesi, 6 valute',
-    stat_shops: 'negozi attivi', stat_countries: 'paesi',
-    testimonial: "HabaShop ha trasformato il mio negozio. Gestisco tutto dal telefono.",
+    after_title: 'Tra due minuti',
+    after_body: 'Il tuo negozio è creato e ci sei dentro. Valuta, lingua e IVA si impostano alla prima apertura — niente da installare.',
+    trial_title: '14 giorni, tutto incluso',
+    trial_body: 'Cassa, magazzino, clienti, HR e report, senza limiti e senza carta. I tuoi dati restano tuoi se ti fermi.',
+    pay_title: 'E per continuare',
+    pay_body: 'Starter 8 000 F CFA al mese, Business 25 000. Il pagamento si concorda con il nostro team (Mobile Money o bonifico).',
   },
 }
 
