@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest'
 import Fastify, { type FastifyInstance } from 'fastify'
 import jwt from '@fastify/jwt'
+import { CLIENT_TENANTS_WHERE, FIXTURE_TENANTS_WHERE } from '../lib/fixtureTenant'
 
 /**
  * P0 — Isolation du panneau PLATEFORME (/api/admin/*).
@@ -21,7 +22,7 @@ const SECRET = 'test-secret-platform-isolation'
 // Prisma mocké : les handlers ne doivent jamais être atteints par un non-admin
 // plateforme (le gate coupe avant). Le contrôle positif renvoie des données neutres.
 const db = {
-  tenant:  { findMany: vi.fn(async () => [{ id: 'A', name: 'Boutique A', _count: { users: 1, products: 2, sales: 3 } }]), count: vi.fn(async () => 3), create: vi.fn(async () => ({ id: 'new' })) },
+  tenant:  { findMany: vi.fn(async () => [{ id: 'A', name: 'Boutique A', _count: { users: 1, products: 2, sales: 3 } }]), count: vi.fn(async () => 3), create: vi.fn(async () => ({ id: 'new' })), groupBy: vi.fn(async () => [{ plan: 'business', _count: { id: 2 } }]) },
   user:    { create: vi.fn(async () => ({ id: 'u' })) },
   planRequest: { findMany: vi.fn(async () => []), findUnique: vi.fn(async () => null), update: vi.fn() },
 }
@@ -95,12 +96,25 @@ describe('P0 — /api/admin/* gate sur isPlatformAdmin, jamais sur le rôle tena
     expect(rows[0]).toMatchObject({ id: 'A', revenue: 5000, lastActivityAt: '2026-07-10T00:00:00.000Z' })
   })
 
-  it('exclut les tenants INTERNES plateforme (isPlatform) des listings ET des totaux', async () => {
+  /**
+   * ⚠️ CE TEST FIGEAIT UN FILTRE INCOMPLET. Il exigeait `where: { isPlatform: false }` —
+   * exactement la clause qui faisait annoncer « 3 boutiques inscrites » alors que les
+   * trois étaient deux démos et un tenant E2E. Il aurait donc BLOQUÉ la correction : il
+   * assertait la forme du filtre au lieu de la propriété qu'il doit garantir.
+   * Il porte désormais sur `CLIENT_TENANTS_WHERE`, qui exclut les TROIS familles.
+   */
+  it('exclut les fixtures — interne plateforme, démo ET E2E — des listings et des totaux', async () => {
     await app.inject({ method: 'GET', url: '/api/admin/tenants', headers: { authorization: `Bearer ${platformAdminToken}` } })
+    // La LISTE garde les fixtures (un opérateur doit pouvoir ouvrir la démo) mais les MARQUE.
     expect(db.tenant.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { isPlatform: false } }))
+
     await app.inject({ method: 'GET', url: '/api/admin/stats', headers: { authorization: `Bearer ${platformAdminToken}` } })
-    expect(db.tenant.count).toHaveBeenCalledWith({ where: { isPlatform: false } })
-    expect(baseDb.user.count).toHaveBeenCalledWith({ where: { tenant: { isPlatform: false } } })
-    expect(baseDb.sale.aggregate).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ tenant: { isPlatform: false } }) }))
+    // Les AGRÉGATS, eux, ne comptent que les clients.
+    expect(db.tenant.count).toHaveBeenCalledWith({ where: CLIENT_TENANTS_WHERE })
+    expect(baseDb.user.count).toHaveBeenCalledWith({ where: { tenant: CLIENT_TENANTS_WHERE } })
+    expect(baseDb.sale.aggregate).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ tenant: CLIENT_TENANTS_WHERE }) }))
+    // …et les fixtures sont COMPTÉES à part, pour être dites à l'écran.
+    expect(db.tenant.count).toHaveBeenCalledWith({ where: FIXTURE_TENANTS_WHERE })
   })
 })

@@ -36,3 +36,5 @@ apps/frontend/src/components/ui/PhoneInputWithCountry.tsx:58
   if (!v) return { code: '+221', flag: '🇸🇳', number: '' }
 apps/frontend/src/components/ui/PhoneInputWithCountry.tsx:63
   return { code: '+221', flag: '🇸🇳', number: v }
+apps/frontend/src/pages/SignupPage.tsx:26
+    phone:      '+221',

@@ -58,7 +58,12 @@ export default function LandingFooter({ lp }: Props) {
           .lp-nav-desktop { display: none !important }
         }
         @media (max-width: 640px) {
-          .lp-selectors { display: none !important }
+          /* ⚠️ C'etait .lp-selectors display:none — langue ET devise disparaissaient.
+             La LANGUE reste : le produit est livré en 4 langues, un visiteur dont le
+             téléphone est en anglais doit pouvoir changer depuis la vitrine. La DEVISE
+             part : préférence d'affichage secondaire, modifiable une fois connecté, et
+             les prix sont annoncés en F CFA de toute façon. Décision du 2026-08-06. */
+          .lp-selectors > select:last-child { display: none !important }
         }
         @media (prefers-reduced-motion: reduce) {
           *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important }

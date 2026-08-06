@@ -373,6 +373,11 @@ export interface ApiAdminStats {
   totalSales: number
   totalRevenue: number
   totalProducts: number
+  /** Boutiques démo / E2E / interne — EXCLUES de tous les totaux ci-dessus. */
+  fixtureTenants?: number
+  /** MRR en XOF : somme des tarifs mensuels des boutiques CLIENTES actives. */
+  mrrXof?: number
+  mrrParPlan?: { plan: string; tenants: number; mrrXof: number; surDevis: boolean }[]
 }
 
 /** `GET /api/admin/plan-requests` — modèle `PlanRequest` + `include: { tenant: true }`. */

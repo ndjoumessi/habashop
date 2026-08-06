@@ -1,3 +1,4 @@
+import { LogIn } from 'lucide-react'
 import LogoMark from '@/components/ui/LogoMark'
 import { D, FONT, scrollTo } from './landingShared'
 import type { LandingT, Lang, Currency } from './landingShared'
@@ -32,7 +33,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
           }}>
             <LogoMark />
           </div>
-          <span style={{ fontSize: 'var(--fs-lg)', fontWeight: 900, color: D.text, letterSpacing: '-.3px', whiteSpace: 'nowrap' }}>
+          <span className="lp-nav-wordmark" style={{ fontSize: 'var(--fs-lg)', fontWeight: 900, color: D.text, letterSpacing: '-.3px', whiteSpace: 'nowrap' }}>
             Haba<span style={{ background: `linear-gradient(135deg,${D.p2},${D.p3})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Shop</span>
           </span>
         </div>
@@ -97,15 +98,26 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" onClick={() => navigate('/login')}
             className="lp-btn-ghost lp-nav-login"
+            aria-label={lp.nav_login}
             style={{
               padding: '8px 16px', borderRadius: 10, background: 'transparent',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               border: `1px solid ${D.border2}`, color: D.text2,
               fontSize: 'var(--fs-sm)', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
               transition: 'all .15s', whiteSpace: 'nowrap',
             }}
             onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,.06)'; el.style.color = D.text }}
             onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'transparent'; el.style.color = D.text2 }}
-          >{lp.nav_login}</button>
+          >
+            {/* ⚠️ Sous 640 px, le libellé cède la place à l'icône — mais le BOUTON RESTE.
+                Il était `display:none`, avec un commentaire affirmant que « le login reste
+                accessible via le CTA / le hero » : MESURÉ le 2026-08-06, c'était faux —
+                zéro `<a href="/login">` dans toute la page à 390, 360 et 320 px. Le CTA
+                dit « Créer ma boutique », et le hero n'a aucun lien de connexion. Un
+                client existant sur téléphone ne pouvait tout simplement pas se connecter. */}
+            <span className="lp-nav-login-txt">{lp.nav_login}</span>
+            <LogIn className="lp-nav-login-ico" size={17} strokeWidth={2.2} aria-hidden="true" />
+          </button>
           <button type="button" onClick={() => navigate('/signup')}
             className="lp-nav-cta-signup"
             style={{
@@ -122,12 +134,32 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
         </div>
       </nav>
 
-      {/* Responsive nav : sous 640px, la barre = logo + CTA principal seulement.
-          On masque « Connexion » (le login reste accessible via le CTA / le hero) pour
-          éviter que les 2 boutons + le logo ne se chevauchent sur petits écrans. */}
+      {/* ⚠️ RESPONSIVE — MESURÉ à 390/360/320 px dans le DOM RENDU, pas lu dans la source.
+          Le bouton « Connexion » était `display:none` sous 640 px, justifié par « le login
+          reste accessible via le CTA / le hero ». C'était FAUX : aucun `<a href="/login">`
+          n'existait dans la page entière à ces largeurs — ni nav, ni hero, ni pied de page.
+          Un client déjà inscrit, sur téléphone, ne pouvait pas se connecter.
+
+          Budget mesuré à 390 px : nav 390, padding 2×16 → 358 utilisables ; bloc logo 188,
+          CTA 156 → 14 px libres. Un bouton TEXTE (~90 px) ne rentrait effectivement pas :
+          la décision de le masquer était dimensionnellement juste, seul son repli était
+          imaginaire. On garde donc la contrainte et on change la FORME — icône 38 px.
+
+          Le mot-clé de marque cède la place (le logo reste) : 96 + 38 + 156 + gaps ≈ 300
+          sur 358. Vérifié jusqu'à 320 px.
+
+          ⚠️ LA LANGUE reste accessible, la DEVISE non : le produit est livré en 4 langues
+          et un visiteur dont le téléphone est en anglais doit pouvoir changer ; la devise
+          d'affichage est une préférence secondaire, modifiable une fois connecté, et les
+          prix sont annoncés en F CFA de toute façon. */}
       <style>{`
+        .lp-nav-login-ico { display: none; }
         @media (max-width: 640px) {
-          .lp-nav-login { display: none !important; }
+          .lp-nav-login-txt  { display: none !important; }
+          .lp-nav-login-ico  { display: inline-flex !important; }
+          .lp-nav-login      { padding: 8px 10px !important; }
+          .lp-nav-wordmark   { display: none !important; }
+          .lp-selectors > select { padding: 6px 20px 6px 7px !important; }
         }
         @media (max-width: 380px) {
           .lp-nav-cta-signup { padding: 8px 14px !important; }

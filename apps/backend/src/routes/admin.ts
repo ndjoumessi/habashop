@@ -8,6 +8,7 @@ import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import { planAmountXOF } from '../lib/plans'
 import { DEFAULT_MARKET } from '../lib/defaultMarket'
+import { CLIENT_TENANTS_WHERE, FIXTURE_TENANTS_WHERE, VIA_CLIENT_TENANT, isFixtureTenant } from '../lib/fixtureTenant'
 import {
   sendUpgradeConfirmation,
   sendWelcomeEmail,
@@ -51,25 +52,62 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       ...t,
       revenue: byTenant.get(t.id)?._sum.total ?? 0,
       lastActivityAt: byTenant.get(t.id)?._max.createdAt ?? null,
+      /**
+       * ⚠️ MARQUÉ, pas masqué. La LISTE garde les fixtures — un opérateur doit pouvoir
+       * ouvrir la démo — mais elles portent le drapeau, et les AGRÉGATS (`/stats`) les
+       * excluent. Masquer sans dire ferait croire à une base vide.
+       */
+      isFixture: isFixtureTenant(t),
     }))
   })
 
   app.get('/api/admin/stats', { preHandler: authenticateAdmin }, async () => {
     // Sale/Product sont scopés par l'extension → basePrisma pour les totaux plateforme.
-    // Tenants INTERNES plateforme (isPlatform) exclus de TOUS les totaux (boutiques,
-    // users, ventes, produits) → métriques SaaS = boutiques CLIENTES uniquement.
-    const [tenants, users, sales, products] = await Promise.all([
-      prisma.tenant.count({ where: { isPlatform: false } }),
-      basePrisma.user.count({ where: { tenant: { isPlatform: false } } }),
-      basePrisma.sale.aggregate({ where: { status: { not: 'refunded' }, tenant: { isPlatform: false } }, _sum: { total: true }, _count: true }),
-      basePrisma.product.count({ where: { tenant: { isPlatform: false } } }),
+    //
+    // ⚠️ LES FIXTURES NE SONT PAS DES CLIENTS. Ce handler excluait les seuls tenants
+    // `isPlatform` et annonçait « 3 boutiques » : deux démos et un tenant E2E. Zéro
+    // client réel. Un tableau de bord qui affiche trois quand il y a zéro donne un
+    // chiffre auquel on va se fier pour décider — il est pire qu'un écran vide.
+    // `CLIENT_TENANTS_WHERE` décide par PROPRIÉTÉ (isPlatform, isDemo, préfixe `e2e-`),
+    // jamais par une liste d'identifiants. Cf. `lib/fixtureTenant.ts`.
+    //
+    // Les fixtures sont COMPTÉES à part et renvoyées : les masquer sans le dire ferait
+    // croire à une base vide alors qu'elle contient des données de démonstration.
+    const [tenants, users, sales, products, fixtures, parPlan] = await Promise.all([
+      prisma.tenant.count({ where: CLIENT_TENANTS_WHERE }),
+      basePrisma.user.count({ where: VIA_CLIENT_TENANT }),
+      basePrisma.sale.aggregate({ where: { status: { not: 'refunded' }, ...VIA_CLIENT_TENANT }, _sum: { total: true }, _count: true }),
+      basePrisma.product.count({ where: VIA_CLIENT_TENANT }),
+      prisma.tenant.count({ where: FIXTURE_TENANTS_WHERE }),
+      // MRR : le chiffre pour lequel cette console existe, et qui n'y était pas.
+      prisma.tenant.groupBy({
+        by: ['plan'],
+        where: { ...CLIENT_TENANTS_WHERE, status: 'active' },
+        _count: { id: true },
+      }),
     ])
+
+    /**
+     * ⚠️ MRR = somme des tarifs MENSUELS des boutiques ACTIVES, plan par plan, lus dans
+     * `lib/plans.ts`. Un plan sans tarif public (`enterprise`, sur devis) contribue 0 et
+     * est compté à part : l'inventer serait pire que l'omettre.
+     */
+    const mrrParPlan = parPlan.map(g => {
+      const montant = planAmountXOF(g.plan, 'monthly')
+      return { plan: g.plan, tenants: g._count.id, mrrXof: montant === null ? 0 : montant * g._count.id, surDevis: montant === null }
+    })
+
     return {
       totalTenants: tenants,
       totalUsers: users,
       totalSales: sales._count,
       totalRevenue: sales._sum.total ?? 0,
       totalProducts: products,
+      /** Boutiques de démonstration / E2E / interne, EXCLUES de tous les totaux ci-dessus. */
+      fixtureTenants: fixtures,
+      /** MRR en XOF et sa décomposition. `surDevis` = plan sans tarif public. */
+      mrrXof: mrrParPlan.reduce((s, p) => s + p.mrrXof, 0),
+      mrrParPlan,
     }
   })
 

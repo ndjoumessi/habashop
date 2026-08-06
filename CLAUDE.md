@@ -454,6 +454,64 @@ balayer après coup : `if (/^import\s/.test(l) && /^import (type )?\{\s*$/.test(
 identique avant et après le parcours réel sur tenant jetable (`verif-market-tmp`, détruit,
 orphelins 0).
 
+### Le COMMENTAIRE QUI INVENTE UN REPLI ⚠️ — règle exécutoire
+
+**Un commentaire qui affirme qu'une alternative existe DOIT citer le `fichier:ligne` de
+cette alternative, ou être supprimé.** TROIS occurrences dans la même session, chacune
+justifiant une décision par un chemin qui n'existait pas :
+
+| Commentaire | Réalité mesurée |
+|---|---|
+| `LandingNav` : « le login reste accessible via le CTA / le hero » | **ZÉRO `<a href="/login">`** dans la page à 390, 360 et 320 px — ni nav, ni hero, ni pied. Le CTA dit « Créer ma boutique ». Un client existant sur téléphone ne pouvait pas se connecter |
+| `CLAUDE.md:16` : « le parc store est en runtime 1.2.0 » | aucun parc — 1 seul `PushToken`, sur le tenant de démo |
+| `quotaLimit` : rien n'indiquait que sa justesse tenait à l'ordre des gardes | invariant distant non enregistré (→ `spendGuardStatusOrder.test.ts`) |
+
+Le motif est constant : **l'affirmation est plausible, jamais exécutée, et personne ne la
+vérifie parce qu'elle sert de justification à autre chose.** Un `fichier:ligne` la rend
+réfutable en dix secondes ; sans lui, elle survit des mois.
+
+⚠️ **Vérifier dans le DOM RENDU, pas dans la source**, dès qu'il s'agit de CSS conditionnel :
+la source dit ce qui est écrit, pas ce qui est affiché. Le masquage `.lp-nav-login` était
+lisible dans le fichier ; qu'il ne reste AUCUN chemin vers `/login` ne l'était pas.
+
+### Console Ops ⚠️ — les FIXTURES ne sont pas des clients
+
+`lib/fixtureTenant.ts` (backend) décide par **PROPRIÉTÉ** : `isPlatform` · `isDemo` ·
+préfixe d'identifiant `e2e-`. **Jamais par une liste d'identifiants** — une liste vieillit,
+le prochain tenant de test n'y figure pas, et le chiffre redevient faux en silence.
+
+MESURÉ le 2026-08-06, la console annonçait « 3 boutiques inscrites, toutes ont démarré » :
+
+```
+                AVANT      APRÈS
+boutiques           3  →       0
+comptes             7  →       0
+ventes           1905  →       0
+CA (XOF)     49 696 665  →      0        fixtures écartées et comptées à part : 4
+```
+
+⚠️ **Les fixtures sont MARQUÉES dans la liste (`isFixture` par ligne) et EXCLUES des
+agrégats** — un opérateur doit pouvoir ouvrir la démo, mais elle ne doit pas peser dans un
+chiffre. Et le nombre d'exclues est DIT à l'écran : masquer sans le dire ferait croire à
+une base vide alors qu'elle contient des démonstrations.
+
+⚠️ **Pas de drapeau `isFixture` en base**, bien que ce fût plus propre : le poser sur
+`e2e-tenant` serait une MUTATION d'un tenant existant, interdite.
+
+⚠️ **« ACTIF » AVAIT DEUX SENS sur le même écran** — l'onglet Boutiques disait « • Actif »
+(ABONNEMENT) pendant que Vue d'ensemble disait « INACTIVE » (ACTIVITÉ) pour la même
+boutique. Deux notions orthogonales : une boutique peut payer et ne rien vendre. Désormais
+`ABONNEMENT` est un Record exhaustif sur les 5 statuts (une valeur inconnue reste neutre et
+VISIBLE, plus de `st` brut), et l'activité se dit « **sans vente depuis 14 j** » — ce qu'elle
+mesure, pas un état.
+
+⚠️ **UNE PASTILLE QUI NE PEUT PAS ROUGIR NE PROUVE RIEN.** « Santé technique » lisait
+`itg.status === 'connected'`, un **littéral** de `pages/Integrations.tsx` : aucune requête
+n'était émise. Le panneau porte maintenant (a) **une sonde réelle** sur `/api/health-extended`,
+datée (« vérifié il y a N s ») et capable de rougir, et (b) la mention explicite que le reste
+est de la **configuration DÉCLARÉE**, pas une vérification. Sonder Sentry/Resend/Twilio
+demanderait un relais serveur : dette assumée, écrite plutôt que masquée par du vert.
+
 ### Le JUMEAU NON TRAITÉ ⚠️ — le motif le plus coûteux de ce dépôt
 
 **Une correction qui s'arrête au premier fichier trouvé n'est pas une correction, c'est un
@@ -602,6 +660,35 @@ trancher : elle est le signal qu'aucune des deux n'a compté.** Aller compter �
 `pushToken.groupBy` a rendu **1**, sur `demo-tenant-001`. Le parc entier tenait dans une ligne, et
 six commandes ont clos six jours de doute. La date et la preuve citée sont toutes deux des
 raccourcis ; seule la mesure tranche.
+
+---
+
+⚠️ **LA SOURCE EST VALIDE, L'ARTEFACT EST NUL — le motif qui a ouvert ET fermé la semaine du
+2026-08.** Cinq jours d'écart, deux langages, un seul défaut :
+
+| Date | Écrit | Livré | Vu par |
+|---|---|---|---|
+| 02/08 | `` border: `1px solid ${v.accent}28` `` où `v.accent` vaut `'var(--p2)'` | déclaration **invalide à l'évaluation** ⇒ `border-style: none` (valeur INITIALE, pas héritée) | l'œil, à l'écran |
+| 06/08 | `<meta name="keywords" <!-- commentaire --> content="…">` | `content` **absent du DOM** — le changement SEO ne faisait rien | le DOM de production |
+
+Dans les deux cas : `tsc` vert, suite verte, revue passante, **et rien de ce qui était censé être
+livré ne l'était**. Ni le compilateur, ni les tests, ni la revue ne regardent l'artefact — ils
+regardent la source, et la source est correcte. Le défaut naît à la frontière : un `var()` suffixé
+d'un alpha hexadécimal est du CSS invalide, un `<!-- -->` dans une balise est du HTML invalide.
+Même famille que l'ordre des règles du service worker et que le contexte Docker (§ Déploiement) :
+**une régression d'ARTEFACT n'est pas visible depuis la source.**
+
+**Règle : tout ce qui est GÉNÉRÉ se vérifie sur le PRODUIT, jamais sur ce qui l'a produit.**
+`verify:seo-urls` (déjà en CI) porte désormais les gardes correspondantes — aucun `<!--` dans une
+balise, `content` non vide sur chaque `<meta name>`, JSON-LD `JSON.parse`-able. Sabotages écrits
+avec les formes **réellement commises**, pas retapées.
+
+⚠️ **Corollaire — un fait peut être encodé en DONNÉES, pas en texte.** Le JSON-LD portait
+`serviceArea.geoMidpoint = 14.6928 / -17.4467` : Dakar. Un signal de ciblage géographique aussi
+fort que le mot « Dakar », **qu'aucune recherche de chaînes ne peut trouver**. Il a été vu en
+balayant les surfaces SEO une par une, pas en cherchant des mots. Quand on nettoie une
+affirmation, se demander sous quelle forme NON TEXTUELLE elle pourrait aussi vivre : coordonnées,
+code pays, indicatif, fuseau, code devise, locale.
 
 ### Injection CSV ⚠️ — convention EXÉCUTOIRE, pas affirmée (#173)
 

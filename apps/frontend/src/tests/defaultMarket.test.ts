@@ -58,6 +58,17 @@ const FORMS: { key: string; re: RegExp }[] = [
   { key: 'useState initial',    re: new RegExp(String.raw`useState(?:<[^>]*>)?\(\s*${PREVIOUS}`, 'g') },
   { key: 'champ de formulaire', re: new RegExp(String.raw`\b(country|pays|iso|currency|devise|dial|indicatif|prefix)\w*\s*:\s*${PREVIOUS}`, 'gi') },
   { key: 'const nommée défaut', re: new RegExp(String.raw`\b(DEFAULT|FALLBACK|BASE)\w*\s*(?::[^=]+)?=\s*${PREVIOUS}`, 'gi') },
+  /**
+   * ⚠️ FORME AJOUTÉE APRÈS COUP — et c'est une leçon sur le verrou lui-même.
+   * `SignupPage.tsx` portait `phone: '+221'` DEUX LIGNES au-dessus de deux
+   * `DEFAULT_MARKET`, dans un fichier déjà « traité ». La règle « champ de formulaire »
+   * ne l'a pas vue parce qu'elle énumérait des NOMS de clé (`country|currency|iso|dial…`)
+   * et que celle-ci s'appelle `phone`. J'avais écrit un verrou de FORME dont une règle
+   * raisonnait par identifiant — exactement ce que `normalizeOrangePhone` avait déjà coûté.
+   * Celle-ci ne regarde QUE la valeur : un indicatif littéral en position initiale,
+   * quel que soit le nom de la clé.
+   */
+  { key: 'indicatif littéral', re: /(?::|=)\s*'\+\d{1,4}'/g },
 ]
 
 /**
@@ -159,7 +170,17 @@ describe('le scan MORD — contre-épreuve sur les formes réellement supprimée
   it('les formes OBSERVÉES sont bien exercées par la fixture', () => {
     const vues = FORMS.filter(f => { f.re.lastIndex = 0; return f.re.test(AVANT) }).map(f => f.key)
     for (const f of FORMS) f.re.lastIndex = 0
-    expect(vues.sort()).toEqual(['champ de formulaire', 'repli ??', 'useState initial'])
+    expect(vues.sort()).toEqual(['champ de formulaire', 'indicatif littéral', 'repli ??', 'useState initial'])
+  })
+
+  it('la forme « indicatif littéral » couvre ce que « champ de formulaire » manquait', () => {
+    const f = FORMS.find(x => x.key === 'indicatif littéral')!
+    const champ = FORMS.find(x => x.key === 'champ de formulaire')!
+    const rate = "    phone:      '+221',"           // le site RÉEL, manqué pendant deux chantiers
+    champ.re.lastIndex = 0; f.re.lastIndex = 0
+    expect(champ.re.test(rate), 'la règle par NOM de clé le voyait déjà ?').toBe(false)
+    expect(f.re.test(rate), 'la règle par VALEUR doit le voir').toBe(true)
+    champ.re.lastIndex = 0; f.re.lastIndex = 0
   })
 
   it('les deux formes PRÉVENTIVES mordent sur leur forme canonique', () => {

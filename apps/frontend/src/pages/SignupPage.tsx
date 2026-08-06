@@ -23,7 +23,10 @@ export default function SignupPage() {
     shopName:   '',
     ownerName:  '',
     email:      '',
-    phone:      '+221',
+    // ⚠️ Deux lignes au-dessus de deux `DEFAULT_MARKET`, et pourtant '+221' en dur : le
+    // verrou ne l'a pas vue parce que sa règle « champ de formulaire » énumérait des NOMS
+    // de clé (country, currency, iso, dial…) et que celle-ci s'appelle `phone`.
+    phone:      DEFAULT_MARKET.dialCode,
     password:   '',
     confirmPwd: '',
     currency:   DEFAULT_MARKET.currency as Currency,

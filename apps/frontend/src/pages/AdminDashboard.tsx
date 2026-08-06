@@ -38,6 +38,8 @@ type Tenant = {
   vatRate?: number; createdAt: string; trialEnds?: string | null
   status?: string; isActive?: boolean; email?: string | null
   revenue?: number; lastActivityAt?: string | null
+  /** Boutique de démonstration / E2E / interne — décidée côté serveur, pas ici. */
+  isFixture?: boolean
   _count?: { users: number; products: number; sales: number }
 }
 
@@ -166,16 +168,30 @@ export default function AdminDashboard() {
   // ── ACTIVATION (héros) : le chiffre qui décide de la vie du SaaS — inscrites n'ayant JAMAIS
   //    ajouté de produit. Entonnoir Inscrites → Produit → Vente. Liste triée « jamais revenues »
   //    d'abord (pas de lastActivityAt), puis inscription la plus ancienne. Données réelles.
+  /**
+   * ⚠️ LES FIXTURES NE SONT PAS DES CLIENTS. Cet entonnoir disait « 3 inscrites, toutes
+   * ont démarré » : deux boutiques de démonstration et un tenant E2E. Zéro client réel.
+   * Le serveur marque chaque ligne (`isFixture`, décidé par PROPRIÉTÉ dans
+   * `lib/fixtureTenant.ts`) ; on filtre ici pour que le héros et l'entonnoir portent sur
+   * des clients. Un tableau de bord qui affiche zéro quand il y a zéro est utile ; un qui
+   * affiche trois ne l'est pas.
+   */
+  const clients = useMemo(() => tenants.filter(t => !t.isFixture), [tenants])
+  // ⚠️ Le NOMBRE de fixtures vient du SERVEUR (`stats.fixtureTenants`), pas d'un calcul
+  // local : `tenants` exclut déjà les tenants `isPlatform`, donc un
+  // `tenants.length - clients.length` en compterait une de moins. Deux sources, deux
+  // chiffres — c'est exactement le motif qu'on ferme ailleurs.
+
   const activation = useMemo(() => {
-    const withProduct = tenants.filter(t => (t._count?.products ?? 0) > 0).length
-    const withSale = tenants.filter(t => (t._count?.sales ?? 0) > 0).length
-    const neverProduct = tenants.filter(t => (t._count?.products ?? 0) === 0).sort((a, b) => {
+    const withProduct = clients.filter(t => (t._count?.products ?? 0) > 0).length
+    const withSale = clients.filter(t => (t._count?.sales ?? 0) > 0).length
+    const neverProduct = clients.filter(t => (t._count?.products ?? 0) === 0).sort((a, b) => {
       const aBack = a.lastActivityAt ? 1 : 0, bBack = b.lastActivityAt ? 1 : 0
       if (aBack !== bBack) return aBack - bBack
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     })
-    return { registered: tenants.length, withProduct, withSale, neverProduct }
-  }, [tenants])
+    return { registered: clients.length, withProduct, withSale, neverProduct }
+  }, [clients])
 
   // ── UNE seule liste « à traiter » (fusion rétention + facturation) : chaque boutique porte
   //    SES motifs (essai ≤3j / inactive / demande de plan / paiement à vérifier). Le rapprochement
@@ -194,7 +210,9 @@ export default function AdminDashboard() {
         const ms = new Date(t.trialEnds).getTime() - now
         if (ms >= 0 && ms < 3 * DAY) add(t, 'trial', i('essai expire ≤ 3 j', 'trial ends ≤ 3 d', 'prueba ≤ 3 d', 'prova ≤ 3 g'), 'var(--warn)')
       }
-      if (t.lastActivityAt && now - new Date(t.lastActivityAt).getTime() > 14 * DAY) add(t, 'inactive', i('inactive', 'inactive', 'inactiva', 'inattiva'), 'var(--acc)')
+      // ⚠️ « inactive » entrait en collision avec le badge d'ABONNEMENT « Actif ».
+      // Le motif dit maintenant ce qu'il MESURE : l'absence de vente, pas un état.
+      if (t.lastActivityAt && now - new Date(t.lastActivityAt).getTime() > 14 * DAY) add(t, 'inactive', i('sans vente depuis 14 j', 'no sale in 14 d', 'sin venta desde 14 d', 'nessuna vendita da 14 g'), 'var(--text3)')
     }
     for (const r of planRequests) {
       const t = tenants.find(x => x.name === r.tenant?.name)
@@ -245,13 +263,31 @@ export default function AdminDashboard() {
     <span style={{ background: mix(planColor(plan), 14), color: planColor(plan), borderRadius: 20, padding: '2px 10px', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'capitalize' }}>{plan}</span>
   )
 
+  /**
+   * ⚠️ DEUX SENS D'« ACTIF », DÉSORMAIS DEUX MOTS.
+   *
+   * Cet écran disait « • Actif » dans l'onglet Boutiques et « INACTIVE » dans Vue
+   * d'ensemble — pour LA MÊME boutique. L'un parlait d'ABONNEMENT (le tenant paie et son
+   * accès est ouvert), l'autre d'ACTIVITÉ (des ventes récentes). Deux notions
+   * orthogonales : une boutique peut payer et ne rien vendre.
+   *
+   *   ABONNEMENT → ce helper. Actif · Essai · Paiement en attente · Suspendu · Résilié
+   *   ACTIVITÉ   → « sans vente depuis N j », jamais le mot « inactif »
+   *
+   * ⚠️ Record EXHAUSTIF sur les cinq statuts : la version précédente retombait sur `st`
+   * BRUT (« cancelled » affiché tel quel), même défaut que le badge mobile corrigé en
+   * 2.13.2. Une valeur inconnue reste NEUTRE et VISIBLE, jamais assimilée à « Actif ».
+   */
+  const ABONNEMENT: Record<string, { h: string; label: string }> = {
+    active:          { h: 'var(--acc2)',  label: i('Actif', 'Active', 'Activo', 'Attivo') },
+    trial:           { h: 'var(--warn)',  label: i('Essai', 'Trial', 'Prueba', 'Prova') },
+    pending_payment: { h: 'var(--acc)',   label: i('Paiement en attente', 'Payment pending', 'Pago pendiente', 'Pagamento in sospeso') },
+    suspended:       { h: 'var(--danger)', label: i('Suspendu', 'Suspended', 'Suspendido', 'Sospeso') },
+    cancelled:       { h: 'var(--danger)', label: i('Résilié', 'Cancelled', 'Cancelado', 'Disdetto') },
+  }
   const statusCfg = (t: Tenant): { h: string; label: string } => {
     const st = t.status ?? (t.isActive === false ? 'suspended' : 'active')
-    if (st === 'active') return { h: 'var(--acc2)', label: i('Actif', 'Active', 'Activo', 'Attivo') }
-    if (st === 'trial') return { h: 'var(--warn)', label: i('Essai', 'Trial', 'Prueba', 'Prova') }
-    if (st === 'suspended') return { h: 'var(--danger)', label: i('Suspendu', 'Suspended', 'Suspendido', 'Sospeso') }
-    if (st === 'pending_payment') return { h: 'var(--acc)', label: i('Paiement', 'Payment', 'Pago', 'Pagamento') }
-    return { h: 'var(--text3)', label: st }
+    return ABONNEMENT[st] ?? { h: 'var(--text3)', label: st.toUpperCase() }
   }
 
   const TABS = [
@@ -334,6 +370,40 @@ export default function AdminDashboard() {
           {/* ══ ACTIVATION — HÉROS : le chiffre qui décide de la vie du SaaS, en tête ══
                À zéro « jamais activées » = BONNE nouvelle → état de succès (vert discret),
                pas une carte d'alerte avec un zéro géant. Le compte à rebours n'apparaît qu'≥1. */}
+          {/* ══ MRR — le chiffre pour lequel cette console existe, et qui n'y était pas ══ */}
+          <div className="panel" style={{ marginBottom: 14 }}>
+            <div style={{ padding: 16, display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'baseline' }}>
+              <div>
+                <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text3)' }}>MRR</div>
+                {/* ⚠️ XOF, jamais converti — console PLATEFORME (cf. § Règles devise). */}
+                <div style={{ fontSize: 34, fontWeight: 'var(--fw-bold)', lineHeight: 1.1, color: 'var(--text)', fontFamily: 'var(--mono)' }}>
+                  {(stats?.mrrXof ?? 0).toLocaleString('fr-FR')} <span style={{ fontSize: 'var(--fs-md)', color: 'var(--text3)' }}>FCFA</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 'var(--fs-label)', color: 'var(--text2)' }}>
+                {(stats?.mrrParPlan ?? []).length === 0
+                  ? <span style={{ color: 'var(--text3)' }}>{i('Aucune boutique cliente active.', 'No active client shop.', 'Ninguna tienda cliente activa.', 'Nessun negozio cliente attivo.')}</span>
+                  : (stats?.mrrParPlan ?? []).map((pp: { plan: string; tenants: number; mrrXof: number; surDevis: boolean }) => (
+                      <span key={pp.plan} style={{ textTransform: 'capitalize' }}>
+                        {pp.plan} · {pp.tenants} · {pp.surDevis
+                          ? i('sur devis', 'on quote', 'bajo presupuesto', 'su preventivo')
+                          : `${pp.mrrXof.toLocaleString('fr-FR')} FCFA`}
+                      </span>
+                    ))}
+              </div>
+              {/* ⚠️ Les fixtures sont DITES, pas masquées : un écran vide sans explication
+                  ferait croire à une base vide alors qu'elle contient des démos. */}
+              {!!stats?.fixtureTenants && (
+                <span style={{ marginLeft: 'auto', fontSize: 'var(--fs-caption)', color: 'var(--text3)', maxWidth: '38ch', lineHeight: 1.5 }}>
+                  {i(`${stats.fixtureTenants} boutique(s) de démonstration / test exclues de tous les chiffres de cet écran.`,
+                     `${stats.fixtureTenants} demo / test shop(s) excluded from every figure on this screen.`,
+                     `${stats.fixtureTenants} tienda(s) de demo / prueba excluidas de todas las cifras.`,
+                     `${stats.fixtureTenants} negozio/i demo / test esclusi da tutte le cifre.`)}
+                </span>
+              )}
+            </div>
+          </div>
+
           <div className="panel" style={{ borderColor: activation.neverProduct.length === 0
             ? 'color-mix(in srgb, var(--acc2) 30%, var(--border))'
             : 'color-mix(in srgb, var(--warn) 30%, var(--border))' }}>
@@ -359,7 +429,10 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 )}
-                {/* entonnoir Inscrites → Produit → Vente */}
+                {/* ⚠️ ENTONNOIR MASQUÉ s'il ne montre AUCUNE déperdition : trois barres pleines
+                    identiques sous une phrase qui dit déjà la même chose n'informent personne.
+                    Il réapparaît dès qu'une étape perd du monde. */}
+                {activation.registered > 0 && !(activation.withProduct === activation.registered && activation.withSale === activation.registered) && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7, flex: 1, minWidth: 240 }}>
                   {[
                     { lab: i('Inscrites', 'Signed up', 'Registradas', 'Registrate'), n: activation.registered, c: 'var(--p)' },
@@ -375,6 +448,7 @@ export default function AdminDashboard() {
                     )
                   })}
                 </div>
+                )}
               </div>
               {/* liste actionnable — « jamais revenues » d'abord */}
               {activation.neverProduct.length > 0 && (
