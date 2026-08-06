@@ -105,10 +105,17 @@ export default function OpsInfrastructure() {
                 <div style={{ fontSize: 13.5, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{itg.name}</div>
                 <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itg.endpoint}</div>
               </div>
+              {/* ⚠️ GRIS, JAMAIS VERT — le SIGNAL prime sur la phrase.
+                  La légende disait que ces pastilles ne peuvent pas rougir, et le point
+                  vert disait le contraire ; entre les deux, l'œil croit la couleur. Le
+                  vert est réservé à ce qui a été VÉRIFIÉ — aujourd'hui, la seule sonde
+                  réelle est celle de l'API, en tête de ce panneau. Ici on distingue
+                  seulement « déclaré configuré » (gris plein) de « déclaré absent »
+                  (gris creux) : deux états d'un fichier, pas deux états d'une machine. */}
               <span title={ok
-                ? (lang === 'en' ? 'Operational' : lang === 'es' ? 'Operativo' : lang === 'it' ? 'Operativo' : 'Opérationnel')
-                : (lang === 'en' ? 'Not configured' : lang === 'es' ? 'No configurado' : lang === 'it' ? 'Non configurato' : 'Non configuré')}
-                style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: ok ? 'var(--acc2)' : 'var(--text4)', boxShadow: ok ? '0 0 6px var(--acc2)' : 'none' }} />
+                ? (lang === 'en' ? 'Declared as configured — not probed' : lang === 'es' ? 'Declarado configurado — sin verificar' : lang === 'it' ? 'Dichiarato configurato — non verificato' : 'Déclaré configuré — non vérifié')
+                : (lang === 'en' ? 'Declared as not configured' : lang === 'es' ? 'Declarado no configurado' : lang === 'it' ? 'Dichiarato non configurato' : 'Déclaré non configuré')}
+                style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: ok ? 'var(--text3)' : 'transparent', border: `1px solid var(--text4)`, boxShadow: 'none' }} />
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 'var(--fs-caption)' }}>
               <span style={{ color: 'var(--text3)', fontFamily: 'var(--mono)', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 7px' }}>{API_VERSION[itg.id]}</span>

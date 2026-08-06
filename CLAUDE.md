@@ -474,6 +474,56 @@ réfutable en dix secondes ; sans lui, elle survit des mois.
 la source dit ce qui est écrit, pas ce qui est affiché. Le masquage `.lp-nav-login` était
 lisible dans le fichier ; qu'il ne reste AUCUN chemin vers `/login` ne l'était pas.
 
+### La VÉRITÉ VACANTE ⚠️ — « toutes » sur l'ensemble vide
+
+**Un quantificateur universel est VRAI et VIDE de sens sur une liste vide.** `.every()`
+rend `true`, `.some()` rend `false` : les deux mentent quand la liste est vide.
+
+MESURÉ sur la console Ops le 2026-08-06 : une coche verte annonçait « **Toutes vos
+boutiques ont démarré** » sous « **0 inscrites** ». L'écran félicitait pour un succès que
+personne n'avait obtenu — et c'était le même écran qui venait d'être corrigé pour ne plus
+compter les fixtures : **exclure les fausses données a révélé une phrase qui n'était vraie
+que grâce à elles**.
+
+**Règle : TROIS états, jamais deux.**
+
+| liste vide | non vide, incomplet | non vide, complet |
+|---|---|---|
+| **NEUTRE** — on constate, on ne félicite pas | alerte | succès |
+
+L'état vide n'a ni coche, ni couleur de succès, ni bordure verte, et il DIT pourquoi il est
+vide (« Rien à mesurer tant qu'aucune inscription réelle n'a eu lieu »).
+
+⚠️ **C'est une FAMILLE, pas une ligne.** Balayer « toutes », « chacune », « aucune » sur
+toute liste qui peut être vide — la liste « à traiter » avait le même défaut : « aucun essai
+n'expire dans les 3 jours · aucune boutique inactive · aucun paiement à vérifier » se lit
+comme un tableau de bord sain, alors qu'il n'y avait simplement personne.
+
+⚠️ **Deux messages différents ne partagent jamais la même phrase.** Trois panneaux disaient
+« Aucune boutique cliente » : on ne savait plus lequel parlait, et un test de rendu ne
+pouvait plus les distinguer (`Found multiple elements`). Trois états ⇒ trois formulations.
+
+⚠️ **Le SIGNAL prime sur la PHRASE.** La légende disait que les pastilles d'infrastructure
+ne peuvent pas rougir ; le point vert disait le contraire — l'œil croit la couleur. Elles
+sont désormais **grises** tant qu'aucune sonde ne les alimente ; le vert est réservé à ce
+qui a été vérifié (la sonde `/api/health-extended`, datée). ⚠️ Le premier correctif a
+changé la couleur du point mais laissé `boxShadow: '0 0 6px var(--acc2)'` : **le signal
+s'était déplacé dans l'ombre**. Vérifier la propriété visuelle, pas seulement celle qu'on
+avait en tête.
+
+⚠️ **Aucun chiffre d'argent affiché sans qu'on sache s'il entre dans le MRR.** Le tiroir
+d'une boutique de démonstration annonçait « Valeur/mois : 25 000 FCFA » — un montant jamais
+encaissé, dans aucun agrégat. Neutralisé (`—`) : un tiret se lit, un faux montant se retient.
+
+⚠️ **Deux nombres muets qui se contredisent, jamais.** L'onglet affichait « 0 » pendant que
+la liste montrait trois cartes. Il porte les deux (« 0 · 3 ») avec le détail en infobulle,
+et les fixtures sont **badgées SUR LA CARTE** — le rapport précédent affirmait qu'elles
+l'étaient, alors que seul un champ `isFixture` non rendu existait. **Une intention n'est pas
+un écran** : vérifier sur le rendu.
+
+Verrou : `adminConsoleTruth.test.tsx` (7) — monte le VRAI `AdminDashboard` et exerce les
+trois états, le double compteur, le badge de carte et l'exclusion des fixtures de la file.
+
 ### Console Ops ⚠️ — les FIXTURES ne sont pas des clients
 
 `lib/fixtureTenant.ts` (backend) décide par **PROPRIÉTÉ** : `isPlatform` · `isDemo` ·

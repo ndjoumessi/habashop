@@ -205,7 +205,12 @@ export default function AdminDashboard() {
       if (!e.reasons.some(r => r.kind === kind)) e.reasons.push({ kind, label, color })
       map.set(t.id, e)
     }
-    for (const t of tenants) {
+    // ⚠️ `clients`, PAS `tenants` : cette file itérait sur la liste brute, qui exclut
+    // `isPlatform` mais garde les démos et l'E2E. Une boutique de démonstration se
+    // retrouvait donc « à traiter » — un opérateur allait relancer une fixture. La file
+    // de travail applique le MÊME prédicat que les agrégats, une seule source.
+    // Si une fixture devait y apparaître, ce serait un choix à écrire, pas un effet de bord.
+    for (const t of clients) {
       if (t.status === 'trial' && t.trialEnds) {
         const ms = new Date(t.trialEnds).getTime() - now
         if (ms >= 0 && ms < 3 * DAY) add(t, 'trial', i('essai expire ≤ 3 j', 'trial ends ≤ 3 d', 'prueba ≤ 3 d', 'prova ≤ 3 g'), 'var(--warn)')
@@ -215,12 +220,12 @@ export default function AdminDashboard() {
       if (t.lastActivityAt && now - new Date(t.lastActivityAt).getTime() > 14 * DAY) add(t, 'inactive', i('sans vente depuis 14 j', 'no sale in 14 d', 'sin venta desde 14 d', 'nessuna vendita da 14 g'), 'var(--text3)')
     }
     for (const r of planRequests) {
-      const t = tenants.find(x => x.name === r.tenant?.name)
+      const t = clients.find(x => x.name === r.tenant?.name)
       if (r.paymentRef) add(t, 'payment', i('paiement à vérifier', 'payment to review', 'pago por revisar', 'pagamento da verificare'), 'var(--danger)')
       else add(t, 'plan', i('demande de plan', 'plan request', 'solicitud de plan', 'richiesta piano'), 'var(--p2)')
     }
     return [...map.values()].sort((a, b) => b.reasons.length - a.reasons.length)
-  }, [tenants, planRequests, i])
+  }, [clients, planRequests, i])
 
   // « Relancer » = lien de contact PRÉ-REMPLI (e-mail). Pas d'envoi automatisé (gabarits/suivi/
   // désinscription pour un volume qui n'existe pas encore). L'opérateur écrit, personnellement.
@@ -259,6 +264,23 @@ export default function AdminDashboard() {
     })
   }, [tenants, query, sortKey, sortDir])
 
+  /**
+   * ⚠️ MARQUER LA FIXTURE SUR LA CARTE, pas seulement dans une phrase d'un autre onglet.
+   * Le rapport de 2.13.6 affirmait que les fixtures étaient « marquées » : elles ne
+   * l'étaient que par un champ `isFixture` non rendu. Une intention n'est pas un écran.
+   */
+  const FixtureBadge = ({ t }: { t: Tenant }) => t.isFixture ? (
+    <span title={i('Boutique de démonstration ou de test — exclue de tous les agrégats et du MRR.',
+                   'Demo or test shop — excluded from every aggregate and from MRR.',
+                   'Tienda de demo o prueba — excluida de todos los agregados y del MRR.',
+                   'Negozio demo o test — escluso da tutti gli aggregati e dal MRR.')}
+      style={{ background: 'var(--bg4)', color: 'var(--text3)', border: '1px dashed var(--border2)',
+               borderRadius: 20, padding: '2px 9px', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)',
+               textTransform: 'uppercase', letterSpacing: '.05em', whiteSpace: 'nowrap' }}>
+      {i('démo / test', 'demo / test', 'demo / prueba', 'demo / test')}
+    </span>
+  ) : null
+
   const PlanBadge = ({ plan }: { plan: string }) => (
     <span style={{ background: mix(planColor(plan), 14), color: planColor(plan), borderRadius: 20, padding: '2px 10px', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', textTransform: 'capitalize' }}>{plan}</span>
   )
@@ -291,9 +313,16 @@ export default function AdminDashboard() {
   }
 
   const TABS = [
-    { id: 'overview' as const, label: i("Vue d'ensemble", 'Overview', 'Resumen', 'Panoramica'), icon: <LayoutDashboard size={15} />, count: null as number | null, alert: false },
-    { id: 'tenants' as const, label: i('Boutiques', 'Shops', 'Tiendas', 'Negozi'), icon: <Store size={15} />, count: stats?.totalTenants ?? null, alert: false },
-    { id: 'requests' as const, label: i('Demandes', 'Requests', 'Solicitudes', 'Richieste'), icon: <Inbox size={15} />, count: pendingCount || null, alert: pendingCount > 0 },
+    { id: 'overview' as const, label: i("Vue d'ensemble", 'Overview', 'Resumen', 'Panoramica'), icon: <LayoutDashboard size={15} />, count: null as number | null, total: null as number | null, alert: false },
+    // ⚠️ DEUX NOMBRES QUI SE CONTREDISAIENT : l'onglet affichait « 0 » (clientes) pendant
+    // que la liste montrait trois cartes. Deux chiffres muets qui se contredisent sont
+    // pires qu'un seul. Le badge porte maintenant les deux : « 0 · 3 », avec le détail
+    // en infobulle. `title` sur le bouton, pas sur le badge, pour que le survol porte.
+    { id: 'tenants' as const, label: i('Boutiques', 'Shops', 'Tiendas', 'Negozi'), icon: <Store size={15} />,
+      count: stats?.totalTenants ?? null,
+      total: tenants.length,
+      alert: false },
+    { id: 'requests' as const, label: i('Demandes', 'Requests', 'Solicitudes', 'Richieste'), icon: <Inbox size={15} />, count: pendingCount || null, total: null as number | null, alert: pendingCount > 0 },
   ]
 
   return (
@@ -341,6 +370,12 @@ export default function AdminDashboard() {
           const isActive = activeTab === tab.id
           return (
             <button key={tab.id} role="tab" aria-selected={isActive} onClick={() => setActiveTab(tab.id)}
+              title={tab.total !== null && tab.total !== tab.count
+                ? i(`${tab.count} boutique(s) cliente(s) · ${tab.total} au total (démonstration et test comprises)`,
+                    `${tab.count} client shop(s) · ${tab.total} total (demo and test included)`,
+                    `${tab.count} tienda(s) cliente(s) · ${tab.total} en total (demo y prueba incluidas)`,
+                    `${tab.count} negozio/i cliente/i · ${tab.total} in totale (demo e test inclusi)`)
+                : undefined}
               style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 9, border: 'none', background: isActive ? 'var(--card)' : 'transparent', color: isActive ? 'var(--text)' : 'var(--text3)', fontSize: 'var(--fs-label)', fontWeight: isActive ? 700 : 500, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s ease', whiteSpace: 'nowrap', boxShadow: isActive ? '0 2px 8px rgba(0,0,0,.15)' : 'none', minHeight: 40, flexShrink: 0 }}>
               <span style={{ color: isActive ? 'var(--p3)' : 'var(--text4)', display: 'flex', transition: 'color .15s' }}>{tab.icon}</span>
               {tab.label}
@@ -349,7 +384,9 @@ export default function AdminDashboard() {
                   background: tab.alert ? 'rgba(255,59,92,.15)' : isActive ? 'rgba(108,71,255,.15)' : 'var(--bg4)',
                   color: tab.alert ? 'var(--danger)' : isActive ? 'var(--p3)' : 'var(--text4)',
                   border: `1px solid ${tab.alert ? 'rgba(255,59,92,.3)' : isActive ? 'rgba(108,71,255,.2)' : 'var(--border)'}` }}>
-                  {tab.count}
+                  {tab.total !== null && tab.total !== tab.count
+                    ? `${tab.count} · ${tab.total}`
+                    : tab.count}
                 </span>
               )}
             </button>
@@ -382,7 +419,9 @@ export default function AdminDashboard() {
               </div>
               <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 'var(--fs-label)', color: 'var(--text2)' }}>
                 {(stats?.mrrParPlan ?? []).length === 0
-                  ? <span style={{ color: 'var(--text3)' }}>{i('Aucune boutique cliente active.', 'No active client shop.', 'Ninguna tienda cliente activa.', 'Nessun negozio cliente attivo.')}</span>
+                  /* ⚠️ Texte DISTINCT de l'état vide du héros : deux messages différents ne
+                     doivent pas partager la même phrase, sinon on ne sait plus lequel parle. */
+                  ? <span style={{ color: 'var(--text3)' }}>{i('Aucun plan facturé à ce jour.', 'No billed plan yet.', 'Ningún plan facturado.', 'Nessun piano fatturato.')}</span>
                   : (stats?.mrrParPlan ?? []).map((pp: { plan: string; tenants: number; mrrXof: number; surDevis: boolean }) => (
                       <span key={pp.plan} style={{ textTransform: 'capitalize' }}>
                         {pp.plan} · {pp.tenants} · {pp.surDevis
@@ -404,13 +443,37 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="panel" style={{ borderColor: activation.neverProduct.length === 0
-            ? 'color-mix(in srgb, var(--acc2) 30%, var(--border))'
+          {/* ⚠️ TROIS ÉTATS, PAS DEUX — la VÉRITÉ VACANTE.
+              « Toutes vos boutiques ont démarré » s'affichait avec « 0 inscrites » : sur
+              l'ensemble VIDE, « toutes » est vrai et ne veut rien dire. La coche verte
+              félicitait pour un succès que personne n'avait obtenu.
+              C'est une FAMILLE, pas une ligne : `.every()` rend `true` et `.some()` rend
+              `false` sur un tableau vide — les deux mentent quand la liste est vide.
+              L'état vide est NEUTRE : ni coche, ni alerte, ni couleur de succès. */}
+          <div className="panel" style={{ borderColor:
+              activation.registered === 0 ? 'var(--border)'
+            : activation.neverProduct.length === 0 ? 'color-mix(in srgb, var(--acc2) 30%, var(--border))'
             : 'color-mix(in srgb, var(--warn) 30%, var(--border))' }}>
             <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Rocket size={15} /> {i('Activation', 'Activation', 'Activación', 'Attivazione')}</span></div>
             <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-                {activation.neverProduct.length === 0 ? (
+                {activation.registered === 0 ? (
+                  /* ÉTAT VIDE — aucune boutique cliente. Neutre : on constate, on ne félicite pas. */
+                  <div style={{ minWidth: 220, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, background: 'var(--bg3)' }}>
+                    <Store size={28} style={{ color: 'var(--text3)', flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-bold)', color: 'var(--text2)' }}>
+                        {i('Aucune boutique cliente', 'No client shop', 'Ninguna tienda cliente', 'Nessun negozio cliente')}
+                      </div>
+                      <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginTop: 3, maxWidth: '44ch', lineHeight: 1.5 }}>
+                        {i("Rien à mesurer tant qu'aucune inscription réelle n'a eu lieu.",
+                           'Nothing to measure until a real signup happens.',
+                           'Nada que medir hasta que haya un registro real.',
+                           'Niente da misurare finché non ci sarà una registrazione reale.')}
+                      </div>
+                    </div>
+                  </div>
+                ) : activation.neverProduct.length === 0 ? (
                   <div style={{ minWidth: 220, display: 'flex', alignItems: 'center', gap: 12, background: 'color-mix(in srgb, var(--acc2) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--acc2) 25%, var(--border))', borderRadius: 12, padding: '12px 14px' }}>
                     <CheckCircle2 size={30} style={{ color: 'var(--acc2)', flexShrink: 0 }} />
                     <div>
@@ -479,7 +542,18 @@ export default function AdminDashboard() {
                signal surveillé comme sain, jamais un panneau qui disparaît (= « fonction absente ? »). */}
           <div className="panel">
               <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Inbox size={15} /> {i('Boutiques à traiter', 'Shops to handle', 'Tiendas por atender', 'Negozi da gestire')} <span style={{ fontSize: 'var(--fs-caption)', padding: '2px 8px', borderRadius: 99, background: 'var(--bg3)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{toTreat.length}</span></span></div>
-              {toTreat.length === 0 ? (
+              {/* ⚠️ MÊME VÉRITÉ VACANTE que le héros : « aucun essai n'expire », « aucune
+                  boutique inactive » sont VRAIS et VIDES de sens s'il n'y a aucune
+                  boutique cliente. On distingue « rien à traiter » de « rien à traiter
+                  PARCE QU'IL N'Y A PERSONNE ». */}
+              {clients.length === 0 ? (
+                <div style={{ padding: 16, fontSize: 12.5, color: 'var(--text3)', lineHeight: 1.6 }}>
+                  {i("Rien à traiter : cette file se remplira à la première inscription réelle.",
+                     'Nothing to handle: this queue fills up on the first real signup.',
+                     'Nada que tratar: esta lista se llenará con el primer registro real.',
+                     'Niente da gestire: questa coda si riempirà alla prima registrazione reale.')}
+                </div>
+              ) : toTreat.length === 0 ? (
                 <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[
                     i("aucun essai n'expire dans les 3 jours", 'no trial ends within 3 days', 'ninguna prueba vence en 3 días', 'nessuna prova scade entro 3 giorni'),
@@ -581,6 +655,9 @@ export default function AdminDashboard() {
                               <span style={{ width: 4, height: 4, borderRadius: '50%', background: sc.h, boxShadow: sc.label === i('Actif', 'Active', 'Activo', 'Attivo') ? `0 0 5px ${sc.h}` : 'none' }} />
                               {sc.label}
                             </span>
+                            {/* ⚠️ Le badge est SUR LA CARTE, pas seulement dans une phrase
+                                d'un autre onglet : c'est là que l'opérateur lit le chiffre. */}
+                            <FixtureBadge t={t} />
                           </div>
                         </div>
                         <ChevronRight size={16} style={{ color: 'var(--text4)', flexShrink: 0 }} />
@@ -687,7 +764,9 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
                 <h3 style={{ fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0 }}>{selected.name}</h3>
-                <div style={{ marginTop: 6 }}><PlanBadge plan={planKey(selected.plan)} /></div>
+                <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <PlanBadge plan={planKey(selected.plan)} /><FixtureBadge t={selected} />
+                </div>
               </div>
               <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={() => setSelected(null)}><X size={14} /></button>
             </div>
@@ -696,7 +775,12 @@ export default function AdminDashboard() {
                 { l: i('Utilisateurs', 'Users', 'Usuarios', 'Utenti'), v: selected._count?.users ?? 0 },
                 { l: i('Produits', 'Products', 'Productos', 'Prodotti'), v: selected._count?.products ?? 0 },
                 { l: i('Ventes', 'Sales', 'Ventas', 'Vendite'), v: selected._count?.sales ?? 0 },
-                { l: i('Valeur/mois', 'Value/mo', 'Valor/mes', 'Valore/mese'), v: fmtXOF(planPrice(selected.plan)) },
+                /* ⚠️ AUCUN CHIFFRE D'ARGENT SANS QU'ON SACHE S'IL ENTRE DANS LE MRR.
+                   Une fixture affichait « Valeur/mois : 25 000 FCFA » — un montant qui ne
+                   sera jamais encaissé et qui n'est dans aucun agrégat. On le neutralise
+                   plutôt que de l'afficher : un tiret se lit, un faux montant se retient. */
+                { l: i('Valeur/mois', 'Value/mo', 'Valor/mes', 'Valore/mese'),
+                  v: selected.isFixture ? '—' : fmtXOF(planPrice(selected.plan)) },
               ].map(s => (
                 <div key={s.l} className="kpi-card" style={{ padding: 12 }}>
                   <div className="kpi-label">{s.l}</div>
