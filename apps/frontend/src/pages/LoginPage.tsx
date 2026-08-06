@@ -270,12 +270,18 @@ export default function LoginPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '1px solid var(--border)', background: 'var(--card2)' }}>
             <Store size={14} strokeWidth={2} color="var(--text3)" />
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text2)' }}>Dakar Central</span>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text2)' }}>Superette Centrale</span>
           </div>
           <div style={{ padding: '12px 14px 14px' }}>
+            {/* ⚠️ EXEMPLES SANS PAYS — décision du 2026-08-06. Deux chaînes seulement étaient des
+                marqueurs géographiques : « Dakar Central » (ville) et « Café Touba » (Touba est
+                une ville sénégalaise, le café Touba une boisson sénégalaise). « Riz local » et
+                « Savon de Marseille » sont vendus partout — les GARDER : un reçu aux produits
+                génériques serait pire que sénégalais, il perdrait la concrétude qui fait sa force.
+                Les MONTANTS sont inchangés, le total du reçu ne bouge pas. */}
             {[
               { n: 'Riz local 25kg',      q: '1 × 11 000', a: '11 000' },
-              { n: 'Café Touba 250g',     q: '2 × 1 300',  a: '2 600' },
+              { n: 'Huile végétale 1L',   q: '2 × 1 300',  a: '2 600' },
               { n: 'Savon de Marseille',  q: '1 × 500',    a: '500' },
             ].map((l, idx) => (
               <div key={l.n} style={{

@@ -138,7 +138,7 @@ export default function Onboarding() {
 
             <label style={lbl} htmlFor="ob-shop-name">{i('Nom de la boutique', 'Shop name', 'Nombre de la tienda', 'Nome del negozio')}</label>
             <input id="ob-shop-name" className="input" style={inputStyle} autoFocus
-              placeholder={i('Ex : Alimentation Koné', 'Ex: Central Market', 'Ej: Tienda Central', 'Es: Negozio Centrale')}
+              placeholder={i('Ex : Alimentation Centrale', 'Ex: Central Market', 'Ej: Tienda Central', 'Es: Negozio Centrale')}
               value={form.shopName} onChange={e => set({ shopName: e.target.value })} />
 
             <label style={lbl}>{i('Type de commerce', 'Business type', 'Tipo de negocio', 'Tipo di attività')}</label>
@@ -178,7 +178,7 @@ export default function Onboarding() {
             <div style={{ position: 'relative', margin: '6px 0 8px' }}>
               <MapPin size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
               <input id="ob-city" className="input" style={{ width: '100%', boxSizing: 'border-box', paddingLeft: 34 }}
-                placeholder={i('Ex : Abidjan', 'Ex: Lagos', 'Ej: Bamako', 'Es: Dakar')}
+                placeholder={i('Ex : votre ville', 'Ex: your city', 'Ej: su ciudad', 'Es: la tua città')}
                 value={form.city} onChange={e => set({ city: e.target.value })} />
             </div>
           </>
@@ -227,7 +227,7 @@ export default function Onboarding() {
 
             <label style={lbl} htmlFor="ob-owner">{i('Votre nom (propriétaire)', 'Your name (owner)', 'Tu nombre (propietario)', 'Il tuo nome (proprietario)')}</label>
             <input id="ob-owner" className="input" style={inputStyle}
-              placeholder={i('Ex : Aminata Diallo', 'Ex: John Smith', 'Ej: María García', 'Es: Mario Rossi')}
+              placeholder={i('Ex : Aminata', 'Ex: John Smith', 'Ej: María García', 'Es: Mario Rossi')}
               value={form.ownerName} onChange={e => set({ ownerName: e.target.value })} />
 
             <label style={lbl}>{i('Téléphone de la boutique', 'Shop phone', 'Teléfono de la tienda', 'Telefono del negozio')}</label>

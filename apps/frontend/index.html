@@ -12,7 +12,14 @@
   <meta name="description"
     content="HabaShop est un logiciel SaaS de gestion commerciale pour les boutiques et superettes d'Afrique. Caisse (POS), stock, clients, fournisseurs, RH et rapports. Essai gratuit 14 jours, sans carte bancaire."/>
   <meta name="keywords"
-    content="logiciel gestion commerciale Afrique, caisse enregistreuse Sénégal, POS Côte d'Ivoire, gestion stock Mali, ERP Afrique francophone, logiciel boutique Dakar, gestion superette, facturation Afrique, HabaShop"/>
+    <!-- ⚠️ CIBLAGE CAMEROUN — décision du 2026-08-06. Le SEO est le SEUL élément de la
+         vitrine qui ATTIRE du trafic : viser un pays où aucun prestataire n'encaisse fait
+         venir des gens qui ne pourront pas payer. Campay (cm-only) et MTN MoMo sont les
+         seuls chemins de paiement câblés, tous deux camerounais.
+         Les mots-clés précédents visaient le Sénégal, la Côte d'Ivoire, le Mali et Dakar.
+         ⚠️ C'est l'EXCEPTION : partout ailleurs les exemples ne nomment aucun pays
+         (cf. l'en-tête de `landingShared.ts`). Le SEO est ciblé par nature, la copie non. -->
+    content="logiciel gestion commerciale Cameroun, caisse enregistreuse Douala, POS Yaoundé, gestion stock Cameroun, ERP Afrique francophone, logiciel boutique Cameroun, gestion superette, facturation Afrique, HabaShop"/>
   <meta name="robots" content="index, follow"/>
   <meta name="author" content="HabaShop"/>
   <link rel="canonical" href="%VITE_APP_URL%/"/>
@@ -99,6 +106,11 @@
   </script>
 
   <!-- Organisation (pour Google Knowledge Panel) -->
+  <!-- ⚠️ `serviceArea.geoMidpoint` = 4.0511 / 9.7679 → DOUALA. C'était 14.6928 / -17.4467,
+       soit DAKAR : un signal de ciblage géographique INVISIBLE en tant que texte — il
+       n'apparaissait dans aucun inventaire de chaînes, seulement dans deux nombres.
+       ⚠️ Aucun commentaire HTML À L'INTÉRIEUR d'un `application/ld+json` : il rend le
+       JSON invalide et Google cesse de lire TOUT le bloc. Vérifié par `JSON.parse`. -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -113,8 +125,8 @@
       "@type": "GeoCircle",
       "geoMidpoint": {
         "@type": "GeoCoordinates",
-        "latitude": 14.6928,
-        "longitude": -17.4467
+        "latitude": 4.0511,
+        "longitude": 9.7679
       }
     },
     "contactPoint": {

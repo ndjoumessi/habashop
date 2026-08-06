@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { DEFAULT_MARKET } from '@/lib/defaultMarket'
-import { COUNTRIES } from '@/components/signup/signupShared'
+import { COUNTRIES, TX } from '@/components/signup/signupShared'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
 const { navigateMock, registerMock, mockState } = vi.hoisted(() => ({
@@ -25,10 +25,17 @@ import SignupPage from '@/pages/SignupPage'
 
 beforeEach(() => { vi.clearAllMocks() })
 
-// Remplit l'étape 1 avec des valeurs valides
+/**
+ * Remplit l'étape 1 avec des valeurs valides.
+ *
+ * ⚠️ Les placeholders sont LUS DANS `TX`, pas recopiés. Ce fichier figeait
+ * « Ex: Aminata Koné » en dur et aurait rougi à la neutralisation des exemples
+ * (2026-08-06) alors que rien n'était cassé — deuxième fois en deux chantiers, après
+ * « Sénégal ». Un test qui NOMME un exemple bloque la prochaine reformulation de la copie.
+ */
 function fillStep1() {
-  fireEvent.change(screen.getByPlaceholderText('Ex: Boutique Aminata'), { target: { value: 'Boutique Test' } })
-  fireEvent.change(screen.getByPlaceholderText('Ex: Aminata Koné'), { target: { value: 'Aminata Koné' } })
+  fireEvent.change(screen.getByPlaceholderText(TX.fr.shop_ph), { target: { value: 'Boutique Test' } })
+  fireEvent.change(screen.getByPlaceholderText(TX.fr.owner_ph), { target: { value: 'Aminata' } })
   fireEvent.change(screen.getByPlaceholderText('vous@exemple.com'), { target: { value: 'a@example.com' } })
   fireEvent.change(screen.getByLabelText('phone'), { target: { value: '+221770000000' } })
 }

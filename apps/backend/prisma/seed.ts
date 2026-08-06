@@ -1,3 +1,19 @@
+/**
+ * ⚠️ CE SCRIPT NE DÉCRIT PAS LA DÉMO DE PRODUCTION.
+ *
+ * Les noms de tenant ont été neutralisés le 2026-08-06 (« Dakar Central » → « Boutique
+ * Centrale », « Alimentation Koné — Abidjan » → « Alimentation Centrale »), en application
+ * de la décision « les exemples ne nomment aucun pays ».
+ *
+ * ⚠️ Le seed n'a PAS été rejoué : `demo-tenant-001` et `demo-tenant-002` portent TOUJOURS
+ * leurs anciens noms en base. Muter un tenant existant est interdit (§ Vérification en
+ * PROD). Ce script sert aux PROCHAINS environnements, pas à réécrire celui-ci.
+ *
+ * ⚠️ Le jeu de données lui-même reste ouest-africain — clients « Teranga / Sahel / Médina /
+ * Baobab / Yoff », adresses « Médina, Dakar », e-mails `@demo.sn`, numéros +221 et +225.
+ * C'est de la couleur locale d'un jeu de démonstration, pas de la copie produit : hors
+ * périmètre de la décision du 2026-08-06, qui vise les EXEMPLES montrés au prospect.
+ */
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
@@ -14,7 +30,7 @@ async function main() {
     update: { lang: 'fr' },
     create: {
       id: 'demo-tenant-001',
-      name: 'HabaShop — Dakar Central',
+      name: 'HabaShop — Boutique Centrale',
       currency: 'XOF',
       country: 'SN',
       plan: 'business',
@@ -110,7 +126,7 @@ async function main() {
     update: { lang: 'fr' },
     create: {
       id: 'demo-tenant-002',
-      name: 'Alimentation Koné — Abidjan',
+      name: 'Alimentation Centrale',
       currency: 'XOF',
       country: 'CI',
       plan: 'starter',
@@ -141,7 +157,7 @@ async function main() {
     })
   }
 
-  console.log('✅ Seed terminé ! (2 tenants : Dakar Central + Alimentation Koné)')
+  console.log('✅ Seed terminé ! (2 tenants : Boutique Centrale + Alimentation Centrale)')
 }
 
 main()

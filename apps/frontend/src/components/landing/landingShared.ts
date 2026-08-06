@@ -42,6 +42,30 @@ const tarifs = (lang: Lang) => ({
 const pFR = tarifs('fr'), pEN = tarifs('en'), pES = tarifs('es'), pIT = tarifs('it')
 
 /**
+ * ⚠️ LES EXEMPLES NE NOMMENT AUCUNE VILLE, AUCUN PAYS — décision du 2026-08-06.
+ *
+ * Les **DÉFAUTS** pointent le marché où le paiement fonctionne (`lib/defaultMarket` :
+ * Cameroun / XAF / +237, parce que Campay et MTN MoMo sont les seuls chemins câblés).
+ * Les **EXEMPLES** ne choisissent pas de pays, parce que l'ambition est plus large qu'un
+ * marché et que la copie ne doit pas être refaite à chaque ouverture. Les deux ne servent
+ * pas la même chose et n'ont pas à s'accorder.
+ *
+ * Le **SEO fait exception** : il est ciblé par nature, et c'est le seul élément de la
+ * vitrine qui attire du trafic (`index.html`, mots-clés + `geoMidpoint` → Douala).
+ *
+ * ⚠️ NE PAS SUR-NEUTRALISER. Un reçu aux produits génériques serait PIRE que sénégalais :
+ * il perdrait la concrétude qui fait sa force. Deux chaînes seulement étaient des
+ * marqueurs de pays — « Dakar Central » et « Café Touba » (Touba est une ville
+ * sénégalaise). « Riz local » et « Savon de Marseille » se vendent partout : ils RESTENT.
+ * De même « Aminata », prénom porté du Sénégal au Cameroun, est gardé SEUL — ce sont les
+ * patronymes qui sont régionaux (« Koné », « Diallo »), pas le prénom.
+ *
+ * ⚠️ AUCUN VERROU ne garde cette règle, et c'est délibéré : interdire les noms de ville
+ * par scan crierait au loup (une ville est légitime dans une adresse, un pays dans une
+ * liste). Le risque n'est pas la régression automatique — c'est qu'un relecteur
+ * « améliore » la copie en remettant Douala. D'où cette note, ici plutôt qu'un test.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
  * Traductions de la vitrine.
  *
  * ⚠️ RÈGLE DU CHANTIER — une affirmation ne va sur une page publique QUE si l'on peut

@@ -48,6 +48,13 @@ export type ST = {
   pay_title:   string; pay_body: string
 }
 
+/**
+ * ⚠️ LES EXEMPLES NE NOMMENT AUCUN PAYS — décision du 2026-08-06.
+ * « Aminata » est un prénom porté du Sénégal au Cameroun : il RESTE. Les patronymes,
+ * eux, sont régionaux — « Koné » (Côte d'Ivoire, Mali), « Diallo » (peul) — et ont été
+ * retirés. On garde la concrétude d'un prénom réel sans désigner un marché.
+ * Cf. l'en-tête de `landingShared.ts` pour la règle complète.
+ */
 export const TX: Record<Lang, ST> = {
   fr: {
     brand_title: 'Rejoignez HabaShop',
@@ -60,7 +67,7 @@ export const TX: Record<Lang, ST> = {
     phone_hint: 'Utilisé pour recevoir les tickets WhatsApp',
     country: 'Pays', currency: 'Devise',
     password: 'Mot de passe', confirm: 'Confirmer le mot de passe',
-    shop_ph: 'Ex: Boutique Aminata', owner_ph: 'Ex: Aminata Koné',
+    shop_ph: 'Ex: Boutique Aminata', owner_ph: 'Ex: Aminata',
     email_ph: 'vous@exemple.com',
     password_ph: '8 caractères minimum', confirm_ph: 'Répétez le mot de passe',
     next_btn: 'Continuer', missing_prefix: 'Il manque encore :',
@@ -93,7 +100,7 @@ export const TX: Record<Lang, ST> = {
     phone_hint: 'Used to receive WhatsApp receipts',
     country: 'Country', currency: 'Currency',
     password: 'Password', confirm: 'Confirm password',
-    shop_ph: 'Ex: Aminata Store', owner_ph: 'Ex: Aminata Koné',
+    shop_ph: 'Ex: Aminata Store', owner_ph: 'Ex: Aminata',
     email_ph: 'you@example.com',
     password_ph: '8 characters minimum', confirm_ph: 'Repeat the password',
     next_btn: 'Continue', missing_prefix: 'Still missing:',
@@ -126,7 +133,7 @@ export const TX: Record<Lang, ST> = {
     phone_hint: 'Usado para recibir tickets por WhatsApp',
     country: 'País', currency: 'Divisa',
     password: 'Contraseña', confirm: 'Confirmar contraseña',
-    shop_ph: 'Ej: Tienda Aminata', owner_ph: 'Ej: Aminata Koné',
+    shop_ph: 'Ej: Tienda Aminata', owner_ph: 'Ej: Aminata',
     email_ph: 'tu@ejemplo.com',
     password_ph: '8 caracteres mínimo', confirm_ph: 'Repite la contraseña',
     next_btn: 'Continuar', missing_prefix: 'Todavía falta:',
@@ -159,7 +166,7 @@ export const TX: Record<Lang, ST> = {
     phone_hint: 'Usato per ricevere gli scontrini WhatsApp',
     country: 'Paese', currency: 'Valuta',
     password: 'Password', confirm: 'Conferma password',
-    shop_ph: 'Es: Negozio Aminata', owner_ph: 'Es: Aminata Koné',
+    shop_ph: 'Es: Negozio Aminata', owner_ph: 'Es: Aminata',
     email_ph: 'tu@esempio.com',
     password_ph: '8 caratteri minimo', confirm_ph: 'Ripeti la password',
     next_btn: 'Continua', missing_prefix: 'Manca ancora:',
