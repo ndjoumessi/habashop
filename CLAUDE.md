@@ -586,6 +586,62 @@ rappel le plus utile de ce chantier : (a) `integrationsRendered` faisait échoue
 ignorait le mot de passe en clair, donc le cas « mot de passe faux » **ne produisait jamais
 d'échec**. Un test qui ne peut pas atteindre le chemin fautif ne garde rien.
 
+### ⚠️ TAILWIND N'ÉMET RIEN — toute classe `sm:`/`lg:` du source est MORTE
+
+**MESURÉ le 2026-08-06 sur le CSS LIVRÉ : 0 occurrence de `lg\:grid-cols`, 0 de
+`grid-cols-1`.** `tailwind.config.js` et `postcss.config.js` existent, mais `index.css` ne
+porte **aucune directive `@tailwind`** (retirée pour la chaîne critique, cf. en-tête du
+fichier) — donc tailwind ne génère rien, et les 14 usages de `lg:grid-cols-*` du dépôt
+étaient soit **inertes**, soit **figés** à la valeur de base.
+
+| Écrit dans le source | Ce qui s'appliquait |
+|---|---|
+| `grid grid-cols-2 lg:grid-cols-4` | `.grid-cols-2` existe → **2 colonnes à TOUTE largeur**, jamais 4 |
+| `grid grid-cols-1 lg:grid-cols-2` | ni l'un ni l'autre n'existe → **aucune** `grid-template-columns`, cartes pleine largeur empilées |
+
+C'est ce qui a fait qu'un correctif de grille **n'atteignait pas l'écran** : la source était
+juste, l'artefact vide. Même famille que l'ordre des règles du service worker et que le
+`<!--` dans une balise `<meta>` (§ « LA SOURCE EST VALIDE, L'ARTEFACT EST NUL »).
+
+Les utilitaires manquants sont désormais écrits **à la main dans `index.css`**, là où vivent
+déjà `.grid`, `.gap-4`, `.flex` — avec de vraies media queries alignées sur les points de
+rupture tailwind (640 / 1024). ⚠️ **NE PAS « réparer » en ajoutant `@tailwind base`** : le
+reset écraserait toute la feuille de style écrite à la main. ⚠️ Toute nouvelle variante
+responsive doit être **ajoutée là** — l'écrire dans un `className` ne suffit pas, et rien ne
+le signale. Vérifier sur `dist/assets/index-*.css`, jamais sur le source.
+
+### Le LIBELLÉ QUI TRONQUE ⚠️ — corriger la CONTRAINTE, pas la chaîne
+
+**DEUX occurrences dans la même session** (« Marketing WhatsApp », puis « Paiements &
+cana… »), toutes deux « corrigées » en raccourcissant l'étiquette. Deux fois, ce n'est plus
+deux accidents : c'est une contrainte trop étroite que personne n'avait mesurée.
+
+**LA CAUSE** : l'état actif ne change **ni le padding ni la largeur** — il change la
+**GRAISSE** (`--fw-regular` 500 → `--fw-bold` 800). Le même texte est donc plus large une
+fois sélectionné, dans un conteneur identique. D'où une troncature qui n'apparaît **que sur
+l'élément actif**, et qu'on ne voit jamais en relisant le code.
+
+```
+largeur utile d'un libellé = --sidebar − marge 16 − padding 20 − icône 30 − gap 8
+  avant  220 − 74 = 146 px   → 21 caractères impossibles à toute graisse utilisable
+  après  264 − 74 = 190 px   → budget 22 caractères, un de plus que le plus long
+plus longs libellés : « Pannello di controllo » (it) et « Registro de actividad » (es), 21
+```
+
+⚠️ **L'espagnol et l'italien rallongent** — un libellé qui tient en français ne prouve rien.
+`--sidebar` **264px** + `.nav-label` en `--fs-sm` (13 px) : à 14 px la marge restait de
+l'ordre du pixel, et une marge de cet ordre se referme à la traduction suivante.
+
+**Verrou** : `navLabelWidth.test.ts` (4) — géométrie **LUE** dans `index.css` (jamais
+recopiée, sinon elle se périme en silence), libellés **DÉRIVÉS** de `Sidebar.tsx`, budget
+vérifié dans les **4 langues**, et une règle qui échoue si `.nav-item.active` acquiert un
+`padding`/`width`/`border-width` — la cause exacte, figée. **2 sabotages vérifiés** (retour
+à 220 → nomme « Paiements & canaux » ; padding ajouté à l'actif → rouge).
+⚠️ **C'est un BUDGET DE CARACTÈRES, pas une mesure en pixels** : jsdom n'a ni police ni
+moteur de rendu. L'hypothèse (`0,64 em/caractère` en graisse 800, volontairement haute) est
+écrite dans le fichier ; **si une capture montre encore une troncature, c'est CE nombre
+qu'il faut relever — pas le libellé qu'il faut raccourcir.**
+
 ### DENSITÉ ⚠️ — un écran vide n'est un défaut que s'il devait porter de l'information
 
 **La distinction, et elle a été prise à l'envers une fois** : `select-shop` avait été rangé

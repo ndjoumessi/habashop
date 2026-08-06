@@ -64,7 +64,9 @@ const tenant = (id: string, n: number, o: Record<string, unknown> = {}) => ({
   plan: ['starter', 'business', 'enterprise'][n % 3], status: 'active',
   currency: 'XOF', country: 'CM',
   createdAt: new Date(2026, 0, 1 + (n % 28)).toISOString(),
-  isFixture: false, revenue: n * 1000,
+  // ⚠️ Une boutique sur cinq porte un CA à NEUF chiffres — la valeur PLAUSIBLE qui a
+  // fait passer la colonne à la ligne, pas la plus grande valeur actuelle.
+  isFixture: false, revenue: n % 5 === 0 ? 987_654_321 : n * 1000,
   lastActivityAt: new Date(2026, 6, 1 + (n % 20)).toISOString(),
   _count: { users: n % 7, products: n * 2, sales: n * 3 },
   ...o,
@@ -153,6 +155,32 @@ describe('les fixtures sont VISIBLES, badgées, et hors des montants', () => {
     const badgees = [...container.querySelectorAll('tbody tr')]
       .filter(tr => /démo \/ test/i.test(tr.textContent ?? ''))
     expect(badgees).toHaveLength(FIXTURES)
+  })
+})
+
+describe('les cellules monétaires ne s’enroulent jamais', () => {
+  it('CA et MRR portent `white-space: nowrap`, y compris à 9 chiffres', async () => {
+    const { container } = await ouvrirOnglet()
+    // ⚠️ jsdom ne fait pas de mise en page : on ne peut pas OBSERVER un retour à la ligne.
+    // On vérifie donc la propriété qui le rend IMPOSSIBLE, sur toutes les lignes — et le
+    // jeu contient des montants à 9 chiffres, la forme qui a produit le défaut.
+    const lignes = [...container.querySelectorAll('tbody tr')]
+    const fautives: string[] = []
+    for (const tr of lignes) {
+      const tds = [...tr.querySelectorAll('td')] as HTMLElement[]
+      // … CA, MRR, activité, chevron → indices −4 et −3.
+      for (const idx of [tds.length - 4, tds.length - 3]) {
+        if (tds[idx].style.whiteSpace !== 'nowrap') fautives.push(`${tr.textContent?.slice(0, 18)} · cellule ${idx}`)
+      }
+    }
+    expect(fautives, fautives.join('\n')).toEqual([])
+  })
+
+  it('le jeu de test CONTIENT bien un montant à 9 chiffres', async () => {
+    // Assertion de couverture : sans elle, la règle ci-dessus serait verte sur des montants
+    // courts, c'est-à-dire sur le cas qui n'a jamais posé problème.
+    const { container } = await ouvrirOnglet()
+    expect(container.textContent).toMatch(/987[\s\u202f\u00a0]?654[\s\u202f\u00a0]?321/)
   })
 })
 

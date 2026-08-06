@@ -119,6 +119,34 @@ export async function leaveRequestRoutes(app: FastifyInstance): Promise<void> {
     return updated
   })
 
+  /**
+   * DELETE /api/leave-requests/:id — supprime une demande.
+   *
+   * ─── POURQUOI CETTE ROUTE EXISTE ──────────────────────────────────────────
+   * Elle manquait, et son absence a produit une fuite MESURÉE le 2026-08-06 : le scénario
+   * E2E `leave-planning.spec.ts` crée une vraie demande à chaque exécution et ne pouvait
+   * pas la retirer — un commentaire du fichier assumait « l'accumulation » sans jamais la
+   * compter. **295 demandes en base pour 2 combinaisons distinctes**, dont 289 sur
+   * `e2e-tenant`, accumulées depuis le 2026-07-16 (+26 le 05/08, +11 le 06/08).
+   *
+   * ⚠️ Ce n'est PAS une route ajoutée pour faire plaisir à un test : son absence était un
+   * vrai trou produit. Un gérant qui approuve une demande par erreur, ou un employé qui
+   * annule la sienne, n'avaient aucun moyen de la retirer — seulement de la « refuser »,
+   * ce qui laisse une ligne refusée dans l'historique et ne dit pas la même chose.
+   *
+   * Mêmes gardes que `refuse` : approbateur, et scope tenant AVANT l'existence — un tiers
+   * obtient 404, jamais 403 (pas d'oracle, § W1).
+   */
+  app.delete('/api/leave-requests/:id', { preHandler: authenticate }, async (request, reply) => {
+    if (!requireApprover(request, reply)) return
+    const tenantId = request.tenantId
+    const { id } = request.params as { id: string }
+    const existing = await prisma.leaveRequest.findFirst({ where: { id, tenantId }, select: { id: true } })
+    if (!existing) return reply.code(404).send({ error: 'Demande introuvable' })
+    await prisma.leaveRequest.delete({ where: { id } })
+    return { ok: true }
+  })
+
   // POST /api/leave-requests/:id/refuse — REFUSED.
   app.post('/api/leave-requests/:id/refuse', { preHandler: authenticate }, async (request, reply) => {
     if (!requireApprover(request, reply)) return

@@ -78,7 +78,16 @@ export type SortKey = 'name' | 'plan' | 'status' | 'users' | 'products' | 'sales
  */
 const COL: Record<string, number> = {
   plan: 96, statut: 124, users: 68, produits: 84, ventes: 80,
-  ca: 132, mrr: 132, activite: 156, chevron: 36,
+  /**
+   * ⚠️ CA et MRR dimensionnés sur la plus longue valeur PLAUSIBLE, pas sur la plus longue
+   * valeur ACTUELLE. À 132 px, « 13 583 350 FCFA » passait déjà à la ligne — le nombre sur
+   * une ligne, « FCFA » en dessous — et une colonne monétaire qui s'enroule détruit
+   * l'alignement qui est la raison d'être de la table.
+   * Gabarit retenu : « 999 999 999 FCFA », 16 caractères en `--mono` à 13 px (≈ 8,4 px/car,
+   * la mono étant plus large que la proportionnelle) ≈ 134 px + 24 px de padding = 158.
+   * On pose 172 pour que le prochain chiffre significatif ne rouvre pas le défaut.
+   */
+  ca: 172, mrr: 172, activite: 156, chevron: 36,
 }
 
 const planColor = (p?: string) => PLAN_COLOR[planKey(p)] ?? 'var(--text3)'
@@ -731,10 +740,13 @@ export default function AdminDashboard() {
                         <td className="td-num" style={{ padding: '9px 12px', fontVariantNumeric: 'tabular-nums' }}>{t._count?.sales ?? 0}</td>
                         {/* ⚠️ `fmtXOF` rend UNE chaîne : le suffixe « FCFA » est à la même
                             taille que le chiffre, par construction (règle de 2.14.0). */}
-                        <td className="td-num" style={{ padding: '9px 12px', fontVariantNumeric: 'tabular-nums' }}>{fmtXOF(t.revenue ?? 0)}</td>
+                        <td className="td-num" style={{ padding: '9px 12px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmtXOF(t.revenue ?? 0)}</td>
                         {/* ⚠️ MRR d'une fixture = « — », jamais un montant : il n'entre dans
                             aucun agrégat, et un faux montant se retient. */}
-                        <td className="td-num" style={{ padding: '9px 12px', fontVariantNumeric: 'tabular-nums', color: t.isFixture ? 'var(--text3)' : 'var(--text)' }}>
+                        {/* ⚠️ `nowrap` en plus de la largeur : la largeur seule dépend de la
+                            police réellement chargée (Geist peut ne pas l'être au premier
+                            rendu). `nowrap` rend l'enroulement impossible, quoi qu'il arrive. */}
+                        <td className="td-num" style={{ padding: '9px 12px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: t.isFixture ? 'var(--text3)' : 'var(--text)' }}>
                           {t.isFixture ? '—' : fmtXOF(planPrice(t.plan))}
                         </td>
                         {/* ⚠️ LA SEULE cellule colorée de la table, et seulement quand elle

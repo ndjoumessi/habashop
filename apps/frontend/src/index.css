@@ -89,7 +89,17 @@
      rouge = danger (--danger) · orange/ambre = ARGENT, montants (--warn) */
   --z-base:0; --z-sticky:10; --z-dropdown:40;
   --z-modal:100; --z-toast:200; --z-overlay:300;
-  --sidebar: 220px;
+  /* ⚠️ 248, pas 220 — MESURÉ le 2026-08-06. Largeur utile d'un libellé de nav :
+     sidebar − marge 16 − padding 20 − icône 30 − gap 8. À 220 elle valait 146 px, et le
+     plus long libellé existant fait 21 caractères (« Pannello di controllo » it,
+     « Registro de actividad » es). 146 px ne tiennent pas 21 caractères à une graisse
+     utilisable : en --fw-regular « Paiements & canaux » passait tout juste, en --fw-bold
+     — la SEULE chose que l'état actif change — il débordait. D'où une troncature qui
+     n'apparaissait qu'en état actif, et deux corrections successives portées sur
+     l'ÉTIQUETTE au lieu de la contrainte (« Marketing WhatsApp », puis celui-ci).
+     À 264 la largeur utile passe à 190 px, soit un budget de 22 caractères — un de plus que
+     le libellé le plus long, pour que la prochaine traduction ne rouvre pas le défaut. */
+  --sidebar: 264px;
   /* backward compat */
   --sh-glow: 0 0 0 3px rgba(108,71,255,.18);
   --sh-acc: 0 6px 24px rgba(0,208,132,.35);
@@ -371,7 +381,10 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 .nav-item.active::before { content:''; position:absolute; left:-8px; top:50%; transform:translateY(-50%); width:3px; height:20px; border-radius:0 var(--r-full) var(--r-full) 0; background:var(--p) }
 .nav-item.collapsed { justify-content:center; padding:8px 0; margin:1px 0; width:100% }
 .nav-item.collapsed.active::before { left:0 }
-.nav-label { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+/* ⚠️ 13 px (--fs-sm), pas 14 : à 14 px et 176 px utiles, 21 caractères en graisse 800
+   passent à quelques pixels près — une marge de cet ordre se referme au premier libellé
+   un peu plus long. `ellipsis` reste, comme filet, mais il ne doit plus jamais servir. */
+.nav-label { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:var(--fs-sm) }
 /* Items du bloc QUOTIDIEN : le cadre porte le gutter (marge 7px + bordure 1px) →
    les items reprennent 100% de largeur, sans leur gutter propre, pour aligner
    libellé et largeur utile sur les entrées normales de la sidebar. */
@@ -575,6 +588,31 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 .text-xs { font-size:11px } .text-sm { font-size:12px } .font-bold { font-weight:var(--fw-semibold) } .font-semibold { font-weight:var(--fw-regular) }
 .grid { display:grid } .grid-cols-2 { grid-template-columns:repeat(2,1fr) }
 .grid-cols-3 { grid-template-columns:repeat(3,1fr) } .grid-cols-4 { grid-template-columns:repeat(4,1fr) }
+/* ⚠️ `grid-cols-1` et les variantes RESPONSIVES n'existaient PAS — et c'est la raison pour
+   laquelle un correctif de grille n'atteignait pas l'écran. `tailwind.config.js` et
+   `postcss.config.js` sont bien présents, mais `index.css` ne porte AUCUNE directive
+   `@tailwind` (retirée pour la chaîne critique, cf. en-tête du fichier) : tailwind n'émet
+   donc rien, et toute classe `sm:` / `lg:` du source ne désigne aucune règle. MESURÉ sur le
+   CSS LIVRÉ : 0 occurrence de `lg\:grid-cols`, 0 de `grid-cols-1`.
+   Conséquence : `grid grid-cols-1 lg:grid-cols-2` ne posait AUCUN `grid-template-columns`
+   → une seule colonne implicite, cartes pleine largeur empilées, à toute résolution.
+   Les 14 usages du dépôt sont donc soit inertes, soit figés à 2 colonnes.
+   La source est valide, l'artefact est nul — même famille que l'ordre des règles du service
+   worker et que le `<!--` dans une balise `<meta>` (§ Déploiement).
+   ⚠️ NE PAS « réparer » en ajoutant `@tailwind base` : le reset écraserait toute la feuille
+   de style écrite à la main. On ajoute les utilitaires manquants là où vivent déjà les
+   autres, avec de vraies media queries alignées sur les points de rupture tailwind. */
+.grid-cols-1 { grid-template-columns:repeat(1,1fr) }
+@media (min-width:640px) {
+  .sm\:grid-cols-2 { grid-template-columns:repeat(2,1fr) }
+  .sm\:grid-cols-3 { grid-template-columns:repeat(3,1fr) }
+  .sm\:grid-cols-4 { grid-template-columns:repeat(4,1fr) }
+}
+@media (min-width:1024px) {
+  .lg\:grid-cols-2 { grid-template-columns:repeat(2,1fr) }
+  .lg\:grid-cols-3 { grid-template-columns:repeat(3,1fr) }
+  .lg\:grid-cols-4 { grid-template-columns:repeat(4,1fr) }
+}
 .col-span-2 { grid-column:span 2 } .block { display:block }
 .tracking-wide { letter-spacing:.05em } .uppercase { text-transform:uppercase }
 .truncate { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
