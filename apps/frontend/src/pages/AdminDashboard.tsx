@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useI18n } from '@/hooks/useI18n'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { confirm } from '@/lib/confirm'
+import { paymentMethodLabel, paymentMethodColor } from '@/lib/paymentMethods'
 import toast from 'react-hot-toast'
 import EmptyState from '@/components/ui/EmptyState'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -563,9 +564,9 @@ export default function AdminDashboard() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {planRequests.map(req => {
-                const pm = req.paymentMethod === 'wave' ? { label: 'Wave', c: 'var(--brand-wave)' }
-                  : req.paymentMethod === 'orange_money' ? { label: 'Orange Money', c: 'var(--brand-om)' }
-                  : { label: req.paymentMethod ?? '—', c: 'var(--text3)' }
+                // ⚠️ Deux branches pour CINQ moyens : `mtn_money`, `virement` et `card`
+                // s'affichaient BRUTS à l'opérateur. Record partagé (jumeau backend).
+                const pm = { label: paymentMethodLabel(req.paymentMethod, lang), c: paymentMethodColor(req.paymentMethod) }
                 return (
                   <div key={req.id} style={{ background: 'var(--card)', border: '1px solid rgba(255,149,0,.2)', borderRadius: 14, padding: 16, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: 'rgba(255,149,0,.1)', border: '1px solid rgba(255,149,0,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--acc)' }}>

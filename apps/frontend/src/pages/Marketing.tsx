@@ -637,7 +637,7 @@ export default function Marketing() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {[
                   { val: 'all',       label: lang === 'en' ? 'All' : lang === 'es' ? 'Todos' : lang === 'it' ? 'Tutti' : 'Tous' },
-                  { val: 'bronze',    label: lang === 'en' ? 'Bronze' : 'Bronze' },
+                  { val: 'bronze',    label: 'Bronze' },   // palier fidélité — nom de marque, identique dans les 4 langues
                   { val: 'silver',    label: lang === 'en' ? 'Silver' : lang === 'es' ? 'Plata' : lang === 'it' ? 'Argento' : 'Silver' },
                   { val: 'gold',      label: lang === 'en' ? 'Gold' : lang === 'es' ? 'Oro' : lang === 'it' ? 'Oro' : 'Gold' },
                   // ⚠️ Types clients DÉRIVÉS de `CLIENT_TYPES` (#215) — c'était une QUATRIÈME

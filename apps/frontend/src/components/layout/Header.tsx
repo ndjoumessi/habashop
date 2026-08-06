@@ -374,7 +374,7 @@ export default function Header() {
             <div
               title={trial.isTrial
                 ? (lang === 'en' ? `Free trial — ${trial.daysLeft} day(s) left` : lang === 'es' ? `Prueba gratuita — ${trial.daysLeft} día(s) restante(s)` : lang === 'it' ? `Prova gratuita — ${trial.daysLeft} giorno/i rimanente/i` : `Essai gratuit — ${trial.daysLeft} jour(s) restant(s)`)
-                : (lang === 'en' ? `${planLabel} plan` : lang === 'it' ? `Piano ${planLabel}` : `Plan ${planLabel}`)}
+                : (lang === 'en' ? `${planLabel} plan` : lang === 'it' ? `Piano ${planLabel}` : lang === 'es' ? `Plan ${planLabel}` : `Plan ${planLabel}`)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20,
                 background: bg, border: `1px solid ${border}`, color, flexShrink: 0,

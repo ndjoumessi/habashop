@@ -263,11 +263,25 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       // Numéro reçu du CORPS DE REQUÊTE → tiers. L'ancien `replace(/^0/, '')`
       // transformait 0622123456 en +622123456, numéro INDONÉSIEN valide donc livrable.
 
+      // ⚠️ C'était `lang === 'fr' ? [FR] : [EN]` — un commerçant espagnol ou italien
+      // recevait son alerte de rupture en ANGLAIS. Table exhaustive sur les 4 langues,
+      // repli FRANÇAIS (langue par défaut du produit), pas anglais.
+      const ALERT_COPY = {
+        fr: { title: 'Alerte Stock',  head: 'Rupture critique :',  cta: 'Commander immédiatement pour éviter la rupture.' },
+        en: { title: 'Stock Alert',   head: 'Critical stock:',     cta: 'Order immediately to avoid stockout.' },
+        es: { title: 'Alerta Stock',  head: 'Stock crítico:',      cta: 'Pedir de inmediato para evitar la rotura.' },
+        it: { title: 'Avviso Scorte', head: 'Scorte critiche:',    cta: 'Ordinare subito per evitare la rottura di stock.' },
+      } as const
+      type AlertLang = keyof typeof ALERT_COPY
+      const isAlertLang = (v: unknown): v is AlertLang => typeof v === 'string' && v in ALERT_COPY
+
       let body = ''
       if (alertType === 'low_stock') {
-        body = lang === 'fr'
-          ? `⚠️ *HabaShop — Alerte Stock*\n\n🔴 *Rupture critique :*\n${(data.products ?? []).map((p: { name: string; stock: number; threshold: number }) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`).join('\n')}\n\n📦 Commander immédiatement pour éviter la rupture.`
-          : `⚠️ *HabaShop — Stock Alert*\n\n🔴 *Critical stock:*\n${(data.products ?? []).map((p: { name: string; stock: number; threshold: number }) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`).join('\n')}\n\n📦 Order immediately to avoid stockout.`
+        const c = ALERT_COPY[isAlertLang(lang) ? lang : 'fr']
+        const lignes = (data.products ?? [])
+          .map((p: { name: string; stock: number; threshold: number }) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`)
+          .join('\n')
+        body = `⚠️ *HabaShop — ${c.title}*\n\n🔴 *${c.head}*\n${lignes}\n\n📦 ${c.cta}`
       }
 
       if (!body) return reply.code(400).send({ error: 'alertType inconnu' })

@@ -336,7 +336,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               </button>
               <button
                 onClick={async () => {
-                  if (!(await confirm({ title: lang === 'en' ? 'Delete employee' : lang === 'es' ? 'Eliminar empleado' : lang === 'it' ? 'Elimina dipendente' : "Supprimer l'employé", message: lang==='fr'?`Supprimer ${selectedEmp!.name} ? Cette action est irréversible.`:`Delete ${selectedEmp!.name}? This action is irreversible.`, danger: true }))) return
+                  if (!(await confirm({ title: lang === 'en' ? 'Delete employee' : lang === 'es' ? 'Eliminar empleado' : lang === 'it' ? 'Elimina dipendente' : "Supprimer l'employé", message: lang === 'en' ? `Delete ${selectedEmp!.name}? This action is irreversible.` : lang === 'es' ? `¿Eliminar ${selectedEmp!.name}? Esta acción es irreversible.` : lang === 'it' ? `Eliminare ${selectedEmp!.name}? L'azione è irreversibile.` : `Supprimer ${selectedEmp!.name} ? Cette action est irréversible.`, danger: true }))) return
                   setEmployees((prev: Employee[]) => prev.filter(e=>e.id!==selectedEmp!.id))
                   setShowEditEmpModal(false)
                   toast.success(lang === 'en' ? 'Deleted' : lang === 'es' ? 'Eliminado' : lang === 'it' ? 'Eliminato' : 'Supprimé')

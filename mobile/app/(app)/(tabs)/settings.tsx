@@ -19,6 +19,7 @@ import Avatar from '@/components/ui/Avatar'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import AccessibleButton from '@/components/ui/AccessibleButton'
 import { appUrlHost } from '@/lib/appUrl'
+import { statusColor, statusLabel } from '@/lib/tenantStatus'
 import { isBiometricAvailable, isBiometricEnabled, disableBiometric, type BiometricType } from '@/services/biometric'
 import { isWidgetEnabled, setWidgetEnabled, refreshWidget, dismissWidget } from '@/services/widgetNotification'
 import { registerWidgetRefresh, unregisterWidgetRefresh } from '@/tasks/backgroundRefresh'
@@ -101,8 +102,13 @@ export default function SettingsScreen() {
     }
   }, [isLoggedIn, isLoading, user, tenant, restoreSession])
 
+  // ⚠️ Le ternaire d'ici mappait CINQ statuts sur trois branches : `pending_payment` et
+  // `cancelled` tombaient dans le vert « actif », avec le champ brut de la base en libellé.
+  // Or `pending_payment` est l'état de TOUT futur client payant (la voie d'abonnement est
+  // manuelle). Le Record de `@/lib/tenantStatus` est exhaustif : `tsc` échoue si le
+  // backend ajoute un statut. Cf. l'en-tête de ce module pour la mesure.
   const status = tenant?.status ?? 'active'
-  const statusColor = status === 'suspended' ? C.danger : status === 'trial' ? C.warn : C.accent2
+  const statusTint = statusColor(status, C)
 
   // Marqueur de bundle EAS : permet de prouver quel OTA tourne réellement sur le device
   // (matcher les 8 premiers caractères avec l'« Update group ID » de `eas update`).
@@ -182,8 +188,8 @@ export default function SettingsScreen() {
                   <View style={[s.badge, { backgroundColor: withAlpha(C.primary, 0.15), borderColor: withAlpha(C.primary, 0.3) }]}>
                     <Text style={[s.badgeTxt, { color: C.primary3 }]}>{tenant.plan.toUpperCase()}</Text>
                   </View>
-                  <View style={[s.badge, { backgroundColor: `${statusColor}1a`, borderColor: `${statusColor}40` }]}>
-                    <Text style={[s.badgeTxt, { color: statusColor }]}>{status.toUpperCase()}</Text>
+                  <View style={[s.badge, { backgroundColor: withAlpha(statusTint, 0.1), borderColor: withAlpha(statusTint, 0.25) }]}>
+                    <Text style={[s.badgeTxt, { color: statusTint }]}>{statusLabel(status, lang).toUpperCase()}</Text>
                   </View>
                 </View>
               </View>
@@ -322,7 +328,7 @@ export default function SettingsScreen() {
           {[
             { k: i('Nom', 'Name', 'Nombre', 'Nome'), v: tenant?.name ?? '—' },
             { k: i('Plan', 'Plan', 'Plan', 'Piano'), v: (tenant?.plan ?? '—').toUpperCase() },
-            { k: i('Statut', 'Status', 'Estado', 'Stato'), v: status },
+            { k: i('Statut', 'Status', 'Estado', 'Stato'), v: statusLabel(status, lang) },
             { k: i('Devise', 'Currency', 'Divisa', 'Valuta'), v: currency },
             { k: i('Langue', 'Language', 'Idioma', 'Lingua'), v: lang.toUpperCase() },
           ].map((row, idx, arr) => (

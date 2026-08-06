@@ -1,0 +1,88 @@
+{
+  "_comment": [
+    "MOYENS DE PAIEMENT D'ABONNEMENT — cas partagés, lus à l'EXÉCUTION par les tests jumeaux :",
+    "  apps/frontend/src/lib/paymentMethods.ts ← src/tests/paymentMethodsShared.test.ts",
+    "  apps/backend/src/lib/paymentMethods.ts  ← src/tests/paymentMethodsShared.test.ts",
+    "Modifier la table d'un seul côté fait rougir l'autre.",
+    "",
+    "⚠️ TROIS implémentations coexistaient, MESURÉES le 2026-08-06 :",
+    "",
+    "  id            UpgradePlan.tsx:22   email.ts:297         AdminDashboard:566",
+    "  wave          Wave                 Wave 🌊              Wave",
+    "  orange_money  Orange Money         Orange Money 🟠      Orange Money",
+    "  mtn_money     MTN Money            MTN Money            → BRUT « mtn_money »",
+    "  virement      Virement bancaire    Virement bancaire    → BRUT « virement »",
+    "  card          — ABSENT             Carte bancaire       → BRUT « card »",
+    "",
+    "Quatre écarts : AdminDashboard rendait le champ BRUT au-delà de deux marques (ternaire",
+    "binaire sur un domaine de cinq) · email.ts collait le pictogramme DANS le libellé ·",
+    "UpgradePlan ne connaissait pas `card` · et donnait à Wave #00B3FF quand le jeton CSS",
+    "--brand-wave vaut #1B9AF5.",
+    "",
+    "⚠️ `offeredInTunnel` distingue ce qu'on PROPOSE de ce qu'on sait NOMMER — même",
+    "distinction que `purchasable` / `billable` du catalogue de plans. `card` n'est pas",
+    "proposé à l'abonnement (aucun processeur branché), mais un admin peut l'enregistrer",
+    "comme méthode d'un paiement reçu : il doit donc avoir un libellé.",
+    "",
+    "⚠️ Les MARQUES ne se traduisent pas (`brand`) ; les moyens génériques ont quatre",
+    "formes (`label`). Cf. § i18n du guide racine."
+  ],
+
+  "methods": [
+    {
+      "id": "wave",
+      "emoji": "🌊",
+      "brand": "Wave",
+      "label": null,
+      "colorHex": "#1B9AF5",
+      "cssVar": "--brand-wave",
+      "offeredInTunnel": true
+    },
+    {
+      "id": "orange_money",
+      "emoji": "🟠",
+      "brand": "Orange Money",
+      "label": null,
+      "colorHex": "#FF6600",
+      "cssVar": "--brand-om",
+      "offeredInTunnel": true
+    },
+    {
+      "id": "mtn_money",
+      "emoji": "💛",
+      "brand": "MTN Money",
+      "label": null,
+      "colorHex": "#FFCC00",
+      "cssVar": "--brand-mtn",
+      "offeredInTunnel": true
+    },
+    {
+      "id": "virement",
+      "emoji": "🏦",
+      "brand": null,
+      "label": {
+        "fr": "Virement bancaire",
+        "en": "Bank transfer",
+        "es": "Transferencia bancaria",
+        "it": "Bonifico bancario"
+      },
+      "colorHex": "#6C47FF",
+      "cssVar": "--p",
+      "offeredInTunnel": true
+    },
+    {
+      "id": "card",
+      "emoji": "💳",
+      "brand": null,
+      "label": {
+        "fr": "Carte bancaire",
+        "en": "Bank card",
+        "es": "Tarjeta bancaria",
+        "it": "Carta di credito"
+      },
+      "colorHex": "#00D084",
+      "cssVar": "--acc2",
+      "offeredInTunnel": false
+    }
+  ]
+}

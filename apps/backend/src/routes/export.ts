@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { sanitizeCsv } from '../lib/csv'
+import { exportHeaders } from '../lib/exportHeaders'
 
 export async function exportRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/export/:resource', { preHandler: [authenticate] }, async (request, reply) => {
@@ -19,6 +20,8 @@ export async function exportRoutes(app: FastifyInstance): Promise<void> {
     // Chaque `case` construit désormais ses lignes là où Prisma a typé sa requête : lire un
     // champ absent devient une erreur de compilation (TS2339), pas une colonne vide en prod.
     let filename = ''
+    // ⚠️ Les cinq jeux d'en-têtes étaient `lang === 'fr' ? [FR] : [EN]` — es et it
+    // recevaient l'ANGLAIS. Record exhaustif dans `lib/exportHeaders.ts`.
     let headers: string[] = []
     let rows: (string | number)[][] = []
 
@@ -26,14 +29,14 @@ export async function exportRoutes(app: FastifyInstance): Promise<void> {
       case 'products': {
         const data = await prisma.product.findMany({ where: { tenantId, isActive: true, deletedAt: null }, orderBy: { name: 'asc' } })
         filename = `stock-${new Date().toISOString().slice(0,10)}.csv`
-        headers = lang==='fr' ? ['Nom','Catégorie','Stock','Min','Prix achat','Prix vente'] : ['Name','Category','Stock','Min','Buy price','Sell price']
+        headers = exportHeaders('products', lang)
         rows = data.map(p => [p.name, p.category, p.stockQty, p.stockMin, p.buyPrice, p.sellPrice])
         break
       }
       case 'customers': {
         const data = await prisma.customer.findMany({ where: { tenantId, deletedAt: null }, orderBy: { createdAt: 'desc' } })
         filename = `clients-${new Date().toISOString().slice(0,10)}.csv`
-        headers = lang==='fr' ? ['Nom','Téléphone','Email','Type','CA Total','Points'] : ['Name','Phone','Email','Type','Revenue','Points']
+        headers = exportHeaders('customers', lang)
         rows = data.map(c => [c.name, c.phone ?? '', c.email ?? '', c.type ?? '', c.totalRevenue, c.loyaltyPoints])
         break
       }
@@ -43,7 +46,7 @@ export async function exportRoutes(app: FastifyInstance): Promise<void> {
         // ⚠️ En-tête « Catégorie », PAS « Spécialité » : c'est le champ réel, et c'est déjà le
         // vocabulaire de l'export CSV frontend (`t('col_category')`, `Suppliers.tsx`). Deux
         // exports du même objet annonçaient deux noms différents pour la même donnée.
-        headers = lang==='fr' ? ['Nom','Catégorie','Téléphone','Email','Rating','Délai'] : ['Name','Category','Phone','Email','Rating','Lead time']
+        headers = exportHeaders('suppliers', lang)
         // `categories` est déjà la chaîne saisie par le commerçant (« Riz, Huile ») : telle quelle.
         rows = data.map(s => [s.name, s.categories ?? '', s.phone ?? '', s.email ?? '', s.rating, s.leadTime])
         break
@@ -51,14 +54,14 @@ export async function exportRoutes(app: FastifyInstance): Promise<void> {
       case 'sales': {
         const data = await prisma.sale.findMany({ where: { tenantId }, include: { items: true }, orderBy: { createdAt: 'desc' }, take: 1000 })
         filename = `ventes-${new Date().toISOString().slice(0,10)}.csv`
-        headers = lang==='fr' ? ['Date','Réf','Articles','Total','Paiement'] : ['Date','Ref','Items','Total','Payment']
+        headers = exportHeaders('sales', lang)
         rows = data.map(v => [new Date(v.createdAt).toLocaleDateString('fr-FR'), v.id.slice(-6), v.items.length, v.total, v.paymentMode ?? ''])
         break
       }
       case 'employees': {
         const data = await prisma.employee.findMany({ where: { tenantId }, orderBy: { name: 'asc' } })
         filename = `employes-${new Date().toISOString().slice(0,10)}.csv`
-        headers = lang==='fr' ? ['Nom','Rôle','Département','Salaire','Type'] : ['Name','Role','Department','Salary','Type']
+        headers = exportHeaders('employees', lang)
         rows = data.map(e => [e.name, e.role, e.dept, e.salary, e.type])
         break
       }

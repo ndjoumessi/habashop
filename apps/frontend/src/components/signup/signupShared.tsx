@@ -10,10 +10,18 @@ export type { Lang, Currency }
  * déjà oublié par le verrou des affirmations. Et quand bien même : il cherchait `\b8000\b`
  * quand la copie écrit « 8 000 ». Deux périmètres faux pour un seul défaut.
  */
+/**
+ * ⚠️ QUATRE locales, pas deux. J'avais écrit `lang === 'en' ? 'en-US' : 'fr-FR'` — un
+ * ternaire binaire sur un domaine de quatre, dans le commit même qui corrigeait des
+ * collapses tarifaires. MESURÉ : es-ES et it-IT groupent au POINT (« 250.000 ») et ne
+ * groupent pas sous cinq chiffres (« 8000 »), là où fr-FR met une espace.
+ */
+const LOCALES: Record<Lang, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT' }
+
 const groupe = (xof: number, lang: Lang): string =>
-  xof.toLocaleString(lang === 'en' ? 'en-US' : 'fr-FR').replace(/[\u202f\u00a0]/g, ' ')
+  xof.toLocaleString(LOCALES[lang] ?? LOCALES.fr).replace(/[\u202f\u00a0]/g, ' ')
 const cfa = (xof: number, lang: Lang): string =>
-  lang === 'en' ? `${groupe(xof, lang)} CFA` : `${groupe(xof, lang)} F CFA`
+  lang === 'en' ? `${groupe(xof, lang)} CFA` : `${groupe(xof, lang)} F CFA`   // « F CFA » = usage francophone, conservé pour fr/es/it
 const starterM  = (lang: Lang) => cfa(planAmountXOF('starter', 'monthly')!, lang)
 const businessM = (lang: Lang) => groupe(planAmountXOF('business', 'monthly')!, lang)
 

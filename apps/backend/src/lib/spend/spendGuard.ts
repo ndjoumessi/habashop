@@ -67,6 +67,30 @@ const ENV_KEY: Record<SpendKind, string> = {
   ai: 'AI', ocr: 'OCR', whatsapp: 'WHATSAPP', whatsapp_marketing: 'WHATSAPP_MARKETING', email: 'EMAIL', sms: 'SMS',
 }
 
+/**
+ * Plafond journalier pour un couple (kind, statut de boutique).
+ *
+ * ⚠️ JUSTESSE EMPRUNTÉE — À NE PAS « CORRIGER », À NE PAS DÉPLACER.
+ *
+ * Le ternaire ci-dessous mappe CINQ statuts (`trial | active | pending_payment |
+ * suspended | cancelled`) sur DEUX paliers de quota. Ce n'est pas une erreur d'arité :
+ * il n'existe que deux jeux de plafonds, `QUOTA_TRIAL_*` et `QUOTA_ACTIVE_*`.
+ *
+ * Mais il n'est juste que **grâce à un invariant distant** : `authorizeSpend` applique
+ * ses gardes dans l'ordre  démo → statut → rafale → quota,  et `tenantSpendState`
+ * REFUSE `suspended` et `cancelled` avant que cette fonction soit atteinte. Sans cette
+ * garde amont, une boutique suspendue ou résiliée hériterait ici du palier PAYANT
+ * (200 appels IA/jour, 300 WhatsApp…) — sur un chemin de dépense réelle, facturée.
+ *
+ * Rien dans cette expression ne dit qu'elle dépend de cet ordre. Une justesse qui
+ * repose sur un invariant qu'aucun test n'enregistre est une justesse empruntée : elle
+ * disparaît le jour où quelqu'un réordonne les gardes, sans que rien ne rougisse.
+ * D'où `spendGuardStatusOrder.test.ts`, qui échoue si un statut refusé en amont
+ * redevient capable d'atteindre cette ligne.
+ *
+ * `pending_payment` reçoit délibérément le palier `active` : le commerçant a demandé un
+ * plan et attend l'encaissement manuel, on ne lui coupe pas le service entre-temps.
+ */
 export function quotaLimit(kind: SpendKind, status: string): number {
   const tier = status === 'trial' ? 'trial' : 'active'
   const parsed = Number(process.env[`QUOTA_${tier.toUpperCase()}_${ENV_KEY[kind]}`])

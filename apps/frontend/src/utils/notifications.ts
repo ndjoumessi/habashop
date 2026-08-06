@@ -26,9 +26,11 @@ export function sendNotification(
 
 export function notifyLowStock(products: { name: string; stock: number }[], lang = 'fr') {
   if (!products.length) return
-  const title = lang === 'fr'
-    ? `⚠️ ${products.length} rupture(s) de stock`
-    : `⚠️ ${products.length} stock alert(s)`
+  const n = products.length
+  const title = lang === 'en' ? `⚠️ ${n} stock alert(s)`
+              : lang === 'es' ? `⚠️ ${n} alerta(s) de stock`
+              : lang === 'it' ? `⚠️ ${n} avviso/i scorte`
+              : `⚠️ ${n} rupture(s) de stock`
   const body = products.slice(0, 3).map(p => `${p.name}: ${p.stock} unités`).join('\n')
   sendNotification(title, { body, tag: 'low-stock', data: { url: '/app/stock' } })
 }

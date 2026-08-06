@@ -332,6 +332,67 @@ les règles **transverses** : celles qu'on enfreint sans même travailler sur le
 - **Webhooks** : HMAC-SHA256 raw body, `timingSafeEqual`, **fail-closed partout** (Wave inclus : `wave.ts` `if (!secret) return false`). Reste à poser `WAVE_WEBHOOK_SECRET` en prod.
 - **Tests PDF** : signature `%PDF` + taille >500o.
 
+### Arité des ternaires ⚠️ — la parade est le `Record`, PAS un scanner
+
+**MESURÉ le 2026-08-06** sur 425 fichiers de production (web + API + mobile) : **1 268
+chaînes** de ternaires portant sur un domaine typé, dont **1 211 exhaustives**. Le motif
+`x === 'litéral' ? A : B` est donc massivement CORRECT — 57 chaînes seulement avalaient
+≥ 2 valeurs, et après lecture il ne restait que **25 défauts réels**.
+
+⚠️ **NE PAS écrire de verrou-scanner sur ce motif.** Décision prise après mesure, pas par
+principe : à 95 % de justes, un scanner crie au loup et se fait désarmer. Surtout, la seule
+liaison qu'il puisse faire à bas coût — **par NOM DE VARIABLE** — s'est révélée FAUSSE au
+cours de la mesure elle-même : `e.status` (statut de dépense, PAYÉ/EN ATTENTE, cardinalité 2)
+était attribué au domaine des statuts de tenant, `alert.level` à `priceGapLevel`, `filterStatus`
+aux statuts de `PlanRequest`. Des ternaires **binaires corrects sur un domaine binaire**,
+comptés comme défauts. **La seule liaison sûre est par les LITTÉRAUX testés** : la chaîne
+appartient au domaine D si *tous* ses littéraux appartiennent à D.
+
+⚠️ **Second piège de mesure : la QUEUE d'une chaîne ressemble à un binaire.**
+`lang === 'en' ? … : lang === 'es' ? … : lang === 'it' ? … : fr` produit quatre
+correspondances, dont la dernière semble binaire. Sans regroupement par offsets d'expression :
+**1 366 faux positifs**. Regrouper d'abord, juger ensuite.
+
+**La parade est le `Record<Domaine, …>`** — `tsc` échoue si une valeur est ajoutée sans être
+décrite, ce que le ternaire ne peut pas faire (son `else` avale silencieusement). À poser
+**uniquement là où le domaine GRANDIRA** :
+- **`paymentMethod`** — `lib/paymentMethods.ts`, jumeaux front/back + fixture partagée
+  `docs/shared-fixtures/payment-methods.json`. Il y avait **TROIS** implémentations avec
+  quatre divergences (UpgradePlan ignorait `card` et donnait `#00B3FF` à Wave quand
+  `--brand-wave` vaut `#1B9AF5` · email.ts collait le pictogramme DANS le libellé ·
+  AdminDashboard rendait le champ BRUT — « virement », « mtn_money » — au-delà de deux
+  marques). `offeredInTunnel` distingue ce qu'on PROPOSE de ce qu'on sait NOMMER, exactement
+  comme `purchasable`/`billable` du catalogue de plans.
+- **`payMode` mobile** — `mobile/src/lib/paymentLabel.ts`. Les deux reçus (`printReceipt.ts`,
+  `whatsappTicket.ts`) portaient la MÊME chaîne à trois branches sur un domaine de cinq :
+  une vente **MTN MoMo s'imprimait « Carte »** sur le document remis à l'acheteur. ⚠️ Chemin
+  mesuré : `posStore.PaymentMode` du mobile ne contient pas `mtn`, le défaut semblait donc
+  inatteignable — il ne l'est pas, `app/(app)/sales/index.tsx` réimprime depuis
+  `sale.paymentMode`, une vente RELUE DU SERVEUR (encaissée sur le web).
+- **`Tenant.status`** — `mobile/src/lib/tenantStatus.ts`. `pending_payment` et `cancelled`
+  tombaient dans le VERT « actif », libellés par le champ brut de la base. Or
+  `pending_payment` est l'état de **tout futur client payant** (la voie d'abonnement est
+  manuelle). ⚠️ La colonne est un `String`, pas un enum : une valeur inconnue doit être
+  **neutre et VISIBLE**, jamais assimilée à « actif ».
+
+⚠️ **JUSTESSE EMPRUNTÉE — l'enregistrer, ne pas la « corriger ».** `spendGuard.quotaLimit`
+mappe cinq statuts sur deux paliers de quota : l'expression **n'est pas fausse** (il n'existe
+que deux jeux de plafonds). Elle n'est juste que parce que `authorizeSpend` applique ses gardes
+dans l'ordre **démo → statut → rafale → quota** et que `tenantSpendState` refuse `suspended` et
+`cancelled` AVANT d'atteindre cette ligne — sinon une boutique suspendue hériterait du palier
+PAYANT sur un chemin de dépense facturée. **Une justesse qui dépend d'un invariant distant et
+que rien n'enregistre est une justesse empruntée** : elle disparaît au premier réordonnancement,
+sans qu'aucune suite ne rougisse (`tsc` ne voit rien, les deux fonctions étant valides
+séparément). D'où `spendGuardStatusOrder.test.ts` — il ne teste pas le plafond, il teste que
+**ce que `quotaLimit` n'a pas à distinguer, quelqu'un d'autre le refuse**. Sabotage vérifié :
+retirer la garde amont → 4 rouges.
+
+**`lang` n'a pas besoin d'un `Record`** : la convention `i(fr,en,es,it)` existe et tient à
+95 %. Les traînards se rattrapent en passant. ⚠️ Mesuré au passage — `Header.tsx` rendait
+`Plan X` pour fr **et** es faute de branche espagnole ; c'était juste *par coïncidence*, les
+deux langues employant le même mot. Une branche correcte pour la mauvaise raison reste à
+écrire, sans quoi la première reformulation française emporte l'espagnol.
+
 ### Le JUMEAU NON TRAITÉ ⚠️ — le motif le plus coûteux de ce dépôt
 
 **Une correction qui s'arrête au premier fichier trouvé n'est pas une correction, c'est un
@@ -398,6 +459,39 @@ atteinte**, et le texte montré au caissier en est **DÉRIVÉ**. Orange passe pa
 **6 divergences sur 9 saisies**) ; MTN reste `international` (bac à sable suédois). ⚠️ Une réserve
 ou un refus écrits deux fois divergent : c'est le motif des corps `phoneInvalidBody(policy)`, et
 c'est pourquoi `/login` lit `pillar1_status` **de la vitrine** au lieu de recopier sa propre réserve.
+
+⚠️ **QUATRE angles morts, et chacun est INVISIBLE depuis le précédent.** Les trois premières
+parades ont toutes été inventées *après* s'être fait avoir. L'ordre ci-dessous est celui où on
+les rencontre, pas celui où on y pense — un verrou peut être vert pour l'une de ces quatre
+raisons sans qu'aucune des autres ne le signale.
+
+| # | Angle mort | Le verrou est vert parce que… | Parade |
+|---|---|---|---|
+| 1 | **Profondeur** | il ne lit RIEN (`walk()` cassé, dossier déplacé, glob muet) | assertion de **COUVERTURE** (« j'ai bien lu N fichiers ») |
+| 2 | **Périmètre** | il lit les MAUVAIS fichiers | périmètre **DÉRIVÉ** (routes d'`App.tsx`, arborescence), jamais listé |
+| 3 | **Forme** | il cherche ce qui ne PEUT PAS exister (`\b8000\b` vs « 8 000 ») | sabotage **COPIÉ** depuis un fichier de production |
+| 4 | **Arité** | il n'y a RIEN à chercher | *aucune — voir ci-dessous* |
+
+⚠️ **L'ARITÉ n'a pas de parade automatique, et c'est la seule des quatre dans ce cas.**
+`plan === 'pro' ? 'Pro' : 'Enterprise'` : un booléen pour un domaine à **QUATRE** valeurs
+(`starter`/`business`/`enterprise` + l'alias `pro`). Aucun littéral fautif à détecter, aucun
+motif textuel, aucun jumeau — juste une branche qui **n'existe pas**. Les trois verrous
+précédents étaient structurellement incapables de le voir ; c'est une relecture qui l'a trouvé,
+et toute activation Starter annonçait « Votre plan Enterprise est activé » depuis l'alignement
+tarifaire.
+
+**La règle i18n (§ i18n, « ternaire inline 4-langues — TOUJOURS les 4, jamais binaire FR/EN »)
+est le MÊME défaut, déjà écrit ailleurs sans qu'on l'ait nommé.** Généralisation :
+**un ternaire dont le domaine a plus de deux valeurs est un bug en attente de sa troisième
+valeur.** Domaines à surveiller dans ce dépôt : `plan` (4 + alias), `lang` (4), devises (6),
+rôles, statuts de `PlanRequest`, niveaux de `priceGapLevel` (4). Domaine légitimement binaire :
+`policy` MSISDN (2, et sans valeur par défaut pour que le compilateur force le choix).
+
+Faute de verrou, la question à poser à chaque revue : **ce booléen décrit-il vraiment un domaine
+binaire ?** Un `x === 'valeur' ? A : B` sur un champ qui vient d'un enum, d'un catalogue ou de la
+base est suspect **par construction** — il code une bijection sur un ensemble qui grandira.
+Préférer un `Record<Domaine, T>` ou un `switch` exhaustif : le compilateur rougit alors à la
+cinquième valeur, ce qu'aucun test ne fera.
 
 ### Injection CSV ⚠️ — convention EXÉCUTOIRE, pas affirmée (#173)
 

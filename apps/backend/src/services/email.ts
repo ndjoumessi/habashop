@@ -1,6 +1,7 @@
 import { sendTenantEmail, sendPlatformEmail } from '../lib/spend/resendClient'
 import { appUrl, appBaseUrl, appHost } from '../lib/appUrl'
 import { getPlan, purchasablePlans } from '../lib/plans'
+import { paymentMethodLabel, getPaymentMethod } from '../lib/paymentMethods'
 
 /**
  * Envois d'e-mails. Le SDK Resend vit dans `lib/spend/resendClient` (goulot gardé).
@@ -119,6 +120,11 @@ function paymentNotice(): string {
  * ⚠️ `lib/plans.ts` vit dans `apps/backend/src/` : il est DANS le contexte Docker
  * (`COPY src`). Ne jamais atteindre `packages/` ni `docs/` par un `import` depuis ici.
  */
+
+/** Pictogramme d'un moyen de paiement — vide si inconnu (jamais de faux symbole). */
+function paymentMethodEmoji(id: string): string {
+  return getPaymentMethod(id)?.emoji ?? ''
+}
 
 /** Formate un montant XOF comme le reste des e-mails (`toLocaleString('fr-FR')`). */
 function fmtXof(xof: number): string {
@@ -335,13 +341,6 @@ export async function sendUpgradeConfirmation(opts: {
   const planLabel  = escHtml(getPlan(plan)?.label ?? plan)
   const loginUrl   = appUrl('/login')
 
-  const methodLabels: Record<string,string> = {
-    wave:         'Wave 🌊',
-    orange_money: 'Orange Money 🟠',
-    mtn_money:    'MTN Money',
-    virement:     'Virement bancaire',
-    card:         'Carte bancaire',
-  }
 
   const eFirst = escHtml(firstName)
   const eShop  = escHtml(shopName)
@@ -363,7 +362,7 @@ export async function sendUpgradeConfirmation(opts: {
         <div class="kpi-lbl">F CFA / mois</div>
       </div>
       <div class="kpi">
-        <div class="kpi-val">${methodLabels[method] ?? method}</div>
+        <div class="kpi-val">${escHtml(paymentMethodEmoji(method))} ${escHtml(paymentMethodLabel(method, 'fr'))}</div>
         <div class="kpi-lbl">Paiement</div>
       </div>
     </div>

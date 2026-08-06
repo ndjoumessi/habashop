@@ -3,6 +3,7 @@ import { vatBreakdown } from '@/stores/posStore'
 import { logger } from '@/lib/logger'
 import { mixedSplitParts, type TicketOptions } from '@/services/whatsappTicket'
 import { appUrlHost } from '@/lib/appUrl'
+import { paymentModeLabel } from '@/lib/paymentLabel'
 
 // Reçu imprimable / PDF via la boîte de dialogue d'impression de l'OS (AirPrint iOS,
 // service d'impression Android → imprimante Bluetooth thermique ou « Enregistrer en PDF »).
@@ -35,11 +36,10 @@ function buildReceiptHtml(opts: TicketOptions): string {
   const date = new Date().toLocaleDateString(locale, {
     day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
   })
-  const payLabel =
-    paymentMode === 'cash'   ? t('cash', lang) :
-    paymentMode === 'wave'   ? 'Wave' :
-    paymentMode === 'orange' ? 'Orange Money' :
-    t('card', lang)
+  // ⚠️ Cinq modes serveur, trois branches : une vente MTN MoMo s'imprimait « Carte » sur
+  // le document remis à l'acheteur. Le Record de `@/lib/paymentLabel` est exhaustif et
+  // partagé avec `whatsappTicket.ts`, qui portait la même chaîne — c'était un jumeau.
+  const payLabel = paymentModeLabel(paymentMode, lang)
 
   // Paiement : mixte → ligne « Mixte » + détail indenté par méthode ; sinon libellé simple.
   const paymentHtml = paymentMode === 'mixed' && split

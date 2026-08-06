@@ -3,6 +3,7 @@ import { vatBreakdown } from '@/stores/posStore'
 import type { CartItem } from '@/stores/posStore'
 import type { MixedSplit } from '@/lib/paymentSplit'
 import { appUrlHost } from '@/lib/appUrl'
+import { paymentModeLabelWithEmoji } from '@/lib/paymentLabel'
 
 export interface TicketOptions {
   items:       CartItem[]
@@ -81,11 +82,8 @@ export function buildWhatsAppTicket(opts: TicketOptions, phone?: string): string
       lines.push(`   • ${p.label}: ${fmt(p.amount)}`)
     }
   } else {
-    const payLabel =
-      paymentMode === 'cash'   ? t('cash', lang) :
-      paymentMode === 'wave'   ? '🌊 Wave' :
-      paymentMode === 'orange' ? '🟠 Orange Money' :
-      '💳 ' + t('card', lang)
+    // Jumeau de `printReceipt.ts` : même Record, seul le pictogramme diffère.
+    const payLabel = paymentModeLabelWithEmoji(paymentMode, lang)
     lines.push(`💳 ${t('payment', lang)}: ${payLabel}`)
   }
   lines.push(`🔖 ${t('ref', lang)}: #${saleId.slice(-6).toUpperCase()}`)

@@ -5,6 +5,7 @@ import { useAppStore } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { api, billingApi } from '@/lib/api'
 import { purchasablePlans, planAmountXOF } from '@/lib/plans'
+import { tunnelPaymentMethods, paymentMethodLabel } from '@/lib/paymentMethods'
 
 type Step = 'plan' | 'payment' | 'done'
 type L4 = { fr: string; en: string; es: string; it: string }
@@ -19,12 +20,26 @@ type L4 = { fr: string; en: string; es: string; it: string }
  * proposer un achat qui se termine par un refus.
  */
 
-const PAYMENT_METHODS: { id: string; icon: string; name: string; color: string; desc: L4; number: string }[] = [
-  { id: 'wave', icon: '🌊', name: 'Wave', color: '#00B3FF', desc: { fr: 'Paiement instantané', en: 'Instant payment', es: 'Pago instantáneo', it: 'Pagamento istantaneo' }, number: '+221 77 000 0000' },
-  { id: 'orange_money', icon: '🟠', name: 'Orange Money', color: '#FF6600', desc: { fr: 'Mobile money Orange', en: 'Orange mobile money', es: 'Orange mobile money', it: 'Orange mobile money' }, number: '+221 78 000 0000' },
-  { id: 'mtn_money', icon: '💛', name: 'MTN Money', color: '#FFCC00', desc: { fr: 'Mobile money MTN', en: 'MTN mobile money', es: 'MTN mobile money', it: 'MTN mobile money' }, number: '+237 65 000 0000' },
-  { id: 'virement', icon: '🏦', name: 'Virement bancaire', color: '#6C47FF', desc: { fr: 'Virement SWIFT/IBAN', en: 'Bank transfer', es: 'Transferencia bancaria', it: 'Bonifico bancario' }, number: 'IBAN: SN00 0000 0000' },
-]
+/**
+ * ⚠️ Identité et couleur des moyens de paiement viennent du jumeau `@/lib/paymentMethods`.
+ * Ce fichier portait sa PROPRE table — la troisième du dépôt — qui ignorait `card` et
+ * donnait #00B3FF à Wave quand le jeton `--brand-wave` vaut #1B9AF5. Ne restent ici que
+ * les données PROPRES au tunnel : coordonnées de règlement et argumentaire.
+ */
+const TUNNEL_EXTRA: Record<string, { desc: L4; number: string }> = {
+  wave:         { desc: { fr: 'Paiement instantané', en: 'Instant payment', es: 'Pago instantáneo', it: 'Pagamento istantaneo' }, number: '+221 77 000 0000' },
+  orange_money: { desc: { fr: 'Mobile money Orange', en: 'Orange mobile money', es: 'Orange mobile money', it: 'Orange mobile money' }, number: '+221 78 000 0000' },
+  mtn_money:    { desc: { fr: 'Mobile money MTN', en: 'MTN mobile money', es: 'MTN mobile money', it: 'MTN mobile money' }, number: '+237 65 000 0000' },
+  virement:     { desc: { fr: 'Virement SWIFT/IBAN', en: 'Bank transfer', es: 'Transferencia bancaria', it: 'Bonifico bancario' }, number: 'IBAN: SN00 0000 0000' },
+}
+
+/** Moyens PROPOSÉS dans le tunnel — `card` en est exclu par `offeredInTunnel`. */
+const PAYMENT_METHODS: { id: string; icon: string; name: string; color: string; desc: L4; number: string }[] =
+  tunnelPaymentMethods().map(m => ({
+    id: m.id, icon: m.emoji, name: paymentMethodLabel(m.id), color: m.colorHex,
+    desc: TUNNEL_EXTRA[m.id]?.desc ?? { fr: '', en: '', es: '', it: '' },
+    number: TUNNEL_EXTRA[m.id]?.number ?? '',
+  }))
 
 export default function UpgradePlan() {
   const navigate = useNavigate()

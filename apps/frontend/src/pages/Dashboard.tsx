@@ -229,7 +229,7 @@ export default function Dashboard() {
       .catch(() => setSalesChart([]))
   }, [reportPeriod, lang]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const dateStr = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR', {
+  const dateStr = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 
@@ -285,9 +285,13 @@ export default function Dashboard() {
           <div style={{ fontSize: 40 }}>🎉</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 4 }}>
-              {lang === 'fr'
-                ? `Bienvenue sur HabaShop, ${user?.name?.split(' ')[0] ?? ''} !`
-                : `Welcome to HabaShop, ${user?.name?.split(' ')[0] ?? ''}!`}
+              {(() => {
+                const prenom = user?.name?.split(' ')[0] ?? ''
+                return lang === 'en' ? `Welcome to HabaShop, ${prenom}!`
+                     : lang === 'es' ? `Bienvenido a HabaShop, ${prenom}!`
+                     : lang === 'it' ? `Benvenuto su HabaShop, ${prenom}!`
+                     : `Bienvenue sur HabaShop, ${prenom} !`
+              })()}
             </div>
             <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text2)', lineHeight: 1.6 }}>
               {lang === 'en' ? 'Your shop is ready. Start by adding products then open the register.' : lang === 'es' ? 'Su tienda está lista. Comience agregando sus productos y luego abra la caja.' : lang === 'it' ? 'Il tuo negozio è pronto. Inizia aggiungendo i prodotti poi apri la cassa.' : 'Votre boutique est prête. Commencez par ajouter vos produits puis ouvrez la caisse.'}

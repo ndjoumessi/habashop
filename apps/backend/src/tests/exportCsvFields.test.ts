@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { exportHeaders, EXPORT_LANGS } from '../lib/exportHeaders'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -80,14 +81,41 @@ describe('export CSV — aucun champ fantôme', () => {
     expect(/\.\s*specialty\b/.test('const x = item.specialty ?? ""')).toBe(true)
   })
 
+  /**
+   * ⚠️ CE TEST GREPAIT LA SOURCE d'`export.ts` (`expect(bloc).toContain("'Catégorie'")`).
+   * Il est passé au rouge quand les en-têtes ont migré vers `lib/exportHeaders.ts` — alors
+   * que le comportement était INCHANGÉ, et même élargi de deux langues. C'est la faiblesse
+   * décrite au § Conventions : un test qui grep du texte source prouve la SOURCE, pas le
+   * comportement ; il rougit sur un déplacement et resterait vert si le bloc devenait
+   * inatteignable. Il porte désormais sur l'EN-TÊTE RÉELLEMENT PRODUIT.
+   */
   it('l’en-tête fournisseurs annonce « Catégorie », le champ réellement exporté', () => {
     // Avant : « Spécialité » pour une colonne vide. Le vocabulaire suit désormais celui de
     // l'export CSV frontend (`t('col_category')`), qui exporte déjà `categories`.
+    for (const lang of EXPORT_LANGS) {
+      const têtes = exportHeaders('suppliers', lang)
+      expect(têtes.some(h => /Cat[ée]gor|Categor/i.test(h)), lang).toBe(true)
+      expect(têtes.some(h => /Sp[ée]cialit|Specialit/i.test(h)), lang).toBe(false)
+    }
+    // …et la LIGNE exportée lit bien `categories`, pas un champ fantôme.
     const bloc = source.slice(source.indexOf("case 'suppliers'"), source.indexOf("case 'sales'"))
-    expect(bloc).toContain("'Catégorie'")
-    expect(bloc).toContain("'Category'")
-    expect(bloc).not.toContain('Spécialité')
     expect(bloc).toContain('s.categories')
+  })
+
+  it('les cinq exports ont un en-tête dans les QUATRE langues, de largeur constante', () => {
+    // Le ternaire `lang === 'fr' ? [FR] : [EN]` donnait l'anglais à es et it.
+    for (const r of ['products', 'customers', 'suppliers', 'sales', 'employees'] as const) {
+      const largeurs = new Set(EXPORT_LANGS.map(l => exportHeaders(r, l).length))
+      expect(largeurs.size, `${r} : colonnes de largeur variable selon la langue`).toBe(1)
+      for (const l of EXPORT_LANGS) {
+        expect(exportHeaders(r, l).every(h => h.length > 0)).toBe(true)
+      }
+      // es et it ne doivent PAS recevoir l'anglais mot pour mot.
+      expect(exportHeaders(r, 'es')).not.toEqual(exportHeaders(r, 'en'))
+      expect(exportHeaders(r, 'it')).not.toEqual(exportHeaders(r, 'en'))
+    }
+    // Une langue inconnue retombe sur le FRANÇAIS, langue par défaut du produit.
+    expect(exportHeaders('products', 'de')).toEqual(exportHeaders('products', 'fr'))
   })
 
   it('le modèle Supplier n’a toujours PAS de `specialty` (sinon la correction serait à revoir)', () => {

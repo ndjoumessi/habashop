@@ -15,12 +15,20 @@ export type { Lang, Currency }
  * Les montants descendent maintenant de `lib/plans.ts`. Le rendu reste identique au
  * caractère près (espace nue, pas l'espace fine de `toLocaleString`).
  */
+/**
+ * ⚠️ QUATRE locales, pas deux. J'avais écrit `lang === 'en' ? 'en-US' : 'fr-FR'` — un
+ * ternaire binaire sur un domaine de quatre, dans le commit même qui corrigeait des
+ * collapses tarifaires. MESURÉ : es-ES et it-IT groupent au POINT (« 250.000 ») et ne
+ * groupent pas sous cinq chiffres (« 8000 »), là où fr-FR met une espace.
+ */
+const LOCALES: Record<Lang, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT' }
+
 const groupe = (xof: number, lang: Lang): string =>
-  xof.toLocaleString(lang === 'en' ? 'en-US' : 'fr-FR').replace(/[\u202f\u00a0]/g, ' ')
+  xof.toLocaleString(LOCALES[lang] ?? LOCALES.fr).replace(/[\u202f\u00a0]/g, ' ')
 
 /** « 8 000 F CFA » (fr/es/it) · « 8,000 CFA » (en) — la forme employée par chaque langue. */
 const cfa = (xof: number, lang: Lang): string =>
-  lang === 'en' ? `${groupe(xof, lang)} CFA` : `${groupe(xof, lang)} F CFA`
+  lang === 'en' ? `${groupe(xof, lang)} CFA` : `${groupe(xof, lang)} F CFA`   // « F CFA » = usage francophone, conservé pour fr/es/it
 
 const tarifs = (lang: Lang) => ({
   starterM:  cfa(planAmountXOF('starter', 'monthly')!, lang),

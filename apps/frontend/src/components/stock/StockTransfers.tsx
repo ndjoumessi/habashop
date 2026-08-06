@@ -153,7 +153,7 @@ export default function StockTransfers() {
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 'var(--r-full)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', background: meta?.bg, border: `1px solid ${meta?.border}`, color: 'var(--text)' }}>{statusLabel(t.status)}</span>
                     </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text3)', whiteSpace: 'nowrap' }}>{new Date(t.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR')}</td>
+                    <td style={{ padding: '12px 16px', color: 'var(--text3)', whiteSpace: 'nowrap' }}>{new Date(t.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       {t.status === 'pending' && isManager && (
                         <div style={{ display: 'inline-flex', gap: 6 }}>

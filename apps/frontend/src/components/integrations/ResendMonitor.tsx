@@ -126,21 +126,24 @@ export default function ResendMonitor({
   const alerts = [
     monthlyPct > 80 && {
       level: 'danger',
-      msg: lang === 'fr'
-        ? `Quota mensuel à ${monthlyPct}% — ${monthlyLimit - monthlyQuota} emails restants`
-        : `Monthly quota at ${monthlyPct}% — ${monthlyLimit - monthlyQuota} emails left`,
+      msg: lang === 'en' ? `Monthly quota at ${monthlyPct}% — ${monthlyLimit - monthlyQuota} emails left`
+         : lang === 'es' ? `Cuota mensual al ${monthlyPct}% — quedan ${monthlyLimit - monthlyQuota} correos`
+         : lang === 'it' ? `Quota mensile al ${monthlyPct}% — ${monthlyLimit - monthlyQuota} email rimaste`
+         : `Quota mensuel à ${monthlyPct}% — ${monthlyLimit - monthlyQuota} emails restants`,
     },
     bounceRate > 0.02 && {
       level: 'warn',
-      msg: lang === 'fr'
-        ? `Taux de rebond élevé : ${(bounceRate * 100).toFixed(1)}% (seuil: 2%)`
-        : `High bounce rate: ${(bounceRate * 100).toFixed(1)}% (threshold: 2%)`,
+      msg: lang === 'en' ? `High bounce rate: ${(bounceRate * 100).toFixed(1)}% (threshold: 2%)`
+         : lang === 'es' ? `Tasa de rebote alta: ${(bounceRate * 100).toFixed(1)}% (umbral: 2%)`
+         : lang === 'it' ? `Tasso di rimbalzo alto: ${(bounceRate * 100).toFixed(1)}% (soglia: 2%)`
+         : `Taux de rebond élevé : ${(bounceRate * 100).toFixed(1)}% (seuil: 2%)`,
     },
     liveStats.avgDuration > 2000 && {
       level: 'warn',
-      msg: lang === 'fr'
-        ? `Temps de réponse élevé : ${liveStats.avgDuration}ms`
-        : `High response time: ${liveStats.avgDuration}ms`,
+      msg: lang === 'en' ? `High response time: ${liveStats.avgDuration}ms`
+         : lang === 'es' ? `Tiempo de respuesta alto: ${liveStats.avgDuration}ms`
+         : lang === 'it' ? `Tempo di risposta alto: ${liveStats.avgDuration}ms`
+         : `Temps de réponse élevé : ${liveStats.avgDuration}ms`,
     },
   ].filter(Boolean) as { level: string; msg: string }[]
 

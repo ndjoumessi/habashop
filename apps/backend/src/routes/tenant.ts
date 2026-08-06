@@ -58,7 +58,9 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       where: { id: request.tenantId },
       select: { status: true, trialEnds: true, plan: true },
     })
-    const inheritedStatus = origin?.status === 'trial' ? 'trial' : (origin?.status ?? 'trial')
+    // (le ternaire d'ici rendait `'trial'` dans les DEUX branches quand le statut valait
+    //  'trial' : strictement équivalent au `??`, et il donnait l'illusion d'une décision)
+    const inheritedStatus = origin?.status ?? 'trial'
     const inheritedTrialEnds = origin?.status === 'trial' ? origin.trialEnds : null
 
     const tenant = await prisma.$transaction(async (tx) => {
