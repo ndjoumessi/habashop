@@ -13,8 +13,9 @@ import { defineConfig } from '@playwright/test'
  * lui-même, mais le SW pourrait intercepter le chargement des chunks.
  */
 export default defineConfig({
-  testDir: './e2e',
-  testMatch: /dev-table-density\.spec\.ts/,
+  // ⚠️ Pointe le DOSSIER, pas un nom : le prochain harnais y tombera sans qu'on touche
+  // à cette config, et sans risque qu'il parte dans la suite de production.
+  testDir: './e2e/dev',
   timeout: 60_000,
   retries: 0,
   workers: 1,

@@ -2,6 +2,17 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e',
+  /**
+   * ⚠️ EXCLUSION PAR DOSSIER, jamais par nom de fichier.
+   * `e2e/dev/` contient les specs qui exigent le SERVEUR DE DÉVELOPPEMENT (harnais gardés par
+   * `import.meta.env.DEV`). Cette config vise la PRODUCTION : les y jouer garantit l'échec,
+   * puisque le harnais y est absent par conception.
+   * MESURÉ le 2026-08-06 : déposé à la racine d'`e2e/`, `dev-table-density.spec.ts` faisait
+   * passer la suite prod de 39 cas / 20 fichiers à 43 / 21 — un défaut introduit par le
+   * correctif lui-même. Ajouter son NOM ici aurait marché ce jour-là et cassé au deuxième
+   * harnais ; un dossier ne se périme pas à l'ajout d'un fichier.
+   */
+  testIgnore: '**/dev/**',
   timeout: 30000,
   retries: 1, // 1 retry en cas d'échec réseau
   // Backend prod = réplique unique Railway (cold start) → on SÉRIALISE pour ne pas le
@@ -28,7 +39,8 @@ export default defineConfig({
       name: 'chromium',
       use: { browserName: 'chromium', storageState: 'e2e/.auth/user.json' },
       dependencies: ['setup'],
-      testIgnore: /auth\.setup\.ts/,
+      // ⚠️ Le `testIgnore` de PROJET écrase celui du niveau config : on répète `dev/`.
+      testIgnore: [/auth\.setup\.ts/, '**/dev/**'],
     },
   ],
 
