@@ -48,33 +48,43 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     const name = body.name?.trim()
     if (!name) return reply.code(400).send({ error: 'Le nom de la boutique est requis' })
 
-    const VALID_CURRENCIES = ['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP']
-    const VALID_LANGS = ['fr', 'en', 'es', 'it']
-    // ⚠️ DÉFAUT DÉRIVÉ DU PAYS, pas un littéral. Le code posait `'XOF'` en dur pendant que
-    // le pays défautait à `DEFAULT_MARKET.country` (CM depuis le 2026-08-06) : créer une
-    // 2ᵉ boutique sans rien préciser produisait **CM + XOF**, exactement le couple que
-    // `currencyZone` refuse. Le garde a exposé le défaut ; c'est le défaut qu'on corrige.
-    const paysCreation = body.country ?? DEFAULT_MARKET.country
-    const zoneCreation = cfaZoneOf(paysCreation)
-    const deviseDefaut = zoneCreation ? currencyOfZone(zoneCreation) : DEFAULT_MARKET.currency
-    const currency = VALID_CURRENCIES.includes(body.currency ?? '') ? body.currency! : deviseDefaut
-    const lang = VALID_LANGS.includes(body.lang ?? '') ? body.lang! : 'fr'
-
-    // ⚠️ Zone franc CFA — cf. `lib/currencyZone.ts`. Le formulaire dérive déjà la devise
-    // du pays, mais « la garde du navigateur n'est pas une garde » : une devise EXPLICITE
-    // et incohérente doit être refusée ici.
-    if (isCurrencyZoneConflict(paysCreation, currency)) {
-      return reply.code(400).send({ error: currencyZoneError(paysCreation, currency), code: 'CURRENCY_ZONE_MISMATCH' })
-    }
-
     // ⚠️ La boutique créée HÉRITE du statut de celle du créateur. Sans ça, un compte à
     // l'essai (même expiré) créait une boutique `status:'active'` sans `trialEnds`, y
     // basculait, et retrouvait le plafond du palier PAYANT — deux appels suffisaient à
     // remettre le compteur à zéro autant de fois que voulu.
     const origin = await prisma.tenant.findUnique({
       where: { id: request.tenantId },
-      select: { status: true, trialEnds: true, plan: true },
+      select: { status: true, trialEnds: true, plan: true, country: true },
     })
+
+    const VALID_CURRENCIES = ['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP']
+    const VALID_LANGS = ['fr', 'en', 'es', 'it']
+    // ⚠️ LE PAYS EST NORMALISÉ ICI AUSSI. C'était le SEUL des quatre chemins d'écriture à
+    // stocker `body.country` brut : `POST /api/tenants {country:'Sénégal'}` rendait 201 avec
+    // `country:'Sénégal'`, `currency:'XAF'` et `vatRate:0` — une boutique sénégalaise en franc
+    // d'Afrique centrale, invisible au garde (`cfaZoneOf` rendait null) et muette pour
+    // `resolveRecipient` (COUNTRY_UNKNOWN ⇒ ni WhatsApp ni SMS commerçant).
+    const paysCreation = normalizeCountry(body.country) ?? origin?.country ?? DEFAULT_MARKET.country
+    // ⚠️ DÉFAUT DÉRIVÉ DU PAYS, pas un littéral. Le code posait `'XOF'` en dur pendant que
+    // le pays défautait à CM : créer une 2ᵉ boutique sans rien préciser produisait CM + XOF.
+    const zoneCreation = cfaZoneOf(paysCreation)
+    const deviseDefaut = zoneCreation ? currencyOfZone(zoneCreation) : DEFAULT_MARKET.currency
+    // ⚠️ ON DÉRIVE, ON NE REFUSE PAS (décision du 2026-08-08). `SectionShops.tsx` n'expose
+    // AUCUN champ pays : refuser un couple que l'utilisateur n'a pas construit rendait XOF
+    // inatteignable depuis le seul parcours multi-boutiques du produit, avec un message
+    // parlant du Cameroun pour une boutique dont le pays n'a jamais été demandé.
+    // ⚠️ Le pays HÉRITE de la boutique d'origine avant de retomber sur le marché par défaut :
+    // la 2ᵉ boutique d'un commerçant de Dakar est à Dakar, pas à Douala. C'est un signal
+    // RÉEL, pas une invention — et il rend le couple cohérent sans écraser aucun choix.
+    const currency = VALID_CURRENCIES.includes(body.currency ?? '') ? body.currency! : deviseDefaut
+    const lang = VALID_LANGS.includes(body.lang ?? '') ? body.lang! : 'fr'
+
+    // Il ne reste ici que le cas où le pays a été EXPLICITEMENT fourni : l'appelant a
+    // construit le couple, on le lui refuse. « La garde du navigateur n'est pas une garde. »
+    if (isCurrencyZoneConflict(paysCreation, currency)) {
+      return reply.code(400).send({ error: currencyZoneError(paysCreation, currency), code: 'CURRENCY_ZONE_MISMATCH' })
+    }
+
     // (le ternaire d'ici rendait `'trial'` dans les DEUX branches quand le statut valait
     //  'trial' : strictement équivalent au `??`, et il donnait l'illusion d'une décision)
     const inheritedStatus = origin?.status ?? 'trial'
@@ -84,10 +94,10 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       const t = await tx.tenant.create({
         data: {
           name, currency, lang,
-          country: body.country ?? DEFAULT_MARKET.country,
+          country: paysCreation,   // ISO-2 normalisé, jamais la valeur brute du client
           // ⚠️ Même dérivation qu'à l'inscription : une 2ᵉ boutique dans un autre pays doit
           // partir de SON taux, pas de celui de la boutique d'origine ni du `@default(18)`.
-          vatRate: vatRateOrZero(body.country ?? DEFAULT_MARKET.country),
+          vatRate: vatRateOrZero(paysCreation),
           address: body.address ?? null,
           phone: body.phone ?? null,
           plan: origin?.plan ?? 'starter',
@@ -158,7 +168,15 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     // Option C — lang & devise = settings TENANT stricts : modifiables UNIQUEMENT par
     // ADMIN/SUPER_ADMIN (cohérence pour tous les membres). Tout autre rôle → 403 si le
     // body touche `lang` ou `currency` (les autres champs restent permis à leur niveau).
-    const touchesLocale = data.lang !== undefined || data.currency !== undefined
+    // ⚠️ `country` et `vatRate` sont ICI depuis le 2026-08-08. Ils étaient écrits sans AUCUN
+    // contrôle de rôle : un CASHIER pouvait poser `vatRate: 0` — toutes les factures et
+    // tickets suivants émis sans TVA — ou `country: 'GB'`, qui casse le routage WhatsApp/SMS
+    // commerçant et sort la boutique de sa zone CFA. Le nouveau code juge ces deux champs
+    // assez sensibles pour les JOURNALISER nommément ; les laisser sans autorisation était
+    // l'incohérence la plus visible du lot.
+    const touchesLocale =
+      data.lang !== undefined || data.currency !== undefined ||
+      data.country !== undefined || data.vatRate !== undefined
     if (touchesLocale && !isAdminRole(request.user?.role)) {
       return reply.code(403).send({
         error: "Langue et devise : modification réservée à l'administrateur",
@@ -253,14 +271,30 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     // ⚠️ Zone franc CFA sur le couple EFFECTIF, pas sur le corps reçu : un PATCH qui ne
     // porte QUE `currency` doit être jugé contre le pays DÉJÀ en base, sinon la moitié des
     // conflits passe. C'est par cette route qu'un `XAF` est arrivé sur un tenant `SN`.
+    // ⚠️ ASYMÉTRIE DÉLIBÉRÉE, et c'est elle qui rend le couple modifiable.
+    // `country` et `currency` s'éditent sur DEUX écrans qui n'envoient chacun que leur
+    // moitié (Réglages → Boutique, Réglages → Langue & devise). Refuser les deux sens
+    // verrouillait la boutique sur son couple courant, sans qu'aucune interface ne puisse
+    // en sortir. On distingue donc QUI a choisi :
+    //   · le PAYS bouge seul → la devise se DÉRIVE de la nouvelle zone. Le commerçant a
+    //     déménagé, il n'a pas choisi de franc ; lui refuser serait lui reprocher un couple
+    //     qu'il n'a pas construit.
+    //   · la DEVISE bouge seule et entre en conflit → 400. Là il a choisi, et le message
+    //     nomme la devise attendue. `saved()` le remonte à l'écran et revient en arrière.
+    let deviseDerivee: string | undefined
     if (data.currency !== undefined || country !== undefined) {
       const paysEffectif    = country ?? avant?.country
       const deviseEffective = data.currency ?? avant?.currency
       if (isCurrencyZoneConflict(paysEffectif, deviseEffective)) {
-        return reply.code(400).send({
-          error: currencyZoneError(paysEffectif, deviseEffective),
-          code: 'CURRENCY_ZONE_MISMATCH',
-        })
+        if (data.currency === undefined) {
+          const zone = cfaZoneOf(paysEffectif)
+          if (zone) deviseDerivee = currencyOfZone(zone)
+        } else {
+          return reply.code(400).send({
+            error: currencyZoneError(paysEffectif, deviseEffective),
+            code: 'CURRENCY_ZONE_MISMATCH',
+          })
+        }
       }
     }
 
@@ -268,7 +302,8 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       where: { id: tenantId },
       data: {
         name:     data.name,
-        currency: data.currency,
+        // `deviseDerivee` n'est posée que quand le pays a changé de zone sans devise fournie.
+        currency: data.currency ?? deviseDerivee,
         country,   // normalisé ISO-2 ci-dessus (jamais la valeur brute du client)
         vatRate:  data.vatRate,
         address:  data.address,
@@ -316,7 +351,11 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     // ⚠️ Cette route n'écrivait AUCUN audit. C'est ce trou qui a rendu insoluble l'enquête
     // du 2026-08-07 : un `XAF` posé sur un tenant `SN`, sans écrivain identifiable.
     // On consigne les DEUX valeurs — « la devise a changé » n'aurait rien permis.
-    const change = champsTouches
+    // ⚠️ On compare TOUTE la liste blanche, pas seulement les champs SOUMIS. Une devise
+    // DÉRIVÉE (le pays a changé de zone) n'est dans aucun champ soumis : la filtrer sur
+    // `champsTouches` la rendait invisible à la trace — un changement de devise non
+    // journalisé, c'est-à-dire exactement le trou qu'on vient de fermer.
+    const change = (avant ? CHAMPS_AUDITES : [])
       .filter(k => (avant as Record<string, unknown> | null)?.[k] !== (tenantMisAJour as unknown as Record<string, unknown>)[k])
       .map(k => [k, {
         avant: (avant as Record<string, unknown> | null)?.[k] ?? null,

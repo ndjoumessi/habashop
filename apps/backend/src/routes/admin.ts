@@ -4,7 +4,7 @@ import type { AdminReviewBody } from '../types'
 import bcrypt from 'bcryptjs'
 import { prisma, basePrisma } from '../db'
 import { normalizeCountry } from '../lib/country'
-import { isCurrencyZoneConflict, currencyZoneError } from '../lib/currencyZone'
+import { isCurrencyZoneConflict, currencyZoneError, cfaZoneOf, currencyOfZone } from '../lib/currencyZone'
 import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import { planAmountXOF } from '../lib/plans'
@@ -122,14 +122,20 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     // ⚠️ Le pays est résolu UNE fois : il sert au champ `country` ET au taux de TVA. Le
     // calculer deux fois laisserait les deux diverger au premier changement de repli.
     const pays = normalizeCountry(country) ?? DEFAULT_MARKET.country
-    const devise = currency ?? DEFAULT_MARKET.currency
+    // ⚠️ La devise se DÉRIVE du pays quand elle n'est pas fournie ; fournie ET en conflit,
+    // elle est REFUSÉE. Écraser en silence le choix d'un opérateur sur la devise d'affichage
+    // d'un tenant CLIENT serait pire qu'un refus : il ne le verrait jamais.
+    // Ce 400 n'était atteignable que parce que le formulaire de la console n'avait pas de
+    // champ pays — il en a un depuis le 2026-08-08, et la devise y suit le pays.
+    const zone = cfaZoneOf(pays)
+    const devise = currency ?? (zone ? currencyOfZone(zone) : DEFAULT_MARKET.currency)
     if (isCurrencyZoneConflict(pays, devise)) {
       return reply.code(400).send({ error: currencyZoneError(pays, devise), code: 'CURRENCY_ZONE_MISMATCH' })
     }
     const tenant = await prisma.tenant.create({
       data: {
         name,
-        currency: currency ?? DEFAULT_MARKET.currency,
+        currency: devise,   // dérivée du pays quand il n'a pas été fourni
         country: pays,
         // ⚠️ Troisième et dernier chemin de création. Sans lui, une boutique créée depuis la
         // console plateforme héritait du `@default(18)` du schéma — le taux UEMOA.

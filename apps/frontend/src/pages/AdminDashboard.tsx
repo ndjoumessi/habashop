@@ -23,6 +23,8 @@ import SecurityEvents from '@/components/admin/SecurityEvents'
 import { Server, Rocket, CheckCircle2 } from 'lucide-react'
 import { planAmountXOF, purchasablePlans } from '@/lib/plans'
 import { DEFAULT_MARKET } from '@/lib/defaultMarket'
+import { COUNTRIES } from '@/utils/countryList'
+import { suggestedCurrencyForCountry } from '@/utils/countryCurrency'
 
 // Version PRODUIT = SOURCE UNIQUE injectée au build (package.json racine), jamais un
 // littéral (la garde `versionSource.test.ts` échoue si un semver en dur réapparaît).
@@ -149,6 +151,7 @@ export default function AdminDashboard() {
     } finally { setSavingPwd(false) }
   }
   const [newTenantForm, setNewTenantForm] = useState({ name: '', currency: DEFAULT_MARKET.currency as string, country: DEFAULT_MARKET.country as string, plan: 'starter', adminEmail: '', adminPassword: '' })
+  const [deviseTouchee, setDeviseTouchee] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'requests'>('overview')
   const [planRequests, setPlanRequests] = useState<any[]>([])
 
@@ -903,8 +906,23 @@ export default function AdminDashboard() {
                   </select>
                 </div>
                 <div>
+                  {/* ⚠️ Le champ PAYS manquait, et son absence rendait XOF INCRÉABLE depuis
+                      cette console : le serveur défautait le pays au marché par défaut (CM,
+                      zone CEMAC) et refusait le couple. On demande le pays plutôt que de
+                      deviner, et la devise le suit tant que l'opérateur n'y a pas touché. */}
+                  <label style={lbl}>{i('Pays', 'Country', 'País', 'Paese')}</label>
+                  <select aria-label={i('Pays', 'Country', 'País', 'Paese')} className="input" value={newTenantForm.country}
+                    onChange={e => {
+                      const iso = e.target.value
+                      const suggeree = suggestedCurrencyForCountry(iso)
+                      setNewTenantForm(f => ({ ...f, country: iso, ...(deviseTouchee || !suggeree ? {} : { currency: suggeree }) }))
+                    }}>
+                    {COUNTRIES.map(c => <option key={c.iso} value={c.iso}>{c.flag} {c.name}</option>)}
+                  </select>
+                </div>
+                <div>
                   <label style={lbl}>{i('Devise', 'Currency', 'Divisa', 'Valuta')}</label>
-                  <select aria-label={i('Devise', 'Currency', 'Divisa', 'Valuta')} className="input" value={newTenantForm.currency} onChange={e => setNewTenantForm(f => ({ ...f, currency: e.target.value }))}>
+                  <select aria-label={i('Devise', 'Currency', 'Divisa', 'Valuta')} className="input" value={newTenantForm.currency} onChange={e => { setDeviseTouchee(true); setNewTenantForm(f => ({ ...f, currency: e.target.value })) }}>
                     <option value="XOF">FCFA (XOF)</option>
                     <option value="XAF">FCFA (XAF)</option>
                     <option value="EUR">Euro (EUR)</option>

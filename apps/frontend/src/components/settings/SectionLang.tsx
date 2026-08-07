@@ -3,6 +3,7 @@ import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useAuthStore } from '@/stores/authStore'
 import { type L4, makeI, pick, panel, Head } from '@/components/settings/settingsShared'
 import { tenantApi } from '@/lib/api'
+import { saved } from '@/lib/saved'
 import { Check, Lock, Globe, Coins, Palette } from 'lucide-react'
 
 // Noms humains des couleurs d'accent (a11y : aria-label lisible, pas le hex) — keyed sur ACCENT_PAIRS.
@@ -72,8 +73,12 @@ export default function SectionLang() {
               const active = lang === l.code
               return (
                 <button key={l.code} type="button" aria-pressed={active} onClick={() => {
+                  // Optimiste, mais RÉVERSIBLE : si le serveur refuse, on revient à la
+                  // valeur d'avant plutôt que de laisser l'écran affirmer un réglage absent.
+                  const precedent = lang
                   cfg.setLang(l.code as Lang)
-                  tenantApi.update({ lang: l.code }).catch(() => {})
+                  void saved(tenantApi.update({ lang: l.code }), i('la langue', 'the language', 'el idioma', 'la lingua'))
+                    .then(ok => { if (!ok) cfg.setLang(precedent as Lang) })
                 }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
@@ -131,8 +136,12 @@ export default function SectionLang() {
                 // Option C : devise = setting TENANT (admin only ici). On met à jour le
                 // store local pour un retour immédiat ET on pousse au tenant ; setTenant
                 // restaurera cette devise pour tous les membres à chaque /me.
+                // Idem, et ce cas est DEVENU atteignable : le garde de zone franc CFA
+                // refuse désormais un couple pays/devise incohérent (400).
+                const precedente = currency
                 cfg.setCurrency(c.code)
-                tenantApi.update({ currency: c.code }).catch(() => {})
+                void saved(tenantApi.update({ currency: c.code }), i('la devise', 'the currency', 'la divisa', 'la valuta'))
+                  .then(ok => { if (!ok) cfg.setCurrency(precedente) })
               }}
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,

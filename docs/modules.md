@@ -83,6 +83,38 @@ Sidebar · Emails Resend · GlobalSearch · Onboarding
 - **POS — prix barré de référence** (extrait de `CLAUDE.md` le 2026-08-08) : affiché
   **UNIQUEMENT** si `showStrikePrice(ref, eff)`, c'est-à-dire `ref > eff` (helper `posShared`).
   Sans ce test, le tarif de gros retombant sur le prix détail affichait « 2 800 2 800 ».
+- **E2E Playwright — configuration** (extrait de `CLAUDE.md` le 2026-08-08 ; les règles
+  transverses — tenant dédié, navigation par clic, pas de `page.reload()` — restent là-bas).
+  Fixtures **statiques** : `apps/backend/scripts/seed-e2e-tenant.ts`, idempotent, garde
+  `E2E_SEED=1` + scope `e2e-tenant`, **manuel** ; jamais demo ni prod. Fixtures **datées**
+  (ventes du jour → `dashboard-donut`) créées par API dans `auth.setup`
+  (`e2e/helpers/fixtures.ts` — **pas de secret DB** dans un dépôt public).
+  `e2e/helpers/preconditions.ts` + `test.skip` conditionnels = garde-fou (0 skip nominal).
+  `storageState` dans `e2e/.auth/user.json`, `workers:1`.
+  **BASE surchargeable** : `playwright.config` et chaque spec lisent leur `<ÉCRAN>_BASE` —
+  `E2E_BASE`, `PAYROLL_BASE`, `POS_BASE`, `STOCK_BASE`, `PAGES_BASE`, `DASH_BASE`,
+  `CUST_BASE`, `HR_BASE`, `REPORTS_BASE`, `SETTINGS_BASE` (défaut prod). ⚠️ Pour valider un
+  build local : `vite preview` + **TOUTES** sur `http://localhost:PORT`, sinon cross-origin
+  (auth locale ≠ site prod → redirection login). API prod = `https://habashop-production.up.railway.app`
+  (Railway free-tier, démarrage à froid lent).
+- **Paie — persistance et gel** (extrait de `CLAUDE.md` le 2026-08-08 ; les règles transverses
+  — instantané GELÉ, source unique `payrollBreakdown`, convertir UNE fois, `month` en clé ISO —
+  restent là-bas). Modèle `Payroll` `@@unique([tenantId, employeeId, month])` +
+  `GET /api/payroll?month=YYYY-MM`, `POST /api/payroll/generate`, `PATCH /api/payroll/:id`.
+  Rôles = **miroir exact** de `ROLE_PERMISSIONS['payroll']` côté front (ADMIN, SUPER_ADMIN,
+  MANAGER, ACCOUNTANT, HR ; CASHIER exclu) — un serveur PLUS STRICT que l'UI ne protège rien,
+  il produit des boutons visibles qui rendent 403. Génération **IDEMPOTENTE**
+  (`skipDuplicates` + contrainte d'unicité) : rejouer ne duplique pas et ne réécrit AUCUN
+  bulletin existant. `paidAt` est posé par le **serveur** — une date de versement doit être
+  vérifiable, pas déclarée par le navigateur — et **effacé** si le statut repasse hors
+  « PAYÉ ». ⚠️ `PayRecord` est identifié par `employeeId` (cuid), **jamais par un index de
+  tableau** : c'était `i + 1`, donc « marquer payé » visait une POSITION et un changement
+  d'ordre payait le mauvais bulletin.
+- **Paiements mobiles — sécurité du bac à sable** (extrait de `CLAUDE.md` le 2026-08-08) :
+  `IS_SANDBOX` est acceptable pour choisir une URL ou une devise, **INTERDIT** pour
+  auto-approuver un paiement. Toujours un `_SANDBOX_AUTO_SUCCESS=1` **explicite**, et le
+  drapeau lu **INLINE dans le handler** — une constante de module fige la valeur à
+  l'import, ce qui rend inefficaces les tests qui manipulent `process.env`.
 - **Finance** : CSV comptable `GET /api/reports/accounting/csv` (UTF-8 BOM, semicolons, `sanitizeCsv()` anti-injection). TVA : `GET /api/reports/vat` + `/csv` + `/pdf` (pdfkit). `buildVatData()` partagé.
 - **RH/Planning** : `Attendance` (`@@unique([tenantId,employeeId,date])`), `Shift` (même type interdit), `LeaveRequest`. Planning = `shiftsByDate Record<"empId_date", {type,id}[]>`, MAJ optimiste + rollback. Clavier PlanningGrid (Entrée/flèches/Échap/Suppr via GripVertical) — ne pas casser.
 - **Paie** : bulletins jsPDF, cron idempotent via `Tenant.lastPayrollReportMonth`, `dryRun:true` par défaut.

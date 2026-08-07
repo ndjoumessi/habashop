@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { Store, Coins, Users, Box, Rocket, Check, ArrowRight, MapPin } from 'lucide-react'
 import { useAppStore, type Currency, type Lang } from '@/stores/appStore'
+import { saved } from '@/lib/saved'
 import { useI18n } from '@/hooks/useI18n'
 import { tenantApi, productsApi } from '@/lib/api'
 import { suggestedCurrencyForCountry } from '@/utils/countryCurrency'
@@ -48,7 +49,16 @@ export default function Onboarding() {
       if (form.shopName.trim()) patch.name = form.shopName.trim()
       if (form.phone.trim()) patch.phone = form.phone
       if (address) patch.address = address
-      await tenantApi.update(patch).catch(() => {})
+      // ⚠️ L'échec ARRÊTE la progression. Avant, un `.catch(() => {})` le jetait : le
+      // store local était mis à jour, l'onboarding marqué terminé, l'écran de succès
+      // affiché — et NI le nom, NI le téléphone, NI l'adresse, NI le pays, NI la TVA
+      // n'étaient enregistrés. On reste à l'étape, données intactes à l'écran, avec le
+      // message du serveur : le commerçant peut corriger et resoumettre.
+      const enregistre = await saved(
+        tenantApi.update(patch),
+        i('les réglages de la boutique', 'the shop settings', 'los ajustes de la tienda', 'le impostazioni del negozio'),
+      )
+      if (!enregistre) return
       updateConfig({
         ...(form.shopName.trim() ? { shopName: form.shopName.trim() } : {}),
         shopAddress: address, shopCountry: form.country, shopPhone: form.phone,
@@ -57,7 +67,12 @@ export default function Onboarding() {
       setCurrency(form.currency)
       setLang(form.language)
       if (form.productName.trim() && !form.skipProduct) {
-        await productsApi.create({ name: form.productName, sellPrice: form.productPrice, buyPrice: Math.round(form.productPrice * 0.7), stockQty: form.productStock, stockMin: 5, category: 'Général', isActive: true }).catch(() => {})
+        // Le premier produit est ACCESSOIRE : son échec ne bloque pas l'onboarding —
+        // mais il se DIT, sinon le commerçant croit son catalogue commencé.
+        await saved(
+          productsApi.create({ name: form.productName, sellPrice: form.productPrice, buyPrice: Math.round(form.productPrice * 0.7), stockQty: form.productStock, stockMin: 5, category: 'Général', isActive: true }),
+          i('le premier produit', 'the first product', 'el primer producto', 'il primo prodotto'),
+        )
       }
       localStorage.setItem('habashop_onboarded', 'true')
       setStep(5)

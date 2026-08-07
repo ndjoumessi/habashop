@@ -36,6 +36,12 @@ on:
       - 'apps/frontend/src/pages/Integrations.tsx'
       # ── Le harnais de mesure lui-même
       - 'apps/frontend/src/pages/DevTableHarness.tsx'
+      # ── Données rendues DANS le formulaire de la console (2026-08-08)
+      #    Le formulaire de création de tenant expose désormais un `select` de pays :
+      #    ces libellés sont du texte RENDU, donc de la géométrie. Ils sont entrés dans la
+      #    fermeture d'imports, et le verrou `densityJobScope` l'a signalé au commit même.
+      - 'apps/frontend/src/utils/countryList.ts'
+      - 'apps/frontend/src/utils/countryCurrency.ts'
       # ── Composants propres à la console
       - 'apps/frontend/src/components/admin/**'
       - 'apps/frontend/src/components/integrations/**'

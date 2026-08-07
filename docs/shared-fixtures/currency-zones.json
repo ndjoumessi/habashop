@@ -1,9 +1,9 @@
 {
   "_comment": [
-    "ZONES FRANC CFA — cas partagés, lus à l'EXÉCUTION par les tests jumeaux :",
+    "ZONES FRANC CFA — cas partagés, lus à l'EXÉCUTION par :",
     "  apps/backend/src/lib/currencyZone.ts  ← apps/backend/src/tests/currencyZone.test.ts",
-    "  apps/frontend/src/lib/currencyZone.ts ← apps/frontend/src/tests/currencyZone.test.ts",
-    "Modifier une zone d'un seul côté fait rougir l'autre.",
+    "⚠️ UN SEUL lecteur, et c'est voulu : la règle est serveur-autoritaire. Le jumeau front",
+    "a été supprimé le 2026-08-08 — rien du produit ne l'importait (code mort).",
     "",
     "⚠️ POURQUOI UNE TABLE EXPLICITE, et pas une dérivation du taux de TVA.",
     "L'intuition « vat-rates.json distingue déjà les deux zones » est FAUSSE, et c'est",

@@ -1,6 +1,7 @@
 import { useState, Fragment } from 'react'
 import { Gift, Trash2, BarChart3, Calendar, ChevronDown, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { saved } from '@/lib/saved'
 import { bonusesApi } from '@/lib/api'
 import { type Employee } from '@/components/hr/hrShared'
 
@@ -39,8 +40,13 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
       else next[empId] = remaining
       return next
     })
-    if (!bonusId.startsWith('local-')) bonusesApi.delete(bonusId).catch(() => {})
-    toast.success(i('Prime supprimée', 'Bonus removed', 'Prima eliminada', 'Premio eliminato'))
+    // ⚠️ Le toast de succès ne part QU'APRÈS le serveur. Avant, la suppression était
+    // jetée (`.catch(() => {})`) et l'écran annonçait « Prime supprimée » sur une prime
+    // toujours en base — elle revenait au prochain chargement.
+    const annonce = () => toast.success(i('Prime supprimée', 'Bonus removed', 'Prima eliminada', 'Premio eliminato'))
+    if (bonusId.startsWith('local-')) { annonce(); return }
+    void saved(bonusesApi.delete(bonusId), i('la suppression de la prime', 'the bonus removal', 'la eliminación de la prima', "l'eliminazione del premio"))
+      .then(ok => { if (ok) annonce() })
   }
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
@@ -109,8 +115,11 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
                               setBonuses(nb)
                               const ids = bonusList.filter(b => b.empId === empId).map(b => b.id)
                               setBonusList((prev: any[]) => prev.filter(b => b.empId !== empId))
-                              ids.forEach(id => { if (!id.startsWith('local-')) bonusesApi.delete(id).catch(()=>{}) })
-                              toast.success(lang === 'en' ? 'Orphan bonuses removed' : lang === 'es' ? 'Primas huérfanas eliminadas' : lang === 'it' ? 'Premi orfani eliminati' : 'Primes orphelines supprimées')
+                              // Toutes les suppressions doivent aboutir AVANT d'annoncer le succès.
+                              void saved(
+                                Promise.all(ids.filter(id => !id.startsWith('local-')).map(id => bonusesApi.delete(id))),
+                                lang === 'en' ? 'the orphan bonuses removal' : lang === 'es' ? 'la eliminación de primas huérfanas' : lang === 'it' ? "l'eliminazione dei premi orfani" : 'la suppression des primes orphelines',
+                              ).then(ok => { if (ok) toast.success(lang === 'en' ? 'Orphan bonuses removed' : lang === 'es' ? 'Primas huérfanas eliminadas' : lang === 'it' ? 'Premi orfani eliminati' : 'Primes orphelines supprimées') })
                             }}>
                             <Trash2 size={11}/> {lang === 'en' ? 'Remove' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
                           </button>
@@ -160,8 +169,12 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
                               setBonuses(nb)
                               const ids = bonusList.filter(b => b.empId === empId).map(b => b.id)
                               setBonusList(prev => prev.filter(b => b.empId !== empId))
-                              ids.forEach(id => { if (!id.startsWith('local-')) bonusesApi.delete(id).catch(()=>{}) })
-                              toast.success(lang === 'en' ? 'Bonus removed' : lang === 'es' ? 'Prima eliminada' : lang === 'it' ? 'Premio eliminato' : 'Prime supprimée')
+                              // ⚠️ TROISIÈME site du même fichier — mon balayage manuel n'en
+                              // avait vu que deux ; c'est le verrou qui a trouvé celui-ci.
+                              void saved(
+                                Promise.all(ids.filter(id => !id.startsWith('local-')).map(id => bonusesApi.delete(id))),
+                                lang === 'en' ? 'the bonus removal' : lang === 'es' ? 'la eliminación de la prima' : lang === 'it' ? "l'eliminazione del premio" : 'la suppression de la prime',
+                              ).then(ok => { if (ok) toast.success(lang === 'en' ? 'Bonus removed' : lang === 'es' ? 'Prima eliminada' : lang === 'it' ? 'Premio eliminato' : 'Prime supprimée') })
                             }}>
                             <Trash2 size={11}/> {lang === 'en' ? 'Remove' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
                           </button>

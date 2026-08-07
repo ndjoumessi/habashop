@@ -47,8 +47,11 @@ import { tenantRoutes } from '../routes/tenant'
 
 /** ⚠️ Le mock APPLIQUE l'état demandé : un `findUnique` qui rend toujours la même chose
  *  resterait vert même si la route cessait de lire le pays en base. */
+/** ⚠️ L'état « avant » doit être COMPLET : la trace compare toute la liste blanche
+ *  (`currency/country/lang/vatRate`). Un mock partiel faisait apparaître `lang` et
+ *  `vatRate` comme modifiés — un faux positif du test, pas du code. */
 const enBase = (country: string, currency = 'XOF') =>
-  db.tenant.findUnique.mockImplementation(async () => ({ id: 'T1', country, currency }))
+  db.tenant.findUnique.mockImplementation(async () => ({ id: 'T1', country, currency, lang: 'fr', vatRate: 18 }))
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -76,12 +79,17 @@ describe('PATCH /api/tenant — zone franc CFA sur le couple EFFECTIF', () => {
     expect(db.tenant.update).not.toHaveBeenCalled()   // aucune écriture, pas seulement un code
   })
 
-  it('REFUSE `country: SN` seul sur un tenant déjà en XAF — l’autre moitié du couple', async () => {
+  it('le PAYS seul qui change de zone DÉRIVE la devise — décision du 2026-08-08', async () => {
+    // ⚠️ Ce test affirmait l'inverse (400) jusqu'au 2026-08-08. Refuser les deux sens
+    // verrouillait la boutique sur son couple : `country` et `currency` s'éditent sur deux
+    // écrans qui n'envoient chacun que leur moitié, donc AUCUNE interface ne pouvait en
+    // sortir. Le commerçant qui déménage n'a pas choisi un franc — on dérive.
     enBase('CM', 'XAF')
     const res = await patch({ country: 'SN' })
-    expect(res.statusCode).toBe(400)
-    expect(res.json().code).toBe('CURRENCY_ZONE_MISMATCH')
-    expect(db.tenant.update).not.toHaveBeenCalled()
+    expect(res.statusCode).toBe(200)
+    const data = db.tenant.update.mock.calls.at(-1)![0].data as Record<string, unknown>
+    expect(data.country).toBe('SN')
+    expect(data.currency).toBe('XOF')
   })
 
   it('ACCEPTE le couple corrigé envoyé ensemble — la migration reste possible', async () => {

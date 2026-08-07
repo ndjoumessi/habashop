@@ -17,15 +17,32 @@
  */
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { randomBytes } from 'node:crypto'
 
 const API = process.env.VERIFY_API ?? 'https://habashop-production.up.railway.app'
 const DEMO_ID = 'demo-tenant-001'
 const TMP_ID = 'verif-zone-tmp'
 const TMP_MAIL = 'verif-zone-tmp@habashop.invalid'
-const TMP_PASS = 'Verif-Zone-2026!'
+/**
+ * ⚠️ ENGENDRÉ À L'EXÉCUTION, jamais un littéral. Ce script crée un utilisateur `ADMIN`
+ * RÉEL dans la base de PRODUCTION, et le dépôt est PUBLIC : un mot de passe écrit ici
+ * serait la clé publiée d'un compte qui existe périodiquement sur l'API exposée.
+ */
+const TMP_PASS = randomBytes(24).toString('base64url')
 
 const prisma = new PrismaClient()
-const ok = (c: boolean) => (c ? 'OK ' : 'RATE')
+
+/**
+ * ⚠️ CE HELPER ASSERTE, il n'imprime pas un verdict.
+ * La version précédente rendait la chaîne « RATE » à `console.log` : si le garde n'était
+ * pas déployé, le PATCH passait, `demo-tenant-001` repartait en XAF en production — et le
+ * script sortait en **0**, avec une sortie d'apparence normale. C'est la forme du job
+ * `notify-failure` qui se déclarait vert sur un run rouge, en pire : ce script est la
+ * SEULE chose qui exerce le garde contre le déploiement réel.
+ * *Un outil de preuve qui ne peut pas échouer ne prouve rien.*
+ */
+let echecs = 0
+const ok = (c: boolean) => { if (!c) echecs++; return c ? 'OK ' : 'RATE' }
 
 async function login(email: string, password: string): Promise<string> {
   const r = await fetch(`${API}/api/auth/login`, {
@@ -82,13 +99,19 @@ async function main() {
 
   // ── (3) TENANT JETABLE : le chemin ACCEPTÉ, qui écrit ─────────────────────────
   console.log('\n── tenant JETABLE : le PATCH accepté doit laisser une trace ──')
-  await prisma.tenant.create({
-    data: { id: TMP_ID, name: 'Vérif zone (jetable)', country: 'CM', currency: 'XAF', vatRate: 19.25, plan: 'starter', status: 'active', isActive: true },
-  })
-  await prisma.user.create({
-    data: { id: `${TMP_ID}-u`, tenantId: TMP_ID, email: TMP_MAIL, name: 'Vérif', role: 'ADMIN', passwordHash: await bcrypt.hash(TMP_PASS, 12) },
-  })
+  // ⚠️ Les `create` sont DANS le `try`. Dehors, un échec entre eux et le bloc laissait un
+  // compte ADMIN vivant en production, jamais nettoyé — et `lib/fixtureTenant.ts` l'aurait
+  // classé boutique CLIENTE réelle (isDemo false, pas de préfixe `e2e-`), donc compté dans
+  // les agrégats de la console Ops. Le ménage préalable rend le script REJOUABLE après une
+  // exécution interrompue au lieu d'échouer sur l'e-mail unique.
   try {
+    await nettoyer()
+    await prisma.tenant.create({
+      data: { id: TMP_ID, name: 'Vérif zone (jetable)', country: 'CM', currency: 'XAF', vatRate: 19.25, plan: 'starter', status: 'active', isActive: true },
+    })
+    await prisma.user.create({
+      data: { id: `${TMP_ID}-u`, tenantId: TMP_ID, email: TMP_MAIL, name: 'Vérif', role: 'ADMIN', passwordHash: await bcrypt.hash(TMP_PASS, 12) },
+    })
     const t2 = await login(TMP_MAIL, TMP_PASS)
 
     const refuse = await patchTenant(t2, { currency: 'XOF' })   // CM en XOF = l'autre sens
@@ -110,18 +133,45 @@ async function main() {
       console.log(`  [${ok(!/@|\+\d{6,}/.test(t.description))}] aucune donnée personnelle dans la trace`)
     }
   } finally {
-    // ── DESTRUCTION, et on vérifie qu'il ne reste rien ──
-    await prisma.auditLog.deleteMany({ where: { tenantId: TMP_ID } })
-    await prisma.user.deleteMany({ where: { tenantId: TMP_ID } })
-    await prisma.tenant.deleteMany({ where: { id: TMP_ID } })
-    const reste =
-      (await prisma.tenant.count({ where: { id: TMP_ID } })) +
-      (await prisma.user.count({ where: { tenantId: TMP_ID } })) +
-      (await prisma.auditLog.count({ where: { tenantId: TMP_ID } }))
+    const reste = await nettoyer()
     console.log(`  [${ok(reste === 0)}] tenant jetable détruit — ${reste} orphelin(s)`)
   }
 }
 
+/** Détruit le tenant jetable et rend le nombre d'orphelins restants. Idempotent. */
+async function nettoyer(): Promise<number> {
+  await prisma.auditLog.deleteMany({ where: { tenantId: TMP_ID } })
+  await prisma.user.deleteMany({ where: { OR: [{ tenantId: TMP_ID }, { email: TMP_MAIL }] } })
+  await prisma.tenant.deleteMany({ where: { id: TMP_ID } })
+  return (
+    (await prisma.tenant.count({ where: { id: TMP_ID } })) +
+    (await prisma.user.count({ where: { OR: [{ tenantId: TMP_ID }, { email: TMP_MAIL }] } })) +
+    (await prisma.auditLog.count({ where: { tenantId: TMP_ID } }))
+  )
+}
+
+// ⚠️ Ctrl-C sur un script qui paraît figé (Railway free-tier démarre à froid) ne doit pas
+// laisser un ADMIN de production derrière lui. Sans ces handlers, le `finally` ne tourne pas.
+let enCoursDeSortie = false
+for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+  process.on(signal, () => {
+    if (enCoursDeSortie) return
+    enCoursDeSortie = true
+    console.error(`\n  ${signal} reçu — nettoyage du tenant jetable avant de sortir…`)
+    void nettoyer()
+      .then(r => console.error(`  ${r} orphelin(s) restant(s)`))
+      .finally(() => prisma.$disconnect().finally(() => process.exit(130)))
+  })
+}
+
 main()
-  .catch(e => { console.error('  ✖', e.message); process.exitCode = 1 })
-  .finally(() => prisma.$disconnect())
+  .catch(e => { console.error('  ✖', e.message); echecs++ })
+  .finally(async () => {
+    await prisma.$disconnect()
+    // ⚠️ LE code de sortie EST le verdict. Un shell qui ne lit que `$?` doit voir l'échec.
+    if (echecs > 0) {
+      console.error(`\n  ✖ ${echecs} vérification(s) en ÉCHEC — le garde ne fait pas ce qu'on affirme.`)
+      process.exit(1)
+    }
+    console.log('\n  ✅ toutes les vérifications passent.')
+  })
