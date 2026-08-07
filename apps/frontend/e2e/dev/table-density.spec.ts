@@ -19,6 +19,23 @@ import { test, expect, type Page } from '@playwright/test'
  *
  * ─── LANCER ──────────────────────────────────────────────────────────────────
  *   npm run e2e:density --workspace=apps/frontend      (démarre `vite dev` tout seul)
+ *
+ * ─── ⚠️ AUCUN PIXEL EXACT N'EST ASSERTÉ, ET C'EST DÉLIBÉRÉ ───────────────────
+ * MESURÉ le 2026-08-07, même commit, deux machines :
+ *
+ *     390 px    macOS local   .table-wrap 1223/342 px
+ *               runner Ubuntu .table-wrap 1232/342 px      ← 9 px d'écart
+ *     1440 px   les deux      1392/1392 px  (identique)
+ *     2560 px   les deux      2512/2512 px  (identique)
+ *
+ * L'écart vient du rendu de POLICE : à 390 px la colonne élastique porte du texte, donc sa
+ * largeur naturelle dépend des métriques de la fonte installée ; aux deux autres largeurs la
+ * table tient dans son conteneur et la mesure est bornée par la mise en page, pas par le
+ * texte. Figer « 1223 » aurait donc produit un rouge sur le runner **sans qu'aucune
+ * régression n'existe** — un verrou qui crie au loup se fait désarmer.
+ * Les assertions portent sur le DÉBORDEMENT (`scrollWidth > clientWidth` du conteneur, et
+ * jamais de la page) et sur l'ENROULEMENT (`Range.getClientRects().length`). Ces deux
+ * propriétés sont invariantes par changement de fonte ; les largeurs, non.
  */
 
 const LARGEURS = [
