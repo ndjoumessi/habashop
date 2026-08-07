@@ -31,11 +31,10 @@
 # chaque passe, ce qui était le pire des trois choix.
 #   docs/AUDIT_REPORT.docx    SUPPRIMÉ le 2026-08-07 : docs/audits/AUDIT_REPORT.md
 #                              contenait strictement le même audit, re-scoré.
-#   docs/HabaShop_CDC_v3.docx CONSERVÉ (aucun jumeau markdown) mais PÉRIMÉ — il
-#                              déclare « l'état réel du code » au 25/05/2026.
-#                              Inscrit en dette : CLAUDE.md § Dette ouverte.
-#                              Installer l'extra ferait payer une ingestion pour
-#                              injecter une vérité de mai 2026 dans la carte.
+#   docs/HabaShop_CDC_v3.PERIME-2026-05.docx CONSERVÉ comme archive, PÉRIMÉ et
+#                              FAUX. Remplacé le 2026-08-07 par docs/HabaShop_CDC_v4.md,
+#                              qui EST dans le graphe (markdown). Installer l'extra
+#                              injecterait une vérité de mai 2026 à côté de la bonne.
 # ⚠️ DÉCLENCHEUR DE RÉOUVERTURE : un `.docx` qui n'aurait PAS de jumeau markdown
 # plus récent. Alors installer l'extra vaut mieux que perdre le contenu.
 *.docx

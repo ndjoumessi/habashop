@@ -116,3 +116,10 @@ jamais sur un pixel exact** : c'est ce qui la rend portable.
 3. la mesure se fait **sur l'image**, avant et après.
 
 Un chantier de densité sans les deux captures n'a pas de mesure, donc pas de résultat.
+
+## Le job CI (mesures, 2026-08-07)
+
+`density.yml`, filtré par `paths:` — **4 tests, job 64 s**. ⚠️ La géométrie diffère de **9 px
+entre Ubuntu et macOS** : c'est pourquoi l'assertion porte sur le DÉBORDEMENT et l'enroulement,
+**jamais sur un pixel exact**. Un seuil en pixels exacts serait vert sur une machine et rouge
+sur l'autre — et c'est le runner qui aurait raison, pas la page.

@@ -29,6 +29,7 @@ Un seul repo `ndjoumessi/habashop` depuis juillet 2026 — fusion de `habashop-m
   ⚠️ **AVANT de toucher `mobile/`, lire `mobile/CLAUDE.md`** (+ `mobile/AGENTS.md`) : il porte les contraintes de plateforme, invisibles depuis ce fichier — version du SDK, crash natif sur modales empilées, fichiers à ne pas supprimer, polices non livrables par OTA, frontière `app/` ↔ `src/lib/`. **Elles ne sont PAS recopiées ici** : deux copies divergent, et c'est la copie lue en premier qui se périme.
   ⚠️ **Ce qui se décide en dehors de `mobile/` est ici** : le **seul** build store est en runtime **1.2.0**, **AUCUNE installation réelle n'existe** (1 seul `PushToken` en prod, l'appareil de test), le canal `production` n'est lié à **aucune** branche, et `main` a franchi des ruptures **natives** qu'une OTA ne porte pas. Une OTA vers l'appareil de TEST passe par un swap temporaire d'`app.json` — ⚠️ **ne PAS transposer à la prod**.
 - `docs/modules.md` → **la référence par module** (Produits, Codes-barres, Étiquettes, Abonnements, Facture PDF, Audit, Multi-boutiques, Admin plateforme, RH…) : endpoints, schémas, composants, verrous — **à ouvrir dès qu'on touche l'un d'eux** ; ce fichier n'en garde que les règles transverses (§ Modules — index).
+- `docs/HabaShop_CDC_v4.md` → **le cahier des charges COURANT** (Markdown, versionné). Chaque capacité y porte son état RÉEL — ✅ atteignable · ⚠️ livré mais inerte · 🧪 bac à sable · ⬜ absent. ⚠️ Le `.docx` v3 est **périmé et faux**, ne pas s'y référer.
 - `docs/lessons/` → **le POURQUOI des chantiers clos** (raisonnement intégral, mesures, tentatives ratées). Ces pages ne sont PAS de l'archive : citées 📖 depuis la règle correspondante, elles **sont à lire avant de retoucher la surface concernée**.
 - `legal/` → **pages légales** (ex-`habashop-legal`). Publiées via `.github/workflows/pages.yml` sur **`https://ndjoumessi.github.io/habashop/legal/`** (suppression compte : `.../legal/account-deletion.html`). ⚠️ URL référencée dans Google Play Console.
 
@@ -579,7 +580,7 @@ franc » comme un bloc est exactement l'erreur qu'encodait le `@default(18)`.
 encaissement, un 18 erroné part sur des factures sans que personne ne le remarque. Même
 raisonnement que `ratingSummary` (→ `null`) et `resolvePosPayMode` (→ pas de prestataire deviné).
 
-⚠️ **Table volontairement INCOMPLÈTE — 11 pays sur les 29 de `SUPPORTED_COUNTRIES`.** On
+⚠️ **Table volontairement INCOMPLÈTE — 12 pays sur les 32 de `SUPPORTED_COUNTRIES`** (recomptés, pas recopiés : clés de `rates` dans la fixture, codes de `lib/country.ts`). On
 n'inscrit que les taux SOURCÉS. La compléter au jugé reviendrait à écrire du droit fiscal de
 mémoire ; **ajouter un pays impose d'en citer la source dans la fixture.**
 
@@ -832,7 +833,7 @@ Verrou : `ratingDenominator.test.tsx` (19), 3 sabotages vérifiés. ⚠️ Deux 
 préfixe d'identifiant `e2e-`. **Jamais par une liste d'identifiants** — une liste vieillit,
 le prochain tenant de test n'y figure pas, et le chiffre redevient faux en silence.
 
-Mesuré : la console annonçait « 3 boutiques inscrites, toutes ont démarré » alors que le compte réel de boutiques CLIENTES était **0**, tout le CA affiché venant de fixtures.
+Mesuré : la console annonçait « 3 boutiques inscrites, toutes ont démarré » alors que le compte réel était **0**, tout le CA venant de fixtures.
 
 ⚠️ **Les fixtures sont MARQUÉES dans la liste (`isFixture` par ligne) et EXCLUES des agrégats** — un opérateur doit pouvoir ouvrir la démo, mais elle ne doit pas peser dans un chiffre. **Et le nombre d'exclues est DIT à l'écran** : masquer sans le dire ferait croire à une base vide alors qu'elle contient des démonstrations.
 
@@ -951,9 +952,9 @@ déclenché par `POST /api/sales` (le plus gros poste Twilio) et les crons 20h/8
   `QUOTA_TRIAL_*` / `QUOTA_ACTIVE_*`, `COST_BURST_PER_MIN` — ⚠️ pas de `|| 10`, sinon
   `Number('0') || 10` rend la désactivation inopérante.
 - **WhatsApp = DEUX seaux séparés** (`SpendKind`) : `whatsapp` TRANSACTIONNEL (reçus,
-  alertes, crons — 30/300, SACRÉ) et `whatsapp_marketing` (diffusions, campagnes —
-  `QUOTA_TRIAL_WHATSAPP_MARKETING`/`QUOTA_ACTIVE_WHATSAPP_MARKETING`, **défaut bas 10/50 =
-  PLACEHOLDER** à fixer par produit/facturation ; chaque message marketing coûte du Twilio
+  alertes, crons — **SACRÉ**) et `whatsapp_marketing` (diffusions, campagnes —
+  `QUOTA_TRIAL_WHATSAPP_MARKETING`/`QUOTA_ACTIVE_WHATSAPP_MARKETING`, **défaut volontairement BAS
+  = PLACEHOLDER** à fixer par produit/facturation ; chaque message marketing coûte du Twilio
   réel, on refuse plutôt qu'on surprend). La clé `whatsapp` est INCHANGÉE → le split ne
   remet aucun compteur à zéro. `sendWhatsApp` exige un `flow` (`sale_receipt` |
   `transactional` | `marketing`) — paramètre OBLIGATOIRE comme `owner` : le compilateur
@@ -1052,7 +1053,7 @@ l'exercer, et être vérifié **dans les deux sens**.
 - **PayDunya go-live** : `PAYDUNYA_MODE=live` + clés live. Flux POS non validé end-to-end. **S**
 
 ### 🔴 Critique (suite)
-- ✅ **Rejeu hors-ligne MOBILE : TRAITÉ** (option A, voie 1) — `saleReplay.ts` pose `offlineReplay` et **consomme la réponse** (elle était jetée) ; hors bornes → entrée durable `repriced` « à vérifier ». Cf. § Intégrité prix + `docs/handoff/2026-07-25-rejeu-mobile-option-a-design.md`.
+- ✅ **Rejeu hors-ligne MOBILE : TRAITÉ** (option A, voie 1) — `saleReplay.ts` pose `offlineReplay` et **consomme la réponse** ; hors bornes → `repriced`. Cf. § Intégrité prix + `docs/handoff/2026-07-25-rejeu-mobile-option-a-design.md`.
 
 ### 🟡 Medium
 - ✅ **Congés E2E : CLOS le 2026-08-07** — fuite fermée, résidu purgé (**307 → 0** sur
@@ -1088,27 +1089,11 @@ l'exercer, et être vérifié **dans les deux sens**.
     `routes/whatsapp.ts:93` annonce `lowStock.length` avant de n'en lister que cinq. Écartés à
     raison : limites dures de format (`xlsxWriter` 31 car., `thermalLabel` 2 lignes) et listes
     d'écran ou de destinataires, qui ne sont pas des documents.
-- **`docs/HabaShop_CDC_v3.docx` — document de RÉFÉRENCE périmé, et c'est celui qu'on ouvre en premier** ⚠️ **M**
-  Il déclare « refléter l'**état réel du code** », signé et daté du **25/05/2026**. Deux mois et demi
-  plus tard il décrit un autre produit : marché ouest-africain (le défaut est **CM/XAF**) · grille
-  « Starter 9 900 · Pro 24 900 · Enterprise 49 900 » (la vraie est dans `lib/plans.ts`, **Enterprise
-  SUR DEVIS**, `pro` n'est plus qu'un alias) · Wave/Orange/MTN donnés pour actifs (webhooks
-  **fail-closed**, aucune clé Wave posée) · « mode offline avancé » en priorité BASSE (le rejeu
-  hors-ligne **existe, mobile uniquement**) · 15 modèles Prisma (**29**) · 7 thèmes (**3**).
-  - ⚠️ **DEUX passages ne sont pas périmés — ils CONTREDISENT une règle en vigueur**, et la gravité
-    est là. §2.4 prescrit le déploiement **manuel** `vercel --prod` **depuis `apps/frontend`** :
-    redondant, il brûle le quota, et ce chemin **échoue** (§ Après un merge). §6.3 documente le
-    gating de `/api/admin/*` **sur le rôle `SUPER_ADMIN`** — la fuite inter-tenants P0 corrigée
-    (§ Admin PLATEFORME). *Un document périmé ne se contente pas de ne rien dire : il dit le
-    contraire, avec l'autorité d'un cahier des charges.*
-  - **DÉCLENCHEUR : le jour où on le montre à quelqu'un** — tant que personne ne le lit il ne coûte
-    rien ; au premier lecteur il coûte la crédibilité. **Correctif** : régénérer depuis `CLAUDE.md`
-    + `docs/modules.md`, **ou** retirer « reflétant l'état réel du code » et l'assumer comme archive
-    datée. ⚠️ Son exclusion du graphe réduit l'exposition, elle ne traite pas la dette.
+- ✅ **Cahier des charges : REMPLACÉ le 2026-08-07** — `docs/HabaShop_CDC_v4.md` (Markdown, versionné, diffable) succède au `.docx` de mai, renommé `HabaShop_CDC_v3.PERIME-2026-05.docx`. La v3 ne se contentait pas d'être périmée : elle prescrivait `vercel --prod` depuis `apps/frontend` (§2.4, chemin qui échoue) et documentait le gating de `/api/admin/*` sur le rôle `SUPER_ADMIN` (§6.3, la fuite P0 corrigée) — *un document de référence périmé dit le contraire, avec autorité.* **Ne plus s'y référer.** ⚠️ La v4 pose une règle qui lui survit : *rien n'y est affirmé qui n'ait été compté*, et son **annexe B donne la commande de recomptage de chaque chiffre**. Un chiffre sans son moyen de recalcul redevient une affirmation.
 - ✅ **Paie statuts : RÉSOLU** — modèle `Payroll` (instantané GELÉ) + routes `GET /api/payroll?month=YYYY-MM`, `POST /api/payroll/generate`, `PATCH /api/payroll/:id`. Cf. § Paie.
 - **Bundle recharts ~105KB gz** : lazy + hors precache. Remplacer visx = **L**.
 - **Densité — UN SEUL lot avec la table dense** ⚠️ : tout touche la même structure, séparer ferait le travail plusieurs fois. Défauts MESURÉS sur captures (console Ops, Rapports/RH, Planning) — 📖 *liste et mesures : `docs/lessons/densite-mesuree.md`* ; la garde P0 sur `/admin` reste intacte, cf. § DENSITÉ.
-  - ✅ **Le workflow densité tourne EN CI** depuis le 2026-08-07 (`density.yml`, filtré par `paths:`) — 4 tests, job 64 s. ⚠️ La géométrie diffère de 9 px entre Ubuntu et macOS : l'assertion porte sur le DÉBORDEMENT et l'enroulement, **jamais sur un pixel exact**.
+  - ✅ **Le workflow densité tourne EN CI** (`density.yml`, filtré par `paths:`). ⚠️ La géométrie diffère entre Ubuntu et macOS : l'assertion porte sur le DÉBORDEMENT et l'enroulement, **jamais sur un pixel exact**.
 
 - ✅ **A11y résiduel : FAIT** — SectionCatalog (4 champs `aria-label` : catalogue/slug/description/WhatsApp), POSModals sélecteur pays devenu vrai `role="listbox"` (+ `role="group"` par région, `role="option"`+`aria-selected` sur `CountryItem`), Stock vue grille en `role="list"`/`role="listitem"` (via props A11y additives de `ResponsiveGrid`).
 
@@ -1143,7 +1128,7 @@ compter les `source_file` distincts de `graph.json`.
 
 `demo1234` — `admin@`/`manager@`/`cashier@`/`accountant@`/`hr@habashop.com`, tenant principal `demo-tenant-001` (« HabaShop — Dakar Central »). 5 employés (`demo-emp-${name}`). Données hors seed : `requireCashier=false`, `ownerPhone='+221771234567'`. Si reseed → repasser `requireCashier=false`.
 
-✅ **`demo-tenant-001` est en XOF** (corrigé le 2026-08-06 — il portait `EUR`, venu d'un `PATCH` manuel, pas du seed). Répartition **EUR 2 / XOF 2**. 📖 *`docs/lessons/demos-devise-et-pii.md`.*
+⚠️ **DEVISES DES TENANTS — MESURÉ le 2026-08-07, et l'ancienne mention était FAUSSE** : `demo-001` **SN/XAF** · `demo-002` **CI/XOF** · `e2e-tenant` SN/EUR · interne FR/EUR. Ce fichier annonçait « demo-001 en XOF, répartition EUR 2 / XOF 2 » — non vérifié depuis un `PATCH`. ⚠️ **`demo-001` est donc un tenant SÉNÉGALAIS en devise d'Afrique CENTRALE**, et rien ne peut le signaler : XOF et XAF calculent à l'identique (parité 1, 0 décimale, même symbole). C'est l'erreur d'attribution que § Règles devise décrit comme invisible — **ne pas la muter** (écriture sur tenant existant interdite) ; cf. `docs/HabaShop_CDC_v4.md` §9.5. 📖 *`docs/lessons/demos-devise-et-pii.md`.*
 
 ⚠️ **`e2e-tenant` reste en EUR, et c'est DÉLIBÉRÉ — ne pas « harmoniser ».** En XOF (0 décimale, taux 1), convertir zéro, une ou deux fois donne le **même affichage** : tous les défauts de conversion y sont invisibles. C'est exactement la raison pour laquelle les cas dorés de paie doublent chaque cas XOF d'un cas EUR (§ Paie). `HabaShop Ops` est un tenant interne, pas une boutique.
 ⚠️ **LES DÉMOS RESTENT OUEST-AFRICAINES — ne pas « aligner » sur le marché par défaut.** Mesuré avant de décider : chaque démo est ancrée sur 16 lignes (SN pour `demo-001`, CI pour `demo-002`), l'indicatif dérive déjà de `tenant.country`, et **la TVA à 18 % est CORRECTE pour SN et CI**. Une démo sénégalaise sous un défaut produit camerounais est la meilleure preuve que le multi-pays fonctionne.
