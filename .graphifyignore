@@ -27,14 +27,15 @@
 *.bmp
 
 # ── Documents Office : extraction en échec à chaque passe ───────────────────
-# `.docx` exige l'extra `graphifyy[office]`, absent. Les deux fichiers concernés
-# sont des INSTANTANÉS PÉRIMÉS dont le jumeau markdown, plus récent, est déjà
-# dans le graphe — installer l'extra ferait payer une ingestion pour y injecter
-# une vérité de mai 2026 :
-#   docs/AUDIT_REPORT.docx    (audit au commit 79b3de09) → docs/audits/AUDIT_REPORT.md
-#                              porte le MÊME audit re-scoré à bfc2d90c
-#   docs/HabaShop_CDC_v3.docx (CDC v3.0, « état réel du code » au 25/05/2026)
-#                              → superséde par CLAUDE.md + docs/modules.md
+# `.docx` exige l'extra `graphifyy[office]`, absent — et l'extraction ÉCHOUAIT à
+# chaque passe, ce qui était le pire des trois choix.
+#   docs/AUDIT_REPORT.docx    SUPPRIMÉ le 2026-08-07 : docs/audits/AUDIT_REPORT.md
+#                              contenait strictement le même audit, re-scoré.
+#   docs/HabaShop_CDC_v3.docx CONSERVÉ (aucun jumeau markdown) mais PÉRIMÉ — il
+#                              déclare « l'état réel du code » au 25/05/2026.
+#                              Inscrit en dette : CLAUDE.md § Dette ouverte.
+#                              Installer l'extra ferait payer une ingestion pour
+#                              injecter une vérité de mai 2026 dans la carte.
 # ⚠️ DÉCLENCHEUR DE RÉOUVERTURE : un `.docx` qui n'aurait PAS de jumeau markdown
 # plus récent. Alors installer l'extra vaut mieux que perdre le contenu.
 *.docx

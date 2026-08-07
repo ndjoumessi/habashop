@@ -102,6 +102,14 @@ si leur contenu était vivant ; il ne l'est pas :
 | `docs/AUDIT_REPORT.docx` | audit au commit `79b3de09`, 25/05/2026 | `docs/audits/AUDIT_REPORT.md` — **même audit re-scoré** à `bfc2d90c` |
 | `docs/HabaShop_CDC_v3.docx` | CDC v3.0, « état réel du code » au 25/05/2026 | supersédé par `CLAUDE.md` + `docs/modules.md` |
 
+✅ **`AUDIT_REPORT.docx` a été SUPPRIMÉ le 2026-08-07** (il reste dans l'historique git). Mesuré
+avant de trancher, pas supposé : la colonne « Avant » du markdown reproduit **les 8 dimensions**,
+le **49/80** et le **61 %** du `.docx`, et rien dans le dépôt ne le référençait. Un document dont
+un autre contient strictement le contenu, en plus récent, n'est pas une archive : c'est une
+seconde version de la vérité, et c'est la plus vieille qu'on ouvre par erreur.
+⚠️ **Le CDC, lui, N'A PAS de jumeau** — il est le seul document produit à décrire le projet dans
+son ensemble. Il est donc conservé, et inscrit en dette (`CLAUDE.md` § Dette ouverte).
+
 Payer une ingestion pour injecter une vérité de mai 2026 dans une carte dont tout
 l'intérêt est d'être à jour, c'est acheter la régression qu'on cherche à éviter.
 **Déclencheur de réouverture : un `.docx` sans jumeau markdown plus récent.**

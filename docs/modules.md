@@ -28,6 +28,33 @@ Sidebar · Emails Resend · GlobalSearch · Onboarding
 - **Facture/devis client (`utils/export.ts` generateInvoice)** : document dédié (logo Sac+H, filet violet, statut Payée/En attente, Total TTC). **Tout montant imprimé passe par `printableAmount()`** (U+202F/U+00A0 → espace simple — sinon « 2 /800 » en monospace ; vaut aussi pour posTicket + rapport Z) et toute donnée dynamique par `escHtml()`. Pied légal : `Tenant.ninea/rccm/vatNumber` (String?, PATCH tenant trim + ''→null + max 64), UI Réglages → Boutique « Infos légales », affichés seulement si renseignés.
 - **Ticket Z** : `@@unique([tenantId,date])`, upsert idempotent, CA hors refunded, breakdown COALESCE(split, paymentMode).
 - **WhatsApp** : auto-vente (Twilio, fail-silent), manuel (`/api/whatsapp/send-ticket`), crons gérant (20h/8h TZ Dakar, **uniquement si `Tenant.ownerPhone` non null**). Campagnes : `POST /api/marketing/whatsapp/campaign`, rate-limit 1/h Redis, segments fidélité.
+- **SMS (Africa's Talking)** — canal DISTINCT de WhatsApp, extrait de `CLAUDE.md` § Dette le 2026-08-07.
+  `lib/spend/smsClient.ts` est le **SEUL module autorisé à importer `africastalking`** (allowlist
+  `spendGuardAllowlist.test.ts`), calqué sur `twilioClient` : garde de dépense (`SpendKind` **`sms`**,
+  quotas `QUOTA_TRIAL_SMS`/`QUOTA_ACTIVE_SMS`, défauts 20/200 **placeholder**) + **`resolveRecipient`
+  obligatoire** (`owner` requis — un SMS part vers un numéro, même sécurité téléphonique que WhatsApp).
+  Ne throw jamais ; rend les unités des envois échoués/écartés. `services/sms.ts`
+  `notifyStockAlertSms(tenantId, products)` = **digest QUOTIDIEN** au gérant, câblé dans
+  `services/notificationCrons.ts` et **PAS par vente** (un SMS/jour, pas un par vente) ; opt-in tenant
+  `notifSmsStock` + `ownerPhone`, flux commerçant normalisé avec `tenant.country`. Filet
+  `mockPaidSdks.ts` mocke aussi `africastalking`. Verrou `smsClient.test.ts` (6 : refus téléphone
+  client, pays non supporté, normalisation commerçant, quota refusé, réserve N, fail-safe clé
+  absente ; sabotage vérifié). *(`notifSmsSales` = résumé ventes, fast-follow via la même infra.)*
+- **Push PWA (Web Push VAPID)** — canal navigateur **DISTINCT** du push Expo mobile ; extrait de
+  `CLAUDE.md` § Dette le 2026-08-07. `services/webPush.ts` est le **SEUL module autorisé à importer
+  `web-push`** (fail-silent, VAPID lu à chaud depuis l'env → no-op si absent) ; `pushService.dispatch()`
+  fanne chaque notification vers Expo (mobile) **ET** web (subscriptions `platform='web'`, subscription
+  JSON stockée dans `PushToken.token`). Front : `utils/webPush.ts` (permission → clé VAPID serveur →
+  `pushManager.subscribe` → POST token), bascule « Recevoir sur cet appareil » dans `SectionNotif`
+  (**distincte** de l'opt-in tenant `notifPushAll`), handlers SW dans `public/push-sw.js` — chargé via
+  workbox `importScripts` parce que **le SW généré n'accepte pas de listeners en configuration**, et
+  exclu du precache. Endpoint `GET /api/notifications/vapid-public-key`. Verrous : `webPush.test.ts`
+  back (parse / fail-safe / purge 404-410) + `webPush.test.ts` front (décodage base64url VAPID).
+- **Fidélité — carte digitale** (extrait de `CLAUDE.md` le 2026-08-07 ; les règles transverses —
+  backend autoritaire, « ne PAS envoyer le net », QR sans crypto — restent dans `CLAUDE.md` § Fidélité).
+  `LoyaltyCardDigital` (maquette 04) : carte hero **teintée par palier** — couleurs **FIXES**, c'est un
+  artefact PNG exporté, pas du chrome thémé ; paliers actuel/prochain (remises et seuils du tenant) ;
+  activité = `loyaltyApi.get().history` (LoyaltyTransactions serveur, pas un calcul client).
 - **Finance** : CSV comptable `GET /api/reports/accounting/csv` (UTF-8 BOM, semicolons, `sanitizeCsv()` anti-injection). TVA : `GET /api/reports/vat` + `/csv` + `/pdf` (pdfkit). `buildVatData()` partagé.
 - **RH/Planning** : `Attendance` (`@@unique([tenantId,employeeId,date])`), `Shift` (même type interdit), `LeaveRequest`. Planning = `shiftsByDate Record<"empId_date", {type,id}[]>`, MAJ optimiste + rollback. Clavier PlanningGrid (Entrée/flèches/Échap/Suppr via GripVertical) — ne pas casser.
 - **Paie** : bulletins jsPDF, cron idempotent via `Tenant.lastPayrollReportMonth`, `dryRun:true` par défaut.

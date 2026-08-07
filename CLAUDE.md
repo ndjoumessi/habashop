@@ -9,6 +9,8 @@ SaaS de gestion commerciale multi-tenant **et multi-boutiques** (boutiques/super
 >
 > **Vérifier un allègement, c'est vérifier ce qui a QUITTÉ ce fichier**, pas ce qui est bien arrivé à destination : différence des identifiants entre `git show <avant>:CLAUDE.md` et le fichier courant, **indépendamment des leçons**, avec un contrôle discriminant (témoin positif trouvé, témoin inexistant non signalé, chemins normalisés — `lib/x.ts` et `x` sont le même identifiant).
 >
+> ⚠️ **L'extraction REDISTRIBUE, elle ne réduit pas.** Mesuré le 2026-08-07 : `CLAUDE.md` **−7 722**, `docs/lessons/` **+6 584**, documentation totale **−1 138**. Le plafond mesure donc la **CONCENTRATION** — ce qui se charge à CHAQUE session — pas le coût réel : graphify indexe les deux répertoires, et une session peut se faire lire une leçon. Sortir une page n'est un gain que si elle n'est pas lue à chaque fois.
+>
 > ⚠️ **Si 150 000 est inatteignable sans toucher une protection : s'arrêter et le dire** — combien de caractères manquent, quelles règles il faudrait sacrifier. Un fichier conforme amputé d'une protection est un mauvais échange.
 > Compter en **caractères**, pas en octets — `wc -c` en annonce 4 % de trop ici (accents, émojis).
 
@@ -272,11 +274,11 @@ Helpers : `makeI(lang)` (settings), `pick(lang, obj)`.
 
 ### Paiements mobiles
 
-| Provider | Service | Env clés |
-|---|---|---|
-| **MTN MoMo** (CM) | `services/mtnMomo.ts` — polling 3s×40 | `MTN_MOMO_SUBSCRIPTION_KEY/USER_ID/API_KEY/ENVIRONMENT` · `MTN_SANDBOX_AUTO_SUCCESS=1` |
-| **Campay/Orange** (CM) | `services/campay.ts` — token 55min, HMAC webhook fail-closed | `CAMPAY_USERNAME/PASSWORD/TOKEN/WEBHOOK_KEY/ENVIRONMENT` · `CAMPAY_SANDBOX_AUTO_SUCCESS=1` (montant forcé 10 XAF) |
-| **PayDunya** (SN/UEMOA) | `services/paydunya.ts` | `PAYDUNYA_MASTER_KEY/PRIVATE_KEY/PUBLIC_KEY/TOKEN/MODE` · `PAYDUNYA_SANDBOX_AUTO_SUCCESS=1` |
+| Provider | Service (clés : § Env vars) |
+|---|---|
+| **MTN MoMo** (CM) | `services/mtnMomo.ts` — polling 3s×40 |
+| **Campay/Orange** (CM) | `services/campay.ts` — token 55min, HMAC webhook fail-closed ; bac à sable **montant forcé 10 XAF** |
+| **PayDunya** (SN/UEMOA) | `services/paydunya.ts` |
 
 **Flux POS** : polling → `confirmSale(mtnRef?, campayRef?, paydunyaRef?)`. Si PayDunya configuré, Wave+Orange → overlay QR `POSPaydunyaOverlay` (3s×100=5min). `isPaydunyaMode = paydunyaOk && (wave||orange)`.
 **PayDunya** : `response_code:'00'` = succès, IPN = SHA-512(MASTER_KEY) fail-closed, réconciliation only. 16 tests.
@@ -308,7 +310,7 @@ Les règles qu'on enfreint **sans même travailler sur ces écrans** :
   rien.
 
 ### Fidélité
-Backend autoritaire : `loyaltyDiscount = total × tierPct` (plafond 50%), `sale.total = NET`. Front envoie BRUT + `customerId` — **ne PAS envoyer le net** (double remise). QR carte = `HABA-CUST:<id>`, noir/blanc opaque, **aucune crypto**. `LoyaltyCardDigital` (maquette 04) : carte hero **teintée par palier** (couleurs FIXES — artefact PNG exporté, pas du chrome thémé), paliers actuel/prochain (remises/seuils tenant), activité = `loyaltyApi.get().history` (LoyaltyTransactions serveur).
+Backend autoritaire : `loyaltyDiscount = total × tierPct` (plafond 50%), `sale.total = NET`. Front envoie BRUT + `customerId` — **ne PAS envoyer le net** (double remise). QR carte = `HABA-CUST:<id>`, noir/blanc opaque, **aucune crypto**. 📖 *carte digitale (`LoyaltyCardDigital`) : `docs/modules.md` § Fidélité.*
 
 ### Paie ⚠️ — bulletins PERSISTÉS, instantané GELÉ
 
@@ -945,9 +947,9 @@ déclenché par `POST /api/sales` (le plus gros poste Twilio) et les crons 20h/8
 - `middleware/demoTenant.ts` + `Tenant.isDemo` — 11 routes gardées (403 `DEMO_TENANT_FORBIDDEN`).
   Bascule : `scripts/set-demo-tenant.ts` (`CONFIRM=1`). ⚠️ Le mot de passe démo est PUBLIC
   (dépôt public) : masquer le bouton côté front ne protège RIEN, seul ce refus serveur tient.
-- **Plafonds par env, lus À L'APPEL** (ajustables sans redéploiement) : `QUOTA_TRIAL_*` /
-  `QUOTA_ACTIVE_*` (essai 20/15/30/20, payant 200/150/300/200), `COST_BURST_PER_MIN`
-  (défaut 10 — ⚠️ pas de `|| 10`, sinon `Number('0') || 10` rend la désactivation inopérante).
+- **Plafonds par env, lus À L'APPEL** (ajustables sans redéploiement ; valeurs en § Env vars) :
+  `QUOTA_TRIAL_*` / `QUOTA_ACTIVE_*`, `COST_BURST_PER_MIN` — ⚠️ pas de `|| 10`, sinon
+  `Number('0') || 10` rend la désactivation inopérante.
 - **WhatsApp = DEUX seaux séparés** (`SpendKind`) : `whatsapp` TRANSACTIONNEL (reçus,
   alertes, crons — 30/300, SACRÉ) et `whatsapp_marketing` (diffusions, campagnes —
   `QUOTA_TRIAL_WHATSAPP_MARKETING`/`QUOTA_ACTIVE_WHATSAPP_MARKETING`, **défaut bas 10/50 =
@@ -1042,9 +1044,9 @@ l'exercer, et être vérifié **dans les deux sens**.
 ## Dette ouverte
 
 ### 🔴 Critique
-- ✅ **Numéros WhatsApp : RÉSOLU** (PR #100) — la normalisation par « à qui appartient ce numéro » (`resolveRecipient`, param `owner` obligatoire) a remplacé le `+` aveugle et le `replace(/^0/)` ; la dette `Tenant.country` est traitée aussi. Cf. § Normalisation téléphonique (+ `docs/lessons/normalisation-telephonique.md`).
-- ✅ **SMS : IMPLÉMENTÉ** (Africa's Talking). `lib/spend/smsClient.ts` = SEUL module important `africastalking` (ajouté à l'allowlist `spendGuardAllowlist.test.ts`), calqué sur `twilioClient` : garde de dépense (`SpendKind` **`sms`**, quotas `QUOTA_TRIAL_SMS`/`QUOTA_ACTIVE_SMS` défauts 20/200 placeholder) + **`resolveRecipient` obligatoire** (`owner` requis — un SMS part vers un numéro, même sécurité téléphonique que WhatsApp), ne throw jamais, rend les unités des envois échoués/écartés. `services/sms.ts` `notifyStockAlertSms(tenantId, products)` = **digest QUOTIDIEN** au gérant (câblé dans `services/notificationCrons.ts`, PAS par vente → un SMS/jour, pas un par vente ; gardé opt-in tenant `notifSmsStock` + `ownerPhone`, flux commerçant normalisé avec `tenant.country`). Filet `mockPaidSdks.ts` mocke aussi `africastalking`. ⚠️ **À ACTIVER (Nelson)** : compte Africa's Talking + `SMS_API_KEY` (+ `SMS_USERNAME` défaut `sandbox`, `SMS_SENDER_ID` optionnel) sur Railway — absente = feature inerte (`SMS_NOT_CONFIGURED`, fail-safe). Verrou : `smsClient.test.ts` (6, sabotage vérifié). *(`notifSmsSales` = résumé ventes, fast-follow trivial via la même infra.)*
-- ✅ **Push PWA : IMPLÉMENTÉ** (Web Push VAPID). Canal navigateur DISTINCT du push Expo mobile : `services/webPush.ts` (SEUL module important `web-push`, fail-silent, VAPID lu à chaud depuis l'env → no-op si absent) ; `pushService.dispatch()` fanne chaque notif vers Expo (mobile) ET web (subscriptions `platform='web'`, subscription JSON stockée dans `PushToken.token`). Front : `utils/webPush.ts` (permission → clé VAPID serveur → `pushManager.subscribe` → POST token), toggle « Recevoir sur cet appareil » dans `SectionNotif` (distinct de l'opt-in tenant `notifPushAll`), handlers SW dans `public/push-sw.js` (chargé via workbox `importScripts` — le SW généré n'accepte pas de listeners en config ; exclu du precache). Endpoint `GET /api/notifications/vapid-public-key`. ⚠️ **À ACTIVER (Nelson)** : poser `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (+ `VAPID_SUBJECT` optionnel) sur Railway — clés absentes = feature inerte (fail-safe). Verrous : `webPush.test.ts` (back : parse/fail-safe/purge 404-410) + `webPush.test.ts` (front : décodage base64url VAPID).
+- ✅ **Numéros WhatsApp : RÉSOLU** (PR #100) — `resolveRecipient` + `owner` obligatoire ; dette `Tenant.country` traitée aussi. Cf. § Normalisation téléphonique.
+- ✅ **SMS : IMPLÉMENTÉ** (Africa's Talking) — `lib/spend/smsClient.ts` = **SEUL module autorisé à importer `africastalking`** (allowlist `spendGuardAllowlist.test.ts`), garde de dépense `SpendKind` **`sms`** + **`resolveRecipient` obligatoire**. Digest QUOTIDIEN au gérant, jamais par vente. 📖 *câblage complet : `docs/modules.md` § SMS.* ⚠️ **À ACTIVER (Nelson)** : compte Africa's Talking + `SMS_API_KEY` (+ `SMS_USERNAME` défaut `sandbox`, `SMS_SENDER_ID` optionnel) sur Railway — absente = feature inerte (`SMS_NOT_CONFIGURED`, fail-safe).
+- ✅ **Push PWA : IMPLÉMENTÉ** (Web Push VAPID) — canal navigateur **DISTINCT** du push Expo mobile ; `services/webPush.ts` = **SEUL module autorisé à importer `web-push`** (fail-silent). 📖 *câblage complet : `docs/modules.md` § Push PWA.* ⚠️ **À ACTIVER (Nelson)** : poser `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (+ `VAPID_SUBJECT` optionnel) sur Railway — clés absentes = feature inerte (fail-safe).
 - **Wave webhook** : code **fail-CLOSED** (`if (!secret) return false`) ✅ — reste à poser `WAVE_WEBHOOK_SECRET` Railway pour activer la vérif en prod. **S**
 - **Campay go-live** : `CAMPAY_WEBHOOK_KEY` + `CAMPAY_ENVIRONMENT=production`. **S**
 - **PayDunya go-live** : `PAYDUNYA_MODE=live` + clés live. Flux POS non validé end-to-end. **S**
@@ -1086,6 +1088,23 @@ l'exercer, et être vérifié **dans les deux sens**.
     `routes/whatsapp.ts:93` annonce `lowStock.length` avant de n'en lister que cinq. Écartés à
     raison : limites dures de format (`xlsxWriter` 31 car., `thermalLabel` 2 lignes) et listes
     d'écran ou de destinataires, qui ne sont pas des documents.
+- **`docs/HabaShop_CDC_v3.docx` — document de RÉFÉRENCE périmé, et c'est celui qu'on ouvre en premier** ⚠️ **M**
+  Il déclare « refléter l'**état réel du code** », signé et daté du **25/05/2026**. Deux mois et demi
+  plus tard il décrit un autre produit : marché ouest-africain (le défaut est **CM/XAF**) · grille
+  « Starter 9 900 · Pro 24 900 · Enterprise 49 900 » (la vraie est dans `lib/plans.ts`, **Enterprise
+  SUR DEVIS**, `pro` n'est plus qu'un alias) · Wave/Orange/MTN donnés pour actifs (webhooks
+  **fail-closed**, aucune clé Wave posée) · « mode offline avancé » en priorité BASSE (le rejeu
+  hors-ligne **existe, mobile uniquement**) · 15 modèles Prisma (**29**) · 7 thèmes (**3**).
+  - ⚠️ **DEUX passages ne sont pas périmés — ils CONTREDISENT une règle en vigueur**, et la gravité
+    est là. §2.4 prescrit le déploiement **manuel** `vercel --prod` **depuis `apps/frontend`** :
+    redondant, il brûle le quota, et ce chemin **échoue** (§ Après un merge). §6.3 documente le
+    gating de `/api/admin/*` **sur le rôle `SUPER_ADMIN`** — la fuite inter-tenants P0 corrigée
+    (§ Admin PLATEFORME). *Un document périmé ne se contente pas de ne rien dire : il dit le
+    contraire, avec l'autorité d'un cahier des charges.*
+  - **DÉCLENCHEUR : le jour où on le montre à quelqu'un** — tant que personne ne le lit il ne coûte
+    rien ; au premier lecteur il coûte la crédibilité. **Correctif** : régénérer depuis `CLAUDE.md`
+    + `docs/modules.md`, **ou** retirer « reflétant l'état réel du code » et l'assumer comme archive
+    datée. ⚠️ Son exclusion du graphe réduit l'exposition, elle ne traite pas la dette.
 - ✅ **Paie statuts : RÉSOLU** — modèle `Payroll` (instantané GELÉ) + routes `GET /api/payroll?month=YYYY-MM`, `POST /api/payroll/generate`, `PATCH /api/payroll/:id`. Cf. § Paie.
 - **Bundle recharts ~105KB gz** : lazy + hors precache. Remplacer visx = **L**.
 - **Densité — UN SEUL lot avec la table dense** ⚠️ : tout touche la même structure, séparer ferait le travail plusieurs fois. Défauts MESURÉS sur captures (console Ops, Rapports/RH, Planning) — 📖 *liste et mesures : `docs/lessons/densite-mesuree.md`* ; la garde P0 sur `/admin` reste intacte, cf. § DENSITÉ.
