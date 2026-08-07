@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/authenticate'
 import { getTenantId } from '../lib/tenantId'
 import { getCached } from '../lib/cache'
 import { salesWindowStart } from '../utils/salesWindow'
+import { regrouperCategories } from '../lib/categoryBreakdown'
 
 /**
  * Évolution en % (1 décimale) entre la valeur actuelle et celle de la période
@@ -102,10 +103,14 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
         const c = i.product?.category ?? 'Autre'
         catMap[c] = (catMap[c] ?? 0) + (i.total ?? 0)
       }
-      const categoryBreakdown = Object.entries(catMap)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 6)
+      // ⚠️ Le `.slice(0, 6)` nu vivait ici. Il tronquait SANS rien dire du reste, et le
+      // client calculait son dénominateur sur ce qu'il recevait — donc sur un sous-ensemble
+      // présenté comme le CA du mois. `regrouperCategories` rend un reliquat EXPLICITE, ce
+      // qui rend l'invariant vérifiable : Σ(rendu) === Σ(toutes catégories). Cf. le module.
+      const categoryBreakdown = regrouperCategories(
+        Object.entries(catMap).map(([name, value]) => ({ name, value })),
+        6,
+      )
 
       return {
         salesToday: salesToday._sum.total ?? 0,

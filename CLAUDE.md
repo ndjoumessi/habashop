@@ -1064,6 +1064,73 @@ comparée, pas par un second argument.
 ⚠️ Un commentaire JSX `{/* … */}` **ne peut pas vivre dans une liste d'attributs** (TS1005,
 commis deux fois dans ce chantier) : l'ancrer au-dessus de l'élément.
 
+### LE TOTAL CALCULÉ SUR CE QUI EST AFFICHÉ ⚠️ — la famille, pas la ligne
+
+**TROIS instances en deux jours**, toutes de la même forme : *un total calculé sur ce qui est
+AFFICHÉ plutôt que sur ce qui EXISTE.*
+
+| Surface | Ce qui manquait au dénominateur |
+|---|---|
+| Répartition paiements (légende vs donut) | 2 ventes sur 50 → Σ = **96 %** / **101 %** |
+| Tableau PDF des paiements | **11 535 XOF** absents d'un total imprimé, sous un « 100 % » littéral |
+| Camembert « CA par catégorie » | la 7ᵉ catégorie et au-delà — **77 000 XOF** en mars sur `demo-002` |
+
+⚠️ **`demo-tenant-001` a EXACTEMENT 6 catégories** — au catalogue comme dans ses ventes. Le
+serveur tronquait à 6. La boutique de démonstration de référence était donc **pile sur la
+valeur limite**, `perdu = 0` toujours : c'est ce qui explique que personne n'ait jamais vu le
+défaut. `demo-tenant-002` en a **sept**, et il y était bien réel — **trois mois consécutifs**
+(2026-03 77 000 · 04 27 500 · 05 65 600 XOF), en silence.
+**Une démonstration calée sur la valeur limite ne démontre rien : elle masque.**
+
+**Ce qui est en place** — `apps/backend/src/lib/categoryBreakdown.ts` :
+- Le serveur rend les plus grosses catégories **PLUS un reliquat explicite**
+  (`{ name:'Autres', value, count, other:true }`). Le client **ne peut pas** le calculer : il
+  ne reçoit que ce qu'on lui envoie. Tronquer côté serveur et totaliser côté client, c'est
+  garantir la divergence.
+- ⚠️ **Le reliquat se reconnaît à un DRAPEAU, jamais à son nom** : `analytics.ts` range déjà
+  les produits sans catégorie sous « Autre », et rien n'interdit qu'une catégorie réelle
+  s'appelle « Autres ». Le front réserve une clé de fusion (`' reliquat'`) que `normCat` ne
+  peut pas produire. Même leçon que le `?? 'cash'` — on ne distingue pas une chose par un nom
+  qu'elle partage.
+- **« Autres » porte son EFFECTIF** (« Autres — 4 catégories »). Sans lui, le lecteur ne sait
+  pas s'il regarde une catégorie ou quatorze : c'est le « 4,2/5 » sans son dénominateur.
+- Le reliquat agrège **au moins DEUX** catégories (`max − 1` nommées dès qu'il y a
+  débordement) : à 7 catégories, « les 6 premières + Autres » cacherait UNE catégorie
+  nommable derrière un libellé anonyme — strictement moins informatif que de la nommer.
+- **À 6 exactement : aucune tranche « Autres » vide.** Un secteur à 0 % se lit comme un
+  graphique cassé. **À 0 catégorie : état vide** — atteignable, pas théorique (`demo-001`
+  n'a aucune vente ce mois-ci).
+
+**L'INVARIANT VERROUILLÉ EST PLUS FORT QUE « Σ = 100 % »** : `Σ(valeurs rendues) == CA du
+mois`. *Un camembert peut sommer à 100 % d'un total faux* — c'est exactement ce qu'il faisait.
+Verrou `categoryBreakdown.test.ts` (9), exercé de **0 à 20 catégories** : un test à 3
+reproduirait la situation qui a laissé passer le défaut. Sabotage rejoué **sur la forme que le
+code venait de prendre** (leçon de S4, § Répartition paiements) → 4 rouges.
+
+⚠️ **`pourcentagesEntiers` est la SOURCE UNIQUE de la répartition en entiers**
+(`apps/frontend/src/lib/pourcentages.ts`, déplacé depuis `paymentBreakdown.ts` et réexporté).
+Le Dashboard corrigeait le **dernier** secteur à `100 − Σ` : la somme valait 100, mais toute
+l'erreur atterrissait sur une seule part — la dernière, donc la plus petite. Mesuré sur la
+distribution réelle de `demo-002` (mars, 7 catégories), la dernière part passe de **1 à 2 %**
+sur une valeur exacte de 1,83 % : `100 − Σ` se trompait de **45 % en relatif**, et c'est
+l'origine du « dernier secteur diverge de ±1 » qu'avait attrapé l'assertion F1 de
+`dashboard-donut.spec.ts`. Écart max par part : **0,83 pt → 0,56 pt**. Ne pas en écrire une
+troisième — deux écrans, deux arrondis, ils divergent au premier cas limite.
+
+⚠️ **BALAYAGE DE LA CLASSE — la « quatrième occurrence » attendue N'EXISTE PAS.** 681 fichiers
+lus sur les trois workspaces (`.slice(0,N)` · `take: N` · `.head(`) : `analytics.ts` était le
+**seul** site dont la troncature alimentait un dénominateur. Les autres sont d'une autre
+nature et **correctes** — `export.ts` calcule `totalCA` **avant** son `slice(0,30)` d'affichage,
+les barres de « Top produits » (web et mobile) sont relatives au **maximum** et non à un total.
+*Écrit pour qu'on ne re-balaye pas cette classe en croyant qu'elle est ouverte.*
+⚠️ Le premier balayage a rendu **zéro correspondance** : `--include=*.ts` non quoté est mangé
+par zsh. Un scan qui ne lit rien rend un résultat propre — **contrôle positif obligatoire**
+(ici : `analytics.ts` contient `.slice(0, 6)`, le scan doit le trouver).
+
+**Dette voisine, NON traitée et distincte** : `routes/export.ts:56` plafonne l'export CSV des
+ventes à `take: 1000` sans le dire. Aucun total n'en dérive — ce n'est pas cette famille — mais
+c'est un plafond silencieux (§ « No silent caps »).
+
 ### La MOYENNE SANS SON DÉNOMINATEUR ⚠️ — `perf` / `rating`
 
 `Employee.perf` et `Supplier.rating` étaient `Int NOT NULL DEFAULT 3`. Un employé jamais

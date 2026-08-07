@@ -137,7 +137,15 @@ export interface ApiDashboardStats {
   /** ⚠️ AUCUN filtre de date côté serveur : 5 dernières ventes, tous temps confondus. */
   recentActivity: { id: string; total: number; paymentMode: string; createdAt: string }[]
   /** Mois en cours, 6 catégories max, triées par CA décroissant. */
-  categoryBreakdown: { name: string; value: number }[]
+  /**
+   * ⚠️ Les catégories les plus grosses **PLUS un reliquat explicite**. Le serveur tronque
+   * (`regrouperCategories`, 6 lignes max) et rend la ligne « Autres » qui porte le reste :
+   * sans elle, le client sommerait ce qu'il reçoit et répartirait 100 % d'un sous-ensemble
+   * en l'appelant le CA du mois. Mesuré sur demo-tenant-002 : 77 000 XOF absents en mars.
+   * `other` est le SEUL moyen de reconnaître le reliquat — « Autre(s) » est aussi un nom de
+   * catégorie légitime (le serveur y range les produits sans catégorie).
+   */
+  categoryBreakdown: { name: string; value: number; count?: number; other?: boolean }[]
 }
 
 /* ────────────────────────── Série du graphe de ventes ────────────────────────── */

@@ -12,6 +12,7 @@ import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import Skeleton from '@/components/ui/skeleton'
 import { normCat } from '@/utils/normCat'
+import { pourcentagesEntiers } from '@/lib/pourcentages'
 import { payModeLabel } from '@/components/pos/posShared'
 import ConsolidatedShops from '@/components/dashboard/ConsolidatedShops'
 import {
@@ -33,6 +34,19 @@ function ActivityIcon({ type }: { type: 'sale' | 'stock' | 'hr' | 'alert' }) {
 }
 
 const RANK_COLORS = ['#6C47FF', '#00D084', '#FF9500', '#8888A8', '#8888A8']
+
+/**
+ * Libellé du reliquat, avec son EFFECTIF. « Autres » seul ne dit pas s'il cache une catégorie
+ * ou quatorze ; le compte fait partie de la mesure, comme l'effectif d'une moyenne.
+ * ⚠️ Le serveur garantit `count >= 2` — on ne prévoit donc pas de singulier qui ne peut pas
+ * survenir. Si le repli était nul (donnée d'une version antérieure), on n'affirme rien.
+ */
+export function autresLabel(count: number, lang: string): string {
+  const mot = lang === 'en' ? 'Other' : lang === 'es' ? 'Otras' : lang === 'it' ? 'Altre' : 'Autres'
+  if (!Number.isFinite(count) || count < 2) return mot
+  const cat = lang === 'en' ? 'categories' : lang === 'es' ? 'categorías' : lang === 'it' ? 'categorie' : 'catégories'
+  return `${mot} — ${count} ${cat}`
+}
 
 // Label du donut : utilise les MÊMES pourcentages que la légende (catPcts, somme garantie
 // = 100 %), repérés par `index`, plutôt que le `percent` brut de recharts → aucun décalage
@@ -159,18 +173,19 @@ export default function Dashboard() {
       // afficherait « 0 à réapprovisionner » sur une requête en échec mentirait.
       .catch(() => {})
   }, [])
+  // Dénominateur = CA du mois. ⚠️ Ce `reduce` n'est légitime QUE parce que le serveur rend
+  // désormais un reliquat « Autres » explicite (`regrouperCategories`, backend) : avant, il
+  // sommait les six premières catégories et le camembert répartissait 100 % d'un
+  // sous-ensemble en l'appelant le mois. Mesuré sur demo-tenant-002 : 77 000 XOF absents en
+  // mars, 27 500 en avril, 65 600 en mai. Ne pas retirer le reliquat côté serveur sans
+  // rouvrir ce trou ICI — l'invariant vit là-bas (`categoryBreakdown.test.ts`).
   const catTotal = catData.reduce((s, d) => s + (d.value ?? 0), 0)
-  // % par catégorie : diviseur = CA total toutes catégories (y compris « Autre ») ;
-  // arrondi Math.round puis correction du dernier slice → somme garantie = 100 %.
-  const catPcts = (() => {
-    if (catTotal <= 0) return catData.map(() => 0)
-    const rounded = catData.map(d => Math.round(((d.value ?? 0) / catTotal) * 100))
-    if (rounded.length) {
-      const sumOthers = rounded.slice(0, -1).reduce((s, p) => s + p, 0)
-      rounded[rounded.length - 1] = 100 - sumOthers
-    }
-    return rounded
-  })()
+  // ⚠️ `pourcentagesEntiers` (plus forts restes) remplace l'ancien `100 − Σ` sur le DERNIER
+  // secteur. La somme valait déjà 100, mais toute l'erreur atterrissait sur une seule part —
+  // la dernière, donc la plus petite : c'est ainsi qu'était né le « dernier secteur diverge
+  // de ±1 » qu'a attrapé l'assertion F1 de `dashboard-donut.spec.ts`. Source UNIQUE partagée
+  // avec « Répartition paiements » : deux écrans, deux arrondis, ils divergeraient.
+  const catPcts = pourcentagesEntiers(catData.map(d => Number(d.value ?? 0)))
 
   useEffect(() => {
     dashboardApi.stats()
@@ -195,7 +210,11 @@ export default function Dashboard() {
         const mergedCats: any[] = []
         const catIndex = new Map<string, number>()
         for (const c of (data?.categoryBreakdown ?? [])) {
-          const key = normCat(String(c?.name ?? ''))
+          // ⚠️ Le RELIQUAT se reconnaît à son drapeau, jamais à son libellé. Le serveur range
+          // déjà les produits sans catégorie sous « Autre », et rien n'empêche une vraie
+          // catégorie de s'appeler « Autres » : les fusionner par le nom ferait disparaître
+          // l'une dans l'autre. Clé réservée, impossible à produire par `normCat`.
+          const key = c?.other ? ' reliquat' : normCat(String(c?.name ?? ''))
           const value = Number(c?.value ?? 0)
           const at = catIndex.get(key)
           if (at !== undefined) {
@@ -205,7 +224,14 @@ export default function Dashboard() {
             mergedCats.push({ ...c, value })
           }
         }
-        setCatData(mergedCats.map((c, i) => ({ ...c, color: DONUT_COLORS[i % DONUT_COLORS.length] })))
+        // ⚠️ « Autres » PORTE SON COMPTE. Sans lui, le lecteur ne peut pas savoir s'il regarde
+        // une catégorie ou quatorze : le libellé deviendrait une catégorie fantôme, du même
+        // genre que le « 4,2/5 » sans son effectif (§ La moyenne sans son dénominateur).
+        setCatData(mergedCats.map((c, i) => ({
+          ...c,
+          name: c.other ? autresLabel(Number(c.count ?? 0), lang) : c.name,
+          color: DONUT_COLORS[i % DONUT_COLORS.length],
+        })))
         // Nouvel ADMIN sans produits ni ventes, non encore onboardé → wizard
         if (
           data.totalProducts === 0 && data.transactionsToday === 0 && data.salesMonth === 0 &&
