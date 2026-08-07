@@ -41,21 +41,44 @@ function fichiersSource(dir: string, acc: string[] = []): string[] {
 const sansCommentaires = (src: string) =>
   src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 
-/** `.catch(() => {})` / `.catch(()=>{})` / avec un `_` — la FORME, pas un identifiant. */
-const AVALE = /\.catch\(\s*\(\s*_?\s*\)\s*=>\s*\{\s*\}\s*\)/g
-/** Une ÉCRITURE : `xxxApi.<verbe>(` — le verbe est ce qui distingue d'un `get`. */
-const ÉCRITURE = /\b\w+Api\.(create|update|remove|delete|patch|post|put|save|send|upload|import)\w*\s*\(/
+/**
+ * Une ÉCRITURE d'API dont le refus est jeté — en UN SEUL motif, et c'est délibéré.
+ *
+ * ⚠️ La première version testait deux regex sur la MÊME LIGNE. Mesuré le 2026-08-08 :
+ * une chaîne coupée en deux lui échappait entièrement —
+ *     tenantApi.update(p)
+ *       .catch(() => {})
+ * — c'est-à-dire la mise en forme que produit n'importe quel reformatage dès que la
+ * ligne dépasse la largeur. Le verrou cherchait une forme qu'un espace blanc suffit à
+ * faire disparaître : l'angle mort « forme », logé dans le détecteur lui-même.
+ *
+ * Le motif est ancré aux DEUX bouts (l'appel d'écriture ET le catch vide) : le `\s*`
+ * entre les deux ne peut donc pas déborder sur un `catch` sans rapport situé plus bas.
+ * `(?:[^()]|\([^()]*\))*` couvre un niveau d'imbrication dans les arguments.
+ */
+const AVALE_ÉCRITURE =
+  /\b\w+Api\.(?:create|update|remove|delete|patch|post|put|save|send|upload|import)\w*\s*\((?:[^()]|\([^()]*\))*\)\s*\.catch\(\s*\(\s*_?\s*\)\s*=>\s*\{\s*\}\s*\)/g
+
+/** Vrai si le texte contient la forme fautive. Réinitialise `lastIndex` : `/g` + `.test()` est à état. */
+const avale = (src: string): boolean => {
+  AVALE_ÉCRITURE.lastIndex = 0
+  return AVALE_ÉCRITURE.test(src)
+}
 
 function sitesFautifs(): { fichier: string; ligne: number; extrait: string }[] {
   const trouvés: { fichier: string; ligne: number; extrait: string }[] = []
   for (const f of fichiersSource(RACINE)) {
-    const lignes = sansCommentaires(readFileSync(f, 'utf-8')).split('\n')
-    lignes.forEach((l, i) => {
-      AVALE.lastIndex = 0
-      if (AVALE.test(l) && ÉCRITURE.test(l)) {
-        trouvés.push({ fichier: f.slice(RACINE.length + 1), ligne: i + 1, extrait: l.trim().slice(0, 110) })
-      }
-    })
+    // Le fichier ENTIER, pas ligne à ligne — sinon une chaîne coupée passe au travers.
+    const src = sansCommentaires(readFileSync(f, 'utf-8'))
+    AVALE_ÉCRITURE.lastIndex = 0
+    let m: RegExpExecArray | null
+    while ((m = AVALE_ÉCRITURE.exec(src)) !== null) {
+      trouvés.push({
+        fichier: f.slice(RACINE.length + 1),
+        ligne: src.slice(0, m.index).split('\n').length,
+        extrait: m[0].replace(/\s+/g, ' ').slice(0, 110),
+      })
+    }
   }
   return trouvés
 }
@@ -83,9 +106,13 @@ describe('aucune soumission n’avale une erreur serveur', () => {
       'bonusesApi.delete(id).catch(()=>{})',
       'productsApi.create(x).catch( (  ) => {  } )',
       'customersApi.remove(id).catch((_) => {})',
+      // ⚠️ LA VARIANTE QUI ÉCHAPPAIT À LA PREMIÈRE VERSION — une chaîne coupée en deux.
+      // C'est la mise en forme que produit tout reformatage sur une ligne trop longue.
+      'await tenantApi.update(p)\n  .catch(() => {})',
+      // arguments contenant eux-mêmes un appel
+      'tenantApi.update({ a: f(1) }).catch(() => {})',
     ]) {
-      AVALE.lastIndex = 0
-      expect(AVALE.test(forme) && ÉCRITURE.test(forme)).toBe(true)
+      expect(avale(forme), forme).toBe(true)
     }
   })
 
@@ -99,16 +126,18 @@ describe('aucune soumission n’avale une erreur serveur', () => {
       'tenantApi.update(p).catch(e => setError(e.message))',
       // et ce qui n'est pas un appel d'API du tout
       'window.matchMedia(q).catch(() => {})',
+      // une écriture SANS catch n'est pas fautive
+      'tenantApi.update(p).then(ok)',
+      // ⚠️ LA CONTRE-ÉPREUVE DU MULTI-LIGNE : autoriser le saut de ligne ne doit PAS
+      // faire rejoindre une écriture à un `catch` sans rapport situé plus bas.
+      'tenantApi.update(p)\nconst x = 1\nfoo.catch(() => {})',
     ]) {
-      AVALE.lastIndex = 0
-      expect(AVALE.test(légitime) && ÉCRITURE.test(légitime)).toBe(false)
+      expect(avale(légitime), légitime).toBe(false)
     }
   })
 
   it('le commentaire qui MENTIONNE la forme interdite ne la déclenche pas', () => {
     const src = `// interdit : tenantApi.update(p).catch(() => {})\nconst x = 1\n`
-    const nettoyé = sansCommentaires(src)
-    AVALE.lastIndex = 0
-    expect(AVALE.test(nettoyé) && ÉCRITURE.test(nettoyé)).toBe(false)
+    expect(avale(sansCommentaires(src))).toBe(false)
   })
 })
