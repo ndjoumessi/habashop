@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
 
 const { db } = vi.hoisted(() => ({
-  db: { tenant: { findUnique: vi.fn(), update: vi.fn() } },
+  db: { tenant: { findUnique: vi.fn(), update: vi.fn() }, auditLog: { create: vi.fn() } },   // la route trace les changements de locale
 }))
 vi.mock('../db', () => ({ prisma: db }))
 vi.mock('../services/email', () => ({ sendUserInvitationEmail: vi.fn() }))

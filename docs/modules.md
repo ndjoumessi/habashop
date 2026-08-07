@@ -55,6 +55,34 @@ Sidebar · Emails Resend · GlobalSearch · Onboarding
   `LoyaltyCardDigital` (maquette 04) : carte hero **teintée par palier** — couleurs **FIXES**, c'est un
   artefact PNG exporté, pas du chrome thémé ; paliers actuel/prochain (remises et seuils du tenant) ;
   activité = `loyaltyApi.get().history` (LoyaltyTransactions serveur, pas un calcul client).
+- **Paiements mobiles — détail par prestataire** (extrait de `CLAUDE.md` le 2026-08-07 ; la règle
+  transverse « `IS_SANDBOX` jamais pour l'auto-approbation » et le flux POS restent là-bas).
+  **PayDunya** : `response_code:'00'` = succès ; IPN = SHA-512(`MASTER_KEY`), **fail-closed**,
+  réconciliation seulement ; 16 tests. **Campay carte** : `/api/get_payment_link/` (underscore,
+  pas de tiret), QR noir/blanc opaque, référence de bac à sable `SANDBOX-CARD-{ts}`.
+  **Stats** : `GET /api/payments/today-stats` agrège par `*Reference`, en UTC, `refunded` exclus —
+  ⚠️ étendre `computePaymentStats` pour **tout** nouveau prestataire, sinon ses encaissements
+  disparaissent d'un total qui continue de s'afficher.
+- **Fidélité — modèle serveur** (extrait de `CLAUDE.md` le 2026-08-07 ; la règle transverse
+  « le front envoie le BRUT, jamais le net » reste là-bas). Backend AUTORITAIRE :
+  `loyaltyDiscount = total × tierPct`, plafond **50 %**, et `sale.total` stocké est le **NET**.
+  Le front envoie le montant BRUT plus `customerId` — envoyer le net appliquerait la remise
+  **deux fois**. QR de carte = `HABA-CUST:<id>`, noir sur blanc opaque, **aucune crypto** :
+  c'est un identifiant, pas un jeton.
+- **Paiements mobiles — cadences et bac à sable** : MTN MoMo `services/mtnMomo.ts`, polling
+  **3 s × 40** ; Campay `services/campay.ts`, jeton **55 min**, HMAC de webhook **fail-closed**,
+  bac à sable à **montant forcé 10 XAF** ; PayDunya `services/paydunya.ts`.
+- **Paiements mobiles — flux POS** (extrait de `CLAUDE.md` le 2026-08-07). Polling →
+  `confirmSale(mtnRef?, campayRef?, paydunyaRef?)`. Si PayDunya est configuré, Wave et Orange
+  basculent sur l'overlay QR `POSPaydunyaOverlay` (3 s × 100 = 5 min) ;
+  `isPaydunyaMode = paydunyaOk && (wave || orange)`.
+- **Onboarding — payload défensif** (extrait de `CLAUDE.md` le 2026-08-08) : les champs vides
+  ne sont PAS envoyés, pour qu'un « Passer » n'écrase rien de ce qui existe déjà.
+- **POS — placeholder honnête** : « …ou scanner » **uniquement** si `posEnableScanner` ; sinon
+  « Rechercher… ». Pas de fausse promesse dans un champ de saisie.
+- **POS — prix barré de référence** (extrait de `CLAUDE.md` le 2026-08-08) : affiché
+  **UNIQUEMENT** si `showStrikePrice(ref, eff)`, c'est-à-dire `ref > eff` (helper `posShared`).
+  Sans ce test, le tarif de gros retombant sur le prix détail affichait « 2 800 2 800 ».
 - **Finance** : CSV comptable `GET /api/reports/accounting/csv` (UTF-8 BOM, semicolons, `sanitizeCsv()` anti-injection). TVA : `GET /api/reports/vat` + `/csv` + `/pdf` (pdfkit). `buildVatData()` partagé.
 - **RH/Planning** : `Attendance` (`@@unique([tenantId,employeeId,date])`), `Shift` (même type interdit), `LeaveRequest`. Planning = `shiftsByDate Record<"empId_date", {type,id}[]>`, MAJ optimiste + rollback. Clavier PlanningGrid (Entrée/flèches/Échap/Suppr via GripVertical) — ne pas casser.
 - **Paie** : bulletins jsPDF, cron idempotent via `Tenant.lastPayrollReportMonth`, `dryRun:true` par défaut.

@@ -76,6 +76,7 @@ const { db } = vi.hoisted(() => ({
   db: {
     tenant: { update: vi.fn(), findUnique: vi.fn(), findFirst: vi.fn() },
     user: { findFirst: vi.fn() },
+    auditLog: { create: vi.fn() },   // la route trace désormais les changements de locale
   },
 }))
 vi.mock('../db', () => ({ prisma: db, basePrisma: db }))

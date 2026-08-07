@@ -412,13 +412,23 @@ trois semaines avant d'être anonymisées. Un balayage hebdomadaire borne désor
 Les migrations SQL et `schema.prisma` ne sont pas indexés par la carte de code. Pour un projet
 dont les défauts ont été majoritairement de forme de donnée, c'est l'angle mort le plus coûteux.
 
-### 9.5 Incohérence pays / devise non gardée
+### 9.5 Incohérence pays / devise — gardée depuis le 7 août, valeur non corrigée
 
-Rien n'empêche d'écrire un couple `country` / `currency` incohérent, et rien ne le signale
-ensuite — cf. §7. Un tenant sénégalais en XAF existe aujourd'hui en production.
+✅ Les quatre chemins d'écriture d'un tenant refusent désormais le **mauvais franc CFA**
+(`400 CURRENCY_ZONE_MISMATCH`) : un pays UEMOA ne peut plus être en XAF, ni un pays CEMAC en
+XOF. Le `PATCH` juge le couple **effectif** — un corps qui ne porte que `currency` est
+confronté au pays déjà en base, sinon la moitié des conflits passe.
 
-**Réouverture :** immédiate si une boutique cliente est créée dans une zone où l'écart devient
-calculable ; sinon, à traiter avec la garde d'écriture sur `Tenant`.
+⚠️ Le garde a immédiatement exposé un second défaut, préexistant : créer une deuxième boutique
+sans rien préciser produisait **CM + XOF**, le pays venant du marché par défaut et la devise
+d'un littéral `'XOF'`. La devise se dérive maintenant du pays.
+
+⬜ **La valeur en base n'est pas corrigée.** `demo-tenant-001` est toujours `SN` / `XAF`.
+Le script existe et est commité (`prisma/fix-demo001-currency.ts`, `CONFIRM=1`), il attend une
+validation. ⚠️ **L'écrivain du `XAF` n'a jamais été identifié** — `PATCH /api/tenant` n'écrit
+aucun audit, et c'est ce trou-là qui rend la question insoluble.
+
+**Réouverture :** l'audit des écritures sur `Tenant`, qui n'existe pas.
 
 ---
 

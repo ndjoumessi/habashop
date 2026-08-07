@@ -1,0 +1,46 @@
+{
+  "_comment": [
+    "ZONES FRANC CFA — cas partagés, lus à l'EXÉCUTION par les tests jumeaux :",
+    "  apps/backend/src/lib/currencyZone.ts  ← apps/backend/src/tests/currencyZone.test.ts",
+    "  apps/frontend/src/lib/currencyZone.ts ← apps/frontend/src/tests/currencyZone.test.ts",
+    "Modifier une zone d'un seul côté fait rougir l'autre.",
+    "",
+    "⚠️ POURQUOI UNE TABLE EXPLICITE, et pas une dérivation du taux de TVA.",
+    "L'intuition « vat-rates.json distingue déjà les deux zones » est FAUSSE, et c'est",
+    "mesuré : GA (CEMAC) porte 18, exactement comme SN, CI, ML, BF, NE, TG, BJ, GW (UEMOA).",
+    "Un garde adossé au taux serait juste pour CM (19,25) et CG (18,9) et FAUX pour GA —",
+    "une justesse empruntée à une table qui n'a jamais eu pour objet de dire la zone.",
+    "",
+    "⚠️ CE QUE LA RÈGLE INTERDIT, ET RIEN DE PLUS : le MAUVAIS franc CFA.",
+    "Un pays UEMOA ne peut pas être en XAF ; un pays CEMAC ne peut pas être en XOF.",
+    "Toute autre devise (EUR, USD, CAD, GBP) reste LÉGITIME partout — c'est une",
+    "préférence d'affichage, pas une erreur de zone monétaire. C'est pourquoi",
+    "`e2e-tenant` (SN/EUR) passe la règle SANS exemption : une exemption nommée",
+    "dont on n'a pas besoin est un trou qu'on aura oublié d'avoir ouvert.",
+    "",
+    "⚠️ Un pays hors des deux zones (FR, NG, MA…) ne contraint RIEN : la règle rend",
+    "`null` — non concluant — jamais une affirmation d'innocence.",
+    "",
+    "Sources : UEMOA — traité UMOA, 8 États, franc CFA XOF (BCEAO).",
+    "          CEMAC — traité CEMAC, 6 États, franc CFA XAF (BEAC)."
+  ],
+  "zones": {
+    "UEMOA": { "currency": "XOF", "countries": ["BJ", "BF", "CI", "GW", "ML", "NE", "SN", "TG"] },
+    "CEMAC": { "currency": "XAF", "countries": ["CM", "CF", "TD", "CG", "GQ", "GA"] }
+  },
+  "_cas": [
+    { "country": "SN", "currency": "XAF", "conflit": true,  "pourquoi": "LE DÉFAUT MESURÉ le 2026-08-07 en production sur demo-tenant-001 — Sénégal en franc d'Afrique centrale" },
+    { "country": "SN", "currency": "XOF", "conflit": false, "pourquoi": "nominal UEMOA" },
+    { "country": "CM", "currency": "XAF", "conflit": false, "pourquoi": "nominal CEMAC — le marché par défaut ; la règle ne doit PAS rougir ici" },
+    { "country": "CM", "currency": "XOF", "conflit": true,  "pourquoi": "l'inverse du défaut mesuré" },
+    { "country": "GA", "currency": "XOF", "conflit": true,  "pourquoi": "GA est CEMAC malgré un taux de TVA de 18 % identique à l'UEMOA — le cas que la dérivation par le taux aurait manqué" },
+    { "country": "GA", "currency": "XAF", "conflit": false, "pourquoi": "nominal CEMAC" },
+    { "country": "SN", "currency": "EUR", "conflit": false, "pourquoi": "e2e-tenant — une devise hors franc CFA n'est pas une erreur de zone. AUCUNE exemption nommée n'est nécessaire, et c'est ce cas qui le prouve" },
+    { "country": "CI", "currency": "USD", "conflit": false, "pourquoi": "idem, hors franc CFA" },
+    { "country": "FR", "currency": "XOF", "conflit": false, "pourquoi": "pays hors des deux zones — non concluant, jamais une affirmation" },
+    { "country": "FR", "currency": "EUR", "conflit": false, "pourquoi": "le tenant interne de production" },
+    { "country": "CI", "currency": "XOF", "conflit": false, "pourquoi": "demo-tenant-002, nominal" },
+    { "country": "TD", "currency": "XOF", "conflit": true,  "pourquoi": "CEMAC peu cité — la table doit porter les 6, pas les 3 connus" },
+    { "country": "GW", "currency": "XAF", "conflit": true,  "pourquoi": "UEMOA peu cité — idem, les 8" }
+  ]
+}

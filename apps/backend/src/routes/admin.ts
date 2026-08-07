@@ -4,6 +4,7 @@ import type { AdminReviewBody } from '../types'
 import bcrypt from 'bcryptjs'
 import { prisma, basePrisma } from '../db'
 import { normalizeCountry } from '../lib/country'
+import { isCurrencyZoneConflict, currencyZoneError } from '../lib/currencyZone'
 import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import { planAmountXOF } from '../lib/plans'
@@ -112,7 +113,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.post('/api/admin/tenants', { preHandler: authenticateAdmin, schema: { body: ADMIN_CREATE_TENANT } }, async (request) => {
+  app.post('/api/admin/tenants', { preHandler: authenticateAdmin, schema: { body: ADMIN_CREATE_TENANT } }, async (request, reply) => {
     // Type DÉRIVÉ du schéma : `name` est `string` (garanti par `z.string().min(1)`),
     // plus `string | undefined` comme le laissait croire l'ancien cast. Sans ce schéma,
     // un POST sans `name` atteignait `prisma.tenant.create` (Tenant.name requis) → 500 ;
@@ -121,6 +122,10 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     // ⚠️ Le pays est résolu UNE fois : il sert au champ `country` ET au taux de TVA. Le
     // calculer deux fois laisserait les deux diverger au premier changement de repli.
     const pays = normalizeCountry(country) ?? DEFAULT_MARKET.country
+    const devise = currency ?? DEFAULT_MARKET.currency
+    if (isCurrencyZoneConflict(pays, devise)) {
+      return reply.code(400).send({ error: currencyZoneError(pays, devise), code: 'CURRENCY_ZONE_MISMATCH' })
+    }
     const tenant = await prisma.tenant.create({
       data: {
         name,

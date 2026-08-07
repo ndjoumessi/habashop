@@ -275,43 +275,29 @@ Helpers : `makeI(lang)` (settings), `pick(lang, obj)`.
 
 ### Paiements mobiles
 
-| Provider | Service (clés : § Env vars) |
-|---|---|
-| **MTN MoMo** (CM) | `services/mtnMomo.ts` — polling 3s×40 |
-| **Campay/Orange** (CM) | `services/campay.ts` — token 55min, HMAC webhook fail-closed ; bac à sable **montant forcé 10 XAF** |
-| **PayDunya** (SN/UEMOA) | `services/paydunya.ts` |
-
-**Flux POS** : polling → `confirmSale(mtnRef?, campayRef?, paydunyaRef?)`. Si PayDunya configuré, Wave+Orange → overlay QR `POSPaydunyaOverlay` (3s×100=5min). `isPaydunyaMode = paydunyaOk && (wave||orange)`.
-**PayDunya** : `response_code:'00'` = succès, IPN = SHA-512(MASTER_KEY) fail-closed, réconciliation only. 16 tests.
-**Campay carte** : `/api/get_payment_link/` (underscore), QR noir/blanc opaque. Sandbox : référence `SANDBOX-CARD-{ts}`.
-**Stats** : `GET /api/payments/today-stats` (par `*Reference`, UTC, refunded exclus). Étendre `computePaymentStats` pour tout nouveau provider.
+**MTN MoMo** (CM) `services/mtnMomo.ts` · **Campay/Orange** (CM) `services/campay.ts` — HMAC webhook **fail-closed** · **PayDunya** (SN/UEMOA) `services/paydunya.ts`. Clés : § Env vars.
+📖 *Flux POS, IPN, Campay carte, `computePaymentStats` : `docs/modules.md` § Paiements mobiles.*
 **⚠️ Sécurité sandbox** : `IS_SANDBOX` OK pour URL/devise, INTERDIT pour auto-approbation. Toujours `_SANDBOX_AUTO_SUCCESS=1` **explicite** + flag **inline dans le handler** (pas constante module → tests process.env inefficaces).
 
 ### UI POS/fidélité/onboarding — item 11 (maquettes) ⚠️
 Refonte 2026-07 fidèle aux **maquettes faisant foi** `docs/ux-mockups/0N-*.view.html`.
-📖 *Détail de mise en page livré (grilles, header, feuille d'encaissement, onboarding, scripts de
-capture) : `docs/SPECS_UX_pos_fidelite_onboarding.md`, section « État IMPLÉMENTÉ ».*
+📖 *Mise en page livrée : `docs/SPECS_UX_pos_fidelite_onboarding.md` § « État IMPLÉMENTÉ » ·
+placeholder honnête et payload d'onboarding : `docs/modules.md`.*
 
 Les règles qu'on enfreint **sans même travailler sur ces écrans** :
 
 - **`.pos-fullbleed`** sur le wrapper POS → neutralise padding/scroll de `.page-content`. Sans
   elle, débordement d'environ 2× le padding et **CTA coupé**.
-- **Placeholder HONNÊTE** : « …ou scanner » seulement si le scan est activé (`posEnableScanner`),
-  sinon « Rechercher… ». Pas de fausse promesse.
 - ⚠️ **Le « Scanner » du PANIER est le scanner de CARTE FIDÉLITÉ** (QR `HABA-CUST:`,
   `POSCustomerSelector`) — fonction **DISTINCTE** du scan produit. Ne pas confondre ni fusionner.
-- **Prix barré (référence) UNIQUEMENT si `showStrikePrice(ref, eff)` = `ref > eff`** (helper
-  `posShared`) — sinon « 2 800 2 800 » quand le tarif de gros retombe sur le prix détail.
 - **Clôture de caisse** : **espèces attendues = fond + ventes ESPÈCES**, jamais le CA tous modes.
   Écart coloré par **MAGNITUDE** via un `gapLevel` unique (écran ET rapport imprimé) : |é| ≤ 1 XOF
   vert · < max(500 XOF, 5 %) ambre · sinon rouge, **surplus comme manque**.
 - ⚠️ **Rapport imprimé : TOUTE interpolation via `esc()`** — anti-XSS, `cashierName` est une
   donnée utilisateur.
-- **Onboarding : payload DÉFENSIF** — champs vides non envoyés, pour qu'un « Passer » n'écrase
-  rien.
 
 ### Fidélité
-Backend autoritaire : `loyaltyDiscount = total × tierPct` (plafond 50%), `sale.total = NET`. Front envoie BRUT + `customerId` — **ne PAS envoyer le net** (double remise). QR carte = `HABA-CUST:<id>`, noir/blanc opaque, **aucune crypto**. 📖 *carte digitale (`LoyaltyCardDigital`) : `docs/modules.md` § Fidélité.*
+Backend AUTORITAIRE (plafond 50 %, `sale.total` = NET). ⚠️ Le front envoie le **BRUT** + `customerId` — **ne PAS envoyer le net** (double remise). 📖 *`docs/modules.md` § Fidélité.*
 
 ### Paie ⚠️ — bulletins PERSISTÉS, instantané GELÉ
 
@@ -343,6 +329,7 @@ les règles **transverses** : celles qu'on enfreint sans même travailler sur le
 - **Audit** ⚠️ : **TOUTE écriture d'audit passe par `writeAudit(label, promise)`** (fail-open mais TRACÉ). Exception : les 3 sites en `$transaction` propagent. Méta-test `auditWriteConvention.test.ts`. `UserAuditLog` est **hors boutique et SANS FK vers User** — un audit de sécurité survit à la suppression du compte.
 - **Multi-boutiques** ⚠️ : **DEUX champs tenant, DEUX helpers** (`lib/tenantId.ts`) — `request.user.tenantId` (JWT, hérité) → `getTenantId()` ; `request.tenantId` (boutique ACTIVE résolue par `authenticate`) → `getActiveTenantId()`. Ne pas les confondre : sur une route platform-scopée, `user.tenantId` est légitimement nullable et `getTenantId` lèverait à tort. Appeler **APRÈS** les gardes 400/403.
 - **Admin PLATEFORME** ⚠️ : `User.isPlatformAdmin` est le **SEUL** critère d'accès à `/api/admin/*`. **JAMAIS gater sur le rôle `SUPER_ADMIN`** — rôle INTERNE au tenant, y gater = fuite inter-tenants (P0 corrigé, `adminPlatformIsolation.test.ts`). Symétriquement, ne jamais masquer le commerçant **par le rôle** : le dépouillement de l'interface se fait sur `isPlatformAdmin`.
+- **Zone franc CFA** ⚠️ : un pays **UEMOA ne peut pas être en XAF**, ni un pays **CEMAC en XOF** — `lib/currencyZone.ts`, **jumeaux front/back**, cas partagés `currency-zones.json`, refus **400 `CURRENCY_ZONE_MISMATCH`** sur les **4** chemins d'écriture de tenant. ⚠️ Le `PATCH` juge le couple **EFFECTIF** (corps + base) : un corps qui ne porte que `currency` doit être confronté au pays déjà stocké — c'est par là qu'un `XAF` est arrivé sur un tenant `SN`, **sans aucune trace** (`PATCH /api/tenant` n'appelle pas `writeAudit`). ⚠️ **NE PAS dériver la zone du taux de TVA** : `GA` (CEMAC) porte 18 comme l'UEMOA — justesse empruntée. ⚠️ Une devise **hors franc CFA reste légitime partout** (`e2e-tenant` SN/EUR passe **sans exemption nommée** — *une exemption dont on n'a pas besoin est un trou*). ⚠️ **Le même geste pose la TRACE** : `PATCH /api/tenant` n'écrivait AUCUN audit — c'est ce trou qui a rendu l'écrivain du `XAF` introuvable. `TENANT_LOCALE_CHANGE` consigne **AVANT → APRÈS** (« la devise a changé » n'aurait rien permis) sur une liste blanche NOMMÉE de codes et de nombres (`currency/country/lang/vatRate`) — **aucun champ personnel**, la leçon du balayage PII. Verrous : `currencyZone.test.ts` (23, des 2 côtés) + `currencyZoneRoute.test.ts` (13, **câblage ET trace**, 6 sabotages — l'invariant pur laissait le couple effectif VERT). ⚠️ Le mock de `writeAudit` **délègue au module réel** : l'attendre sans l'attraper prouverait le mock, pas le fail-open.
 - **Expiration de promo** ⚠️ : helper pur **`isPromotionActive(hasPromotion, promotionEnd, now)`**, miroir back (`utils/pricing.ts`) ↔ front (`lib/pricing.ts`), cas partagés `promotion-active-cases.json`, `now` **injecté**. Échéance inclusive au jour calendaire **UTC**. ✅ **Miroir MOBILE (`posStore.ts`) ALIGNÉ et désormais ENFORCED** — `mobile/src/__tests__/promotionActiveShared.test.ts` exerce `isPromotionActive` sur les 9 cas partagés et tourne en CI depuis #163. *(Ce fichier a longtemps affirmé le miroir « PAS aligné » : c'était FAUX — il l'était, il n'était simplement pas enforced. Une dette d'exécution lue comme une dette de code.)*
 - **Abonnements** : **aucun total n'est stocké** (dérivé de `product.sellPrice` → « au tarif du jour ») et **aucune colonne de fréquence** n'existe (`dayOfWeek` impose l'hebdo) — ne pas promettre en UI ce que le modèle ne porte pas.
 - **Commandes** ⚠️ : **`PurchaseOrder` ne représente QUE des commandes FOURNISSEUR** — `supplierId` y est une FK obligatoire, et il n'existe ni `clientName`, ni `clientPhone`, ni colonne `type`. Les **commandes CLIENT de l'écran sont donc LOCALES et ÉPHÉMÈRES** (décision produit #171) : aucun appel serveur n'est émis pour elles. Avant, il l'était — sans `supplierId` — et se faisait refuser en **400 systématique**, dont le caissier ne voyait qu'un « Échec de la création ». Leur persistance est une **dette backend** (colonnes + zod), pas un oubli du front.

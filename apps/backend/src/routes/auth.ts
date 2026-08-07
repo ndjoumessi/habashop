@@ -8,6 +8,7 @@ import { authenticate } from '../middleware/authenticate'
 import { sendWelcomeEmail } from '../services/email'
 import type { LoginBody, RegisterBody } from '../types'
 import { DEFAULT_PLAN_ON_SIGNUP } from '../lib/plans'
+import { isCurrencyZoneConflict, currencyZoneError } from '../lib/currencyZone'
 import { DEFAULT_MARKET } from '../lib/defaultMarket'
 import { vatRateOrZero } from '../lib/vatRate'
 
@@ -181,6 +182,17 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) return reply.code(409).send({ error: 'Email déjà utilisé' })
+
+    // ⚠️ Zone franc CFA : un pays UEMOA ne peut pas être en XAF, ni l'inverse. Les deux
+    // francs calculent à l'identique, donc l'erreur est INVISIBLE ensuite (cf. currencyZone).
+    const paysInscription = normalizeCountry(country) ?? DEFAULT_MARKET.country
+    const deviseInscription = currency ?? DEFAULT_MARKET.currency
+    if (isCurrencyZoneConflict(paysInscription, deviseInscription)) {
+      return reply.code(400).send({
+        error: currencyZoneError(paysInscription, deviseInscription),
+        code: 'CURRENCY_ZONE_MISMATCH',
+      })
+    }
 
     const passwordHash = await bcrypt.hash(password, 12)
 

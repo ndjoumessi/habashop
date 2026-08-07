@@ -4,6 +4,7 @@ import { isValidSlug, RESERVED_SLUGS } from '../utils/slug'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
 import { normalizeCountry } from '../lib/country'
+import { isCurrencyZoneConflict, currencyZoneError, cfaZoneOf, currencyOfZone } from '../lib/currencyZone'
 import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
 import { getTenantId, getActiveTenantId } from '../lib/tenantId'
@@ -49,8 +50,22 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
 
     const VALID_CURRENCIES = ['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP']
     const VALID_LANGS = ['fr', 'en', 'es', 'it']
-    const currency = VALID_CURRENCIES.includes(body.currency ?? '') ? body.currency! : 'XOF'
+    // ⚠️ DÉFAUT DÉRIVÉ DU PAYS, pas un littéral. Le code posait `'XOF'` en dur pendant que
+    // le pays défautait à `DEFAULT_MARKET.country` (CM depuis le 2026-08-06) : créer une
+    // 2ᵉ boutique sans rien préciser produisait **CM + XOF**, exactement le couple que
+    // `currencyZone` refuse. Le garde a exposé le défaut ; c'est le défaut qu'on corrige.
+    const paysCreation = body.country ?? DEFAULT_MARKET.country
+    const zoneCreation = cfaZoneOf(paysCreation)
+    const deviseDefaut = zoneCreation ? currencyOfZone(zoneCreation) : DEFAULT_MARKET.currency
+    const currency = VALID_CURRENCIES.includes(body.currency ?? '') ? body.currency! : deviseDefaut
     const lang = VALID_LANGS.includes(body.lang ?? '') ? body.lang! : 'fr'
+
+    // ⚠️ Zone franc CFA — cf. `lib/currencyZone.ts`. Le formulaire dérive déjà la devise
+    // du pays, mais « la garde du navigateur n'est pas une garde » : une devise EXPLICITE
+    // et incohérente doit être refusée ici.
+    if (isCurrencyZoneConflict(paysCreation, currency)) {
+      return reply.code(400).send({ error: currencyZoneError(paysCreation, currency), code: 'CURRENCY_ZONE_MISMATCH' })
+    }
 
     // ⚠️ La boutique créée HÉRITE du statut de celle du créateur. Sans ça, un compte à
     // l'essai (même expiré) créait une boutique `status:'active'` sans `trialEnds`, y
@@ -214,7 +229,42 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       country = iso
     }
 
-    return prisma.tenant.update({
+    // ── Réglages AUDITÉS : locale et fiscalité ───────────────────────────────────────
+    // ⚠️ Liste blanche NOMMÉE, et volontairement étroite : que des codes et des nombres.
+    // Aucun champ personnel (`phone`, `email`, `address`) ni texte libre n'entre dans la
+    // trace — la leçon du balayage PII : *un journal qui recopie ce qu'il trouve déplace
+    // la fuite au lieu de la fermer.*
+    const CHAMPS_AUDITES = ['currency', 'country', 'lang', 'vatRate'] as const
+    const valeursSoumises: Record<string, unknown> = {
+      currency: data.currency, country, lang: data.lang, vatRate: data.vatRate,
+    }
+    const champsTouches = CHAMPS_AUDITES.filter(k => valeursSoumises[k] !== undefined)
+
+    // Une SEULE lecture « avant » : elle sert au garde de zone ET à la trace. Sans l'état
+    // antérieur, la trace dirait « la devise a changé » — ce qui ne permet aucune enquête ;
+    // c'est précisément ce qui a manqué le 2026-08-07.
+    const avant = champsTouches.length
+      ? await prisma.tenant.findUnique({
+          where: { id: tenantId },
+          select: { currency: true, country: true, lang: true, vatRate: true },
+        })
+      : null
+
+    // ⚠️ Zone franc CFA sur le couple EFFECTIF, pas sur le corps reçu : un PATCH qui ne
+    // porte QUE `currency` doit être jugé contre le pays DÉJÀ en base, sinon la moitié des
+    // conflits passe. C'est par cette route qu'un `XAF` est arrivé sur un tenant `SN`.
+    if (data.currency !== undefined || country !== undefined) {
+      const paysEffectif    = country ?? avant?.country
+      const deviseEffective = data.currency ?? avant?.currency
+      if (isCurrencyZoneConflict(paysEffectif, deviseEffective)) {
+        return reply.code(400).send({
+          error: currencyZoneError(paysEffectif, deviseEffective),
+          code: 'CURRENCY_ZONE_MISMATCH',
+        })
+      }
+    }
+
+    const tenantMisAJour = await prisma.tenant.update({
       where: { id: tenantId },
       data: {
         name:     data.name,
@@ -261,6 +311,35 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         vatNumber: legal(data.vatNumber),
       },
     })
+
+    // ── Trace : AVANT → APRÈS, sur les seuls réglages de locale et de fiscalité ──────
+    // ⚠️ Cette route n'écrivait AUCUN audit. C'est ce trou qui a rendu insoluble l'enquête
+    // du 2026-08-07 : un `XAF` posé sur un tenant `SN`, sans écrivain identifiable.
+    // On consigne les DEUX valeurs — « la devise a changé » n'aurait rien permis.
+    const change = champsTouches
+      .filter(k => (avant as Record<string, unknown> | null)?.[k] !== (tenantMisAJour as unknown as Record<string, unknown>)[k])
+      .map(k => [k, {
+        avant: (avant as Record<string, unknown> | null)?.[k] ?? null,
+        apres: (tenantMisAJour as unknown as Record<string, unknown>)[k] ?? null,
+      }] as const)
+
+    if (change.length) {
+      await writeAudit('TENANT_LOCALE_CHANGE', prisma.auditLog.create({
+        data: {
+          // ⚠️ `getActiveTenantId` et non `request.tenantId` brut : appelé APRÈS les gardes,
+          // il lève plutôt que d'écrire une trace orpheline (cf. § Multi-boutiques).
+          tenantId: getActiveTenantId(request),
+          userId: request.user!.userId,
+          module: 'SETTINGS',
+          action: 'TENANT_LOCALE_CHANGE',
+          // Codes et nombres UNIQUEMENT (cf. CHAMPS_AUDITES) — aucune donnée personnelle.
+          description: JSON.stringify(Object.fromEntries(change)),
+          severity: 'info',
+        },
+      }))
+    }
+
+    return tenantMisAJour
   }
   app.put('/api/tenant',   { preHandler: authenticate }, updateTenantHandler)
   app.patch('/api/tenant', { preHandler: authenticate }, updateTenantHandler)
