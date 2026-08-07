@@ -68,6 +68,7 @@ Vérifications qui inspectent l'ARTEFACT livré ou la PROD — un test unitaire 
 npm run verify:sw-routes  --workspace=apps/frontend   # ordre des règles du dist/sw.js livré (une règle occultée = morte)
 npm run verify:demo-flag  --workspace=apps/frontend   # demo1234 absent du dist/ prod
 npm run verify:seo-urls   --workspace=apps/frontend   # dist/ livré : aucun %VITE_*% non substitué (canonical cassé = désindexation)
+npm run verify:classes    --workspace=apps/frontend   # dist/ livré (JS compris) : aucune classe atteignable absente — tailwind n'émet RIEN
 npm run smoke:version     --workspace=apps/backend    # /health DÉPLOYÉ == version source (après CHAQUE déploiement back)
 npm run test:integration  --workspace=apps/backend    # vitest.integration.config.ts — LECTURE SEULE contre la prod (CI sur main)
 ```
@@ -321,35 +322,21 @@ Backend autoritaire : `loyaltyDiscount = total × tierPct` (plafond 50%), `sale.
 
 ### Paie ⚠️ — bulletins PERSISTÉS, instantané GELÉ
 
-**Modèle `Payroll`** (`@@unique([tenantId, employeeId, month])`) + `GET /api/payroll?month=YYYY-MM`, `POST /api/payroll/generate`, `PATCH /api/payroll/:id`. Rôles = **miroir exact** de `ROLE_PERMISSIONS['payroll']` côté front (ADMIN, SUPER_ADMIN, MANAGER, ACCOUNTANT, HR ; CASHIER exclu) — un serveur PLUS STRICT que l'UI ne protège rien, il produit des boutons visibles qui renvoient 403.
+📖 *POURQUOI intégral (les deux règles de retenues incompatibles — 150 000 imprimé contre 130 500 affiché —, les trois temps de la correction de conversion, le verrou tout négatif aveugle au « zéro fois », les cas dorés chiffrés) : `docs/lessons/paie-conversion-et-gel.md`* — **à lire AVANT** de toucher `payrollShared`, `utils/payroll.ts`, `payrollDisplay`, `PayrollGrid`, `PayrollPayslips`, `printBulletin` ou l'une des 5 surfaces d'affichage.
 
-⚠️ **INSTANTANÉ GELÉ — c'est l'INVERSE de la règle Abonnements**, et c'est délibéré. Un abonnement ne stocke aucun total (« au tarif du jour ») ; un bulletin de paie FIGE `baseSalary/bonus/overtime/deductions/absences/net` **et le nom de l'employé** au moment de la génération. Une augmentation en août ne doit pas réécrire ce qui a été versé en juin — sinon la paie passée devient irrécupérable et l'export comptable ment rétroactivement. Ne jamais « simplifier » en joignant `Employee.salary` à l'affichage. Verrou : `payrollPersistence.test.ts` (20, dont le cas augmentation-postérieure et le cas bulletin-déjà-payé).
+**Modèle `Payroll`** (`@@unique([tenantId, employeeId, month])`) + `GET /api/payroll?month=YYYY-MM`, `POST /api/payroll/generate`, `PATCH /api/payroll/:id`. Rôles = **miroir exact** de `ROLE_PERMISSIONS['payroll']` côté front (ADMIN, SUPER_ADMIN, MANAGER, ACCOUNTANT, HR ; CASHIER exclu) — un serveur PLUS STRICT que l'UI ne protège rien, il produit des boutons visibles qui renvoient 403. **Génération IDEMPOTENTE** (`skipDuplicates` + contrainte d'unicité) : rejouer ne duplique pas et ne réécrit AUCUN bulletin existant. `paidAt` est posé par le **serveur** (une date de versement doit être vérifiable, pas déclarée par le navigateur) et **effacé** si le statut repasse hors « PAYÉ ». `PayRecord` est identifié par `employeeId` (cuid), **jamais par un index de tableau** — c'était `i + 1`, donc « marquer payé » visait une POSITION et un changement d'ordre payait le mauvais bulletin.
+
+⚠️ **INSTANTANÉ GELÉ — c'est l'INVERSE de la règle Abonnements**, et c'est délibéré. Un abonnement ne stocke aucun total (« au tarif du jour ») ; un bulletin de paie FIGE `baseSalary/bonus/overtime/deductions/absences/net` **et le nom de l'employé** au moment de la génération. Une augmentation en août ne doit pas réécrire ce qui a été versé en juin — sinon la paie passée devient irrécupérable et l'export comptable ment rétroactivement. Ne jamais « simplifier » en joignant `Employee.salary` à l'affichage. ⚠️ **`Payroll.cnss` et `Payroll.ir` sont GELÉS** comme `net` : ils dépendent de taux **légaux**, donc les recalculer à l'affichage rejouerait un bulletin passé au barème du jour. Geler `baseSalary` sans geler `cnss` ne suffit pas. (La pénalité d'absence, elle, se redérive des champs gelés + la constante de 26 jours.)
 
 ⚠️ **`month` = clé ISO `YYYY-MM`, JAMAIS le libellé d'écran** (« Juillet 2026 »). Une clé qui dépend de la langue d'affichage rend les données illisibles au changement de locale et fait écrire des mois incompatibles à deux tenants en langues différentes. Conversion côté front (`monthKey`, rend `null` sur l'irreconnaissable — **jamais un mois par défaut**, un repli silencieux écrirait la paie sur le mauvais mois) ; le serveur **refuse** tout le reste en 400.
 
-⚠️ **`PayRecord.id` était un INDEX DE TABLEAU** (`i + 1`) alors qu'`Employee.id` est un cuid string : « marquer payé » visait une POSITION, pas une personne — un changement d'ordre de la liste payait le mauvais bulletin. `PayRecord` porte désormais `employeeId` (cuid) et un `id` qui est soit le bulletin persisté, soit `pending:<employeeId>` tant qu'il n'existe pas en base.
+**Retenues ⚠️ SOURCE UNIQUE `payrollShared.payrollBreakdown`** (miroir back `utils/payroll.ts`, cas partagés `payroll-net-cases.json`) : **CNSS 8 % + IR 5 % assis sur le BRUT** (base+primes+heures sup), **tous deux DÉDUITS** ; `deductions` = retenues **EXCEPTIONNELLES** (avance, casse) qui s'**AJOUTENT** aux cotisations ; pénalité d'absence = `round(absences × base / 26)`. ⚠️ **Les taux ne vivent QUE dans `CNSS_RATE`/`IR_RATE`** — jamais en dur, jamais dans un libellé i18n (un taux écrit dans la chaîne redevient faux dans 4 langues au premier changement de loi).
 
-**Génération IDEMPOTENTE** (`skipDuplicates` + contrainte d'unicité) : rejouer ne duplique pas et ne réécrit AUCUN bulletin existant. `paidAt` est posé par le **serveur** (une date de versement doit être vérifiable, pas déclarée par le navigateur) et **effacé** si le statut repasse hors « PAYÉ ».
+⚠️ **CONVERTIR UNE FOIS — `payrollDisplay(record, currency)` puis `fmtDisplay`.** Le calcul vit en XOF, l'affichage peut être à 2 décimales : convertir chaque ligne PUIS le total séparément donne un bulletin **qui ne s'additionne pas**. **Règle : total = SOMME des lignes arrondies · net = brut − total**, gains inclus. Les valeurs rendues sont **DÉJÀ CONVERTIES** → `useFormatAmount`/`formatAmount`/`convertFromXOF`/`convertAmount` sont **INTERDITS** sur toute surface de paie (double conversion), et `payrollBreakdown` (XOF) n'est plus utilisé pour afficher. **Les 5 surfaces y passent** : page Paie (table + KPI + totaux), bulletin PDF, modale bulletin, cartes RH `PayrollPayslips`, grille RH `PayrollGrid`. ⚠️ **Un local qui porte des XOF se suffixe `Xof`** — deux locaux de même nom et d'unités différentes ont coûté une soustraction d'euros à des francs CFA.
 
-**Retenues ⚠️ SOURCE UNIQUE `payrollShared.payrollBreakdown`** (miroir back `utils/payroll.ts`, cas partagés `payroll-net-cases.json`) : **CNSS 8 % + IR 5 % assis sur le BRUT** (base+primes+heures sup), **tous deux DÉDUITS** ; `deductions` = retenues **EXCEPTIONNELLES** (avance, casse) qui s'**AJOUTENT** aux cotisations ; pénalité d'absence = `round(absences × base / 26)`.
+⚠️ **UN SEUL générateur de bulletin : `printBulletin`** (l'onglet RH passe par l'adaptateur `payRecordFromEmployee` + `labelFromMonthKey`). Ne pas recréer un template : le méta-test rougit si un fichier consommant le détail de paie ouvre un document. **Logo — `LogoMark` est la seule source.**
 
-⚠️ **IL Y AVAIT DEUX RÈGLES INCOMPATIBLES, et le bulletin PDF appliquait la mauvaise.** Mesuré le 2026-07-30 : `payrollShared` calculait CNSS **5,6 % du salaire de BASE** avec un **IRPP résiduel**, et **ni l'un ni l'autre ne réduisait le net** (simple ventilation d'affichage de `deductions`) ; `PayrollGrid`/`PayrollPayslips` déduisaient bien 8 %+5 % du brut. Sur 150 000 XOF sans prime : **150 000 imprimé par le PDF contre 130 500 affiché par l'onglet RH** — deux nets pour le même salaire, sur un document remis à l'employé. Le commentaire de `PayrollGrid` se déclarait « source unique (cf. payroll-calc) » alors que payroll-calc divergeait : **un doublon qui s'affirme canonique est pire qu'un doublon assumé**, il décourage la vérification.
-
-⚠️ **Les taux ne vivent QUE dans `CNSS_RATE`/`IR_RATE`** — jamais en dur, jamais dans un libellé i18n (« CNSS (5,6 %) » redevenait faux dans 4 langues au premier changement de loi ; le taux est rendu depuis la constante). **6 fichiers** codaient `0.08`/`0.05`/`0.87` en dur (`PayrollGrid`, `PayrollPayslips`, `EditEmployeeModal`, `NewContractModal`, `ContractDetailModal`, `HR.tsx`) : tous importent désormais la source. Deux bugs révélés au passage — le KPI « Net à payer » de `PayrollGrid` valait `brut × 0.92` (il ne retirait **que** la CNSS, jamais l'IR, contredisant sa propre table), et sa ligne de TOTAL appliquait les taux à la **masse globale** alors qu'un arrondi global ≠ la somme des arrondis par bulletin — or c'est le bulletin qui est versé.
-
-⚠️ **`Payroll.cnss` et `Payroll.ir` sont GELÉS** comme `net` : ils dépendent de taux **légaux**, donc les recalculer à l'affichage rejouerait un bulletin passé au barème du jour. Geler `baseSalary` sans geler `cnss` ne suffit pas. (La pénalité d'absence, elle, se redérive des champs gelés + la constante de 26 jours.)
-
-⚠️ **COHÉRENCE ARITHMÉTIQUE DU DOCUMENT — `payrollDisplay(record, currency)`.** Le calcul vit en XOF ; l'affichage peut être en EUR/USD/… à 2 décimales. Convertir chaque ligne PUIS le total séparément donne un bulletin **qui ne s'additionne pas**. MESURÉ sur 350 000 XOF en EUR (parité 655,957) : lignes CNSS 42,69 + IR 26,68 = **69,37**, alors que convertir le total XOF (45 500) donne **69,36** ; net `brut − total` = **464,20**, alors que convertir le net XOF (304 500) donne **464,21**. Un centime — mais l'employé qui additionne les lignes n'obtient pas le total imprimé. **Règle : total = SOMME des lignes arrondies · net = brut − total**, gains inclus (`base + primes + heures sup == brut`). En XOF (0 décimale, aucune conversion) le helper est neutre : le problème n'existe QUE en devise à décimales. ⚠️ Les valeurs rendues sont **DÉJÀ CONVERTIES** → les formater avec **`fmtDisplay`/`formatInCurrency`**, JAMAIS avec `fmt()`/`useFormatAmount()` qui reconvertiraient (double conversion — c'est l'exception documentée « valeurs déjà en devise tenant » du § Règles devise). **Les 5 surfaces y passent** : page Paie (table + KPI + totaux), bulletin PDF, modale bulletin, cartes RH `PayrollPayslips`, grille RH `PayrollGrid`. Verrou : `payrollDisplayCoherence.test.ts` (12, cas doré + les 6 devises, **2 sabotages vérifiés** : total converti au lieu de sommé → 6 rouges ; net converti au lieu de déduit → 6 rouges).
-
-⚠️ **CONVERTIR UNE FOIS — convention EXÉCUTÉE, pas un accident par surface.** Une correction surface par surface **déplace** le trou au lieu de le fermer : c'est mesuré en trois temps — (1) chaque surface convertissait elle-même ⇒ lignes ≠ total (69,36 vs 69,37) ; (2) `payrollDisplay` a corrigé la page Paie **et introduit une DOUBLE conversion** dans le PDF de l'onglet RH, qui recevait désormais des montants déjà convertis et les repassait dans `fmt` ⇒ sur 280 000 XOF en EUR, **NET 0,57 € au lieu de 371,37 €** ; (3) d'où le méta-test. **Toute surface de paie appelle `payrollDisplay` et formate par `fmtDisplay`** — `useFormatAmount`/`formatAmount`/`convertFromXOF`/`convertAmount` y sont INTERDITS, et `payrollBreakdown` (XOF) n'est plus utilisé pour afficher. Verrou : `payrollConvertOnce.test.ts` (15) — scan du code exécuté (commentaires **et** imports retirés), **5 sabotages inline** + **2 sabotages réels vérifiés en dépôt** (reconversion dans la modale → rouge nominatif ; taux en dur dans une carte RH → rouge). ⚠️ Il a trouvé **deux trous dans le correctif lui-même** : le CSV de `PayrollGrid` convertissait brut/bonus par un `cv()` local pendant que cnss/ir/net venaient de `payrollDisplay` (deux chemins d'arrondi dans la même ligne), et `Payroll.tsx` gardait un `useFormatAmount` mort passé en prop à la modale. **Cas dorés** : Marie 280 000 XOF/EUR → brut **426,86** · CNSS **34,15** · IR **21,34** · total **55,49** · net **371,37** ; Aminata 350 000 → total **69,37** · net **464,20**.
-
-⚠️ **Un verrou tout NÉGATIF est aveugle au « zéro fois ».** Les 4 premières règles du méta-test interdisaient de convertir DEUX fois ; aucune n'exigeait de convertir UNE fois. La cellule BRUT de la Grille rendait donc `fmt(brut)` avec `brut = Number(emp.salary)||0` (XOF nu) et un `fmt` qui **ne convertit pas** : Marie affichée **« 280 000,00 € » au lieu de « 426,86 € » — 656×** — pendant que le TOTAL de la colonne était converti, donc la colonne ne sommait pas à son pied. Les 4 règles restaient **vertes**. Ajouté : une **règle POSITIVE** (aucune expression d'origine XOF n'atteint un formateur ; on suit le flux syntaxiquement, locaux teintés inclus) **+ interdiction des formateurs INJECTÉS PAR PROP** — R1 cherchait le jeton `useFormatAmount` dans le fichier, donc un composant recevant `fmt` en prop convertissait sans jamais nommer le hook. Elle a immédiatement révélé **trois bugs de plus** : `EditEmployeeModal` calculait `net = salaryXOF − cnss − ir`, une **soustraction d'euros à des francs CFA** (426,77 € au lieu de 371,37, soit 55,40 € d'écart) ; `ContractDetailModal` affichait son brut par un second chemin de conversion ; `PayrollGrid` avait deux locaux **de même nom et d'unités différentes** (`brut`/`bonus` XOF dans une closure, EUR dans la ligne) — d'où la convention : **un local qui porte des XOF se suffixe `Xof`**. Cas dorés étendus : colonne BRUT == brut converti, et somme(colonne) == total affiché (1 189,10 / 1 034,52 sur trois employés). ⚠️ **Un cas doré XOF double le cas EUR** — non par symétrie, mais parce qu'en XOF (0 décimale, taux 1) convertir 0, 1 ou 2 fois donne **le même affichage** : tous les défauts de conversion y sont INVISIBLES, et c'est la devise de la majorité des boutiques. Un jeu EUR seul ferait croire qu'on couvre la paie alors qu'on ne couvre que le cas rare. ⚠️ Le cas **salaire fractionnaire** (`280 000,5` XOF → 280 001) existe parce qu'un sabotage l'a exigé : forcer `dec = 2` au lieu de lire `CURRENCY_DECIMALS` ne cassait AUCUN test, tous les cas XOF étant entiers — or `Employee.salary` est un `Float` et le franc CFA n'a pas de subdivision. **Un verrou qu'on n'a pas vu échouer peut être vert pour la mauvaise raison.** Sabotages vérifiés : XOF nu dans la cellule → rouge nominatif ; formateur par prop → 2 rouges.
-
-⚠️ **UN SEUL générateur de bulletin : `printBulletin`.** `HR.tsx` en avait un second (`generatePayslipPDF`, ~90 lignes) : logo en **TEXTE**, taux écrits en dur dans les libellés, et un contrat d'entrée **ambigu** — montants XOF depuis « Générer tous », montants déjà convertis depuis les cartes. Supprimé ; l'onglet RH passe par l'adaptateur **`payRecordFromEmployee`** + `labelFromMonthKey` (clé ISO → libellé, inverse de `monthKey`). ⚠️ Ne pas recréer un template de bulletin : le méta-test rougit si un fichier consommant le détail de paie ouvre un document.
-
-⚠️ **Logo — `LogoMark` est la seule source.** L'en-tête de la modale Paie dessinait une **lettre « H » nue** dans un carré translucide, et l'ancien PDF RH écrivait « HabaShop » en texte : trois rendus pour un logo. Distinct de **#178** (coordonnées du favicon, arrondies à la main) — ici il n'y avait **aucun asset**.
-
-**Verrous** : `payrollFrozenNet.test.ts` (front — `Payroll.net == payslip.net`, plus « les cotisations SONT dans le net » et « le net = somme exacte des lignes affichées ») + `payrollNetShared.test.ts` (jumeaux front/back sur le fixture) + `payroll-calc.test.ts`. **Sabotages vérifiés dans les deux sens** : ancien taux côté front seul → 8 rouges ; déduction retirée côté back seul → 8 rouges.
+**Verrous** : `payrollPersistence.test.ts` (20, dont augmentation-postérieure et bulletin-déjà-payé) · `payrollDisplayCoherence.test.ts` (12, cas doré + les 6 devises, 2 sabotages) · `payrollConvertOnce.test.ts` (15, règle POSITIVE incluse — *un verrou tout négatif est aveugle au « zéro fois »* — 5 sabotages inline + 2 réels) · `payrollFrozenNet.test.ts` · `payrollNetShared.test.ts` (jumeaux front/back sur le fixture) · `payroll-calc.test.ts`. **Sabotages vérifiés dans les deux sens** : ancien taux côté front seul → 8 rouges ; déduction retirée côté back seul → 8 rouges.
 
 ### Modules — index
 
@@ -821,89 +808,43 @@ d'échec**. Un test qui ne peut pas atteindre le chemin fautif ne garde rien.
 
 ### ⚠️ TAILWIND N'ÉMET RIEN — toute classe `sm:`/`lg:` du source est MORTE
 
-**MESURÉ le 2026-08-06 sur le CSS LIVRÉ : 0 occurrence de `lg\:grid-cols`, 0 de
-`grid-cols-1`.** `tailwind.config.js` et `postcss.config.js` existent, mais `index.css` ne
-porte **aucune directive `@tailwind`** (retirée pour la chaîne critique, cf. en-tête du
-fichier) — donc tailwind ne génère rien, et les 14 usages de `lg:grid-cols-*` du dépôt
-étaient soit **inertes**, soit **figés** à la valeur de base.
+📖 *POURQUOI intégral (mesure du 2026-08-06, 5 angles morts du scanner, sabotage passé vert,
+suppression des 18 modules shadcn) : `docs/lessons/tailwind-classes-livrees.md`* — **à lire
+AVANT** de toucher `index.css`, `tailwind.config.js`, `scripts/classAudit.mjs` ou
+`classesLivrees.test.ts`.
 
-| Écrit dans le source | Ce qui s'appliquait |
-|---|---|
-| `grid grid-cols-2 lg:grid-cols-4` | `.grid-cols-2` existe → **2 colonnes à TOUTE largeur**, jamais 4 |
-| `grid grid-cols-1 lg:grid-cols-2` | ni l'un ni l'autre n'existe → **aucune** `grid-template-columns`, cartes pleine largeur empilées |
+`tailwind.config.js` et `postcss.config.js` existent, mais `index.css` ne porte **aucune
+directive `@tailwind`** (retirée pour la chaîne critique) : **tailwind ne génère RIEN.** Une
+classe `lg:grid-cols-4` écrite dans un `className` est donc soit **inerte**, soit **figée** à
+sa valeur de base — la source est juste, l'artefact vide (même famille que l'ordre des règles
+du service worker, § « LA SOURCE EST VALIDE, L'ARTEFACT EST NUL »).
 
-C'est ce qui a fait qu'un correctif de grille **n'atteignait pas l'écran** : la source était
-juste, l'artefact vide. Même famille que l'ordre des règles du service worker et que le
-`<!--` dans une balise `<meta>` (§ « LA SOURCE EST VALIDE, L'ARTEFACT EST NUL »).
+⚠️ **Toute nouvelle variante responsive s'écrit À LA MAIN dans `index.css`**, là où vivent
+déjà `.grid`, `.gap-4`, `.flex`, avec de vraies media queries aux points de rupture tailwind
+(640 / 1024). L'écrire dans un `className` ne suffit pas, et **rien ne le signale**.
+⚠️ **NE PAS « réparer » en ajoutant `@tailwind base`** : le reset écraserait toute la feuille
+écrite à la main.
 
-Les utilitaires manquants sont écrits **à la main dans `index.css`**, là où vivent déjà
-`.grid`, `.gap-4`, `.flex` — avec de vraies media queries alignées sur les points de rupture
-tailwind (640 / 1024). ⚠️ **NE PAS « réparer » en ajoutant `@tailwind base`** : le reset
-écraserait toute la feuille écrite à la main. ⚠️ Toute nouvelle variante responsive doit être
-**ajoutée là** — l'écrire dans un `className` ne suffit pas, et rien ne le signale.
-
-**Verrou : `npm run verify:classes --workspace=apps/frontend`** (CI, après le build) — échoue
-si un jeton de classe du code ATTEIGNABLE manque au `dist/` livré. La LOGIQUE est gardée par
-`classesLivrees.test.ts` (16, **4 sabotages vérifiés**), qui REJOUE l'état d'avant depuis des
-fixtures extraites par `git show` : il rougit sur les 17 utilitaires, aux fréquences exactes.
-Le verrou d'artefact ne peut pas vivre dans la suite — **la CI lance `vitest` AVANT `build`**.
-
-⚠️ **CORPUS = TOUT `dist/`, JS COMPRIS.** Les blocs `<style>{`…`}</style>` (LoginPage,
-SubscriptionModal, LandingNav) partent dans le **bundle JS**. En lisant les seuls
-`dist/assets/*.css`, l'audit comptait **89** jetons absents ; corpus élargi, **44**. Un
-corpus trop étroit rend un chiffre faux avec l'air d'un fait — `lp-nav-login` et `login-spin`
-sont ainsi ABSENTS d'`index.css` et pourtant bien livrés.
-
-⚠️ **« Absent de la feuille » ne veut PAS dire « style manquant » — TROIS cas, et écrire du
-CSS n'est le bon geste que dans le troisième.** L'audit initial les confondait, et disait
-d'un message de connexion qu'il était « sans style » alors qu'il était intégralement stylé
-inline (vérifié sur le rendu réel : seul l'attribut `class` changeait).
+⚠️ **« Absent de la feuille » ≠ « style manquant » — QUATRE cas, et écrire du CSS n'est le bon
+geste que dans le dernier** (l'audit initial les confondait) :
 
 | Cas | Signe | Geste |
 |---|---|---|
-| **poignée morte** | un `style={{…}}` complet à côté | **retirer la classe** — `login-error`, `lp-btn-ghost`, `dashboard-chart-wide` |
-| **mauvais nom** | la règle existe sous un autre nom | **corriger l'APPEL** — `badge-ok`→`badge-green`, `btn-secondary`→`btn btn-ghost`. En définir un synonyme serait pire |
-| **poignée E2E** | le jeton est cité dans `e2e/` | **ne rien faire** — `sub-modal`, `sub-body` sont des sélecteurs Playwright. Exemption **DÉRIVÉE** des specs, jamais listée |
-| **réellement manquant** | rien ne le porte | **l'écrire** — 17 utilitaires + `form-label` |
+| **poignée morte** | un `style={{…}}` complet à côté | **retirer la classe** |
+| **mauvais nom** | la règle existe sous un autre nom | **corriger l'APPEL** (`badge-ok`→`badge-green`) — définir un synonyme serait pire |
+| **poignée E2E** | le jeton est cité dans `e2e/` | **ne rien faire** — sélecteur Playwright. Exemption **DÉRIVÉE** des specs, jamais listée |
+| **réellement manquant** | rien ne le porte | **l'écrire** dans `index.css` |
 
-Mesuré au passage : `badge-ok` rendait un badge **neutre** à côté d'un « Remboursé » rouge ;
-`btn-secondary` laissait `cursor:auto` sur deux boutons (le pointeur vient de `.btn`, pas de
-`.btn-ghost`) ; `form-label` laissait **7 libellés** de la modale Employé au style par défaut
-du navigateur pendant que la modale Fournisseur voisine stylait les siens.
-
-⚠️ **CINQ angles morts, chacun découvert en se faisant avoir** — les quatre premiers ont
-produit des **faux positifs**, c'est-à-dire un verrou qui accuse du code correct, et qui se
-fait désarmer aussi sûrement qu'un verrou qui laisse passer :
-
-1. **Échappement CSS** — `lg:grid-cols-4` s'écrit `.lg\:grid-cols-4`. N'échapper que le point
-   faisait remonter les **4 variantes responsives sur 12 sites**, pourtant bien livrées.
-2. **Interpolation de gabarit** — le `${` en fin de ligne faisait passer `o.status` et
-   `s.mode` pour des classes. Découpe par appariement, jamais une regex.
-3. **Commentaires** — `skeleton.tsx` documente son usage par `<Skeleton className="h-4 w-20" />`
-   en JSDoc : `h-4` et `w-20` remontaient. `codeSeul()` avant tout scan (même leçon que
-   `ratingDenominator`).
-4. **Code MORT** — 18 modules shadcn jamais importés portaient à eux seuls **253** jetons
-   absents. Périmètre **DÉRIVÉ** du graphe depuis `main.tsx`.
-5. **Faux NÉGATIF, celui-là** — les littéraux **dans** une interpolation
-   (`` `badge ${x ? 'badge-green' : 'badge-red'}` ``, motif très courant) n'étaient pas
-   scannés. Un commentaire affirmait qu'ils étaient « rattrapés par les tours suivants de la
-   boucle » : ils ne l'étaient pas. **Trouvé par le test, pas par la relecture** — encore un
-   commentaire qui invente un repli.
-
-⚠️ **Un sabotage doit VÉRIFIER QUE LE BUILD A RÉUSSI.** Le sabotage « remettre la feuille
-d'avant » est passé **vert** au premier tir : `tsc` échouait (le nouveau test importait un
-`.mjs` sans déclaration, TS7016), donc `npm run build` s'arrêtait et `dist/` restait
-**PÉRIMÉ** — le verrou jugeait l'artefact d'avant le sabotage. C'est le défaut même que ce
-verrou garde, reproduit dans sa propre procédure de validation. D'où `scripts/classAudit.d.mts`,
-et la règle : *un sabotage qui régénère un artefact doit asserter que la régénération a eu lieu.*
-
-✅ **18 modules shadcn supprimés** (`alert-dialog` … `textarea`) — ensemble CLOS, aucune arête
-sortante, aucun import hors de `components/ui/`. ⚠️ **Diff de bundle MESURÉ : ZÉRO octet**
-(`js_total` 3 766 591 o identique, 81 chunks identiques) : le tree-shaking les écartait déjà.
-Le gain est de **clarté**, pas de poids — ils faisaient croire à un système de design branché.
-`tooltip.tsx` est réduit à `TooltipProvider` (importé par `main.tsx:5`, aucune classe rendue) ;
-ses trois autres exports portaient **18 des 20 derniers jetons absents**. L'infobulle réelle du
-produit est `components/ui/FocusTooltip.tsx`.
+**Verrous** : `npm run verify:classes --workspace=apps/frontend` (CI, **après le build** —
+il inspecte le `dist/` livré, JS compris : les blocs `<style>{…}</style>` partent dans le
+bundle) + `classesLivrees.test.ts` (16, 4 sabotages) pour la LOGIQUE. Le verrou d'artefact ne
+peut pas vivre dans la suite — **la CI lance `vitest` AVANT `build`**.
+⚠️ Règle générale tirée d'ici : *un sabotage qui régénère un artefact doit asserter que la
+régénération a eu lieu* — sinon `tsc` échoue, le build s'arrête, et le verrou juge un `dist/`
+périmé en se déclarant vert.
+⚠️ **Ne pas réintroduire les 18 modules shadcn supprimés** (`alert-dialog` … `textarea`,
+tree-shakés donc **zéro octet** de gain, mais ils faisaient croire à un système de design
+branché). L'infobulle réelle du produit est `components/ui/FocusTooltip.tsx`.
 
 ### Le LIBELLÉ QUI TRONQUE ⚠️ — corriger la CONTRAINTE, pas la chaîne
 
@@ -1257,172 +1198,34 @@ demanderait un relais serveur : dette assumée, écrite plutôt que masquée par
 
 ### Le JUMEAU NON TRAITÉ ⚠️ — le motif le plus coûteux de ce dépôt
 
-**Une correction qui s'arrête au premier fichier trouvé n'est pas une correction, c'est un
-déplacement.** MESURÉ le 2026-08-06 : sur une même journée, **cinq** corrections ont laissé
-un jumeau vivant, dont trois n'étaient pas dans le répertoire voisin.
+📖 *POURQUOI intégral (les 5 jumeaux mesurés du 2026-08-06, les deux cachés dans un fichier déjà traité, le calibrage du verrou tarifaire, la chaîne de relais qui a inventé un parc d'appareils, et le **registre des messages de commit non réécrivables**) : `docs/lessons/jumeau-non-traite.md`* — **à lire AVANT** d'écrire un verrou à périmètre, un scanner de littéraux, ou une synthèse qui compresse une mesure.
 
-| Correction | Traité | Oublié |
-|---|---|---|
-| Témoignages fabriqués | `components/landing/` | `components/signup/` |
-| Normalisation MSISDN serveur | `campayPayment.ts` | `mtnPayment.ts` |
-| Grille tarifaire source unique | frontend | **`services/email.ts`** — autre workspace |
-| Réserve « paiement inactif » | vitrine | `/login` |
-| Densité de colonne | `/signup` | `/login` |
+**Une correction qui s'arrête au premier fichier trouvé n'est pas une correction, c'est un déplacement.** MESURÉ le 2026-08-06 : **cinq** corrections en une journée ont laissé un jumeau vivant, dont trois **hors du répertoire voisin** (autre workspace, backend, vitrine↔`/login`).
 
-⚠️ **Chercher au répertoire voisin n'attrape que la moitié.** Les deux jumeaux les plus
-graves se cachaient **dans un fichier déjà traité** :
-- **sous un autre NOM** — `normalizeOrangePhone` vivait quarante lignes au-dessus de l'appel
-  `normalizeMsisdn` déjà fusionné, dans `POS.tsx`. Le verrou assertait `calls.length === 1` :
-  il **prouvait** un site d'appel et était aveugle au second. D'où la règle : **un verrou de
-  normalisation juge la FORME, jamais l'identifiant** (`msisdnShared.test.ts`, 3 règles —
-  quantificateur de chiffres, ancre `^\+`/`^0`, indicatif en dur concaténé ; calibrage mesuré
-  0 correspondance après / 7 avant).
-- **sous une autre FORME** — le verrou tarifaire cherchait `\b8000\b` quand **toute chaîne
-  visible écrit « 8 000 »** (et « 8,000 » en anglais). Zéro correspondance possible : vert par
-  construction, sur un motif que personne n'emploie.
+⚠️ **Chercher au répertoire voisin n'attrape que la moitié** — les deux jumeaux les plus graves vivaient **dans un fichier déjà traité** : l'un **sous un autre NOM** (`normalizeOrangePhone` quarante lignes au-dessus du `normalizeMsisdn` déjà fusionné ; le verrou assertait `calls.length === 1`, donc il PROUVAIT un site d'appel et était aveugle au second), l'autre **sous une autre FORME** (le verrou cherchait `\b8000\b` quand toute chaîne visible écrit « 8 000 »). D'où : **un verrou juge la FORME, jamais l'identifiant.**
 
-⚠️ **QUATRE séparateurs de milliers coexistent** — U+0020 (copie manuelle), **U+202F**
-(`toLocaleString('fr-FR')`), U+00A0 (gabarits HTML), U+002C (`en-US`). **Normaliser AVANT de
-chercher, jamais l'inverse.** Corollaire eslint : `no-irregular-whitespace` interdit ces
-caractères en littéral — les écrire en `\u202f`, sinon on choisit entre le lint et la
-couverture.
+⚠️ **QUATRE séparateurs de milliers coexistent** — U+0020 (copie manuelle), **U+202F** (`toLocaleString('fr-FR')`), U+00A0 (gabarits HTML), U+002C (`en-US`). **Normaliser AVANT de chercher, jamais l'inverse.** Corollaire eslint : `no-irregular-whitespace` interdit ces caractères en littéral — les écrire en `\u202f`, sinon on choisit entre le lint et la couverture.
 
-⚠️ **RÈGLE DE SABOTAGE — copier la forme depuis un fichier de PRODUCTION, jamais la retaper.**
-Un sabotage écrit de mémoire hérite des hypothèses du détecteur, et les deux tombent ensemble :
-c'est exactement ce qui a laissé le verrou tarifaire vert. Le sabotage doit être extrait par
-`git show HEAD:<fichier>` ou lu à l'exécution (cf. la fixture `pos-normalizeOrangePhone.deleted.txt`,
-et le séparateur relu dans `index.html` par `planPriceLiterals.test.ts`).
+⚠️ **RÈGLE DE SABOTAGE — copier la forme depuis un fichier de PRODUCTION, jamais la retaper.** Un sabotage écrit de mémoire hérite des hypothèses du détecteur, et les deux tombent ensemble : c'est exactement ce qui a laissé le verrou tarifaire vert. Le sabotage doit être extrait par `git show HEAD:<fichier>` ou lu à l'exécution (cf. `pos-normalizeOrangePhone.deleted.txt`, et le séparateur relu dans `index.html` par `planPriceLiterals.test.ts`).
 
-⚠️ **Un périmètre ÉCRIT À LA MAIN est faux dès qu'on ajoute quelque chose**, et l'assertion de
-couverture ne le dira pas : elle prouve qu'on a lu N fichiers, jamais que N était le bon N.
-`landingClaims.test.ts` avait tiré la leçon (périmètre DÉRIVÉ des routes d'`App.tsx`) ; le verrou
-tarifaire écrit trois heures plus tard listait à nouveau ses fichiers, et omettait `signup/` **et**
-tout le backend. Son remplaçant `planPriceLiterals.test.ts` **marche sur les trois cibles**
-(`apps/frontend/src`, `apps/backend/src`, `mobile/src|app`) sans aucune liste, et juge **un nombre
-PRÉSENTÉ COMME DE L'ARGENT** (collé à `F CFA|FCFA|CFA|XOF|XAF`, à `"price":`, ou à `monthly:`/
-`yearly:`) plutôt qu'une suite de chiffres — assez spécifique pour ignorer `setTimeout(8000)`
-(mesuré : 35 occurrences sur 425 fichiers de production). **Deux exemptions NOMMÉES** : `lib/plans.ts`
-(la source) et le JSON-LD d'`index.html` (aucun `<script type="ld+json">` ne peut importer un module
-— vérifié par ALIGNEMENT, pas exempté).
+⚠️ **Un périmètre ÉCRIT À LA MAIN est faux dès qu'on ajoute quelque chose**, et l'assertion de couverture ne le dira pas : elle prouve qu'on a lu N fichiers, jamais que N était le bon N. Le périmètre se **DÉRIVE** (routes d'`App.tsx`, arborescence, les trois cibles `apps/frontend/src` + `apps/backend/src` + `mobile/src|app`), et les exemptions se **NOMMENT** une par une.
 
-**E-mails de cycle de vie** (`services/email.ts`) : trois d'entre eux annonçaient **24 900 F CFA/mois**,
-prix d'un plan `pro` disparu, pendant que le bouton du même e-mail menait à `/app/upgrade` qui affiche
-8 000 / 25 000. Une **cinquième** grille — de libellés — vivait deux fonctions plus bas
-(`plan === 'pro' ? 'Pro' : 'Enterprise'`), donc toute activation Starter annonçait
-« Votre plan **Enterprise** est activé ». ⚠️ **Un prix envoyé par écrit engage plus qu'un prix
-affiché.** Verrou `lifecycleEmails.test.ts` (27) : monte les vraies fonctions avec Resend mocké et
-lit les **octets envoyés** — prix ∈ catalogue, libellé résolu par `getPlan()`, `paymentNotice()` sur
-les quatre e-mails d'avant-paiement (absente de la confirmation, à raison), **aucune marque de
-paiement inactive** proposée, aucun délai de réponse chiffré. 4 sabotages vérifiés.
-
-**Politique MSISDN du POS** (`lib/posMsisdnPolicy.ts`) : la politique est **MESURÉE sur la route
-atteinte**, et le texte montré au caissier en est **DÉRIVÉ**. Orange passe par Campay ⇒ `cm-only`
-(le champ promettait « 8–15 chiffres » et acceptait un numéro sénégalais que le serveur refusait —
-**6 divergences sur 9 saisies**) ; MTN reste `international` (bac à sable suédois). ⚠️ Une réserve
-ou un refus écrits deux fois divergent : c'est le motif des corps `phoneInvalidBody(policy)`, et
-c'est pourquoi `/login` lit `pillar1_status` **de la vitrine** au lieu de recopier sa propre réserve.
-
-⚠️ **QUATRE angles morts, et chacun est INVISIBLE depuis le précédent.** Les trois premières
-parades ont toutes été inventées *après* s'être fait avoir. L'ordre ci-dessous est celui où on
-les rencontre, pas celui où on y pense — un verrou peut être vert pour l'une de ces quatre
-raisons sans qu'aucune des autres ne le signale.
+⚠️ **QUATRE angles morts, et chacun est INVISIBLE depuis le précédent.** Les trois premières parades ont toutes été inventées *après* s'être fait avoir. Un verrou peut être vert pour l'une de ces quatre raisons sans qu'aucune des autres ne le signale.
 
 | # | Angle mort | Le verrou est vert parce que… | Parade |
 |---|---|---|---|
 | 1 | **Profondeur** | il ne lit RIEN (`walk()` cassé, dossier déplacé, glob muet) | assertion de **COUVERTURE** (« j'ai bien lu N fichiers ») |
 | 2 | **Périmètre** | il lit les MAUVAIS fichiers | périmètre **DÉRIVÉ** (routes d'`App.tsx`, arborescence), jamais listé |
 | 3 | **Forme** | il cherche ce qui ne PEUT PAS exister (`\b8000\b` vs « 8 000 ») | sabotage **COPIÉ** depuis un fichier de production |
-| 4 | **Arité** | il n'y a RIEN à chercher | *aucune — voir ci-dessous* |
+| 4 | **Arité** | il n'y a RIEN à chercher | *aucune parade automatique* |
 
-⚠️ **L'ARITÉ n'a pas de parade automatique, et c'est la seule des quatre dans ce cas.**
-`plan === 'pro' ? 'Pro' : 'Enterprise'` : un booléen pour un domaine à **QUATRE** valeurs
-(`starter`/`business`/`enterprise` + l'alias `pro`). Aucun littéral fautif à détecter, aucun
-motif textuel, aucun jumeau — juste une branche qui **n'existe pas**. Les trois verrous
-précédents étaient structurellement incapables de le voir ; c'est une relecture qui l'a trouvé,
-et toute activation Starter annonçait « Votre plan Enterprise est activé » depuis l'alignement
-tarifaire.
+⚠️ **L'ARITÉ est la seule des quatre sans parade** : `plan === 'pro' ? 'Pro' : 'Enterprise'` sur un domaine à QUATRE valeurs n'offre aucun littéral fautif à détecter, juste une branche qui **n'existe pas** (toute activation Starter annonçait « plan Enterprise activé »). Question à poser à chaque revue : **ce booléen décrit-il vraiment un domaine binaire ?** Préférer un `Record<Domaine, T>` — le compilateur rougit là où aucun test ne le fera. Fréquence mesurée et calibrage : § « Arité des ternaires ».
 
-**La règle i18n (§ i18n, « ternaire inline 4-langues — TOUJOURS les 4, jamais binaire FR/EN »)
-est le MÊME défaut, déjà écrit ailleurs sans qu'on l'ait nommé.** Généralisation :
-**un ternaire dont le domaine a plus de deux valeurs est un bug en attente de sa troisième
-valeur.** Domaines à surveiller dans ce dépôt : `plan` (4 + alias), `lang` (4), devises (6),
-rôles, statuts de `PlanRequest`, niveaux de `priceGapLevel` (4). Domaine légitimement binaire :
-`policy` MSISDN (2, et sans valeur par défaut pour que le compilateur force le choix).
+⚠️ **Règle : une synthèse ne doit introduire AUCUN nom absent de sa source.** `build` → `parc`, `une route` → `les routes`, `un tenant` → `les clients` : chaque généralisation d'un singulier mesuré vers un collectif crée une population qui n'a jamais été comptée — c'est ainsi qu'un parc d'appareils inexistant a franchi trois relais. Quand une phrase de `CLAUDE.md` porte un collectif (« le parc », « les utilisateurs », « les boutiques »), remonter à la mesure d'origine avant de s'en servir.
 
-Faute de verrou, la question à poser à chaque revue : **ce booléen décrit-il vraiment un domaine
-binaire ?** Un `x === 'valeur' ? A : B` sur un champ qui vient d'un enum, d'un catalogue ou de la
-base est suspect **par construction** — il code une bijection sur un ensemble qui grandira.
-Préférer un `Record<Domaine, T>` ou un `switch` exhaustif : le compilateur rougit alors à la
-cinquième valeur, ce qu'aucun test ne fera.
+⚠️ **NE PAS ARBITRER — COMPTER.** Quand deux sources se contredisent sur une entité DÉNOMBRABLE, la contradiction n'est pas à trancher : elle est le signal qu'**aucune des deux n'a compté** (les deux affirmations en litige étaient fausses toutes les deux). Aller compter — ici `pushToken.groupBy` a rendu **1**, et six commandes ont clos six jours de doute. La date et la preuve citée sont toutes deux des raccourcis ; seule la mesure tranche.
 
-⚠️ **LA SYNTHÈSE QUI INVENTE UN FAIT — le seul de ces motifs qui vive dans la DOC, pas dans le
-code.** MESURÉ le 2026-08-06, chaîne complète :
-
-| Relais | Texte | État |
-|---|---|---|
-| `mobile/CLAUDE.md:58` | « le seul **BUILD** store est en runtime 1.2.0 » | **vrai** |
-| `CLAUDE.md:16` (racine) | « le **PARC** store est en runtime 1.2.0 » | un parc apparaît |
-| commit du 2026-08-06 | formulation racine recopiée | propagé |
-| analyse de revue | « des utilisateurs voient un badge vert » | amplifié |
-
-⚠️ **Ce tableau est un HISTORIQUE, pas un pointeur** : les trois lignes fautives sont corrigées
-(`CLAUDE.md:16`, `mobile/CLAUDE.md:58` et `:90` nomment désormais « le seul build store » et
-comptent les installations). Ne pas aller les chercher — elles n'y sont plus. Seul le message de
-commit reste tel quel, n'étant pas réécrivable.
-
-#### Traces NON RÉÉCRIVABLES — messages de commit portant une affirmation fausse
-
-Un message de commit ne se corrige pas. Il se **RECENSE**, sinon il redevient une source :
-c'est un texte daté, signé, que `git log` remonte en premier et qu'on relit sans le suspecter.
-
-| Commit | Ce qu'il affirme | Ce qui est mesuré |
-|---|---|---|
-| 2026-08-06 (parc mobile) | « le parc store est en runtime 1.2.0 » | **aucun parc** — 1 seul `PushToken`, sur l'appareil de test |
-| `01f37fe5` | « cliquet faux d'un cran **depuis `e076b7aa`**, CI rouge **en continu** » | `e076b7aa` a été poussé avec `0a07d5b5` : leur run est **VERT**, le cliquet à 209 était **JUSTE**. La CI est passée au rouge à `da31e7a9`, **le soir même** — **14 runs** depuis `e076b7aa`, **5 rouges**, fenêtre de **6 h**, **5 commits** poussés dessus. Cause : `da31e7a9`, c'est-à-dire **le même auteur, 3 h plus tôt** |
-| `d73a62d4` | « si les **minutes** Actions sont épuisées, aucun correctif n'y changera rien » ; Billing → Actions renvoyé à Nelson | **impossible** : le dépôt est **PUBLIC**, minutes runner standard gratuites et illimitées. La cause réelle est une **panne Actions** (incident `critical` ouvert 15h22 UTC). Sur les 5 runs rouges, **3 n'ont exécuté aucune étape** — la moitié du « 6 h de rouge » n'était pas notre code |
-
-⚠️ **Les deux lignes ci-dessus ont été écrites à trois heures d'intervalle, par le même auteur, dans deux commits qui prétendaient chacun corriger le précédent.** C'est le vrai enseignement : ce n'est pas une erreur isolée, c'est un RÉFLEXE — désigner une cause plausible avant d'avoir mesuré, puis l'écrire dans un fichier qui fait autorité. Les deux fois, **une seule commande** aurait tranché (`gh run list` pour dater, `gh api /repos/…` pour la visibilité). Les deux fois, elle n'a été lancée qu'APRÈS que Nelson a demandé de mesurer.
-
-⚠️ Le motif de `01f37fe5` n'est pas la synthèse qui compresse (ci-dessus) mais son symétrique :
-**attribuer à une dette HÉRITÉE ce qu'on vient soi-même d'introduire**. Il naît du même
-raccourci — un cliquet trouvé faux, un commit ancien qui l'a posé, et la conclusion tirée sans
-mesurer l'intervalle. La parade est identique et tient en une commande : `git log`/`gh run list`
-**datent** le basculement, ils ne le supposent pas. **Un « depuis <commit> » qu'on n'a pas daté
-run par run est une hypothèse, pas un fait** — et celle-ci s'est trompée de coupable.
-
-⚠️ **Les deux affirmations en litige étaient FAUSSES toutes les deux**, et c'est le point qu'on
-retient mal : « aucun build production, jamais » l'était aussi — **deux AAB `FINISHED` existent**
-(1.0.0/vc2 et 1.2.0/vc3, tous deux Android, artefacts **expirés le 2026-06-26**), et **aucun build
-iOS n'a jamais abouti**. Arbitrer entre deux sources contradictoires en choisissant l'une des deux
-suppose qu'une au moins soit juste : ici il fallait aller mesurer.
-
-Un mot, et des installations existent. Ce n'est ni une omission ni une fabrication : c'est une
-**affirmation vraie compressée jusqu'à présupposer ce qui est faux** — et elle a franchi trois
-relais sans résistance, chacun faisant confiance au précédent parce qu'il était plus récent, pas
-parce qu'il était mieux étayé. La mesure a tranché : **zéro installation réelle** (1 seul
-`PushToken` en prod, sur `demo-tenant-001`, l'appareil de test), donc la réserve « l'application
-mobile n'est pas encore publiée » de la vitrine est EXACTE.
-
-**Règle : une synthèse ne doit introduire AUCUN nom absent de sa source.** `build` → `parc`,
-`une route` → `les routes`, `un tenant` → `les clients` : chaque généralisation d'un singulier
-mesuré vers un collectif crée une population qui n'a jamais été comptée. Quand une phrase de
-`CLAUDE.md` porte un collectif (« le parc », « les utilisateurs », « les boutiques »), remonter à
-la mesure d'origine avant de s'en servir — et si la mesure ne compte pas cette population, la
-réécrire au singulier mesuré.
-
-⚠️ **NE PAS ARBITRER — COMPTER.** Corollaire écrit d'abord sous la forme « entre deux
-affirmations contradictoires, arbitrer par la preuve citée, jamais par la date ». **Cette
-formulation était fausse, et pour la raison même que le motif décrit** : arbitrer présuppose
-qu'au moins une des deux sources soit juste. Ici les DEUX l'étaient à moitié — « le parc store en
-runtime 1.2.0 » inventait une population, et « aucun build production, jamais » était démenti par
-**deux AAB `FINISHED`** (`1f6bf56f` 1.2.0 canal production, `4c5d7888` 1.0.0). Choisir l'une ou
-l'autre menait à une erreur dans les deux sens.
-
-**Quand deux sources se contredisent sur une entité DÉNOMBRABLE, la contradiction n'est pas à
-trancher : elle est le signal qu'aucune des deux n'a compté.** Aller compter — ici
-`pushToken.groupBy` a rendu **1**, sur `demo-tenant-001`. Le parc entier tenait dans une ligne, et
-six commandes ont clos six jours de doute. La date et la preuve citée sont toutes deux des
-raccourcis ; seule la mesure tranche.
+⚠️ **Un message de commit ne se corrige pas — il se RECENSE**, sinon il redevient une source : c'est un texte daté, signé, que `git log` remonte en premier et qu'on relit sans le suspecter. **Trois** en portent une, recensés dans la leçon.
 
 ---
 
