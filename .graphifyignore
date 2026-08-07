@@ -1,0 +1,52 @@
+# .graphifyignore — périmètre du graphe de connaissance (`graphify`)
+#
+# Syntaxe gitignore. graphify lit .gitignore PUIS ce fichier : il ne peut
+# qu'exclure DAVANTAGE, jamais réintroduire ce que .gitignore a écarté.
+#
+# ⚠️ RÈGLE : on exclut ce qui coûte sans rien rendre, et on ÉCRIT pourquoi.
+# Un fichier compté « couvert » mais invisible au graphe est pire qu'un fichier
+# exclu — l'exclusion, elle, se voit (elle est listée dans le rapport de passe).
+
+# ── Images : valeur de graphe NULLE, coût vision RÉEL ────────────────────────
+# 15 fichiers tamponnés au 2026-08-07 : favicons, icônes PWA, splash, adaptive
+# icon, feature graphic, og-image, lockup. Le graphe n'en tire aucun nœud ; la
+# passe les REPROPOSE à chaque exécution tant qu'elles ne sont pas exclues.
+# ⚠️ La liste comprend `docs/ux-mockups/06-abonnement-modale.png`, qui n'est PAS
+# une icône mais une maquette : les 5 autres maquettes sont en `.html` et
+# restent dans le corpus (elles, le graphe les lit). Écarter la 6ᵉ perd donc
+# quelque chose — un rendu qu'aucun AST n'atteint de toute façon.
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.ico
+*.icns
+*.avif
+*.bmp
+
+# ── Documents Office : extraction en échec à chaque passe ───────────────────
+# `.docx` exige l'extra `graphifyy[office]`, absent. Les deux fichiers concernés
+# sont des INSTANTANÉS PÉRIMÉS dont le jumeau markdown, plus récent, est déjà
+# dans le graphe — installer l'extra ferait payer une ingestion pour y injecter
+# une vérité de mai 2026 :
+#   docs/AUDIT_REPORT.docx    (audit au commit 79b3de09) → docs/audits/AUDIT_REPORT.md
+#                              porte le MÊME audit re-scoré à bfc2d90c
+#   docs/HabaShop_CDC_v3.docx (CDC v3.0, « état réel du code » au 25/05/2026)
+#                              → superséde par CLAUDE.md + docs/modules.md
+# ⚠️ DÉCLENCHEUR DE RÉOUVERTURE : un `.docx` qui n'aurait PAS de jumeau markdown
+# plus récent. Alors installer l'extra vaut mieux que perdre le contenu.
+*.docx
+*.doc
+*.pptx
+*.xlsx
+
+# ── Fixtures partagées : dans le corpus, mais ZÉRO nœud ─────────────────────
+# 14 fichiers de `docs/shared-fixtures/` : données pures, rien à extraire pour
+# l'AST. Ils étaient comptés couverts et n'étaient lisibles par aucune requête —
+# le graphe ne dira jamais qu'un cas partagé a bougé. Les exclure ne retire
+# aucune information du graphe ; ça rend le compte de couverture HONNÊTE.
+# ⚠️ Ce que ça coûte, et c'est assumé : si une version future de graphify savait
+# extraire des nœuds de données JSON, ces fichiers y resteraient aveugles.
+docs/shared-fixtures/

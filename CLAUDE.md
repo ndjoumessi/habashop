@@ -2,16 +2,15 @@
 
 SaaS de gestion commerciale multi-tenant **et multi-boutiques** (boutiques/superettes, Afrique de l'Ouest). **Monorepo unique `habashop`** : web (npm workspaces `apps/*`) + `mobile/` (Expo, hors workspaces) + `legal/` (pages légales).
 
-> ## ⚠️ TAILLE DE CE FICHIER — l'avertissement des 150 k est ASSUMÉ, ne pas y répondre par une compression
+> ## ⚠️ ALLÉGER CE FICHIER — plafond 150 000 CARACTÈRES, et une compression a déjà coûté cinq règles
 >
-> Claude Code avertit au démarrage que ce fichier dépasse 150 000 caractères. **C'est une décision, pas une dérive.** Le 2026-08-07 une compression l'a ramené à 149 844 — conforme — **en supprimant cinq règles**, dont la trace d'audit qui borne une fraude de caisse. Une revue les a rattrapées ; sans elle, le fichier aurait été conforme et le produit moins protégé.
+> **Le critère** — reste ici ce qui **change un comportement sans qu'on l'ait demandé** (le piège du pipe sur `tsc`, le contexte Docker, la garde de dépense, le jumeau, le sabotage copié, le contrôle discriminant, l'arité) ; part dans `docs/lessons/` ce qu'on **consulte une fois déjà sur le sujet** (récits d'incident, tableaux de mesure, chiffres datés).
+> ⚠️ **Une règle rétrogradée vers une leçon est une règle qui ne se charge plus.** Le texte existe encore, il ne s'applique plus tout seul — c'est ainsi que 3 des 5 régressions du 2026-08-07 sont passées (compression à 149 844 conforme, **cinq règles supprimées**, dont la trace d'audit qui borne une fraude de caisse ; une revue les a rattrapées).
 >
-> **Le critère, si tu dois alléger** — reste ici ce qui **change un comportement sans qu'on l'ait demandé** (le piège du pipe sur `tsc`, le contexte Docker, la garde de dépense, le jumeau, le sabotage copié, le contrôle discriminant, l'arité) ; part dans `docs/lessons/` ce qu'on **consulte une fois déjà sur le sujet** (récits d'incident, tableaux de mesure, chiffres datés).
-> ⚠️ **Une règle rétrogradée vers une leçon est une règle qui ne se charge plus.** Le texte existe encore, il ne s'applique plus tout seul — c'est ainsi que 3 des 5 régressions sont passées.
+> **Vérifier un allègement, c'est vérifier ce qui a QUITTÉ ce fichier**, pas ce qui est bien arrivé à destination : différence des identifiants entre `git show <avant>:CLAUDE.md` et le fichier courant, **indépendamment des leçons**, avec un contrôle discriminant (témoin positif trouvé, témoin inexistant non signalé, chemins normalisés — `lib/x.ts` et `x` sont le même identifiant).
 >
-> **Vérifier un allègement, c'est vérifier ce qui a QUITTÉ ce fichier**, pas ce qui est bien arrivé à destination. Le contrôle qui les attrape : différence des identifiants entre `git show <avant>:CLAUDE.md` et `HEAD:CLAUDE.md`, **indépendamment des leçons**.
->
-> **Déclencheur de remesure : 160 000 caractères.** Et compter en **caractères**, pas en octets — `wc -c` en annonce 4 % de trop sur ce fichier (accents, émojis).
+> ⚠️ **Si 150 000 est inatteignable sans toucher une protection : s'arrêter et le dire** — combien de caractères manquent, quelles règles il faudrait sacrifier. Un fichier conforme amputé d'une protection est un mauvais échange.
+> Compter en **caractères**, pas en octets — `wc -c` en annonce 4 % de trop ici (accents, émojis).
 
 ## Stack
 
@@ -26,9 +25,9 @@ Un seul repo `ndjoumessi/habashop` depuis juillet 2026 — fusion de `habashop-m
 - `apps/frontend`, `apps/backend` → **web** (workspaces racine `apps/*` + `packages/*`).
 - `mobile/` → **app Expo** (ex-`habashop-mobile`). **Hors workspaces npm** : `package.json` + `package-lock.json` propres → `npm ci` à lancer *dans* `mobile/`. Builds/OTA EAS depuis `mobile/` (`cd mobile && eas update --branch preview`). Projet EAS inchangé (`projectId e7399d7a-…`, canal `preview`).
   ⚠️ **AVANT de toucher `mobile/`, lire `mobile/CLAUDE.md`** (+ `mobile/AGENTS.md`) : il porte les contraintes de plateforme, invisibles depuis ce fichier — version du SDK, crash natif sur modales empilées, fichiers à ne pas supprimer, polices non livrables par OTA, frontière `app/` ↔ `src/lib/`. **Elles ne sont PAS recopiées ici** : deux copies divergent, et c'est la copie lue en premier qui se périme.
-  ⚠️ **Ce qui se décide en dehors de `mobile/`, en revanche, est ici** : le **seul** build store est en runtime **1.2.0**, **AUCUNE installation réelle n'existe** (1 seul `PushToken` en prod, l'appareil de test), le canal `production` n'est lié à **aucune** branche, et `main` a franchi des ruptures **natives** qu'une OTA ne porte pas. Une OTA vers l'appareil de TEST passe par un swap temporaire d'`app.json` — ⚠️ **ne PAS transposer à la prod**.
-- `docs/modules.md` → **la référence par module** (Produits, Codes-barres, Étiquettes, Abonnements, Facture PDF, Audit, Multi-boutiques, Admin plateforme, RH…) : endpoints, schémas, composants, verrous. Sortie d'ici pour alléger le contexte chargé à chaque session — **à ouvrir dès qu'on touche l'un de ces modules** ; ce fichier n'en garde que les règles transverses (§ Modules — index).
-- `docs/lessons/` → **le POURQUOI des chantiers clos** (raisonnement intégral, mesures, tentatives ratées) sorti de ce fichier pour l'alléger. Ces pages ne sont PAS de l'archive : elles sont citées 📖 depuis la règle correspondante et **sont à lire avant de retoucher la surface concernée**.
+  ⚠️ **Ce qui se décide en dehors de `mobile/` est ici** : le **seul** build store est en runtime **1.2.0**, **AUCUNE installation réelle n'existe** (1 seul `PushToken` en prod, l'appareil de test), le canal `production` n'est lié à **aucune** branche, et `main` a franchi des ruptures **natives** qu'une OTA ne porte pas. Une OTA vers l'appareil de TEST passe par un swap temporaire d'`app.json` — ⚠️ **ne PAS transposer à la prod**.
+- `docs/modules.md` → **la référence par module** (Produits, Codes-barres, Étiquettes, Abonnements, Facture PDF, Audit, Multi-boutiques, Admin plateforme, RH…) : endpoints, schémas, composants, verrous — **à ouvrir dès qu'on touche l'un d'eux** ; ce fichier n'en garde que les règles transverses (§ Modules — index).
+- `docs/lessons/` → **le POURQUOI des chantiers clos** (raisonnement intégral, mesures, tentatives ratées). Ces pages ne sont PAS de l'archive : citées 📖 depuis la règle correspondante, elles **sont à lire avant de retoucher la surface concernée**.
 - `legal/` → **pages légales** (ex-`habashop-legal`). Publiées via `.github/workflows/pages.yml` sur **`https://ndjoumessi.github.io/habashop/legal/`** (suppression compte : `.../legal/account-deletion.html`). ⚠️ URL référencée dans Google Play Console.
 
 ## Commandes courantes
@@ -73,7 +72,7 @@ npx vitest run src/tests/foo.test.ts         # un seul fichier — depuis le wor
 cd mobile && npm ci && npx jest              # tests MOBILE (hors workspaces npm → npm ci DANS mobile/) ; un fichier : npx jest src/…/foo.test.ts
 cd apps/frontend && npm run e2e              # Playwright live prod (tenant e2e) ; un spec : npx playwright test e2e/pos.spec.ts
 npx tsc --noEmit                             # typecheck — dans chaque workspace touché
-npm run lint --workspaces                    # eslint front+back (⚠️ back = cliquet --max-warnings, cf. § CI)
+npm run lint --workspaces                    # eslint front+back (⚠️ LES DEUX sont des cliquets, cf. § CI)
 ```
 
 Vérifications qui inspectent l'ARTEFACT livré ou la PROD — un test unitaire ne peut pas les remplacer (cf. § Versionnage, § Conventions) :
@@ -103,7 +102,7 @@ npm run test:integration  --workspace=apps/backend    # vitest.integration.confi
 - **NE PAS** lancer `railway up --ci` · **NE PAS** lancer `vercel --prod`.
 - **VÉRIFIER** : `/health` (version + build id) côté back · un déploiement `● Ready` **plus récent que le merge** côté front.
 
-Le geste manuel **double le déploiement** et **brûle le quota Vercel** (free-tier = 100 déploiements/jour). Mesuré : la prod servait la version neuve **17 s** après le push, pendant qu'un `railway up --ci` « pour forcer » était encore en build — il a produit un **second** déploiement du même commit.
+Le geste manuel **double le déploiement** et **brûle le quota Vercel** (free-tier = 100 déploiements/jour) : mesuré, la prod servait déjà la version neuve pendant qu'un `railway up --ci` « pour forcer » était encore en build.
 
 Repli d'URGENCE seulement, si l'auto-deploy est *démontré* cassé (pas supposé lent) : `railway up --ci` depuis la racine · `vercel --prod --yes` depuis la **racine** (jamais `apps/frontend` → path doublé = échec).
 
@@ -119,7 +118,7 @@ Repli d'URGENCE seulement, si l'auto-deploy est *démontré* cassé (pas suppos�
 
 ⚠️ **Et `$?` après un pipe n'est PAS celui de `tsc`.** `npx tsc --noEmit 2>&1 | tail -20` rend le statut de `tail`, donc **0** alors que tsc sort en 2 : mesuré le 2026-08-05, deux erreurs de type affichées sous un « exit=0 ». Annoncer « tsc 0 » depuis une commande pipée ne prouve rien — lancer sans pipe, ou lire `${PIPESTATUS[0]}`. ⚠️ Depuis la RACINE, `npx tsc --noEmit` ne vérifie **rien du tout** (aucun `tsconfig.json` racine) : il imprime son aide et sort en 1. Toujours depuis le workspace concerné.
 
-**CI** (`.github/workflows/ci.yml`, Node 22) : tsc + **lint** + tests unitaires sur les deux workspaces, build front avec **garde de taille de bundle < 100 Ko gz** (`index-*.js`), scan de secrets en dur ; sur `main` uniquement : tests d'intégration (lecture seule contre la PROD) et E2E Playwright. ⚠️ **Les DEUX lints sont des CLIQUETS** : back `--max-warnings 321`, front `--max-warnings 207` — l'état actuel, donc tout NOUVEL avertissement casse la CI. ⚠️ **Ces deux nombres se lisent dans `apps/{backend,frontend}/package.json`, jamais ici** : ce fichier a déjà annoncé 209 puis 323 alors que les scripts disaient autre chose, et une CI rouge en continu n'a pas été vue pendant six heures. Ne pas relever le plafond pour faire passer un commit — corriger, ou l'abaisser quand on nettoie (descendu de 333 → 327 au fil de l'item 10, puis → 325 en extrayant le handler d'erreur, → 323 en typant l'export CSV par Prisma ; chaque suppression d'`any` abaisse le plafond d'autant). (Il était à 200 pour 333 avertissements réels : la CI ne lançait pas le lint, l'échec passait inaperçu.) ⚠️ **Le front a AUSSI un cliquet** (`--max-warnings 207`), et il a été FRANCHI le 2026-08-06 : `da31e7a9` a fait passer le compte de 209 à **210**, par une `() => {}` vide dans un test qu'il ajoutait — la CI de `main` a échoué à l'étape « Lint » du job frontend pendant **6 h et 5 commits**. Corrigé **par le bas**, jamais en relevant le plafond.
+**CI** (`.github/workflows/ci.yml`, Node 22) : tsc + **lint** + tests unitaires sur les deux workspaces, build front avec **garde de taille de bundle < 100 Ko gz** (`index-*.js`), scan de secrets en dur ; sur `main` uniquement : tests d'intégration (lecture seule contre la PROD) et E2E Playwright. ⚠️ **Les DEUX lints sont des CLIQUETS** (`--max-warnings`, back ET front) : le plafond vaut l'état actuel, donc tout NOUVEL avertissement casse la CI. ⚠️ **Les deux nombres se lisent dans `apps/{backend,frontend}/package.json`, JAMAIS ici** — ce fichier en a déjà écrit deux qui étaient faux, et une CI rouge en continu n'a pas été vue pendant six heures. Ne pas relever le plafond pour faire passer un commit : corriger, ou l'abaisser de ce qu'on a nettoyé (chaque `any` supprimé l'abaisse d'autant). ⚠️ Le cliquet **FRONT** a déjà été franchi — une `() => {}` vide dans un test ajouté — et la CI de `main` est restée rouge **6 h et 5 commits**. Corrigé **par le bas**, jamais en relevant le plafond.
 
 ⚠️ **UN CLIQUET CONTRAINT LA SOMME, PAS L'INTRODUCTION.** « Lint au cliquet » ne prouve **PAS** qu'aucun avertissement n'a été ajouté : il prouve que le TOTAL n'a pas monté. Un cliquet soldé par une coupe ailleurs cesse de mesurer ce qu'il devait mesurer, et le budget de nettoyage part sans que rien ne soit nettoyé — c'est ce qui s'est passé, deux imports morts sacrifiés pendant que la fonction vide restait.
 
@@ -163,7 +162,7 @@ curl -s https://www.githubstatus.com/api/v2/summary.json | jq '.components[]|sel
 
 **JAMAIS** : muter l'état d'un tenant existant (`PATCH` sur `ownerPhone`, `enableAutoWhatsApp`, `status`…), ni déclencher un envoi/appel réel (Twilio, Anthropic, Resend) pour « prouver que ça marche ».
 
-⚠️ Les deux incidents qui ont produit cette règle sont réels : un « contrôle positif » a **réellement expédié** un WhatsApp facturé (l'endpoint choisi pour prouver qu'un garde laisse passer était… un endpoint qui envoie), et un `PATCH` exploratoire a modifié la config d'une boutique. 📖 *`docs/lessons/deploiement-et-ci.md`.*
+⚠️ Les deux incidents qui ont produit cette règle sont réels : un « contrôle positif » a **réellement expédié** un WhatsApp facturé — l'endpoint choisi pour prouver qu'un garde laisse passer était un endpoint qui envoie — et un `PATCH` exploratoire a modifié la config d'une boutique. 📖 *`docs/lessons/deploiement-et-ci.md`.*
 
 **Corollaire — le smoke de version ne prouve pas un déploiement.** `npm run smoke:version` compare la version, donc reste **vert quand le déploiement n'a pas eu lieu** si la version n'a pas bougé (vu 2 fois). Preuve réelle = **`uptime` de `/api/health-extended` remis à zéro** (poller jusqu'à ce qu'il redescende), ou une réponse dont le contenu a changé.
 
@@ -219,7 +218,7 @@ Helpers : `makeI(lang)` (settings), `pick(lang, obj)`.
 - **Couleurs** : `var(--)` systématiquement. Exceptions : palettes sémantiques, Google Maps, PDF, `.public-scope`, `#fff` boutons colorés, défs thème. ⚠️ FS macOS : ne pas créer `Button.tsx`/`Tabs.tsx`/`Tooltip.tsx` (collision shadcn minuscules).
 - **Branding / thème** : logo **« Sac + H »** = composant `components/ui/LogoMark.tsx` (SVG, violet `#6C47FF` + or) — utilisé Sidebar/Login/PWA/SelectShop/Landing. Assets dans `public/` + `mobile/assets/` (source éditable : `../habashop-brand/`). **Mode sombre = « NKONI »** (bleu-noir `#0A0C14`, cartes `#121724`, or `#FFB020`, `--border3` glow violet sur cartes clés, CTA `--grad-p` violet→bleu). Police UI = **Geist** (`@fontsource-variable/geist`, `--font`) ; mono = JetBrains.
 - **Thèmes = 3 seulement** (`appStore.ts` `Theme='dark'|'light'|'system'`, défaut `dark`) : **Sombre (NKONI)** / **Clair** / **Système**. `system` n'a pas de palette → `resolveTheme()` le résout en dark/light selon `prefers-color-scheme` (+ listener `matchMedia` réactif) ; `applyTheme` pose `body.className=theme-<resolved>`. `THEMES` ne contient QUE `dark`+`light` ; `THEME_OPTIONS` = les 3 options du sélecteur (`SectionLang`). **Fallback gracieux** : thème persisté obsolète (ancien `darker/midnight/forest/ocean/sunset/gold/soleil`) → `merge` retombe sur `dark` (`VALID_THEMES`). Détection clair côté JS = `isThemeLight(theme)` (résout `system`), **pas** `t==='light'`. Sélecteur d'accent (6 pastilles `ACCENT_PAIRS`) conservé. `THEMES.dark.vars` **doit rester synchro** avec le `:root` sombre d'`index.css` (sinon `applyTheme` réintroduit l'ancien fond) ; miroir `BASE` de `contrast-aa.test.ts` idem. *(Mobile aligné : 3 thèmes aussi, cf. #19.)*
-- **Login** (`pages/LoginPage.tsx`) — refonte 2026-07 : **formulaire héros**, 100 % tokens `var(--)` (le dégradé `#0F0A2E` en dur a sauté → le thème Clair fonctionne), volet gauche = accroche + aperçu POS + capacités factuelles, CTA unique **désactivé tant qu'un champ est vide**, erreur INLINE (`role=status` + `aria-live`) avec focus rendu à l'e-mail, version issue de `__APP_VERSION__`. Sélecteurs stables **`data-testid="login-email/login-password/login-submit"`** — E2E en dépend. Lien « ← Retour à l'accueil » + logo cliquable → `/`. ⚠️ **RETIRÉS et à ne pas réintroduire** : « Déployé dans 150+ pays » (faux), badges SSL/TLS (page + pied), liste de fonctionnalités génériques. `login.anchor.test.tsx` fige leur ABSENCE.
+- **Login** (`pages/LoginPage.tsx`) — refonte 2026-07 : **formulaire héros**, 100 % tokens `var(--)` (le dégradé `#0F0A2E` en dur a sauté → le thème Clair fonctionne), volet gauche = accroche + aperçu POS + capacités factuelles, CTA unique **désactivé PENDANT L'ENVOI SEULEMENT** (jamais par la validation : au clic à vide on NOMME les champs manquants et on donne le focus au premier — cf. `landingClaims.test.ts`), erreur INLINE (`role=status` + `aria-live`) avec focus rendu à l'e-mail, version issue de `__APP_VERSION__`. Sélecteurs stables **`data-testid="login-email/login-password/login-submit"`** — E2E en dépend. Lien « ← Retour à l'accueil » + logo cliquable → `/`. ⚠️ **RETIRÉS et à ne pas réintroduire** : « Déployé dans 150+ pays » (faux), badges SSL/TLS (page + pied), liste de fonctionnalités génériques. `login.anchor.test.tsx` fige leur ABSENCE.
 - **Raccourci démo par rôle** : vit dans `components/login/DemoRoleLogin.tsx`, rendu **UNIQUEMENT** si `VITE_DEMO_MODE === '1'`. ⚠️ Le `import()` doit rester DANS la branche (`DEMO_MODE ? lazy(…) : null`) : un `lazy(() => import(…))` inconditionnel laisse Rollup émettre le chunk et **livre `demo1234` en prod**. Garde : `npm run verify:demo-flag --workspace=apps/frontend` grep le `dist/` livré — à valider dans les DEUX sens (prod = absent, `VITE_DEMO_MODE=1` = présent, sinon le grep ne prouve rien). Ceci n'est PAS la sécurité (cf. § Garde de dépense).
 - **Landing hero** (`components/landing/LandingHero.tsx`) : **split 2 colonnes** (texte / carte aperçu produit), **100 % tokens CSS** (`var(--…)` + `color-mix`, theme-aware) — pas la palette `D` hex. H1 unique, mot d'accent en `--p2`. `< 900px` → colonne unique. `LandingNav` masque « Connexion » `< 640px` (`.lp-nav-login`).
 - **Graisses** : `--fw-regular/--fw-semibold/--fw-bold` uniquement. Exclusions : PDF, SVG Maps, `.public-scope`.
@@ -228,7 +227,7 @@ Helpers : `makeI(lang)` (settings), `pick(lang, obj)`.
 - **Pills de statut** : tokens `--c-{green,orange,blue,red,amber}-bg/-border`, `--r-full`, 12px semibold.
 - **Logs** : `logger.log/warn` (`@/lib/logger`, filtre DEV) — pas de `console.*` en commit.
 - **Éditions masse multi-octets/emoji** : script Python ou tsx, pas `sed`.
-- **Édition scriptée d'un fichier** ⚠️ : tout `replace()` doit **asserter que l'ancre existe** (`assert s.count(old) == 1`). Sans ça, une ancre inexacte fait un **no-op silencieux** — le script affiche « ✓ » et rien n'a changé. C'est ainsi que le compteur de tests backend est resté faux pendant 4 PR : l'ancre portait un `- ` que le fichier n'a pas (la mention est en milieu de phrase).
+- **Édition scriptée d'un fichier** ⚠️ : tout `replace()` doit **asserter que l'ancre existe** (`assert s.count(old) == 1`). Sans ça, une ancre inexacte fait un **no-op silencieux** — le script affiche « ✓ » et rien n'a changé. C'est ainsi qu'un compteur est resté faux pendant 4 PR.
 - **Sabotage d'un verrou** ⚠️ — **passe par le script, il n'y a plus de procédure à retenir** :
   ```bash
   npm run sabotage -- <fichier…>    # instantané HORS du dépôt, puis on casse librement
@@ -236,9 +235,9 @@ Helpers : `makeI(lang)` (settings), `pick(lang, obj)`.
   npm run sabotage:restore          # restaure DEPUIS LA COPIE + vérifie octet par octet
   ```
   Ce qui suit n'est plus une consigne, c'est l'**explication** du script. `git checkout <f>` restaure depuis HEAD : pendant la vérification d'un verrou le correctif n'est PAS commité, donc il est **effacé**. L'instantané vit dans `os.tmpdir()` — invisible pour `git status`, incommitable, et hors d'atteinte d'un `checkout`. Un second instantané est **refusé** (un sabotage interrompu dont on restaurerait la copie plus tard écraserait du travail plus récent). La restauration **vérifie et le DIT** : une restauration silencieuse est une restauration non prouvée.
-  ⚠️ **Pourquoi un script plutôt qu'une règle** : ce piège était écrit **deux fois** dans ce fichier, et il a été commis **trois fois dans la même session par l'auteur de ces deux avertissements** — la troisième en relisant le paragraphe qui l'interdit. **Quand une règle documentée est violée trois fois par le même acteur, ce n'est plus la règle qu'il faut corriger.** Verrou : `sabotageScript.test.ts` (8) — il exécute le vrai script sur de vrais fichiers, compare les octets, et exerce le cas « instantané déjà présent ».
+  ⚠️ **Pourquoi un script plutôt qu'une règle** : le piège était déjà écrit **deux fois** ici, et il a été commis **trois fois dans la même session par l'auteur de ces avertissements**. **Quand une règle documentée est violée trois fois par le même acteur, ce n'est plus la règle qu'il faut corriger.** Verrou : `sabotageScript.test.ts` (8) — vrai script, vrais fichiers, octets comparés, cas « instantané déjà présent » exercé.
 - **Specs prescriptives** : si instruction ≠ code réel → réconcilie et continue. Questions réservées aux choix irréversibles.
-- **Refactor transverse** ⚠️ : unifier N points d'appel dans un module unique fait perdre ce que chaque appelant distinguait, si le module ne remonte pas TOUTE leur information (statuts, codes d'erreur, détail par élément). Un goulot ne doit pas être un entonnoir. Corollaire éprouvé : **une surface à la fois, revue entre chaque** — trois refactors enchaînés sur le même code ont produit à chaque tour des régressions plus graves que ce qu'ils réparaient.
+- **Refactor transverse** ⚠️ : unifier N points d'appel dans un module unique fait perdre ce que chaque appelant distinguait, si le module ne remonte pas TOUTE leur information (statuts, codes d'erreur, détail par élément). **Un goulot ne doit pas être un entonnoir.** Corollaire éprouvé : **une surface à la fois, revue entre chaque.**
 - **Test qui grep du texte source** (`expect(src).toContain(…)`) : prouve la SOURCE, pas le comportement. Il passe au rouge sur un simple reformatage et reste vert si le bloc devient inatteignable. Préférer l'injection de la route avec les dépendances mockées et l'assertion sur l'effet (cf. `redactPhone.test.ts`). Tout verrou doit être vérifié **dans les deux sens** : on le casse volontairement pour prouver qu'il détecte.
 - **Mock qui ignore ses arguments** ⚠️ : un `mockResolvedValue([…])` rend la même liste quel que soit le `where`/filtre reçu — le test reste **vert même si le code n'envoie plus le filtre**, en décrivant un monde qui n'existe pas. Faire APPLIQUER le filtre par le mock (cf. `salesHonoredFilter.test.ts`, `stockAlertChannels.test.ts`). Corollaire pour les méta-tests qui scannent l'arborescence : asserter que le **scan couvre des fichiers** — un `walk()` cassé rend une liste vide, donc un vert qui ne garde rien.
 
@@ -251,8 +250,8 @@ Helpers : `makeI(lang)` (settings), `pick(lang, obj)`.
 - **Anti-survente** : backend `400 INSUFFICIENT_STOCK` (garde AVANT tx, décrément atomique). Front : `confirmSale` surface l'erreur + refetch stock. Tuile rupture grisée `opacity .45`. 4 tests `overselling.test.ts`.
 - **Scan douchette (« keyboard wedge »)** ⚠️ — chemin de scan PRIMAIRE en boutique, plus courant que la caméra. La douchette est un CLAVIER : elle tape dans le champ de recherche POS. `looksLikeScannedInput` (`components/pos/wedgeScan.ts`) tranche scan vs recherche par **deux voies** — la **forme** (code canonique valide, jugé par `lib/barcode.ts`, jamais une regex locale) et la **vitesse** (≤ 30 ms/car sur ≥ 4 car, ce qui rattrape les étiquettes CODE128-sur-SKU). Le champ est **vidé AVANT de résoudre** : sinon, en cas d'échec, la grille resterait filtrée sur le code — vide et muette, l'incident même qu'on ferme (#148).
   - **Sans terminateur** (#161) : certaines douchettes n'envoient pas Entrée. Le champ tranche alors sur l'**INACTIVITÉ** (`WEDGE_IDLE_MS` 60 ms après la dernière touche), avec `elapsed` figé de la 1re à la **DERNIÈRE touche** — jamais jusqu'au déclenchement, sinon le délai diluerait la cadence sous le seuil.
-  - ⚠️ **Le tir sur inactivité n'a le droit d'utiliser QUE la vitesse** (`looksLikeScannerBurst`), **jamais** `looksLikeScannedInput`. **MESURÉ sur 10 000 EAN-13 : 10,0 % ont un préfixe de 12 caractères qui est un UPC-A VALIDE**, et la collision tombe *exactement* à 12 — restreindre à « ≥ 12 car » ne servirait à rien. Un caissier qui RECOPIE marque des pauses : s'il s'arrête au 12ᵉ chiffre, la voie forme validerait le code **partiel** et ajouterait **un AUTRE produit** au panier — une erreur d'ARGENT, silencieuse, une fois sur dix. **Ne pas « simplifier » les deux prédicats en un seul.**
-  - **La recopie manuelle reste servie par ENTRÉE**, où la saisie est finie *par construction* — c'est l'appui qui dit « j'ai fini », pas une horloge. C'est la réponse au résiduel, et elle est délibérée.
+  - ⚠️ **Le tir sur inactivité n'utilise QUE la vitesse** (`looksLikeScannerBurst`), **jamais** `looksLikeScannedInput`. **MESURÉ sur 10 000 EAN-13 : 10,0 % ont un préfixe de 12 caractères qui est un UPC-A VALIDE**, et la collision tombe *exactement* à 12 — restreindre à « ≥ 12 car » ne servirait à rien. Un caissier qui RECOPIE marque des pauses : s'il s'arrête au 12ᵉ chiffre, la voie forme validerait le code **partiel** et ajouterait **un AUTRE produit** au panier — erreur d'ARGENT, silencieuse, une fois sur dix. **Ne pas « simplifier » les deux prédicats en un seul.**
+  - **La recopie manuelle reste servie par ENTRÉE**, où la saisie est finie *par construction* — c'est l'appui qui dit « j'ai fini », pas une horloge. Délibéré.
   - **Deux gardes REDONDANTES** annulent le minuteur après Entrée (`onKeyDown` + `resetTyping`) : retirer une seule des deux laisse la suite **verte** (vérifié) — ceinture et bretelles sur un double-ajout au panier.
   - Verrous : `wedgeScan.test.ts` (25, invariant PUR) + **`pos-wedge-wiring.test.tsx`** (10, **câblage** — monte le VRAI `POS.tsx` avec faux timers ; 3 sabotages). ⚠️ L'invariant pur ne peut RIEN dire du câblage (minuteur posé/annulé) : il faut les deux. **Limite assumée** : la saisie exige le focus du champ — une capture clavier au niveau `document` volerait les touches aux autres champs et modales.
 - **Intégrité prix — SERVEUR-autoritaire** ⚠️ (`sales.ts`) 📖 *raisonnement complet, expositions mesurées et justification des bornes : `docs/lessons/integrite-prix-pos.md`* :
@@ -351,14 +350,14 @@ les règles **transverses** : celles qu'on enfreint sans même travailler sur le
 
 ### Tests
 - ⚠️ **Un compteur de tests écrit ici se périme au commit suivant** — celui du mobile a menti deux fois **dans la même journée**, et un chiffre faux dans un fichier qui fait autorité coûte plus qu'un chiffre absent : on le recopie. **Ne pas réinscrire de total ; lancer la suite.** *(Plus AUCUN total ici — la commande fait foi, elle ne se périme pas.)*
-- **Front : `cd apps/frontend && npx vitest run`** (helpers purs + anchor tests + contraste AA sur les 2 thèmes concrets dark+light). Lancer **`vitest run` COMPLET** avant tout push touchant landing/login/thème (`landing.anchor.test.tsx` fige le H1 du hero). **Back : `cd apps/backend && npx vitest run`** (prisma mocké `vi.mock('../db')`, routes via `app.inject()`, mock `authenticate` via `vi.hoisted`). ⚠️ **`strict: true` COMPLET des DEUX côtés** (`apps/{backend,frontend}/tsconfig.json`) : une régression de nullité ou de typage casse tsc/CI. Côté front il a été atteint par **typage des états de formulaire** (`StockForm`/`CatForm`/`LabelConfig`/`CustomerForm`/`ContractForm`/`LeaveForm`/`DiscountForm` définis dans les modules partagés et threadés dans les props `form`/`setForm`) plutôt que par des `any` mécaniques — ce qui a révélé 2 vrais bugs de type au passage. Filet global `src/tests/setup/mockPaidSdks.ts` (`setupFiles`) : aucun test unitaire ne parle à un SDK payant (Anthropic/Twilio/Resend) — un `vi.mock` local garde précédence. **Mobile : `cd mobile && npx jest`** (`cd mobile && npx jest`, cf. § Commandes) — **en CI depuis #163** (job `unit-tests-mobile`). ⚠️ Certains tests montent une route avec un `total` DÉCOUPLÉ des lignes (ancien « trust client total ») → cassés par l'intégrité prix serveur-autoritaire ; envoyer des lignes qui somment au total voulu (cf. `loyalty.test.ts`). **Cas PARTAGÉS backend↔mobile↔frontend (anti-dérive)** via `docs/shared-fixtures/*.json` lus par les tests jumeaux des différents côtés — modifier la règle d'un côté sans l'autre fait échouer le test : `loyalty-discount-cases.json` (`computeLoyaltyDiscount` : arrondi/plafond 50 %/remise manuelle) ; `barcode-cases.json` (`normalizeBarcode`/`isValidBarcode`/`barcodeMatches`/`matchesScannedCode` — canonicalisation, recherche, résolution scan) ; `csv-injection-cases.json` (`sanitizeCsv` front↔back — cf. § Injection CSV) ; `payroll-net-cases.json` (`payrollBreakdown` front↔back — le front l'AFFICHE, le back le FIGE en base, cf. § Paie). ⚠️ Codes-barres : **méta-test** (front `barcode.test.ts`) échoue si une regex `\d{13}` locale réapparaît hors de `lib/barcode.ts` ; les 3 rendus (vignette écran + Avery + thermique) ont un test qui verrouille les **quiet zones ≥10 modules** ; PDF étiquettes non grep-ables → mocker jsbarcode/jsPDF et capturer les options (cf. `exportLabels`/`thermalLabel`/`barcodeVignette`). OCR : `vi.hoisted()` + classe constructeur. **PDF pdfkit non grep-able** (buffer binaire) → tester présence/absence de texte en **mockant pdfkit** et capturant les `.text()` (cf. `invoiceBilledTo.test.ts`). ⚠️ Route avec `schema` zod → `app.setValidatorCompiler(validatorCompiler)` avant `register` (cf. § Sécurité). Isolation cross-tenant : `tenantIsolation.test.ts` (mock Prisma tenant-aware).
+- **Front : `cd apps/frontend && npx vitest run`** (helpers purs + anchor tests + contraste AA sur les 2 thèmes concrets dark+light). Lancer **`vitest run` COMPLET** avant tout push touchant landing/login/thème (`landing.anchor.test.tsx` fige le H1 du hero). **Back : `cd apps/backend && npx vitest run`** (prisma mocké `vi.mock('../db')`, routes via `app.inject()`, mock `authenticate` via `vi.hoisted`). ⚠️ **`strict: true` COMPLET des DEUX côtés** (`apps/{backend,frontend}/tsconfig.json`) : une régression de nullité ou de typage casse tsc/CI. Côté front il a été atteint par **typage des états de formulaire** (`StockForm`/`CatForm`/`LabelConfig`/`CustomerForm`/`ContractForm`/`LeaveForm`/`DiscountForm` définis dans les modules partagés et threadés dans les props `form`/`setForm`) plutôt que par des `any` mécaniques. Filet global `src/tests/setup/mockPaidSdks.ts` (`setupFiles`) : aucun test unitaire ne parle à un SDK payant (Anthropic/Twilio/Resend) — un `vi.mock` local garde précédence. **Mobile : `cd mobile && npx jest`** (cf. § Commandes) — **en CI depuis #163** (job `unit-tests-mobile`). ⚠️ Certains tests montent une route avec un `total` DÉCOUPLÉ des lignes (ancien « trust client total ») → cassés par l'intégrité prix serveur-autoritaire ; envoyer des lignes qui somment au total voulu (cf. `loyalty.test.ts`). **Cas PARTAGÉS backend↔mobile↔frontend (anti-dérive)** via `docs/shared-fixtures/*.json` lus par les tests jumeaux des différents côtés — modifier la règle d'un côté sans l'autre fait échouer le test : `loyalty-discount-cases.json` (`computeLoyaltyDiscount` : arrondi/plafond 50 %/remise manuelle) ; `barcode-cases.json` (`normalizeBarcode`/`isValidBarcode`/`barcodeMatches`/`matchesScannedCode` — canonicalisation, recherche, résolution scan) ; `csv-injection-cases.json` (`sanitizeCsv` front↔back — cf. § Injection CSV) ; `payroll-net-cases.json` (`payrollBreakdown` front↔back — le front l'AFFICHE, le back le FIGE en base, cf. § Paie). ⚠️ Codes-barres : **méta-test** (front `barcode.test.ts`) échoue si une regex `\d{13}` locale réapparaît hors de `lib/barcode.ts` ; les 3 rendus (vignette écran + Avery + thermique) ont un test qui verrouille les **quiet zones ≥10 modules** ; PDF étiquettes non grep-ables → mocker jsbarcode/jsPDF et capturer les options (cf. `exportLabels`/`thermalLabel`/`barcodeVignette`). OCR : `vi.hoisted()` + classe constructeur. **PDF pdfkit non grep-able** (buffer binaire) → tester présence/absence de texte en **mockant pdfkit** et capturant les `.text()` (cf. `invoiceBilledTo.test.ts`). ⚠️ Route avec `schema` zod → `app.setValidatorCompiler(validatorCompiler)` avant `register` (cf. § Sécurité). Isolation cross-tenant : `tenantIsolation.test.ts` (mock Prisma tenant-aware).
 - **MSISDN — UNE règle de nettoyage, DEUX politiques** ⚠️ : `lib/msisdn.ts`, **jumeaux front/back à l'identique**, cas partagés `docs/shared-fixtures/msisdn-cases.json`.
   📖 *Les deux fonctions homonymes, les 8 divergences sur 20 et les deux axes à séparer : `docs/lessons/msisdn-deux-politiques.md`* — **à lire AVANT de câbler un 3ᵉ prestataire**.
   - `normalizeMsisdn(raw, policy)` — `policy` **sans valeur par défaut** : le compilateur force chaque futur appelant à choisir (comme le `owner` de `resolveRecipient`). MTN = `international` (son bac à sable utilise des numéros ÉTRANGERS), Campay = `cm-only` (seul pays desservi). **Aplatir casse forcément un côté.**
   - ⚠️ **La politique se verrouille AU POINT D'APPEL**, pas seulement dans le module : basculer POS en `'cm-only'` laissait toute la suite VERTE et aurait tué le bac à sable MTN en silence. *Un invariant garanti sur le module ne dit rien de ce que l'appelant en demande.*
   - ⚠️ **Les DEUX routes normalisent côté SERVEUR.** MTN ne le faisait pas — **la garde du navigateur n'est pas une garde**, un appel direct à l'API passait. Refus = **400 `PHONE_INVALID`**, SDK jamais appelé, numéro absent du message (PII). Le verrou énumère les routes **NOMMÉMENT** : un 3ᵉ prestataire ne peut pas entrer en douce.
   - ⚠️ **La FORME du refus est verrouillée aussi** — corps unique `phoneInvalidBody(policy)`, message **DÉRIVÉ** de la politique : écrit à la main, un « format Cameroun attendu » survivrait à un passage en `international`. Les deux routes avaient déjà divergé dessus.
-  - ⚠️ **Le texte montré au CAISSIER est DÉRIVÉ de la politique de la route réellement atteinte** (`lib/posMsisdnPolicy.ts`) — mesurée, pas supposée. Orange passe par Campay ⇒ `cm-only` ; le champ promettait « 8–15 chiffres » et acceptait un numéro sénégalais que le serveur refusait — **6 divergences sur 9 saisies**. MTN reste `international` (bac à sable suédois). *Une réserve ou un refus écrits deux fois divergent* : c'est aussi pourquoi `/login` lit `pillar1_status` **de la vitrine** au lieu de recopier sa propre réserve.
+  - ⚠️ **Le texte montré au CAISSIER est DÉRIVÉ de la politique de la route réellement atteinte** (`lib/posMsisdnPolicy.ts`) — mesurée, pas supposée. Orange passe par Campay ⇒ `cm-only` ; le champ promettait « 8–15 chiffres » et acceptait un numéro sénégalais que le serveur refusait. MTN reste `international` (bac à sable suédois). *Une réserve ou un refus écrits deux fois divergent* : c'est aussi pourquoi `/login` lit `pillar1_status` **de la vitrine** au lieu de recopier sa propre réserve.
 - **Tests qui FIGENT au lieu d'affirmer** ⚠️ — *le test décrit ce que le code FAIT au lieu d'affirmer ce qu'il DOIT faire*. Invisible tant que le comportement est juste ; le jour où il devient faux, **le test protège le défaut**.
   📖 *Récit de la purge (−58 cas), cas nommés et limites de la détection : `docs/lessons/tests-qui-figent.md`.*
   - **UN TEST QUI N'AFFIRME RIEN SE SUPPRIME, IL NE SE RÉPARE PAS** : le réparer invente une couverture que personne n'a demandée sur un code que personne n'a jugé prioritaire de tester. **Critère de succès d'une purge : le total DOIT baisser.**
@@ -454,16 +453,10 @@ sabotages) — tous deux jugent la **FORME**, pas l'identifiant. 📖 *Balayages
 
 ### Arité des ternaires ⚠️ — la parade est le `Record`, PAS un scanner
 
-**MESURÉ sur 425 fichiers de production** : **1 268 chaînes** de ternaires portant sur un
-domaine typé, dont **1 211 exhaustives**. Le motif `x === 'litéral' ? A : B` est donc massivement
-CORRECT — après lecture il ne restait que **25 défauts réels**.
-
-⚠️ **NE PAS écrire de verrou-scanner sur ce motif.** Décision prise après mesure, pas par
-principe : à 95 % de justes, **un scanner crie au loup et se fait désarmer**. Et les deux pièges
-de mesure sont instructifs — la liaison **par nom de variable** est fausse (des ternaires binaires
-corrects sur un domaine binaire comptés comme défauts ; la seule liaison sûre est **par les
-LITTÉRAUX testés**), et la **QUEUE d'une chaîne ressemble à un binaire** (sans regroupement par
-offsets : 1 366 faux positifs). 📖 *Balayages, tables de verdict et archéologie : `docs/lessons/domaines-de-type.md`.*
+⚠️ **NE PAS écrire de verrou-scanner sur ce motif.** Décision prise APRÈS mesure, pas par
+principe : le motif `x === 'litéral' ? A : B` est massivement CORRECT dans ce dépôt (~95 % des
+chaînes sont exhaustives), et **un scanner qui crie au loup se fait désarmer**. 📖 *Balayages,
+deux pièges de mesure, tables de verdict : `docs/lessons/domaines-de-type.md`.*
 
 **La parade est le `Record<Domaine, …>`** — `tsc` échoue si une valeur est ajoutée sans être
 décrite, ce que le ternaire ne peut pas faire (son `else` avale silencieusement). À poser
@@ -554,14 +547,11 @@ après « la dernière ligne qui commence par `import` » le place **à l'intér
 `import {` multi-ligne → TS1003 en cascade. Ancrer sur la fin du bloc (`} from '…'`), ou
 balayer après coup : `if (/^import\s/.test(l) && /^import (type )?\{\s*$/.test(lignePrécédente))`.
 
-**Preuve de non-régression** : le basculement ne touche **AUCUN** tenant existant — empreinte
-pays/devise des 4 tenants de prod **identique avant et après** le parcours réel sur tenant
-jetable (`verif-market-tmp`, détruit, orphelins 0).
-⚠️ **La valeur de l'empreinte a été perdue à la compression du 2026-08-07.** L'affirmation
-reste donc invérifiable en l'état : elle se **recalcule** — hash du `(id, country, currency,
-vatRate, updatedAt)` des 4 tenants, trié par id — et c'est ce recalcul qui fait preuve, pas
-cette phrase. *Une assertion dont on a supprimé le moyen de vérification n'est plus une preuve,
-c'est une affirmation.*
+**Preuve de non-régression** : le basculement ne touche **AUCUN** tenant existant — vérifié sur
+tenant jetable (`verif-market-tmp`, détruit, orphelins 0). ⚠️ La valeur de l'empreinte a été
+perdue à une compression : elle se **RECALCULE** — hash du
+`(id, country, currency, vatRate, updatedAt)` des 4 tenants, trié par id. *Une assertion dont on a supprimé le moyen de
+vérification n'est plus une preuve, c'est une affirmation.*
 
 ### ⚠️ TVA — le taux se DÉRIVE du pays, il n'a pas de valeur par défaut
 
@@ -622,13 +612,10 @@ ouest-africaines, laissées à 18 % **délibérément** et à raison (SN/CI sont
 
 **Un commentaire qui affirme qu'une alternative existe DOIT citer le `fichier:ligne` de
 cette alternative, ou être supprimé.** TROIS occurrences dans la même session, chacune
-justifiant une décision par un chemin qui n'existait pas — un « login accessible par ailleurs »
-alors qu'il ne restait **AUCUN** lien vers `/login` sur téléphone, un parc d'appareils qui
-n'existait pas, et une justesse qui tenait à l'ordre de gardes distantes sans que rien ne l'écrive.
-
-Le motif est constant : **l'affirmation est plausible, jamais exécutée, et personne ne la
-vérifie parce qu'elle sert de justification à autre chose.** Un `fichier:ligne` la rend
-réfutable en dix secondes ; sans lui, elle survit des mois. 📖 *Mesures, incidents et calibrages de scanner : `docs/lessons/chiffres-affiches.md`.*
+justifiant une décision par un chemin qui n'existait pas. Le motif est constant :
+**l'affirmation est plausible, jamais exécutée, et personne ne la vérifie parce qu'elle sert
+de justification à autre chose.** Un `fichier:ligne` la rend réfutable en dix secondes ; sans
+lui, elle survit des mois. 📖 *`docs/lessons/chiffres-affiches.md`.*
 
 ⚠️ **Vérifier dans le DOM RENDU, pas dans la source**, dès qu'il s'agit de CSS conditionnel :
 la source dit ce qui est écrit, pas ce qui est affiché. Le masquage `.lp-nav-login` était
@@ -636,7 +623,7 @@ lisible dans le fichier ; qu'il ne reste AUCUN chemin vers `/login` ne l'était 
 
 ### La VÉRITÉ VACANTE ⚠️ — « toutes » sur l'ensemble vide
 
-**Un quantificateur universel est VRAI et VIDE de sens sur une liste vide.** `.every()` rend `true`, `.some()` rend `false` : les deux mentent quand la liste est vide. Mesuré : une coche verte annonçait « **Toutes vos boutiques ont démarré** » sous « **0 inscrites** ».
+**Un quantificateur universel est VRAI et VIDE de sens sur une liste vide** — `.every()` rend `true`, `.some()` rend `false` : les deux mentent.
 
 **Règle : TROIS états, jamais deux.**
 
@@ -644,38 +631,38 @@ lisible dans le fichier ; qu'il ne reste AUCUN chemin vers `/login` ne l'était 
 |---|---|---|
 | **NEUTRE** — on constate, on ne félicite pas | alerte | succès |
 
-L'état vide n'a ni coche, ni couleur de succès, ni bordure verte, et il DIT pourquoi il est vide (« Rien à mesurer tant qu'aucune inscription réelle n'a eu lieu »).
+L'état vide n'a ni coche, ni couleur de succès, ni bordure verte, et il DIT pourquoi il est vide.
 
 ⚠️ **C'est une FAMILLE, pas une ligne.** Balayer « toutes », « chacune », « aucune » sur toute liste qui peut être vide.
 
-⚠️ **Deux messages différents ne partagent jamais la même phrase** — trois panneaux disant « Aucune boutique cliente » deviennent indistinguables, y compris pour un test de rendu. Trois états ⇒ trois formulations.
+⚠️ **Deux messages différents ne partagent jamais la même phrase** — trois panneaux disant « Aucune boutique cliente » deviennent indistinguables, y compris pour un test de rendu.
 
-⚠️ **Le SIGNAL prime sur la PHRASE** : l'œil croit la couleur, pas la légende qui la relativise. Une pastille non alimentée est **grise**, jamais verte. ⚠️ Vérifier **la propriété visuelle, pas seulement celle qu'on avait en tête** — un correctif a changé la couleur du point en laissant le `boxShadow` : le signal s'était déplacé dans l'ombre.
+⚠️ **Le SIGNAL prime sur la PHRASE** : l'œil croit la couleur, pas la légende qui la relativise. Une pastille non alimentée est **grise**, jamais verte. ⚠️ Vérifier **la propriété visuelle, pas seulement celle qu'on avait en tête** (un correctif avait changé la couleur du point en laissant le `boxShadow`).
 
 ⚠️ **Aucun chiffre d'argent affiché sans qu'on sache s'il entre dans le MRR.** Un tiret se lit, un faux montant se retient.
 
 ⚠️ **Deux nombres muets qui se contredisent, jamais** (un onglet à « 0 » au-dessus de trois cartes). Et **une intention n'est pas un écran** : un champ `isFixture` non rendu ne badge rien — vérifier sur le rendu.
 
-Verrou : `adminConsoleTruth.test.tsx` (7). 📖 *Mesures, incidents et calibrages de scanner : `docs/lessons/chiffres-affiches.md`.*
+Verrou : `adminConsoleTruth.test.tsx` (7). 📖 *`docs/lessons/chiffres-affiches.md`.*
 
 ### Le CHAMP DÉCLARÉ QUI SE FAIT PASSER POUR UNE MESURE ⚠️
 
-**Un signal qui ne peut pas être faux ne prouve rien**, et il coûte plus cher qu'un signal absent : on s'y fie. Trois formes, et la troisième n'est visible depuis aucune des deux autres — un **littéral dans un catalogue** (`status:'connected'`, `uptime:'99.9%'`), une **colonne déclarée JAMAIS écrite** (une absence n'a pas de forme), un **compteur dérivé des clés d'une map** plutôt que de ce qui est affiché.
+**Un signal qui ne peut pas être faux ne prouve rien**, et il coûte plus cher qu'un signal absent : on s'y fie. Trois formes, dont aucune n'est visible depuis les autres — un **littéral dans un catalogue** (`status:'connected'`, `uptime:'99.9%'`), une **colonne déclarée JAMAIS écrite**, un **compteur dérivé des clés d'une map** plutôt que de ce qui est affiché.
 
 - **Le NOM est la moitié du correctif** : `status` → **`declared: 'configured' | 'absent'`**. Un champ qui dit sa nature ne se relit pas trois fois sans qu'on voie le défaut. L'état RÉEL vient de **`GET /api/integrations/status`** (`lib/integrationStatus.ts`, adossé au `providerMode()` **déjà existant** — ne pas en écrire un second). `sandbox` n'est **pas** une nuance de `live` : c'est la différence entre encaisser et simuler.
 - ⚠️ **Tant que la sonde n'a pas répondu, on n'est pas optimiste** : pastille GRISE, compteur « Vérification… ». **Un défaut réseau doit rendre l'écran muet, jamais rassurant.**
-- ⚠️ **Une sonde vit avec sa carte, et un compteur se dérive de ce qui est AFFICHÉ** — jamais des clés d'une map. Une sonde orpheline a produit « 3/2 OK », un `allChecked` faux pour toujours et une barre figée : trois symptômes, une ligne.
+- ⚠️ **Une sonde vit avec sa carte, et un compteur se dérive de ce qui est AFFICHÉ** — jamais des clés d'une map (une sonde orpheline avait produit « 3/2 OK » et un `allChecked` faux pour toujours).
 - ⚠️ **Vérité vacante, encore** : zéro sonde ⇒ barre verte « Tous les services opérationnels ». Et « tous les services » sur un sous-ensemble sondable est un quantificateur universel présenté comme le tout.
 - ⚠️ **On mesure ce que la donnée porte** : `isOnlineNow` → **`loggedInRecently`** — « En ligne » promettait ce qu'aucune donnée ne porte. L'écriture de `lastLoginAt` est en **fail-open tracé**, après les refus : une colonne d'affichage ne refuse pas une authentification. L'absence se dit **« Aucune trace »**, jamais « Jamais » : *un trou de mesure n'est pas un fait sur la personne.*
-- ⚠️ **Un test qui ne peut pas atteindre le chemin fautif ne garde rien** — deux verrous sont restés VERTS sous sabotage ici : l'un parce que `fetch` échouait en jsdom et court-circuitait la branche testée, l'autre parce que le mock `bcrypt.compare` ignorait le mot de passe en clair.
+- ⚠️ **Un test qui ne peut pas atteindre le chemin fautif ne garde rien** — deux verrous sont restés VERTS sous sabotage ici (`fetch` qui échoue en jsdom, mock `bcrypt.compare` qui ignore le mot de passe).
 
-Verrous : `measuredNotDeclared.test.ts` (5) · `lastLoginWritten.test.ts` (6) · `integrationsRendered.test.tsx` (8, DOM rendu). 📖 *Mesures, incidents et calibrages de scanner : `docs/lessons/chiffres-affiches.md`.*
+Verrous : `measuredNotDeclared.test.ts` (5) · `lastLoginWritten.test.ts` (6) · `integrationsRendered.test.tsx` (8, DOM rendu). 📖 *`docs/lessons/chiffres-affiches.md`.*
 
 ### ⚠️ TAILWIND N'ÉMET RIEN — toute classe `sm:`/`lg:` du source est MORTE
 
 📖 *POURQUOI intégral (mesure du 2026-08-06, 5 angles morts du scanner, sabotage passé vert,
 suppression des 18 modules shadcn) : `docs/lessons/tailwind-classes-livrees.md`* — **à lire
-AVANT** de toucher `index.css`, `tailwind.config.js`, `scripts/classAudit.mjs` ou
+AVANT** de toucher `index.css`, `tailwind.config.js`, `apps/frontend/scripts/classAudit.mjs` ou
 `classesLivrees.test.ts`.
 
 `tailwind.config.js` et `postcss.config.js` existent, mais `index.css` ne porte **aucune
@@ -713,25 +700,25 @@ branché). L'infobulle réelle du produit est `components/ui/FocusTooltip.tsx`.
 
 ### Le LIBELLÉ QUI TRONQUE ⚠️ — corriger la CONTRAINTE, pas la chaîne
 
-**DEUX occurrences dans la même session**, toutes deux « corrigées » en raccourcissant l'étiquette. *Deux fois, ce n'est plus deux accidents : c'est une contrainte trop étroite que personne n'avait mesurée.*
+DEUX occurrences dans la même session, toutes deux « corrigées » en raccourcissant l'étiquette
+— *c'est une contrainte trop étroite que personne n'avait mesurée.*
 
-**LA CAUSE** : l'état actif ne change **ni le padding ni la largeur** — il change la **GRAISSE** (500 → 800). Le même texte est donc plus large une fois sélectionné, dans un conteneur identique : une troncature qui n'apparaît **que sur l'élément actif**, et qu'on ne voit jamais en relisant le code.
-
-⚠️ **L'espagnol et l'italien rallongent** — un libellé qui tient en français ne prouve rien (les plus longs font 21 caractères en it et es). `--sidebar` est passée à **264 px**, ce qui porte le budget à 22 caractères ; à la largeur précédente, 21 étaient impossibles à toute graisse utilisable.
+**LA CAUSE** : l'état actif ne change **ni le padding ni la largeur** — il change la **GRAISSE**
+(500 → 800). Le même texte est plus large une fois sélectionné, dans un conteneur identique :
+une troncature qui n'apparaît **que sur l'élément actif**, et qu'on ne voit jamais en relisant
+le code. ⚠️ **L'espagnol et l'italien rallongent** : un libellé qui tient en français ne prouve rien.
 
 **Verrou** : `navLabelWidth.test.ts` (4) — géométrie **LUE** dans `index.css` (jamais
 recopiée, sinon elle se périme en silence), libellés **DÉRIVÉS** de `Sidebar.tsx`, budget
 vérifié dans les **4 langues**, et une règle qui échoue si `.nav-item.active` acquiert un
-`padding`/`width`/`border-width` — la cause exacte, figée. **2 sabotages vérifiés** (retour
-à 220 → nomme « Paiements & canaux » ; padding ajouté à l'actif → rouge).
-⚠️ **C'est un BUDGET DE CARACTÈRES, pas une mesure en pixels** : jsdom n'a ni police ni moteur de rendu. L'hypothèse (`0,64 em/caractère` en graisse 800, volontairement haute) est écrite dans le fichier ; **si une capture montre encore une troncature, c'est CE nombre qu'il faut relever — pas le libellé qu'il faut raccourcir.** 📖 *Mesures, incidents et calibrages de scanner : `docs/lessons/chiffres-affiches.md`.*
+`padding`/`width`/`border-width` — la cause exacte, figée. **2 sabotages vérifiés.**
+⚠️ **C'est un BUDGET DE CARACTÈRES, pas une mesure en pixels** : jsdom n'a ni police ni moteur de rendu. L'hypothèse (`0,64 em/caractère` en graisse 800, volontairement haute) est écrite dans le fichier ; **si une capture montre encore une troncature, c'est CE nombre qu'il faut relever — pas le libellé qu'il faut raccourcir.** 📖 *`docs/lessons/chiffres-affiches.md`.*
 
 ### DENSITÉ ⚠️ — un écran vide n'est un défaut que s'il devait porter de l'information
 
-**La distinction, et elle a été prise à l'envers une fois** : `select-shop` avait été rangé
-dans les défauts de densité (« deux lignes dans un écran vide »). **À tort.** Un sélecteur à
-deux entrées est CENSÉ être calme et centré : ce n'est pas un écran de données, c'est un
-**choix**. Le vide y est du repos, pas du gaspillage — **ne pas le « corriger »**.
+**La distinction a été prise à l'envers une fois** : `select-shop` rangé dans les défauts de
+densité, **à tort** — un sélecteur à deux entrées est CENSÉ être calme et centré. Le vide y est
+du repos, pas du gaspillage : **ne pas le « corriger »**.
 
 | L'écran doit… | Le vide est… |
 |---|---|
@@ -750,17 +737,18 @@ Verrou `adminTableDense.test.tsx` : **50 clientes + 3 fixtures**, assertion de c
 ⚠️ **jsdom ne fait AUCUNE mise en page** — ni largeur, ni retour à la ligne, ni débordement.
 Un verrou de rendu prouve la STRUCTURE, jamais la GÉOMÉTRIE : celle-ci se mesure avec un vrai
 moteur (`npm run e2e:density --workspace=apps/frontend`). On avait affirmé que la table tient
-à 390 px sans l'avoir jamais vue — la mesure a disculpé la table et trouvé un autre défaut.
+sur un écran étroit sans l'avoir jamais vue : la mesure a disculpé la table et trouvé un autre défaut.
 
 ⚠️ **La garde P0 protège la ROUTE `/admin`, pas le COMPOSANT — et elle reste INTACTE.** Ne pas
 chercher à authentifier Playwright sur `/admin` : le compte E2E est SUPER_ADMIN *de boutique*,
-l'échec d'accès est le BON comportement. Le harnais rend le même composant ailleurs, et son
+l'échec d'accès est le BON comportement (`App.tsx:97` redirige si `isPlatformAdmin !== true`,
+`Sidebar.tsx:255` masque l'entrée, `e2e/smoke.spec.ts:78` fige l'absence). Le harnais rend le même composant ailleurs, et son
 absence du bundle est **vérifiée** par `verify:demo-flag` (marqueur
 `__habashop_dev_table_harness__`) — **l'artefact décide**, pas le ternaire.
 
 ### RÉPARTITION PAIEMENTS ⚠️ — QUATRE dénominateurs sur un seul camembert
 
-**MESURÉ : l'écran Rapports → Ventes portait QUATRE dénominateurs pour le même dessin** — légende (Σ = 96 %), donut (Σ = 101 %), PDF (littéral « 100 % » sur un total court de 11 535 XOF) et KPI de période (8 contre « 50 transactions »). Aucun n'était visible à la relecture : chacun était correct *localement*. ⚠️ Le sélecteur de période n'agissait pas sur ce panneau — une carte annonçait **0 transaction** pendant que le camembert en répartissait **50** avec assurance.
+**MESURÉ : l'écran Rapports → Ventes portait QUATRE dénominateurs pour le même dessin** — légende, donut, PDF et KPI de période, aucun d'accord avec les autres. Aucun n'était visible à la relecture : chacun était correct *localement*.
 
 **Cause unique : une liste de modes RÉÉNUMÉRÉE en dur**, fausse dans les deux sens — un mode rendu que le serveur n'écrit **jamais**, deux modes écrits et **avalés**. *Tant que rien ne manque, les dénominateurs coïncident et le défaut dort.*
 
@@ -777,21 +765,21 @@ absence du bundle est **vérifiée** par `verify:demo-flag` (marqueur
   défaut sous une autre forme. Une part sous 0,5 % est annoncée **« < 1 % »**.
 - ⚠️ **`?? 'cash'` SUPPRIMÉ.** Un mode absent est sa propre catégorie (« Non renseigné »).
   C'est la famille `rating ?? 0`, sur de l'argent. **Honnêteté : la colonne est
-  `String @default("cash")` NOT NULL et la production porte ZÉRO ligne sans mode** — on
-  retire un piège, on ne colmate pas une fuite qui aurait coulé.
+  `String @default("cash")` NOT NULL et la production porte ZÉRO ligne sans mode** — on retire un
+  piège, on ne colmate pas une fuite.
 - ⚠️ **Un repli fabriqué est une justesse EMPRUNTÉE** : celui-ci (Σ = 113 %) était inatteignable — l'état vide était rendu 140 lignes plus haut — mais il aurait resurgi au premier déplacement de la garde. Le cas vide est désormais **atteignable** (période sans vente) et il se **DIT** : pas d'anneau à zéro part, qui se lit comme un graphique cassé.
 
 **Verrou** : `paymentBreakdown.test.tsx` (18), **5 sabotages vérifiés**. Jumeau mobile : `salePaymentModesShared.test.ts` (4).
 
-⚠️ **Le sabotage S4 est passé VERT au premier tir, et la leçon est neuve** : la règle scrutait **la ligne** de total, or ma propre correction venait de l'éclater sur six lignes — la règle était devenue aveugle à la forme **que le code venait de prendre**. *Un verrou qui ne détecte pas son défaut dans la forme ACTUELLE du code ne garde rien.* Réécrit par **appariement de crochets, jamais par regex sur la structure**.
+⚠️ **Un sabotage y est passé VERT au premier tir** : la règle scrutait **la ligne** de total, que la correction venait d'éclater sur six lignes. *Un verrou qui ne détecte pas son défaut dans la forme ACTUELLE du code ne garde rien.* Réécrit par **appariement de crochets, jamais par regex sur la structure**.
 
-📖 *Mesures, incidents et calibrages de scanner : `docs/lessons/chiffres-affiches.md`.*
+📖 *`docs/lessons/chiffres-affiches.md`.*
 
 ### LE TOTAL CALCULÉ SUR CE QUI EST AFFICHÉ ⚠️ — la famille, pas la ligne
 
-**TROIS instances en deux jours**, toutes de la même forme : *un total calculé sur ce qui est AFFICHÉ plutôt que sur ce qui EXISTE* — répartition paiements, tableau PDF (11 535 XOF absents d'un total imprimé), et camembert « CA par catégorie » tronqué à 6 (**77 000 XOF** perdus en un seul mois).
+**TROIS instances en deux jours**, toutes de la même forme : *un total calculé sur ce qui est AFFICHÉ plutôt que sur ce qui EXISTE* — répartition paiements, tableau PDF, et camembert « CA par catégorie » tronqué à 6 (des dizaines de milliers de XOF perdus en un mois).
 
-⚠️ **La démonstration de référence était PILE sur la valeur limite** : `demo-tenant-001` a EXACTEMENT 6 catégories, donc `perdu = 0` toujours. C'est ce qui explique que personne n'ait jamais vu le défaut, pourtant réel et silencieux sur `demo-002` pendant **trois mois consécutifs**. **Une démonstration calée sur la valeur limite ne démontre rien : elle masque.**
+⚠️ **La démonstration de référence était PILE sur la valeur limite** : `demo-tenant-001` a EXACTEMENT 6 catégories, donc `perdu = 0` toujours — le défaut, réel et silencieux sur `demo-002`, restait invisible. **Une démonstration calée sur la valeur limite ne démontre rien : elle masque.**
 
 **Ce qui est en place** — `apps/backend/src/lib/categoryBreakdown.ts` :
 - Le serveur rend les plus grosses catégories **PLUS un reliquat explicite**
@@ -814,9 +802,9 @@ absence du bundle est **vérifiée** par `verify:demo-flag` (marqueur
 
 **L'INVARIANT VERROUILLÉ EST PLUS FORT QUE « Σ = 100 % »** : `Σ(valeurs rendues) == CA du mois`. *Un camembert peut sommer à 100 % d'un total faux* — c'est exactement ce qu'il faisait. Verrou `categoryBreakdown.test.ts` (9), exercé de **0 à 20 catégories** : un test à 3 reproduirait la situation qui a laissé passer le défaut.
 
-⚠️ **`pourcentagesEntiers` est la SOURCE UNIQUE de la répartition en entiers** (`apps/frontend/src/lib/pourcentages.ts`). Le Dashboard corrigeait le **dernier** secteur à `100 − Σ` : la somme valait 100, mais toute l'erreur atterrissait sur une seule part — la dernière, donc la plus petite (mesuré : **45 % d'erreur en relatif**, écart max par part 0,83 → 0,56 pt). Ne pas en écrire une troisième — deux écrans, deux arrondis, ils divergent au premier cas limite.
+⚠️ **`pourcentagesEntiers` est la SOURCE UNIQUE de la répartition en entiers** (`apps/frontend/src/lib/pourcentages.ts`). Le Dashboard corrigeait le **dernier** secteur à `100 − Σ` : la somme valait 100, mais toute l'erreur atterrissait sur une seule part — la dernière, donc la plus petite. Ne pas en écrire une troisième — deux écrans, deux arrondis, ils divergent au premier cas limite.
 
-⚠️ **BALAYAGE DE LA CLASSE FAIT — la « quatrième occurrence » attendue N'EXISTE PAS.** 681 fichiers sur les trois workspaces : `analytics.ts` était le **seul** site dont la troncature alimentait un dénominateur. Les autres sont d'une autre nature et **correctes** (total calculé AVANT le `slice`, barres relatives au maximum). *Écrit pour qu'on ne re-balaye pas cette classe en croyant qu'elle est ouverte.* 📖 *Mesures, incidents et calibrages de scanner : `docs/lessons/chiffres-affiches.md`.*
+⚠️ **BALAYAGE DE LA CLASSE FAIT — la « quatrième occurrence » attendue N'EXISTE PAS.** 681 fichiers sur les trois workspaces : `analytics.ts` était le **seul** site dont la troncature alimentait un dénominateur. Les autres sont d'une autre nature et **correctes** (total calculé AVANT le `slice`, barres relatives au maximum). *Écrit pour qu'on ne re-balaye pas cette classe en croyant qu'elle est ouverte.* 📖 *`docs/lessons/chiffres-affiches.md`.*
 
 **Dette voisine, NON traitée et distincte** : `routes/export.ts:56` plafonne l'export CSV des
 ventes à `take: 1000` sans le dire. Aucun total n'en dérive — ce n'est pas cette famille — mais
@@ -828,13 +816,13 @@ c'est un plafond silencieux. **Entrée complète, avec son déclencheur de réou
 
 - **Source unique `lib/ratingSummary.ts`** : `summarizeRatings(valeurs) → { total, rated, average }`. `average` est **`null`** quand personne n'est évalué — **jamais `0`**. `ratingValue` rend « — » (ni « 0,0/5 », ni « —/5 » : un dénominateur suggère qu'une note existe), `ratingCaption` porte l'**effectif évalué**.
 - ⚠️ **« 4,2/5 » sur 3 évalués parmi 5 n'est PAS « 4,2/5 »** : sans son effectif, le nombre se lit comme portant sur toute l'équipe. **Le dénominateur fait partie de la mesure.**
-- ⚠️ **Un filtre `.filter(e => e.perf)` n'écarte QUE `0`** — valeur impossible sur une échelle 1..5. Il avait l'air de filtrer et ne filtrait rien : **comparer à `null`**. Et le NUMÉRATEUR peut être faux aussi (`Number(x) || 0` divisé par le total fait compter un non-évalué pour zéro : un unique fournisseur noté 5 sur 3 affichait **1,7**).
+- ⚠️ **Un filtre `.filter(e => e.perf)` n'écarte QUE `0`** — valeur impossible sur une échelle 1..5. Il avait l'air de filtrer et ne filtrait rien : **comparer à `null`**. Et le NUMÉRATEUR peut être faux aussi : `Number(x) || 0` divisé par le TOTAL fait compter un non-évalué pour zéro.
 - ⚠️ **`z.coerce.number()` transforme `null` en 0.** Poser `.nullable()` AVANT toute coercition.
 - ⚠️ **L'absence se DIT, elle ne se dessine pas** — cinq étoiles éteintes se lisent « 0/5 ». Re-cliquer l'étoile courante **remet à non évalué**, sinon un clic accidentel serait définitif et l'état vide inatteignable.
 - ⚠️ **Aucun formulaire ne démarre noté.** `perf ?? 3` (serveur), `useState(emp?.perf ?? 3)`, `rating: 4` (création fournisseur), `perf:3` (nouveau contrat) écrivaient tous une note que personne n'avait donnée. Le verrou interdit la FORME `(perf|rating) ?? <chiffre>`. ⚠️ **Il n'attrape QUE cette forme** : `rating: 4` et `perf:3` en littéral d'objet passent au travers — vérifié en exécutant le motif. Ces deux-là n'ont que cette ligne comme défense ; la supprimer, c'est retirer la seule protection d'un cas que le code ne couvre pas.
 - **Le seed laisse une partie NON évaluée** — *une démonstration qui note tout le monde ne montre jamais l'état vide.*
 
-Verrou : `ratingDenominator.test.tsx` (19), 3 sabotages vérifiés. ⚠️ Deux enseignements de méthode y sont attachés : **un critère qui laisse passer son propre déclencheur est faux, pas prudent** (la règle a été exécutée contre son cas d'origine avant d'être gardée), et **un scanner doit retirer les commentaires avant de conclure** — sinon il interdit d'expliquer ce qu'il interdit. 📖 *Mesures, incidents et calibrages de scanner : `docs/lessons/chiffres-affiches.md`.*
+Verrou : `ratingDenominator.test.tsx` (19), 3 sabotages vérifiés. ⚠️ Deux enseignements de méthode y sont attachés : **un critère qui laisse passer son propre déclencheur est faux, pas prudent** (la règle a été exécutée contre son cas d'origine avant d'être gardée), et **un scanner doit retirer les commentaires avant de conclure** — sinon il interdit d'expliquer ce qu'il interdit. 📖 *`docs/lessons/chiffres-affiches.md`.*
 
 ### Console Ops ⚠️ — les FIXTURES ne sont pas des clients
 
@@ -842,26 +830,25 @@ Verrou : `ratingDenominator.test.tsx` (19), 3 sabotages vérifiés. ⚠️ Deux 
 préfixe d'identifiant `e2e-`. **Jamais par une liste d'identifiants** — une liste vieillit,
 le prochain tenant de test n'y figure pas, et le chiffre redevient faux en silence.
 
-Mesuré : la console annonçait « 3 boutiques inscrites, toutes ont démarré » alors que le compte réel de boutiques CLIENTES était **0** (et le CA affiché, ~49,7 M XOF, entièrement issu de fixtures).
+Mesuré : la console annonçait « 3 boutiques inscrites, toutes ont démarré » alors que le compte réel de boutiques CLIENTES était **0**, tout le CA affiché venant de fixtures.
 
 ⚠️ **Les fixtures sont MARQUÉES dans la liste (`isFixture` par ligne) et EXCLUES des agrégats** — un opérateur doit pouvoir ouvrir la démo, mais elle ne doit pas peser dans un chiffre. **Et le nombre d'exclues est DIT à l'écran** : masquer sans le dire ferait croire à une base vide alors qu'elle contient des démonstrations.
 
 ⚠️ **Pas de drapeau `isFixture` en base**, bien que ce fût plus propre : le poser sur `e2e-tenant` serait une MUTATION d'un tenant existant, interdite.
 
-⚠️ **« ACTIF » AVAIT DEUX SENS sur le même écran** — l'onglet Boutiques disait « • Actif »
-(ABONNEMENT) pendant que Vue d'ensemble disait « INACTIVE » (ACTIVITÉ) pour la même
-boutique. Deux notions orthogonales : une boutique peut payer et ne rien vendre. Désormais
-`ABONNEMENT` est un Record exhaustif sur les 5 statuts (une valeur inconnue reste neutre et
-VISIBLE, plus de `st` brut), et l'activité se dit « **sans vente depuis 14 j** » — ce qu'elle
-mesure, pas un état.
+⚠️ **« ACTIF » A DEUX SENS — ne pas les confondre** : l'ABONNEMENT (une boutique paie) et
+l'ACTIVITÉ (elle vend). Notions orthogonales, elles se contredisaient sur le même écran.
+`ABONNEMENT` est un Record exhaustif sur les 5 statuts (valeur inconnue = neutre et VISIBLE,
+plus de `st` brut) ; l'activité se dit « **sans vente depuis 14 j** » — ce qu'elle mesure,
+pas un état.
 
-⚠️ **UNE PASTILLE QUI NE PEUT PAS ROUGIR NE PROUVE RIEN.** « Santé technique » lisait un **littéral** de `pages/Integrations.tsx` : aucune requête n'était émise. Le panneau porte maintenant (a) **une sonde réelle** sur `/api/health-extended`, datée (« vérifié il y a N s ») et capable de rougir, et (b) la mention explicite que le reste est de la **configuration DÉCLARÉE**, pas une vérification. Sonder Sentry/Resend/Twilio demanderait un relais serveur : **dette assumée, écrite plutôt que masquée par du vert.** 📖 *Mesures, incidents et calibrages de scanner : `docs/lessons/chiffres-affiches.md`.*
+⚠️ **UNE PASTILLE QUI NE PEUT PAS ROUGIR NE PROUVE RIEN.** « Santé technique » lisait un **littéral** de `pages/Integrations.tsx` : aucune requête n'était émise. Le panneau porte maintenant (a) **une sonde réelle** sur `/api/health-extended`, datée (« vérifié il y a N s ») et capable de rougir, et (b) la mention explicite que le reste est de la **configuration DÉCLARÉE**, pas une vérification. Sonder Sentry/Resend/Twilio demanderait un relais serveur : **dette assumée, écrite plutôt que masquée par du vert.** 📖 *`docs/lessons/chiffres-affiches.md`.*
 
 ### Le JUMEAU NON TRAITÉ ⚠️ — le motif le plus coûteux de ce dépôt
 
 📖 *POURQUOI intégral (les 5 jumeaux mesurés du 2026-08-06, les deux cachés dans un fichier déjà traité, le calibrage du verrou tarifaire, la chaîne de relais qui a inventé un parc d'appareils, et le **registre des messages de commit non réécrivables**) : `docs/lessons/jumeau-non-traite.md`* — **à lire AVANT** d'écrire un verrou à périmètre, un scanner de littéraux, ou une synthèse qui compresse une mesure.
 
-**Une correction qui s'arrête au premier fichier trouvé n'est pas une correction, c'est un déplacement.** MESURÉ le 2026-08-06 : **cinq** corrections en une journée ont laissé un jumeau vivant, dont trois **hors du répertoire voisin** (autre workspace, backend, vitrine↔`/login`).
+**Une correction qui s'arrête au premier fichier trouvé n'est pas une correction, c'est un déplacement.** MESURÉ : **cinq** corrections en une journée ont laissé un jumeau vivant, dont trois **hors du répertoire voisin**.
 
 ⚠️ **Chercher au répertoire voisin n'attrape que la moitié** — les deux jumeaux les plus graves vivaient **dans un fichier déjà traité** : l'un **sous un autre NOM** (`normalizeOrangePhone` quarante lignes au-dessus du `normalizeMsisdn` déjà fusionné ; le verrou assertait `calls.length === 1`, donc il PROUVAIT un site d'appel et était aveugle au second), l'autre **sous une autre FORME** (le verrou cherchait `\b8000\b` quand toute chaîne visible écrit « 8 000 »). D'où : **un verrou juge la FORME, jamais l'identifiant.**
 
@@ -882,42 +869,35 @@ mesure, pas un état.
 
 ⚠️ **L'ARITÉ est la seule des quatre sans parade** : `plan === 'pro' ? 'Pro' : 'Enterprise'` sur un domaine à QUATRE valeurs n'offre aucun littéral fautif à détecter, juste une branche qui **n'existe pas** (toute activation Starter annonçait « plan Enterprise activé »). Question à poser à chaque revue : **ce booléen décrit-il vraiment un domaine binaire ?** Un `x === 'valeur' ? A : B` sur un champ qui vient d'un enum, d'un catalogue ou de la base est suspect **par construction** — il code une bijection sur un ensemble qui grandira. Préférer un `Record<Domaine, T>` ou un `switch` exhaustif — le compilateur rougit là où aucun test ne le fera. **Domaines à surveiller dans ce dépôt** : `plan` (4 + alias), `lang` (4), devises (6), rôles, statuts de `PlanRequest`, niveaux de `priceGapLevel` (4), `payMode` (5 + `mixed`). **Seul domaine légitimement binaire** : `policy` MSISDN (2, et sans valeur par défaut pour que le compilateur force le choix). ⚠️ **`as` désactive la seule parade automatique** : un cast qui RÉTRÉCIT un domaine (5 → 2) n'est pas une annotation, c'est une affirmation fausse que le compilateur a été prié d'accepter. Fréquence mesurée et calibrage : § « Arité des ternaires ».
 
-⚠️ **Règle : une synthèse ne doit introduire AUCUN nom absent de sa source.** `build` → `parc`, `une route` → `les routes`, `un tenant` → `les clients` : chaque généralisation d'un singulier mesuré vers un collectif crée une population qui n'a jamais été comptée — c'est ainsi qu'un parc d'appareils inexistant a franchi trois relais. Quand une phrase de `CLAUDE.md` porte un collectif (« le parc », « les utilisateurs », « les boutiques »), remonter à la mesure d'origine avant de s'en servir.
+⚠️ **Règle : une synthèse ne doit introduire AUCUN nom absent de sa source.** `build` → `parc`, `une route` → `les routes`, `un tenant` → `les clients` : chaque généralisation d'un singulier mesuré vers un collectif crée une population qui n'a jamais été comptée — c'est ainsi qu'un parc d'appareils inexistant a franchi trois relais. Quand une phrase porte un collectif, remonter à la mesure d'origine avant de s'en servir.
 
-⚠️ **NE PAS ARBITRER — COMPTER.** Quand deux sources se contredisent sur une entité DÉNOMBRABLE, la contradiction n'est pas à trancher : elle est le signal qu'**aucune des deux n'a compté** (les deux affirmations en litige étaient fausses toutes les deux). Aller compter — ici `pushToken.groupBy` a rendu **1**, et six commandes ont clos six jours de doute. La date et la preuve citée sont toutes deux des raccourcis ; seule la mesure tranche.
+⚠️ **NE PAS ARBITRER — COMPTER.** Quand deux sources se contredisent sur une entité DÉNOMBRABLE, la contradiction n'est pas à trancher : elle est le signal qu'**aucune des deux n'a compté** (les deux affirmations en litige étaient fausses toutes les deux). Aller compter — ici `pushToken.groupBy` a rendu **1**, et six commandes ont clos six jours de doute. Seule la mesure tranche.
 
 ⚠️ **Un message de commit ne se corrige pas — il se RECENSE**, sinon il redevient une source : c'est un texte daté, signé, que `git log` remonte en premier et qu'on relit sans le suspecter. **Trois** en portent une, recensés dans la leçon.
 
 ---
 
-⚠️ **LA SOURCE EST VALIDE, L'ARTEFACT EST NUL — le motif qui a ouvert ET fermé la semaine du
-2026-08.** Cinq jours d'écart, deux langages, un seul défaut — un `` `${v.accent}28` `` où
-`v.accent` vaut `'var(--p2)'` (CSS **invalide à l'évaluation** ⇒ `border-style: none`, la valeur
-INITIALE), et un `<meta name="keywords" <!-- commentaire --> content="…">` dont le `content` est
-**absent du DOM**, donc un changement SEO qui ne faisait rien.
-
-Dans les deux cas : `tsc` vert, suite verte, revue passante, **et rien de ce qui était censé être
-livré ne l'était**. Ni le compilateur, ni les tests, ni la revue ne regardent l'artefact — ils
-regardent la source, et la source est correcte. Le défaut naît à la frontière : un `var()` suffixé
-d'un alpha hexadécimal est du CSS invalide, un `<!-- -->` dans une balise est du HTML invalide.
-Même famille que l'ordre des règles du service worker et que le contexte Docker (§ Déploiement) :
-**une régression d'ARTEFACT n'est pas visible depuis la source.**
+⚠️ **LA SOURCE EST VALIDE, L'ARTEFACT EST NUL.** Deux défauts en cinq jours, deux langages : un
+`` `${v.accent}28` `` où `v.accent` vaut `'var(--p2)'` (CSS **invalide à l'évaluation** ⇒
+`border-style: none`, la valeur INITIALE), et un `<meta name="keywords" <!-- commentaire --> content="…">` dont le `content` est
+**absent du DOM**. Dans les deux cas : `tsc` vert, suite
+verte, revue passante, **et rien de ce qui était censé être livré ne l'était** — ni le
+compilateur, ni les tests, ni la revue ne regardent l'artefact. Même famille que l'ordre des
+règles du service worker et que le contexte Docker (§ Déploiement).
 
 **Règle : tout ce qui est GÉNÉRÉ se vérifie sur le PRODUIT, jamais sur ce qui l'a produit.**
-`verify:seo-urls` porte les gardes correspondantes — aucun `<!--` dans une
-balise, `content` non vide sur chaque `<meta name>`, JSON-LD `JSON.parse`-able.
-⚠️ **Il n'est PAS lancé par la CI** : `ci.yml` n'exécute que `verify:sw-routes` et
-`verify:classes`. C'est donc une garde locale, à lancer à la main avant tout push touchant
-`index.html` ou `gen-seo.mjs` — une garde qu'on croit automatique et qui ne l'est pas ne
-protège rien. Sabotages écrits
-avec les formes **réellement commises**, pas retapées.
+`verify:seo-urls` porte les gardes correspondantes — aucun `<!--` dans une balise, `content` non
+vide sur chaque `<meta name>`, JSON-LD `JSON.parse`-able ; sabotages écrits avec les formes
+**réellement commises**, pas retapées. ⚠️ **Il n'est PAS lancé par la CI** (`ci.yml` n'exécute
+que `verify:sw-routes` et `verify:classes`) : garde LOCALE, à lancer à la main avant tout push
+touchant `index.html` ou `gen-seo.mjs` — *une garde qu'on croit automatique et qui ne l'est pas
+ne protège rien.*
 
 ⚠️ **Corollaire — un fait peut être encodé en DONNÉES, pas en texte.** Le JSON-LD portait
 `serviceArea.geoMidpoint = 14.6928 / -17.4467` : Dakar. Un signal de ciblage géographique aussi
-fort que le mot « Dakar », **qu'aucune recherche de chaînes ne peut trouver**. Il a été vu en
-balayant les surfaces SEO une par une, pas en cherchant des mots. Quand on nettoie une
-affirmation, se demander sous quelle forme NON TEXTUELLE elle pourrait aussi vivre : coordonnées,
-code pays, indicatif, fuseau, code devise, locale.
+fort que le mot, **qu'aucune recherche de chaînes ne peut trouver** — vu en balayant les surfaces
+SEO une par une. Quand on nettoie une affirmation, se demander sous quelle forme NON TEXTUELLE
+elle pourrait aussi vivre : coordonnées, code pays, indicatif, fuseau, code devise, locale.
 
 ### Injection CSV ⚠️ — convention EXÉCUTOIRE, pas affirmée (#173)
 
@@ -1036,11 +1016,10 @@ au lieu de refuser (seul `isValid()` écarte) · « Twilio rejettera un numéro 
 (un `+` à l'aveugle produit des numéros étrangers **livrables**). Donc « on ne normalise pas » ne
 vaut **jamais** « on n'envoie pas » : il faut refuser d'envoyer, explicitement.
 
-✅ **Dette `Tenant.country` : TRAITÉE.** Le champ a contenu des LIBELLÉS français à côté d'ISO-2
-(`Onboarding` PATCHait la `value` de son `<select>`, `SignupPage` envoyait de l'ISO-2, aucune
-validation au milieu). Conséquence NON cosmétique : `resolveRecipient` n'accepte que l'ISO-2, donc
-un tenant « France » ne recevait **ni WhatsApp ni SMS**, en silence — *le garde faisait son
-travail, la donnée mentait*.
+✅ **Dette `Tenant.country` : TRAITÉE.** Le champ a contenu des LIBELLÉS français à côté d'ISO-2,
+faute de validation entre `Onboarding` et `SignupPage`. Conséquence NON cosmétique :
+`resolveRecipient` n'accepte que l'ISO-2, donc un tenant « France » ne recevait **ni WhatsApp ni
+SMS**, en silence — *le garde faisait son travail, la donnée mentait*.
 
 **`lib/country.ts`** (`normalizeCountry`, `SUPPORTED_COUNTRIES`) est le seul juge, appelé par les
 **3** chemins d'écriture (`PATCH /api/tenant` → **400** sur l'irrésolvable, register, admin).
@@ -1063,8 +1042,8 @@ l'exercer, et être vérifié **dans les deux sens**.
 ## Dette ouverte
 
 ### 🔴 Critique
-- ✅ **Numéros WhatsApp : RÉSOLU** (sous-surface 1, PR #100) — la normalisation par « à qui appartient ce numéro » (`resolveRecipient`, param `owner` obligatoire) a remplacé le `+` aveugle et le `replace(/^0/)`. Cf. § Normalisation téléphonique (+ `docs/lessons/normalisation-telephonique.md`). La dette `Tenant.country` qui subsistait est elle aussi traitée (cf. § Normalisation téléphonique, fin).
-- ✅ **SMS : IMPLÉMENTÉ** (Africa's Talking). `lib/spend/smsClient.ts` = SEUL module important `africastalking` (ajouté à l'allowlist `spendGuardAllowlist.test.ts`), calqué sur `twilioClient` : garde de dépense (`SpendKind` **`sms`**, quotas `QUOTA_TRIAL_SMS`/`QUOTA_ACTIVE_SMS` défauts 20/200 placeholder) + **`resolveRecipient` obligatoire** (`owner` requis — un SMS part vers un numéro, même sécurité téléphonique que WhatsApp), ne throw jamais, rend les unités des envois échoués/écartés. `services/sms.ts` `notifyStockAlertSms(tenantId, products)` = **digest QUOTIDIEN** au gérant (câblé dans `services/notificationCrons.ts`, PAS par vente → un SMS/jour, pas un par vente ; gardé opt-in tenant `notifSmsStock` + `ownerPhone`, flux commerçant normalisé avec `tenant.country`). Filet `mockPaidSdks.ts` mocke aussi `africastalking`. ⚠️ **À ACTIVER (Nelson)** : compte Africa's Talking + `SMS_API_KEY` (+ `SMS_USERNAME` défaut `sandbox`, `SMS_SENDER_ID` optionnel) sur Railway — absente = feature inerte (`SMS_NOT_CONFIGURED`, fail-safe). Verrou : `smsClient.test.ts` (6 : refus téléphone client/pays non supporté, normalisation commerçant, quota refusé, réserve N, fail-safe clé absente ; sabotage vérifié). *(`notifSmsSales` = résumé ventes, fast-follow trivial via la même infra.)*
+- ✅ **Numéros WhatsApp : RÉSOLU** (PR #100) — la normalisation par « à qui appartient ce numéro » (`resolveRecipient`, param `owner` obligatoire) a remplacé le `+` aveugle et le `replace(/^0/)` ; la dette `Tenant.country` est traitée aussi. Cf. § Normalisation téléphonique (+ `docs/lessons/normalisation-telephonique.md`).
+- ✅ **SMS : IMPLÉMENTÉ** (Africa's Talking). `lib/spend/smsClient.ts` = SEUL module important `africastalking` (ajouté à l'allowlist `spendGuardAllowlist.test.ts`), calqué sur `twilioClient` : garde de dépense (`SpendKind` **`sms`**, quotas `QUOTA_TRIAL_SMS`/`QUOTA_ACTIVE_SMS` défauts 20/200 placeholder) + **`resolveRecipient` obligatoire** (`owner` requis — un SMS part vers un numéro, même sécurité téléphonique que WhatsApp), ne throw jamais, rend les unités des envois échoués/écartés. `services/sms.ts` `notifyStockAlertSms(tenantId, products)` = **digest QUOTIDIEN** au gérant (câblé dans `services/notificationCrons.ts`, PAS par vente → un SMS/jour, pas un par vente ; gardé opt-in tenant `notifSmsStock` + `ownerPhone`, flux commerçant normalisé avec `tenant.country`). Filet `mockPaidSdks.ts` mocke aussi `africastalking`. ⚠️ **À ACTIVER (Nelson)** : compte Africa's Talking + `SMS_API_KEY` (+ `SMS_USERNAME` défaut `sandbox`, `SMS_SENDER_ID` optionnel) sur Railway — absente = feature inerte (`SMS_NOT_CONFIGURED`, fail-safe). Verrou : `smsClient.test.ts` (6, sabotage vérifié). *(`notifSmsSales` = résumé ventes, fast-follow trivial via la même infra.)*
 - ✅ **Push PWA : IMPLÉMENTÉ** (Web Push VAPID). Canal navigateur DISTINCT du push Expo mobile : `services/webPush.ts` (SEUL module important `web-push`, fail-silent, VAPID lu à chaud depuis l'env → no-op si absent) ; `pushService.dispatch()` fanne chaque notif vers Expo (mobile) ET web (subscriptions `platform='web'`, subscription JSON stockée dans `PushToken.token`). Front : `utils/webPush.ts` (permission → clé VAPID serveur → `pushManager.subscribe` → POST token), toggle « Recevoir sur cet appareil » dans `SectionNotif` (distinct de l'opt-in tenant `notifPushAll`), handlers SW dans `public/push-sw.js` (chargé via workbox `importScripts` — le SW généré n'accepte pas de listeners en config ; exclu du precache). Endpoint `GET /api/notifications/vapid-public-key`. ⚠️ **À ACTIVER (Nelson)** : poser `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (+ `VAPID_SUBJECT` optionnel) sur Railway — clés absentes = feature inerte (fail-safe). Verrous : `webPush.test.ts` (back : parse/fail-safe/purge 404-410) + `webPush.test.ts` (front : décodage base64url VAPID).
 - **Wave webhook** : code **fail-CLOSED** (`if (!secret) return false`) ✅ — reste à poser `WAVE_WEBHOOK_SECRET` Railway pour activer la vérif en prod. **S**
 - **Campay go-live** : `CAMPAY_WEBHOOK_KEY` + `CAMPAY_ENVIRONMENT=production`. **S**
@@ -1077,33 +1056,25 @@ l'exercer, et être vérifié **dans les deux sens**.
 - ✅ **Congés E2E : CLOS le 2026-08-07** — fuite fermée, résidu purgé (**307 → 0** sur
   `e2e-tenant`, effets de bord vérifiés intacts).
   📖 *`docs/lessons/menage-e2e-conges.md`* — **à lire avant** d'écrire un bloc de ménage E2E.
-  - ⚠️ **Un ménage s'ASSERTE, il n'est jamais « best-effort ».** Il était non bloquant « pour
-    ne pas rougir sur du ménage » et a échoué à chaque exécution pendant une journée sans que
-    rien ne le dise — le repli était un `console.warn`, et **un test vert n'imprime rien**.
-    *Un ménage silencieux qui ne marche pas est pire que pas de ménage : il fait croire que
-    c'est réglé.* L'assertion porte sur **le COMPTE avant/après**, jamais sur le code de
+  - ⚠️ **Un ménage s'ASSERTE, il n'est jamais « best-effort ».** Non bloquant, il a échoué une
+    journée entière sans que rien ne le dise (repli en `console.warn`, et **un test vert
+    n'imprime rien**). L'assertion porte sur **le COMPTE avant/après**, jamais sur le code de
     retour : un 200 dit que l'appel a abouti, pas que la base est revenue à son état d'avant.
   - ⚠️ **Le jeton E2E se lit sous `habashop_token`** (store persisté : `habashop-auth`). Le
     ménage lisait `auth-storage`, **clé qui n'existe nulle part** → `Bearer ` → 401 muet.
-  - ⚠️ **Une purge sur un tenant réel** : périmètre **en dur dans le script** (un périmètre
-    passé en argument est un périmètre qu'on peut mal taper), garde `CONFIRM=1`, refus si
-    `isDemo`, instantané avant / diff de l'objet entier après.
+  - ⚠️ **Une purge sur un tenant réel** : périmètre **en dur dans le script**, garde `CONFIRM=1`,
+    refus si `isDemo`, instantané avant / diff de l'objet entier après.
 - **Export CSV des ventes : plafond SILENCIEUX à 1 000 lignes** (`apps/backend/src/routes/export.ts:56`, `take: 1000`). **S**
-  - ⚠️ **Ce n'est PAS la famille « le total est la somme de ce qu'on montre »** (analytics.ts:108,
-    Répartition paiements, PDF du 07/08) : **aucun total n'en dérive**, et le balayage du
-    2026-08-07 a établi qu'`analytics.ts` était le **seul** site de cette famille-là. C'en est
-    une autre : *un document qui SORT du produit est tronqué en silence.*
-  - **Et elle est plus grave dans un export que dans un graphique** : le CSV part chez un
-    comptable. Une épicerie qui fait 1 200 ventes dans le mois en reçoit **1 000**, et aucune
-    ligne du fichier ne le signale. Un graphique faux se discute ; un fichier comptable amputé
-    se recopie.
+  - ⚠️ **Ce n'est PAS la famille « le total est la somme de ce qu'on montre »** : aucun total
+    n'en dérive (le balayage du 2026-08-07 a établi qu'`analytics.ts` en était le **seul** site).
+    C'en est une autre : *un document qui SORT du produit est tronqué en silence* — et c'est plus
+    grave qu'un graphique, car le CSV part chez un comptable et se recopie.
   - **DÉCLENCHEUR DE RÉOUVERTURE : le premier commerçant dépassant 1 000 ventes sur une période
     exportée.** Avec zéro client, personne n'exporte — c'est **cela** qui rend l'attente
     acceptable, pas la gravité du défaut. ⚠️ Une question ouverte sans condition de réouverture
     ne se rouvre jamais : le déclencheur fait partie de la dette, pas du commentaire.
-  - **Correctif attendu le jour venu** : lever le plafond, **ou le DIRE** — ligne d'en-tête dans
-    le CSV, ou avertissement à l'écran. *Un export tronqué qui s'annonce est utilisable ; un
-    export tronqué muet ne l'est pas.*
+  - **Correctif attendu le jour venu** : lever le plafond, **ou le DIRE** (en-tête dans le CSV,
+    ou avertissement à l'écran). *Un export tronqué qui s'annonce est utilisable ; muet, non.*
   - **Frère plus léger, même dette** : `export.ts:99` — le rapport mensuel HTML/PDF liste
     `sales.slice(0,30)` sous « Détail des ventes » sans dire que ce sont les 30 premières. Moins
     grave : le KPI voisin affiche `sales.length`, donc l'écart est au moins *inférable* par le
@@ -1117,60 +1088,35 @@ l'exercer, et être vérifié **dans les deux sens**.
     d'écran ou de destinataires, qui ne sont pas des documents.
 - ✅ **Paie statuts : RÉSOLU** — modèle `Payroll` (instantané GELÉ) + routes `GET /api/payroll?month=YYYY-MM`, `POST /api/payroll/generate`, `PATCH /api/payroll/:id`. Cf. § Paie.
 - **Bundle recharts ~105KB gz** : lazy + hors precache. Remplacer visx = **L**.
-- **Densité — UN SEUL lot avec la table dense** ⚠️ : tout touche la même structure, séparer ferait le travail plusieurs fois. Défauts MESURÉS sur captures — **console Ops** : bandeau MRR ~1 400 px entre le chiffre et la note de droite · onglet Boutiques ~700 px de vide sous trois cartes · tiroir de détail ~700 px de vide en bas. **Écrans applicatifs** (2026-08-06) : Rapports/RH deux cartes pleine largeur pour deux valeurs · `select-shop` deux lignes dans un écran vide · Planning légende du bas redondante avec la barre du haut.
-  - ⚠️ **NE PAS chercher à authentifier Playwright sur `/admin`.** Le compte E2E est SUPER_ADMIN **de boutique** ; la console plateforme lui est masquée **PAR CONCEPTION** (garde P0 : `App.tsx:97` `isPlatformAdmin !== true` → redirection, `Sidebar.tsx:255` masque l'entrée, `e2e/smoke.spec.ts:78` fige l'absence). L'échec d'accès est le **bon comportement** — ne pas l'affaiblir pour mesurer une marge. C'est le motif du § Vérification en PROD appliqué à l'UI : on ne desserre pas un garde pour se donner un instrument.
+- **Densité — UN SEUL lot avec la table dense** ⚠️ : tout touche la même structure, séparer ferait le travail plusieurs fois. Défauts MESURÉS sur captures (console Ops, Rapports/RH, Planning) — 📖 *liste et mesures : `docs/lessons/densite-mesuree.md`* ; la garde P0 sur `/admin` reste intacte, cf. § DENSITÉ.
   - ✅ **Le workflow densité tourne EN CI** depuis le 2026-08-07 (`density.yml`, filtré par `paths:`) — 4 tests, job 64 s. ⚠️ La géométrie diffère de 9 px entre Ubuntu et macOS : l'assertion porte sur le DÉBORDEMENT et l'enroulement, **jamais sur un pixel exact**.
 
 - ✅ **A11y résiduel : FAIT** — SectionCatalog (4 champs `aria-label` : catalogue/slug/description/WhatsApp), POSModals sélecteur pays devenu vrai `role="listbox"` (+ `role="group"` par région, `role="option"`+`aria-selected` sur `CountryItem`), Stock vue grille en `role="list"`/`role="listitem"` (via props A11y additives de `ResponsiveGrid`).
 
 ## Carte du dépôt (graphify) ⚠️ — datée, et elle se périme vite
 
-**Dernière passe : 2026-08-07** (`graphify . --update`). **5 109 nœuds · 10 711 arêtes ·
-321 communautés**, sur un corpus de **922 fichiers**. Sorties dans `graphify-out/`
-(**gitignoré** — la carte ne voyage pas avec le dépôt, chacun la reconstruit).
+📖 *Passes mesurées, périmètre recalculable, archéologie et POURQUOI de chaque
+exclusion : `docs/lessons/carte-graphify.md`.* Passe : `graphify . --update` ; sorties dans
+`graphify-out/`, **gitignoré**.
 
-⚠️ **UNE CARTE PLUS VIEILLE QUE QUELQUES DIZAINES DE COMMITS DÉCRIT UN TERRITOIRE DISPARU.**
-Mesuré : la passe du 01/08 avait **86 commits** de retard, et **29 modules de source unique**
-lui manquaient — `msisdn.ts`, les trois jumeaux `defaultMarket.ts`, `vatRate.ts`,
-`paymentMethods.ts`, `posMsisdnPolicy.ts`, `ratingSummary.ts`, `pourcentages.ts`,
-`salePaymentModes.ts`, `categoryBreakdown.ts`. Exactement les fichiers que ce guide traite
-comme faisant autorité. **Une carte qui ignore les sources uniques est pire qu'aucune carte :
-elle répond, et elle répond à côté.**
+⚠️ **RAFRAÎCHIR au premier des deux :** **50 commits** depuis la dernière passe, ou **la
+création d'un module de source unique** (`lib/*` jumelé, fixture partagée). Le second est
+celui qui coûte cher : mesuré, une carte de 86 commits de retard ignorait **29 modules de
+source unique** — exactement ceux que ce guide traite comme faisant autorité. *Une carte
+qui ignore les sources uniques répond, et répond à côté.*
 
-**DÉCLENCHEUR DE RAFRAÎCHISSEMENT — au premier des deux :** plus de **50 commits** depuis la
-dernière passe, ou **la création d'un module de source unique** (`lib/*` jumelé, fixture
-partagée). Le premier est mécanique, le second est celui qui coûte cher quand on l'oublie.
+⚠️ **LE MODÈLE DE DONNÉES EST INVISIBLE AU GRAPHE** — `schema.prisma` n'est pas une
+extension supportée, les 35 migrations `.sql` exigent `graphifyy[sql]` (absent). Ne pas
+lui demander « quelles colonnes porte `Sale` ? » : lire `schema.prisma`.
 
-**PÉRIMÈTRE RÉEL, mesuré le 2026-08-07 — la règle n'exclut presque rien :**
+⚠️ **Le coût suit la DOCUMENTATION, pas le code** (AST = coût nul), et ce guide plus
+`docs/lessons/` en sont l'essentiel — à savoir **avant** de lancer une passe.
 
-| | |
-|---|---|
-| production couverte (git, code, `apps\|mobile\|packages`) | **757 / 793** |
-| fichiers du graphe, toutes natures | **857** |
-| exclus par la règle de corpus | **36** |
-
-Les 36 sont **les 35 migrations SQL + `schema.prisma`**, et pour deux raisons distinctes :
-`.prisma` n'est pas une extension supportée, et les `.sql` exigent `graphifyy[sql]`
-(`tree_sitter_sql`, absent). ⚠️ **Le MODÈLE DE DONNÉES est donc invisible au graphe** — ne pas
-lui demander « quelles colonnes porte `Sale` ? », il ne peut pas le savoir. Lire
-`schema.prisma`. Deux `.docx` (dont le cahier des charges) échouent aussi, faute de
-`graphifyy[office]`.
-
-⚠️ **Les fixtures partagées `.json` sont dans le corpus mais ne produisent AUCUN nœud** (données
-pures, rien à extraire pour l'AST). Elles apparaissent donc comme couvertes sans l'être — le
-graphe ne dira jamais qu'un cas partagé a bougé.
-
-⚠️ **Le « N files » de la *Corpus Check* n'est PAS la couverture** : c'est le nombre de fichiers
-passés par l'extraction sémantique. Le rapport du 01/08 affichait « 173 files » alors que le
-graphe référençait **738** fichiers. Pour mesurer la couverture, compter les `source_file`
-distincts de `graph.json` — jamais lire l'en-tête.
-
-⚠️ **Coût réel, à connaître avant de lancer** : la passe du 07/08 a consommé **1 033 525 jetons**
-pour 81 documents (le code est en AST, coût **nul**). C'est **7,7×** la passe précédente, dont
-l'en-tête annonçait 134 637. **Le coût suit le volume de DOCUMENTATION, pas celui du code** — et
-ce guide et `docs/lessons/` en sont l'essentiel. Les 15 images (favicons, icônes PWA, splash)
-ont été **délibérément sautées** : valeur de graphe nulle, coût vision réel. Elles restent non
-tamponnées et seront reproposées ; les écarter durablement demande un `.graphifyignore`.
+**Périmètre borné par `.graphifyignore`** (racine, exclusions motivées en clair) : images,
+`.docx` sans jumeau markdown, `docs/shared-fixtures/`. ⚠️ **Ne jamais y mettre du code de
+production** — la règle actuelle ne retire aucun fichier du dénominateur de couverture,
+c'est ce qui la rend sûre. Et le « N files » de la *Corpus Check* n'est PAS la couverture :
+compter les `source_file` distincts de `graph.json`.
 
 ## Comptes démo
 
@@ -1178,21 +1124,21 @@ tamponnées et seront reproposées ; les écarter durablement demande un `.graph
 
 `demo1234` — `admin@`/`manager@`/`cashier@`/`accountant@`/`hr@habashop.com`, tenant principal `demo-tenant-001` (« HabaShop — Dakar Central »). 5 employés (`demo-emp-${name}`). Données hors seed : `requireCashier=false`, `ownerPhone='+221771234567'`. Si reseed → repasser `requireCashier=false`.
 
-✅ **`demo-tenant-001` est en XOF — corrigé le 2026-08-06, plus rien à faire.** Il portait `EUR`, venu d'un `PATCH` manuel et non du seed. Répartition **EUR 2 / XOF 2**. 📖 *`docs/lessons/demos-devise-et-pii.md`.*
+✅ **`demo-tenant-001` est en XOF** (corrigé le 2026-08-06 — il portait `EUR`, venu d'un `PATCH` manuel, pas du seed). Répartition **EUR 2 / XOF 2**. 📖 *`docs/lessons/demos-devise-et-pii.md`.*
 
 ⚠️ **`e2e-tenant` reste en EUR, et c'est DÉLIBÉRÉ — ne pas « harmoniser ».** En XOF (0 décimale, taux 1), convertir zéro, une ou deux fois donne le **même affichage** : tous les défauts de conversion y sont invisibles. C'est exactement la raison pour laquelle les cas dorés de paie doublent chaque cas XOF d'un cas EUR (§ Paie). `HabaShop Ops` est un tenant interne, pas une boutique.
-⚠️ **LES DÉMOS RESTENT OUEST-AFRICAINES — ne pas « aligner » sur le marché par défaut.** Mesuré avant de décider : chaque démo est ancrée sur **16 lignes** (SN pour `demo-001`, CI pour `demo-002`), les produits sont neutres, l'indicatif dérive déjà de `tenant.country`, et **la TVA à 18 % est CORRECTE pour SN et CI**. Une démo sénégalaise sous un défaut produit camerounais est la meilleure preuve que le multi-pays fonctionne.
+⚠️ **LES DÉMOS RESTENT OUEST-AFRICAINES — ne pas « aligner » sur le marché par défaut.** Mesuré avant de décider : chaque démo est ancrée sur 16 lignes (SN pour `demo-001`, CI pour `demo-002`), l'indicatif dérive déjà de `tenant.country`, et **la TVA à 18 % est CORRECTE pour SN et CI**. Une démo sénégalaise sous un défaut produit camerounais est la meilleure preuve que le multi-pays fonctionne.
 
-⚠️ **Et « re-seeder » ne ferait RIEN** : tous les `upsert` du seed ont `update: {}` (seules exceptions : `lang` sur le tenant, `role`/`name` sur les users). Le seed a d'ailleurs **déjà dérivé** — il écrit « HabaShop — Boutique Centrale » depuis la neutralisation des exemples, quand la base porte toujours « Dakar Central ». Un re-seed ne réconcilierait pas cet écart : il ne réécrit aucune ligne existante.
+⚠️ **Et « re-seeder » ne ferait RIEN** : tous les `upsert` du seed ont `update: {}` (seules exceptions : `lang` sur le tenant, `role`/`name` sur les users). Le seed a d'ailleurs **déjà dérivé** du contenu de la base, et un re-seed ne réconcilierait pas l'écart — il ne réécrit aucune ligne existante.
 
-✅ **DONNÉES PERSONNELLES RÉELLES — TRAITÉES le 2026-08-06, et surveillées depuis.** Un client de `demo-001` portait un nom réel, un mobile `+336`, une adresse et un e-mail personnels — **trois semaines** en lecture publique. Anonymisé. 📖 *`docs/lessons/demos-devise-et-pii.md`.*
+✅ **DONNÉES PERSONNELLES RÉELLES — TRAITÉES le 2026-08-06, et surveillées depuis** (un client de `demo-001` portait nom, mobile, adresse et e-mail réels, **trois semaines** en lecture publique ; anonymisé). 📖 *`docs/lessons/demos-devise-et-pii.md`.*
 
-⚠️ **LE TIROIR MENTAIT, ET C'EST LA LEÇON** : l'écran affichait « Aucun achat », 0 point — la base portait **1 abonnement actif**. C'est ce comptage qui a fait choisir l'ANONYMISATION plutôt que la suppression (`Subscription.customerId` non nullable : supprimer aurait violé la FK). **Compter les références avant de choisir, jamais déduire de l'écran.**
+⚠️ **LE TIROIR MENTAIT, ET C'EST LA LEÇON** : l'écran affichait « Aucun achat », la base portait **1 abonnement actif** — c'est ce comptage qui a imposé l'ANONYMISATION plutôt que la suppression (`Subscription.customerId` non nullable). **Compter les références avant de choisir, jamais déduire de l'écran.**
 
 ⚠️ **BALAYAGE HEBDOMADAIRE** — `runDemoPiiSweep` (lundi 9h), `lib/piiSweep.ts`. Il **RAPPORTE, il n'empêche pas** : empêcher supposerait de refuser des saisies dans une démo dont l'intérêt est qu'on puisse tout y faire. Détection **de FORME** (indicatif, domaine), jamais par liste de pays ou de messageries — le critère « absent des seeds » a été ABANDONNÉ après **8 faux positifs sur 12**. ⚠️ Le rapport ne reproduit **aucune valeur**, seulement identifiants et noms de champs : le recopier l'écrirait dans les logs Railway et **déplacerait la fuite au lieu de la fermer**. Périmètre `isDemo` UNIQUEMENT.
 
 ⚠️ **QUESTION OUVERTE, non tranchée** : le mot de passe démo doit-il rester public maintenant qu'on sait que des données réelles peuvent y atterrir ? `isDemo` borne le **coût** (403 sur toute dépense externe), pas l'**exposition** : n'importe qui peut lire. Trois voies — le garder public et balayer · le fermer et distribuer à la demande · le réinitialiser périodiquement. Décision de Nelson.
-**DÉCLENCHEUR DE RÉOUVERTURE : le premier prospect envoyé sur la démo.** Tant que personne n'y est dirigé, l'exposition se limite à qui trouve le dépôt ; le jour où on donne l'adresse à un client potentiel, la démo devient une vitrine et le mot de passe public un choix, plus un reliquat. ⚠️ Le balayage hebdomadaire (`runDemoPiiSweep`) réduit la fenêtre de trois semaines à sept jours — **il ne la ferme pas**, et il RAPPORTE au lieu d'empêcher.
+**DÉCLENCHEUR DE RÉOUVERTURE : le premier prospect envoyé sur la démo.** Tant que personne n'y est dirigé, l'exposition se limite à qui trouve le dépôt ; le jour où on donne l'adresse, la démo devient une vitrine et le mot de passe public un choix, plus un reliquat. ⚠️ `runDemoPiiSweep` réduit la fenêtre à sept jours — **il ne la ferme pas**.
 
 **Multi-boutiques** : `admin@` et `manager@` sont liés à une 2ᵉ boutique `demo-tenant-002` (« Alimentation Koné — Abidjan », XOF) via `UserTenant` → login déclenche le sélecteur. `admin@` = SUPER_ADMIN/ADMIN, `manager@` = MANAGER/MANAGER. Les 3 autres restent mono-boutique.
 

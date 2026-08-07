@@ -5,7 +5,7 @@
 > sabotage passé vert, la suppression des 18 modules shadcn). Le QUOI opérationnel — la règle
 > « toute variante responsive s'écrit à la main dans `index.css` », le tableau des quatre cas
 > et les verrous — reste dans `CLAUDE.md` § « Tailwind n'émet rien », qui pointe ici.
-> **À lire AVANT** de toucher `index.css`, `tailwind.config.js`, `scripts/classAudit.mjs`
+> **À lire AVANT** de toucher `index.css`, `tailwind.config.js`, `apps/frontend/scripts/classAudit.mjs`
 > ou `classesLivrees.test.ts`.
 
 ---
@@ -85,7 +85,7 @@ fait désarmer aussi sûrement qu'un verrou qui laisse passer :
 d'avant » est passé **vert** au premier tir : `tsc` échouait (le nouveau test importait un
 `.mjs` sans déclaration, TS7016), donc `npm run build` s'arrêtait et `dist/` restait
 **PÉRIMÉ** — le verrou jugeait l'artefact d'avant le sabotage. C'est le défaut même que ce
-verrou garde, reproduit dans sa propre procédure de validation. D'où `scripts/classAudit.d.mts`,
+verrou garde, reproduit dans sa propre procédure de validation. D'où `apps/frontend/scripts/classAudit.d.mts`,
 et la règle : *un sabotage qui régénère un artefact doit asserter que la régénération a eu lieu.*
 
 ✅ **18 modules shadcn supprimés** (`alert-dialog` … `textarea`) — ensemble CLOS, aucune arête
