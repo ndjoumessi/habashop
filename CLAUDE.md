@@ -2,6 +2,17 @@
 
 SaaS de gestion commerciale multi-tenant **et multi-boutiques** (boutiques/superettes, Afrique de l'Ouest). **Monorepo unique `habashop`** : web (npm workspaces `apps/*`) + `mobile/` (Expo, hors workspaces) + `legal/` (pages légales).
 
+> ## ⚠️ TAILLE DE CE FICHIER — l'avertissement des 150 k est ASSUMÉ, ne pas y répondre par une compression
+>
+> Claude Code avertit au démarrage que ce fichier dépasse 150 000 caractères. **C'est une décision, pas une dérive.** Le 2026-08-07 une compression l'a ramené à 149 844 — conforme — **en supprimant cinq règles**, dont la trace d'audit qui borne une fraude de caisse. Une revue les a rattrapées ; sans elle, le fichier aurait été conforme et le produit moins protégé.
+>
+> **Le critère, si tu dois alléger** — reste ici ce qui **change un comportement sans qu'on l'ait demandé** (le piège du pipe sur `tsc`, le contexte Docker, la garde de dépense, le jumeau, le sabotage copié, le contrôle discriminant, l'arité) ; part dans `docs/lessons/` ce qu'on **consulte une fois déjà sur le sujet** (récits d'incident, tableaux de mesure, chiffres datés).
+> ⚠️ **Une règle rétrogradée vers une leçon est une règle qui ne se charge plus.** Le texte existe encore, il ne s'applique plus tout seul — c'est ainsi que 3 des 5 régressions sont passées.
+>
+> **Vérifier un allègement, c'est vérifier ce qui a QUITTÉ ce fichier**, pas ce qui est bien arrivé à destination. Le contrôle qui les attrape : différence des identifiants entre `git show <avant>:CLAUDE.md` et `HEAD:CLAUDE.md`, **indépendamment des leçons**.
+>
+> **Déclencheur de remesure : 160 000 caractères.** Et compter en **caractères**, pas en octets — `wc -c` en annonce 4 % de trop sur ce fichier (accents, émojis).
+
 ## Stack
 
 - **Frontend** (`apps/frontend`) : React 18 + TS + Vite 8 + vitest 4, Zustand (persisté localStorage), React Router 7 (API déclarative classique — BrowserRouter/Routes/Route + hooks ; migré depuis 6.30 pour les CVE open-redirect, quasi drop-in), Lucide, recharts, jsbarcode (EAN-13/EAN-8/UPC-A), @zxing (scan), qrcode+html2canvas (fidélité), jspdf (étiquettes thermiques, **import dynamique**), cmdk (GlobalSearch), Playwright E2E, Sentry (org **haba-76** / projet **habashop-web**), PWA vite-plugin-pwa 1.x. Chunks `charts`/`barcode`/`canvas`/`pdf` EXCLUS du precache (runtime CacheFirst `lazy-chunks-cache`) — préserver si on touche `vite.config.ts`. ⚠️ **Cache SW = premier match gagne** (`workbox-routing/Router.js` `findMatchingRoute`) : une règle enregistrée après une règle plus large est **MORTE**. C'est arrivé — `products-cache` (SWR 7 j) n'a **jamais tourné en prod**, occultée par la règle `/api/`, alors que tout lecteur de la config y lisait la politique de cache du catalogue POS (supprimée ; SWR servirait un prix périmé même en ligne et rapide, or pour un prix de caisse la fraîcheur en ligne prime — `NetworkFirst` n'y retombe qu'au-delà du délai réseau). La règle API matche désormais le **chemin `/api/`, pas l'hôte** (l'hôte en dur mourait en silence si l'API déménageait — cf. `.env.production`). Garde CI : `npm run verify:sw-routes --workspace=apps/frontend` inspecte le **`dist/sw.js` livré** et échoue si une règle est inatteignable ou si une URL tombe sur le mauvais cache (invisible pour tsc/tests/revue : la source est valide, c'est l'ORDRE dans l'artefact qui tue). Vérifié dans les deux sens.
@@ -1111,6 +1122,55 @@ l'exercer, et être vérifié **dans les deux sens**.
   - ✅ **Le workflow densité tourne EN CI** depuis le 2026-08-07 (`density.yml`, filtré par `paths:`) — 4 tests, job 64 s. ⚠️ La géométrie diffère de 9 px entre Ubuntu et macOS : l'assertion porte sur le DÉBORDEMENT et l'enroulement, **jamais sur un pixel exact**.
 
 - ✅ **A11y résiduel : FAIT** — SectionCatalog (4 champs `aria-label` : catalogue/slug/description/WhatsApp), POSModals sélecteur pays devenu vrai `role="listbox"` (+ `role="group"` par région, `role="option"`+`aria-selected` sur `CountryItem`), Stock vue grille en `role="list"`/`role="listitem"` (via props A11y additives de `ResponsiveGrid`).
+
+## Carte du dépôt (graphify) ⚠️ — datée, et elle se périme vite
+
+**Dernière passe : 2026-08-07** (`graphify . --update`). **5 109 nœuds · 10 711 arêtes ·
+321 communautés**, sur un corpus de **922 fichiers**. Sorties dans `graphify-out/`
+(**gitignoré** — la carte ne voyage pas avec le dépôt, chacun la reconstruit).
+
+⚠️ **UNE CARTE PLUS VIEILLE QUE QUELQUES DIZAINES DE COMMITS DÉCRIT UN TERRITOIRE DISPARU.**
+Mesuré : la passe du 01/08 avait **86 commits** de retard, et **29 modules de source unique**
+lui manquaient — `msisdn.ts`, les trois jumeaux `defaultMarket.ts`, `vatRate.ts`,
+`paymentMethods.ts`, `posMsisdnPolicy.ts`, `ratingSummary.ts`, `pourcentages.ts`,
+`salePaymentModes.ts`, `categoryBreakdown.ts`. Exactement les fichiers que ce guide traite
+comme faisant autorité. **Une carte qui ignore les sources uniques est pire qu'aucune carte :
+elle répond, et elle répond à côté.**
+
+**DÉCLENCHEUR DE RAFRAÎCHISSEMENT — au premier des deux :** plus de **50 commits** depuis la
+dernière passe, ou **la création d'un module de source unique** (`lib/*` jumelé, fixture
+partagée). Le premier est mécanique, le second est celui qui coûte cher quand on l'oublie.
+
+**PÉRIMÈTRE RÉEL, mesuré le 2026-08-07 — la règle n'exclut presque rien :**
+
+| | |
+|---|---|
+| production couverte (git, code, `apps\|mobile\|packages`) | **757 / 793** |
+| fichiers du graphe, toutes natures | **857** |
+| exclus par la règle de corpus | **36** |
+
+Les 36 sont **les 35 migrations SQL + `schema.prisma`**, et pour deux raisons distinctes :
+`.prisma` n'est pas une extension supportée, et les `.sql` exigent `graphifyy[sql]`
+(`tree_sitter_sql`, absent). ⚠️ **Le MODÈLE DE DONNÉES est donc invisible au graphe** — ne pas
+lui demander « quelles colonnes porte `Sale` ? », il ne peut pas le savoir. Lire
+`schema.prisma`. Deux `.docx` (dont le cahier des charges) échouent aussi, faute de
+`graphifyy[office]`.
+
+⚠️ **Les fixtures partagées `.json` sont dans le corpus mais ne produisent AUCUN nœud** (données
+pures, rien à extraire pour l'AST). Elles apparaissent donc comme couvertes sans l'être — le
+graphe ne dira jamais qu'un cas partagé a bougé.
+
+⚠️ **Le « N files » de la *Corpus Check* n'est PAS la couverture** : c'est le nombre de fichiers
+passés par l'extraction sémantique. Le rapport du 01/08 affichait « 173 files » alors que le
+graphe référençait **738** fichiers. Pour mesurer la couverture, compter les `source_file`
+distincts de `graph.json` — jamais lire l'en-tête.
+
+⚠️ **Coût réel, à connaître avant de lancer** : la passe du 07/08 a consommé **1 033 525 jetons**
+pour 81 documents (le code est en AST, coût **nul**). C'est **7,7×** la passe précédente, dont
+l'en-tête annonçait 134 637. **Le coût suit le volume de DOCUMENTATION, pas celui du code** — et
+ce guide et `docs/lessons/` en sont l'essentiel. Les 15 images (favicons, icônes PWA, splash)
+ont été **délibérément sautées** : valeur de graphe nulle, coût vision réel. Elles restent non
+tamponnées et seront reproposées ; les écarter durablement demande un `.graphifyignore`.
 
 ## Comptes démo
 
