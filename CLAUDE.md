@@ -653,6 +653,12 @@ quelles, cf. § Comptes démo). Empreinte pays/TVA après chantier : **`ebb3d856
 — 4 tenants, tous à 18 %. ⚠️ Dont le tenant **FR à 18 %** alors que la France est à 20 % :
 valeur héritée de l'ancien défaut, sur un tenant existant, **non mutée**. Un nouveau tenant FR
 recevrait désormais 20.
+**DÉCLENCHEUR DE RÉOUVERTURE : un SECOND tenant FR, ou une facture réellement émise depuis
+celui-ci.** Aujourd'hui le taux ne sert à rien — le tenant n'émet pas de facture — et le muter
+serait une écriture sur un tenant existant pour corriger un chiffre que personne ne lit. Au
+premier des deux événements, il devient un taux appliqué : soit deux tenants FR affichent deux
+TVA différentes, soit une facture part à 18 % en France. ⚠️ Ne pas confondre avec les démos
+ouest-africaines, laissées à 18 % **délibérément** et à raison (SN/CI sont bien à 18 %).
 
 ### Le COMMENTAIRE QUI INVENTE UN REPLI ⚠️ — règle exécutoire
 
@@ -1576,6 +1582,36 @@ l'exercer, et être vérifié **dans les deux sens**.
 - ✅ **Rejeu hors-ligne MOBILE : TRAITÉ** (option A, voie 1) — `saleReplay.ts` pose `offlineReplay` et **consomme la réponse** (elle était jetée) ; hors bornes → entrée durable `repriced` « à vérifier ». Cf. § Intégrité prix + `docs/handoff/2026-07-25-rejeu-mobile-option-a-design.md`.
 
 ### 🟡 Medium
+- **Congés E2E : la fuite n'est PAS refermée, et le résidu attend qu'elle le soit** (`apps/frontend/e2e/leave-planning.spec.ts`, ménage best-effort). **S**
+  - ✅ **Les effets de bord, eux, n'ont RIEN à nettoyer — mesuré le 2026-08-07.**
+    `applyApprovedLeaveSideEffects` (`routes/leaveRequests.ts:26`) fait **exactement deux
+    choses**, toutes deux en `upsert` sur clé unique
+    (`tenantId_employeeId_date_shiftTypeKey`, `tenantId_employeeId_date`). Les **306** demandes
+    de `e2e-tenant` portent toutes le même employé et les mêmes dates `2026-06-01 → 06-03` :
+    elles ont donc produit **3 Shift + 3 Attendance**, pas 918. ⚠️ **L'hypothèse « empilés sur
+    trois jours, 289 fois » était FAUSSE** — l'idempotence était dans le code, pas dans le
+    raisonnement.
+  - ✅ **Rien n'est détruit, contrairement au `perf` par défaut** : l'origine reste lisible en
+    base (`Shift.shiftTypeKey = 'leave'`, `Attendance.status = 'LEAVE'`). Information *cachée*
+    au pire, jamais perdue.
+  - ✅ **La paie ne lit PAS `Attendance`** — vérifié, pas supposé : **zéro** occurrence dans
+    `routes/payroll.ts`, `utils/payroll.ts`, `services/payrollReport.ts`, et aucun lien
+    `absences ↔ attendance` côté front. `Payroll.absences` est une colonne **gelée**, posée à
+    `0` à la génération (`payroll.ts:159`). Supprimer une ligne d'assiduité ne peut donc pas
+    réécrire un bulletin. *C'est le contrôle qui avait manqué avant de vouloir supprimer un
+    client porteur d'un abonnement.*
+  - 🔴 **CE QUI RESTE OUVERT : la fuite continue.** Le ménage du spec existe, mais **+11
+    demandes le 2026-08-07, toutes encore présentes** (289 → 306 depuis le 06/08). Cause **non
+    déterminée** — deux candidates non départagées : le `DELETE` échoue et son `console.warn`
+    est avalé par le rapporteur Playwright (qui n'imprime la sortie d'un test **réussi**
+    qu'en cas d'échec), ou plus d'une demande est créée par exécution (les *retries* CI
+    rejouent le test entier). ⚠️ **Ne pas purger le passé avant d'avoir fermé le robinet** :
+    vider un réservoir qui fuit donne l'illusion d'une clôture.
+  - **DÉCLENCHEUR DE RÉOUVERTURE : le compte de `LeaveRequest` sur `e2e-tenant` reste STABLE
+    sur trois exécutions CI consécutives.** C'est la preuve que le ménage marche ; alors, et
+    alors seulement, purger le résidu. Le SQL est prêt et **sûr** (aucune FK entrante vers
+    `LeaveRequest` ; les Shift/Attendance sont des lignes distinctes, non supprimées par
+    cascade) — il n'est pas *cher*, il est *prématuré*.
 - **Export CSV des ventes : plafond SILENCIEUX à 1 000 lignes** (`apps/backend/src/routes/export.ts:56`, `take: 1000`). **S**
   - ⚠️ **Ce n'est PAS la famille « le total est la somme de ce qu'on montre »** (analytics.ts:108,
     Répartition paiements, PDF du 07/08) : **aucun total n'en dérive**, et le balayage du
@@ -1647,6 +1683,7 @@ l'exercer, et être vérifié **dans les deux sens**.
 ⚠️ **BALAYAGE HEBDOMADAIRE** — `runDemoPiiSweep` (lundi 9h), `lib/piiSweep.ts`. Il **RAPPORTE, il n'empêche pas** : empêcher supposerait de refuser des saisies dans une démo dont l'intérêt est qu'on puisse tout y faire. Détection **de FORME** (indicatif hors `+221/+225/+237`, domaine hors fixture), jamais par liste de pays ou de messageries. ⚠️ Le critère « absent des seeds » de l'audit initial est ABANDONNÉ : il a produit **8 faux positifs sur 12** (apostrophe échappée `N\'Guessan`, domaines `.ci` et `.test` pourtant écrits par les seeds) — *un critère qui se trompe deux fois sur trois se fait désarmer*. ⚠️ Le rapport ne reproduit **aucune valeur**, seulement identifiants et noms de champs : le recopier l'écrirait dans les logs Railway et déplacerait la fuite au lieu de la fermer. Périmètre `isDemo` UNIQUEMENT. Verrou : `piiSweep.test.ts` (11), dont le cas réel rejoué et les 8 faux positifs figés en silence.
 
 ⚠️ **QUESTION OUVERTE, non tranchée** : le mot de passe démo doit-il rester public maintenant qu'on sait que des données réelles peuvent y atterrir ? `isDemo` borne le **coût** (403 sur toute dépense externe), pas l'**exposition** : n'importe qui peut lire. Trois voies — le garder public et balayer · le fermer et distribuer à la demande · le réinitialiser périodiquement. Décision de Nelson.
+**DÉCLENCHEUR DE RÉOUVERTURE : le premier prospect envoyé sur la démo.** Tant que personne n'y est dirigé, l'exposition se limite à qui trouve le dépôt ; le jour où on donne l'adresse à un client potentiel, la démo devient une vitrine et le mot de passe public un choix, plus un reliquat. ⚠️ Le balayage hebdomadaire (`runDemoPiiSweep`) réduit la fenêtre de trois semaines à sept jours — **il ne la ferme pas**, et il RAPPORTE au lieu d'empêcher.
 
 **Multi-boutiques** : `admin@` et `manager@` sont liés à une 2ᵉ boutique `demo-tenant-002` (« Alimentation Koné — Abidjan », XOF) via `UserTenant` → login déclenche le sélecteur. `admin@` = SUPER_ADMIN/ADMIN, `manager@` = MANAGER/MANAGER. Les 3 autres restent mono-boutique.
 
