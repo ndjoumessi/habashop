@@ -45,8 +45,8 @@ SubscriptionModal, LandingNav) partent dans le **bundle JS**. En lisant les seul
 corpus trop étroit rend un chiffre faux avec l'air d'un fait — `lp-nav-login` et `login-spin`
 sont ainsi ABSENTS d'`index.css` et pourtant bien livrés.
 
-⚠️ **« Absent de la feuille » ne veut PAS dire « style manquant » — TROIS cas, et écrire du
-CSS n'est le bon geste que dans le troisième.** L'audit initial les confondait, et disait
+⚠️ **« Absent de la feuille » ne veut PAS dire « style manquant » — QUATRE cas, et écrire du
+CSS n'est le bon geste que dans le DERNIER.** L'audit initial les confondait, et disait
 d'un message de connexion qu'il était « sans style » alors qu'il était intégralement stylé
 inline (vérifié sur le rendu réel : seul l'attribut `class` changeait).
 
