@@ -1576,6 +1576,42 @@ l'exercer, et être vérifié **dans les deux sens**.
 - ✅ **Rejeu hors-ligne MOBILE : TRAITÉ** (option A, voie 1) — `saleReplay.ts` pose `offlineReplay` et **consomme la réponse** (elle était jetée) ; hors bornes → entrée durable `repriced` « à vérifier ». Cf. § Intégrité prix + `docs/handoff/2026-07-25-rejeu-mobile-option-a-design.md`.
 
 ### 🟡 Medium
+- **Export CSV des ventes : plafond SILENCIEUX à 1 000 lignes** (`apps/backend/src/routes/export.ts:56`, `take: 1000`). **S**
+  - ⚠️ **Ce n'est PAS la famille « le total est la somme de ce qu'on montre »** (analytics.ts:108,
+    Répartition paiements, PDF du 07/08) : **aucun total n'en dérive**, et le balayage du
+    2026-08-07 a établi qu'`analytics.ts` était le **seul** site de cette famille-là. C'en est
+    une autre : *un document qui SORT du produit est tronqué en silence.*
+  - **Et elle est plus grave dans un export que dans un graphique** : le CSV part chez un
+    comptable. Une épicerie qui fait 1 200 ventes dans le mois en reçoit **1 000**, et aucune
+    ligne du fichier ne le signale. Un graphique faux se discute ; un fichier comptable amputé
+    se recopie.
+  - **DÉCLENCHEUR DE RÉOUVERTURE : le premier commerçant dépassant 1 000 ventes sur une période
+    exportée.** Avec zéro client, personne n'exporte — c'est **cela** qui rend l'attente
+    acceptable, pas la gravité du défaut. ⚠️ Une question ouverte sans condition de réouverture
+    ne se rouvre jamais : le déclencheur fait partie de la dette, pas du commentaire.
+  - **Correctif attendu le jour venu** : lever le plafond, **ou le DIRE** — ligne d'en-tête dans
+    le CSV, ou avertissement à l'écran. *Un export tronqué qui s'annonce est utilisable ; un
+    export tronqué muet ne l'est pas.*
+  - **Frère plus léger, même dette** : `export.ts:99` — le rapport mensuel HTML/PDF liste
+    `sales.slice(0,30)` sous « Détail des ventes » sans dire que ce sont les 30 premières. Moins
+    grave : le KPI voisin affiche `sales.length`, donc l'écart est au moins *inférable* par le
+    lecteur. À traiter dans le même geste.
+  - ✅ **Balayage de CETTE famille — fait le 2026-08-07, résultat consigné pour ne pas le
+    refaire.** 15 producteurs de documents (export, facture PDF, ticket, reçu, e-mail, rapport,
+    étiquette, xlsx), web + API + mobile. Les deux ci-dessus sont les seuls défauts. **Deux
+    contre-exemples portent le bon motif** et servent de modèle : `services/email.ts:473`
+    calcule `totalCount = products.length` **avant** son `slice(0,20)`, et `routes/whatsapp.ts:93`
+    annonce `lowStock.length` avant de n'en lister que cinq. Écartés à raison : `xlsxWriter`
+    (31 car. = limite dure du format Excel), `thermalLabel` (2 lignes = contrainte physique de
+    l'étiquette), `ticketZ`/`whatsapp:355`/`payrollReport` (listes d'écran ou destinataires, pas
+    des documents). Résiduel mineur **non retenu** : `reports.ts:492` coupe un nom de client à
+    18 caractères sans ellipse — troncature de CHAMP, pas de jeu de lignes.
+  - ⚠️ **Le balayage a menti deux fois avant d'aboutir, et les deux fois en SORTANT EN 0.**
+    (1) `for f in $CIBLES` — zsh ne découpe pas les variables non quotées → « 0/15 fichiers ».
+    (2) `xargs grep -nP` — `xargs` appelle le `grep` **BSD** de `/usr/bin`, qui n'a pas `-P`,
+    pendant que le `grep` du shell est `ugrep` : erreur affichée, **code de sortie 0**, sortie
+    vide. Un scan muet se lit comme un scan propre. **Contrôle positif obligatoire avant de
+    conclure « rien »** — ici : la commande DOIT trouver `export.ts:56`.
 - ✅ **Paie statuts : RÉSOLU** — modèle `Payroll` (instantané GELÉ) + routes `GET /api/payroll?month=YYYY-MM`, `POST /api/payroll/generate`, `PATCH /api/payroll/:id`. Cf. § Paie.
 - **Bundle recharts ~105KB gz** : lazy + hors precache. Remplacer visx = **L**.
 - **Densité — UN SEUL lot avec la table dense** ⚠️ : tout touche la même structure, séparer ferait le travail plusieurs fois. Défauts MESURÉS sur captures — **console Ops** : bandeau MRR ~1 400 px entre le chiffre et la note de droite · onglet Boutiques ~700 px de vide sous trois cartes · tiroir de détail ~700 px de vide en bas. **Écrans applicatifs** (2026-08-06) : Rapports/RH deux cartes pleine largeur pour deux valeurs · `select-shop` deux lignes dans un écran vide · Planning légende du bas redondante avec la barre du haut.
