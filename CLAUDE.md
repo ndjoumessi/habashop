@@ -1513,7 +1513,15 @@ l'exercer, et être vérifié **dans les deux sens**.
 - **Bundle recharts ~105KB gz** : lazy + hors precache. Remplacer visx = **L**.
 - **Densité — UN SEUL lot avec la table dense** ⚠️ : tout touche la même structure, séparer ferait le travail plusieurs fois. Défauts MESURÉS sur captures — **console Ops** : bandeau MRR ~1 400 px entre le chiffre et la note de droite · onglet Boutiques ~700 px de vide sous trois cartes · tiroir de détail ~700 px de vide en bas. **Écrans applicatifs** (2026-08-06) : Rapports/RH deux cartes pleine largeur pour deux valeurs · `select-shop` deux lignes dans un écran vide · Planning légende du bas redondante avec la barre du haut.
   - ⚠️ **NE PAS chercher à authentifier Playwright sur `/admin`.** Le compte E2E est SUPER_ADMIN **de boutique** ; la console plateforme lui est masquée **PAR CONCEPTION** (garde P0 : `App.tsx:97` `isPlatformAdmin !== true` → redirection, `Sidebar.tsx:255` masque l'entrée, `e2e/smoke.spec.ts:78` fige l'absence). L'échec d'accès est le **bon comportement** — ne pas l'affaiblir pour mesurer une marge. C'est le motif du § Vérification en PROD appliqué à l'UI : on ne desserre pas un garde pour se donner un instrument.
-  - **Boucle de mesure — Nelson EST la session authentifiée** : (1) Claude propose la mise en page avec les **valeurs visées écrites** (largeur max, gouttières, hauteur de tiroir) ; (2) Nelson envoie une capture de `/admin` à 2560 et 1440 ; (3) la mesure se fait **sur l'image**, avant et après. Un chantier de densité sans les deux captures n'a pas de mesure, donc pas de résultat.
+  -   - ✅ **Le workflow densité tourne EN CI** depuis le 2026-08-07 (`density.yml`, filtré par
+    `paths:`). Preuve sur runner, pas affirmation : le `webServer` **démarre** (`> vite`,
+    ready 439 ms — jamais réutilisé, `reuseExistingServer: !process.env.CI`), 4 tests en
+    **9,8 s**, job **64 s** au total dont 43 s d'installation. ⚠️ La géométrie mesurée sur
+    Ubuntu diffère de **9 px** du macOS local à 390 px (`.table-wrap` 1232 vs 1223) — rendu
+    de police. L'assertion porte sur le DÉBORDEMENT et l'enroulement, jamais sur un pixel
+    exact : c'est ce qui la rend portable.
+
+**Boucle de mesure — Nelson EST la session authentifiée** : (1) Claude propose la mise en page avec les **valeurs visées écrites** (largeur max, gouttières, hauteur de tiroir) ; (2) Nelson envoie une capture de `/admin` à 2560 et 1440 ; (3) la mesure se fait **sur l'image**, avant et après. Un chantier de densité sans les deux captures n'a pas de mesure, donc pas de résultat.
 - ✅ **A11y résiduel : FAIT** — SectionCatalog (4 champs `aria-label` : catalogue/slug/description/WhatsApp), POSModals sélecteur pays devenu vrai `role="listbox"` (+ `role="group"` par région, `role="option"`+`aria-selected` sur `CountryItem`), Stock vue grille en `role="list"`/`role="listitem"` (via props A11y additives de `ResponsiveGrid`).
 
 ## Comptes démo
