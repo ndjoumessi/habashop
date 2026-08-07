@@ -13,3 +13,86 @@
 
 **Deux sens DISTINCTS dérivés des lignes** : `unitPrice===catalogPrice` ⇒ **corrigé (EN LIGNE)** = tentative à regarder (ambre) ; `unitPrice===submittedPrice` ⇒ **honoré (HORS-LIGNE)** = bénin (gris). Vocabulaire **factuel** (« écart de prix », jamais « suspect »/« fraude »). Masqué aux MANAGER/CASHIER (`canAuditPrices`). Backend : `cashier.name` ajouté à l'include de `GET /api/sales`.
 - **Réconciliation du total encaissé (Chantier B, (c))** ⚠️ : `confirmSale` **JETAIT** la réponse de `POST /api/sales`. Or le serveur est autoritaire sur le prix : s'il re-tarife (catalogue du terminal périmé), il facture un autre montant que celui encaissé → **caisse courte, sans cause explicable à la clôture**. Désormais la réponse est capturée ; `reconcileSaleTotal(serverTotal, netTotal)` (`components/pos/saleReconcile.ts`, tolérance **1** comme le paiement mixte) signale au caissier **combien réclamer ou rendre**, tant que le client est au comptoir (toast 15 s + `announce`). ⚠️ `authoritativeTotal` alimente **le ticket imprimé ET le reçu WhatsApp** — les deux affichaient le total CLIENT alors que la facture PDF porte le total SERVEUR (le reçu WhatsApp envoyait même le **BRUT**, remise fidélité ignorée). Le total serveur transite par une **`ref`** (`billedTotalRef`), pas un state : `printTicket` est appelé dans la même passe que l'enregistrement, et garder sa signature à zéro argument évite le piège `onPrint={printTicket}` (l'événement passerait en 1er argument). ⚠️ **`Number(null) === 0`** : sans filtre d'absence explicite, un total serveur absent déclenchait « rendre 1 000 F » sur une vente saine et imprimait un ticket à **0** — l'absence de donnée doit rester une absence (`readTotal`). **Effet de bord utile** : une alerte sur une vente au tarif courant signale une **dérive des miroirs front/back** (TVA `computePosVat`, fidélité) — c'est un signal, pas un faux positif à museler. Verrou : `saleReconcile.test.ts` (11 tests, sabotage vérifié). Aucun appel réseau ajouté au chemin critique. *(Prévenir AVANT l'encaissement = décision produit ouverte : que devient le panier quand un tarif bouge en cours de vente ?)*
+
+---
+
+## MISE À JOUR 2026-08 — option A : le rejeu hors-ligne est désormais HONORÉ
+
+⚠️ **Ceci PÉRIME le passage ci-dessus qui décrit la branche hors-ligne comme « du code mort tel
+que déployé ».** C'était exact au 2026-07-25 (`clientCreatedAt` n'était renseigné par personne) ;
+ça ne l'est plus. `clientCreatedAt`, `REPLAY_THRESHOLD_MS` et `honorClientPrice` ont été
+**SUPPRIMÉS**.
+
+### Ce que l'option A remplace
+
+La branche dormante honorait **n'importe quel** prix sur un simple horodatage antidaté (1 F pour
+un produit à 1300), sans borne ni appartenance à un tarif. L'option A **n'ouvre donc pas une
+porte** : elle remplace une porte grande ouverte et non gardée par une porte étroite et
+surveillée. Ne jamais ré-adosser un honneur à une horloge client — `salesPriceIntegrity.test.ts`
+échoue si on le refait.
+
+### La condition
+
+`honored = offlineReplay && staleCatalogAt !== null` — **DEUX conditions cumulatives**, et
+l'ORDRE du bloc est load-bearing : la qualification se calcule AVANT la décision ; l'inverse
+honorerait sur le seul drapeau (`tsc` le refuse, TS2448).
+
+`offlineReplay` est posé **UNIQUEMENT** par la file mobile (`saleReplay.ts`). Sans lui, le chemin
+en ligne direct est **exactement** celui de #145 : re-tarification + `reconcileSaleTotal` alerte
+le caissier au comptoir.
+
+### Le drapeau est FALSIFIABLE — vecteur assumé et BORNÉ
+
+Un caissier forgeant `offlineReplay:true` ne peut faire passer qu'un prix qui **était réellement
+celui de son tarif DÉCLARÉ il y a moins de 48 h**. Il ne peut pas inventer un montant : le gain
+maximal est le delta d'un vrai changement de prix récent, sur les seuls produits concernés.
+
+**Aucun signal non falsifiable de « c'était hors-ligne » n'existe** — `idempotencyKey` ne porte
+pas le temps, l'horloge client n'est jamais transmise, un jeton pré-signé serait rejouable. La
+protection est donc le **CADRE** (`staleCatalogAt`, fait serveur) **+ la TRACE** : toute
+divergence écrit `submittedPrice` / `catalogPrice` / `staleCatalogAt` + `SaleItem.pricingHonored`
++ `Sale.priceDivergence=true`.
+
+### Hors des bornes
+
+Fenêtre **48 h**, **profondeur 1**. Hors bornes — ou tarif non qualifié, ou vente mixte
+partiellement qualifiée — le serveur **re-tarife** et le mobile écrit une entrée durable
+**`repriced`** (« à vérifier »), **distincte de `rejected`** (« à ressaisir ») : la vente EXISTE,
+et confondre les deux la ferait compter **deux fois**.
+
+**Jamais un honneur par défaut** : hors bornes = re-tarifer + avertir.
+
+### L'UI d'audit passe de TROIS à QUATRE niveaux
+
+Toujours une source unique `priceGapLevel(rows)`, par ordre de PRUDENCE :
+
+| Niveau | Couleur | Sens |
+|---|---|---|
+| `look` | ambre | en ligne, inexpliqué — à regarder |
+| **`honored`** | **ambre « à vérifier »** | **le montant encaissé a été facturé tel quel au rejeu** |
+| `previous` | bleu | le tarif venait de changer, serveur re-tarifé |
+| `offline` | gris | ventes historiques d'avant l'option A |
+
+⚠️ **`honored` ne doit JAMAIS retomber dans le bleu.** Là-bas le serveur a corrigé, donc l'argent
+est juste et le bleu se lit « fait établi » ; ici **l'argent a bougé** — il n'y a rien à établir,
+il y a une caisse à vérifier. *Une trace stockée que personne ne regarde ne protège personne :
+c'est toute la contrepartie de l'option A.*
+
+### Le filtre « Écarts honorés » est résolu CÔTÉ SERVEUR
+
+`GET /api/sales?pricingHonored=true` (`items: { some: { pricingHonored: true } }`).
+
+⚠️ Filtrer côté client ne verrait que **la page de 50 ventes** : un écart honoré de quelques
+jours deviendrait **introuvable**, et une trace qu'on ne peut pas retrouver ne protège personne.
+Verrou : `salesHonoredFilter.test.ts` (6, sabotage « filtre ignoré » vérifié).
+
+*(L'autre sous-filtre, « À regarder », reste un affinage CLIENT — le serveur ne sait pas ce
+qu'il « n'explique pas ».)*
+
+### Verrous de l'option A
+
+- `offlineReplayHonor.test.ts` (11, **5 sabotages** : honorer sans drapeau · sans qualification ·
+  sur un autre tarif · ordre inversé — rouge à `tsc` ET aux tests · ligne honorée non marquée) ;
+- mobile `saleReplay.test.ts` (10, **3 sabotages** : réponse jetée · drapeau absent · motif fondu
+  dans `rejected`) ;
+- `priceGapLevel.test.ts` (22, **2 sabotages**) — il en comptait 11 avant l'option A.

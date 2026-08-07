@@ -107,3 +107,54 @@ Ouverte au clic « Encaisser ». `useModalFocus`, fermeture par X / Échap / cli
 
 ## Récap des écrans à implémenter
 POS principal · Encaissement (+ variations Mobile Money / Mixte) · Ouverture & Clôture Ticket Z · Carte fidélité · Onboarding wizard. Priorité : **POS d'abord** (usage quotidien).
+
+---
+
+# État IMPLÉMENTÉ (refonte 2026-07) — détail de mise en page
+
+*Extrait de `CLAUDE.md` pour l'alléger. Les maquettes `docs/ux-mockups/0N-*.view.html` font foi ;
+ce bloc décrit ce qui a été livré. Les **règles** qu'on enfreint sans travailler sur ces écrans
+restent dans `CLAUDE.md` § UI POS/fidélité/onboarding.*
+
+## POS plein écran
+
+Colonnes grid `1.6fr / minmax(270px,1fr)` ; **< 900 px** = vue panier dédiée (feuille défilante).
+
+**Header POS unique** : icône Store + nom boutique · pill « Caisse ouverte » **cliquable = modale
+de clôture** · recherche avec l'icône code-barres **dans le champ** (max 360 px, hit-area 44 px,
+réutilise `handleScan` — PAS de duplication), gatée sur `posEnableScanner` · Historique en icône ·
+badge réseau **uniquement hors-ligne**.
+
+## Panier et feuille d'encaissement
+
+Le panier ne porte **AUCUN mode de paiement** : la sélection vit dans la feuille d'encaissement
+(`POSModals` `showModal`) — Total à payer or + « dont TVA », tuiles 3×2 (Mixte pointillée,
+offline → cash-only), `POSCashField` (extrait, testable : clamp négatif, raccourcis Exact/arrondis
+dynamiques via `totalDisplay` **+ décimales devise** — pas 1000/5000 hors XOF, cf.
+`currencyDecimals`, « Rendu monnaie »), PayDunya = bouton brandé → overlay.
+
+**Tuiles catalogue** : prix = **montant or + suffixe devise séparés** (`amountLabel`/`curSuffix`,
+pas `fmt()` entier) ; stock bas = bordure `--warn` + point.
+
+**Modale remise** : suffixe = symbole devise dynamique (`currencySymbol`), pas « F » figé ; icône
+type = Coins/Percent.
+
+**Mention tarif actif** discrète au-dessus de la grille (« Tarif Grossiste/Demi-gros appliqué »,
+`--p2`), affichée hors Détail — le sélecteur de tarif est loin à droite.
+
+## Clôture de caisse (maquette 03)
+
+Ventilation par mode = ventes du JOUR via `salesApi.list` (lecture seule, repli CA session
+hors-ligne). `TicketZModal` (Z serveur, MANAGER+) inchangé.
+
+## Onboarding (maquette 05)
+
+Tokens NKONI (plus de `public-scope`), 5 étapes à icônes, « Passer pour l'instant » partout
+(jamais bloquant). `shopType` = UI only (non envoyé).
+
+## Captures maquette ↔ implémentation
+
+Scripts `apps/frontend/e2e/pos-item11*.shot.mjs` — ⚠️ `serviceWorkers:'block'`, sinon le SW
+court-circuite `page.route`. Sorties dans `e2e/screenshots/item11/`.
+
+BillingBanner : masquée sur `/app/pos` + garde `status` malformé (anti « undefined jour(s) »).
