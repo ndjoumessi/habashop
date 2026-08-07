@@ -423,12 +423,22 @@ confronté au pays déjà en base, sinon la moitié des conflits passe.
 sans rien préciser produisait **CM + XOF**, le pays venant du marché par défaut et la devise
 d'un littéral `'XOF'`. La devise se dérive maintenant du pays.
 
-⬜ **La valeur en base n'est pas corrigée.** `demo-tenant-001` est toujours `SN` / `XAF`.
-Le script existe et est commité (`prisma/fix-demo001-currency.ts`, `CONFIRM=1`), il attend une
-validation. ⚠️ **L'écrivain du `XAF` n'a jamais été identifié** — `PATCH /api/tenant` n'écrit
-aucun audit, et c'est ce trou-là qui rend la question insoluble.
+✅ **Valeur corrigée le 7 août 2026** — `demo-tenant-001` est `SN` / `XOF`
+(`prisma/fix-demo001-currency.ts`, `CONFIRM=1`, commité cette fois : c'est l'absence
+d'artefact qui avait rendu l'enquête impossible). Diff de l'objet ENTIER : **2 colonnes
+modifiées sur 56** (`currency`, `updatedAt`), **952 ventes / 35 896 515 inchangées**, les
+trois autres tenants intacts. Les 4 tenants sont désormais cohérents avec leur zone.
 
-**Réouverture :** l'audit des écritures sur `Tenant`, qui n'existe pas.
+✅ **La trace existe** — `TENANT_LOCALE_CHANGE` consigne AVANT → APRÈS sur
+`currency/country/lang/vatRate`, sans aucune donnée personnelle.
+
+⚠️ **L'écrivain du `XAF` n'a jamais été identifié**, et ne le sera pas : au moment des faits
+`PATCH /api/tenant` n'écrivait aucun audit. `updatedAt` a seulement pu exonérer le commit du
+6 août. C'est le trou qui a été fermé, pas la question qui a été résolue.
+
+⬜ **Le reste des écritures sur `Tenant` n'est toujours pas audité** — seuls les réglages de
+locale le sont. **Réouverture :** la première boutique cliente, ou tout défaut de donnée
+tenant dont l'écrivain sera de nouveau introuvable.
 
 ---
 
