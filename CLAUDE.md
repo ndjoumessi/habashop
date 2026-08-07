@@ -1605,12 +1605,17 @@ l'exercer, et être vérifié **dans les deux sens**.
     a créé DEUX demandes (01:24:40 et 01:25:37). Une tentative qui échoue avant le bloc de
     ménage laisse une orpheline, et le `avant` de la tentative suivante l'inclut. **Limite
     assumée**, écrite dans le scénario.
-  - 🟡 **RESTE : purger les 307 lignes résiduelles** (`e2e-tenant` UNIQUEMENT). Sûr — aucune FK
-    entrante vers `LeaveRequest`, et les 3 Shift + 3 Attendance sont des lignes distinctes
-    qu'aucune cascade n'emporte ; elles doivent **RESTER** (données légitimes d'un congé
-    approuvé, affichées par le Planning). **DÉCLENCHEUR : ARMÉ** — attend la validation
-    explicite de Nelson, puis écriture scopée `e2e-tenant`, `CONFIRM=1`, instantané avant / diff
-    après / empreinte des tenants inchangée.
+  - ✅ **RÉSIDU PURGÉ le 2026-08-07** — **307 → 0** sur `e2e-tenant`, après validation explicite.
+    Protocole complet : répétition à blanc, garde `CONFIRM=1`, périmètre **en dur** dans le
+    script (un périmètre passé en argument est un périmètre qu'on peut mal taper), refus si le
+    tenant est `isDemo`, instantané avant, diff de l'objet entier après.
+    **Effets de bord vérifiés INTACTS** — les 3 Shift et les 3 Attendance sont inchangés
+    **id par id** (ce sont les données légitimes d'un congé approuvé, affichées par le
+    Planning), 2 employés, 4 tenants, empreinte `b5c8ead69eaf537c6d5f640b` **inchangée**, et
+    les **7** demandes de `demo-tenant-001` intactes.
+    **Cycle E2E réel rejoué APRÈS la purge** : vert, et la base retombe à `LeaveRequest=0`,
+    `Shift=3`, `Attendance=3` — le ménage tient sur une base propre, pas seulement sur une base
+    déjà pleine.
 - **Export CSV des ventes : plafond SILENCIEUX à 1 000 lignes** (`apps/backend/src/routes/export.ts:56`, `take: 1000`). **S**
   - ⚠️ **Ce n'est PAS la famille « le total est la somme de ce qu'on montre »** (analytics.ts:108,
     Répartition paiements, PDF du 07/08) : **aucun total n'en dérive**, et le balayage du
