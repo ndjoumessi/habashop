@@ -25,6 +25,33 @@ Un seul repo `ndjoumessi/habashop` depuis juillet 2026 — fusion de `habashop-m
 export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH"
 ```
 
+⚠️ **TOUTE commande composée commence par `set -euo pipefail`, et TOUT est entre guillemets.**
+Consigne de Nelson du 2026-08-07, après **cinq faux zéros en vingt-quatre heures** — cinq
+formes différentes, toutes rendant une sortie vide qui se lit comme un résultat propre :
+
+| Forme | Ce qui s'est passé |
+|---|---|
+| `--include=*.ts` non quoté | zsh a mangé le glob → « 0 correspondance » sur trois workspaces |
+| `for f in $CIBLES` | zsh ne découpe PAS une variable non quotée → « 0/15 fichiers » |
+| `xargs grep -nP` | `xargs` appelle le `grep` **BSD** (sans `-P`), pas l'`ugrep` du shell → erreur affichée, **exit 0**, sortie vide |
+| `cd apps/backend` déjà appliqué | chemins relatifs non résolus → « aucune occurrence dans les fichiers de paie », faux |
+| `cd apps/frontend` en échec | la commande suivante a tourné dans le MAUVAIS répertoire, et son résultat plausible a failli être rendu |
+
+`set -e` fait qu'un `cd` en échec **interrompt** au lieu de laisser la suite s'exécuter ailleurs ;
+`pipefail` fait qu'une commande qui échoue dans un pipe fait échouer le pipe (c'est le
+`npx tsc | tail` qui rendait « exit=0 » sur deux erreurs de type). Les quatre gardes sont
+**vérifiées dans ce shell**, pas supposées.
+
+⚠️ **PIÈGE D'ADOPTION, mesuré** : sous `set -e`, un `grep` **sans correspondance** sort en 1 et
+**interrompt le script** — or « rien trouvé » est parfois la bonne réponse. Écrire alors
+`n=$(grep … | wc -l || true)`. ⚠️ Et ce `|| true` rend à nouveau possible le masquage d'un scan
+cassé : **le contrôle positif reste obligatoire** — la commande doit d'abord trouver un cas
+qu'on sait présent.
+
+⚠️ **`set -e` est DÉSACTIVÉ dans un contexte dont le statut est testé** — `( cmd ) || echo …`,
+`if cmd`, `cmd && …`. Une vérification de `set -e` écrite sous cette forme ne mesure rien :
+c'est arrivé au premier essai ci-dessus, et le test annonçait le contraire de la réalité.
+
 ```bash
 npm run dev                                  # front (5173) + back (3001) via concurrently — ou --workspace=apps/backend pour l'API seule
 cd apps/frontend && npx vitest run           # tests front COMPLETS (requis avant push landing/login/thème)
