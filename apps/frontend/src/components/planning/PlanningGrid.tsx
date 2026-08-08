@@ -3,6 +3,7 @@ import Skeleton from '@/components/ui/skeleton'
 import { Users, MousePointer2, Lock, GripVertical } from 'lucide-react'
 import { deptLabel } from '@/components/hr/hrShared'
 import { SHIFT_TYPES, shiftLabel, getDayLabels, buildT } from './planningShared'
+import { calculerTotaux, formatHeures } from './planningTotals'
 import type { ShiftType, PlanningEmployee } from './planningShared'
 
 interface Props {
@@ -22,6 +23,11 @@ interface Props {
 export default function PlanningGrid(props: Props) {
   const { lang, loading, filtered, weekDays, shifts, lockedShifts, activeShift, onAssign, onOpenModal, onClearShift, onMoveShift } = props
   const T = buildT(lang)
+  /* ⚠️ Calculé UNE fois, ici, et consommé par la colonne ET la ligne de pied. Deux
+     agrégats séparés d'une même grandeur divergent — leçon du panneau budgétaire. */
+  const totaux = calculerTotaux(filtered, shifts)
+  const T_HEURES = lang === 'en' ? 'Hours' : lang === 'es' ? 'Horas' : lang === 'it' ? 'Ore' : 'Heures'
+  const T_COUV = lang === 'en' ? 'Coverage' : lang === 'es' ? 'Cobertura' : lang === 'it' ? 'Copertura' : 'Couverture'
   const DAY_LABELS = getDayLabels(lang)
   const lockedTitle = lang === 'en' ? 'Approved leave — cannot be modified'
     : lang === 'es' ? 'Permiso aprobado — no modificable'
@@ -158,10 +164,18 @@ export default function PlanningGrid(props: Props) {
                       }}>
                         {emp.name.split(' ')[0]}
                       </div>
+                      {/* ⚠️ Les heures vivent ICI, pas dans une 8e colonne : celle-ci
+                          poussait la table en défilement horizontal, et on échangeait un
+                          défaut de lisibilité contre un autre. Cette ligne existait déjà. */}
                       <div style={{
                         fontSize:'var(--fs-caption)', color:'var(--text3)',
-                        whiteSpace:'nowrap',
-                      }}>{deptLabel(emp.dept, lang)}</div>
+                        whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:6,
+                      }}>
+                        {deptLabel(emp.dept, lang)}
+                        {formatHeures(totaux.heuresParEmploye[emp.id] ?? 0) && (
+                          <span className="pl-emp-h" title={T_HEURES}>{formatHeures(totaux.heuresParEmploye[emp.id] ?? 0)}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -358,6 +372,24 @@ export default function PlanningGrid(props: Props) {
               </tr>
             ))}
           </tbody>
+          {/* ⚠️ LIGNE DE COUVERTURE — l'autre question du gérant : « qui couvre jeudi ? ».
+              Elle se comptait à l'œil, colonne par colonne. Zéro personne un jour ouvré
+              est le seul chiffre qui doit ALERTER : il se voit, les autres restent
+              neutres. Repos et congé ne comptent pas — ce sont des absences. */}
+          {!loading && filtered.length > 0 && (
+            <tfoot>
+              <tr className="pl-couv">
+                <th scope="row" className="pl-couv-lab">
+                  {T_COUV}
+                  {formatHeures(totaux.heuresTotal) && <span className="pl-couv-tot">{formatHeures(totaux.heuresTotal)}</span>}
+                </th>
+                {weekDays.map((_, di) => {
+                  const n = totaux.couvertureParJour[di] ?? 0
+                  return <td key={di} className={`pl-couv-c${n === 0 ? ' pl-couv-zero' : ''}`}>{n}</td>
+                })}
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 

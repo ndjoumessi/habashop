@@ -1,8 +1,9 @@
 import { FileText, X } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
-import { type Employee, type ContractForm, COLORS, CONTRACT_TYPES, DEPT_COLORS, labelStyle, deptLabel, contractLabel, isOpenEnded } from '@/components/hr/hrShared'
+import { type Employee, type ContractForm, COLORS, CONTRACT_TYPES, DEPT_COLORS, labelStyle, deptLabel, roleLabel, contractLabel, isOpenEnded } from '@/components/hr/hrShared'
 // ⚠️ Taux et calcul importés de la SOURCE UNIQUE (`payrollShared`). Ces fichiers codaient
 // `0.08`/`0.05`/`0.87` en dur — le `0.87` étant le pire : un net magique qui devient
 // silencieusement faux dès qu'un taux change.
@@ -32,6 +33,48 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
   // Montant saisi (devise d'affichage) → XOF pour les aperçus et le storage.
   const salaryXOF = toXOF(contractForm.salary || 0)
   const boxRef = useModalFocus<HTMLDivElement>()
+
+  /* ── Combobox employé ───────────────────────────────────────────────────────
+     `empExistantId` non nul ⇒ on MET À JOUR ce membre. Nul ⇒ on en crée un. Ces
+     deux chemins doivent rester DISTINGUABLES à l'écran, sinon dupliquer une
+     personne redevient un geste invisible. */
+  const [comboOuvert, setComboOuvert] = useState(false)
+  const [survol, setSurvol] = useState(0)
+  const [empExistantId, setEmpExistantId] = useState<Employee['id'] | null>(null)
+  const comboRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!comboOuvert) return
+    const dehors = (e: MouseEvent) => { if (comboRef.current && !comboRef.current.contains(e.target as Node)) setComboOuvert(false) }
+    document.addEventListener('mousedown', dehors)
+    return () => document.removeEventListener('mousedown', dehors)
+  }, [comboOuvert])
+
+  // ⚠️ Recherche INSENSIBLE aux accents : « Amina » doit trouver « Aminata Traoré ».
+  // Sans `normalize`, un gérant qui tape sans accent ne trouve personne et crée un double.
+  const sansAccent = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const saisie = sansAccent(contractForm.empId.trim())
+  const suggestions = (employees ?? [])
+    .filter(e => e.active !== false)
+    .filter(e => saisie.length === 0 || sansAccent(e.name).includes(saisie))
+    .slice(0, 6)
+
+  const choisirEmploye = (e: Employee | undefined) => {
+    if (!e) return
+    setEmpExistantId(e.id)
+    setComboOuvert(false)
+    // Le contrat part de la situation ACTUELLE du membre : on ne repropose pas des
+    // valeurs par défaut qui écraseraient son poste ou son salaire par inadvertance.
+    setContractForm(f => ({
+      ...f,
+      empId: e.name,
+      role: e.role ?? f.role,
+      dept: e.dept ?? f.dept,
+      type: (e.type as ContractForm['type']) ?? f.type,
+      salary: Number(e.salary) || f.salary,
+    }))
+  }
+
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={lang === 'en' ? 'New contract' : lang === 'es' ? 'Nuevo contrato' : lang === 'it' ? 'Nuovo contratto' : 'Nouveau contrat'} onClick={e => e.target===e.currentTarget&&setShowNewContractModal(false)}>
       <div ref={boxRef} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, padding:28, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto', boxShadow:'var(--sh-xl)' }}>
@@ -40,9 +83,62 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
           <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={()=>setShowNewContractModal(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)' }}><X size={18}/></button>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-          <div>
-            <label style={labelStyle}>{lang === 'en' ? 'EMPLOYEE NAME' : lang === 'es' ? 'NOMBRE DEL EMPLEADO' : lang === 'it' ? 'NOME DEL DIPENDENTE' : 'NOM DE L\'EMPLOYÉ'}</label>
-            <input aria-label={lang === 'en' ? 'EMPLOYEE NAME' : lang === 'es' ? 'NOMBRE DEL EMPLEADO' : lang === 'it' ? 'NOME DEL DIPENDENTE' : 'NOM DE L\'EMPLOYÉ'} className="input" placeholder={lang === 'en' ? 'Employee name' : lang === 'es' ? 'Nombre del empleado' : lang === 'it' ? 'Nome del dipendente' : 'Aminata Diallo'} value={contractForm.empId} onChange={e=>setContractForm(f=>({...f,empId:e.target.value}))}/>
+          {/* ⚠️ COMBOBOX, pas un champ libre — et ce n'est PAS un confort de saisie.
+              « Créer le contrat » faisait `setEmployees(prev => [...prev, newEmp])` sans
+              jamais chercher : taper « Aminata » pour quelqu'un qui existe déjà fabriquait
+              une SECONDE Aminata, avec un autre id, sa propre paie et sa propre ligne de
+              planning. Le champ suggère donc l'équipe, et choisir un membre MET À JOUR son
+              contrat au lieu de le dupliquer. */}
+          <div style={{ position:'relative' }} ref={comboRef}>
+            <label style={labelStyle} id="nc-emp-label">{lang === 'en' ? 'EMPLOYEE NAME' : lang === 'es' ? 'NOMBRE DEL EMPLEADO' : lang === 'it' ? 'NOME DEL DIPENDENTE' : 'NOM DE L\'EMPLOYÉ'}</label>
+            <input
+              className="input"
+              role="combobox"
+              aria-expanded={comboOuvert}
+              aria-controls="nc-emp-list"
+              aria-autocomplete="list"
+              aria-labelledby="nc-emp-label"
+              aria-label={lang === 'en' ? 'EMPLOYEE NAME' : lang === 'es' ? 'NOMBRE DEL EMPLEADO' : lang === 'it' ? 'NOME DEL DIPENDENTE' : 'NOM DE L\'EMPLOYÉ'}
+              placeholder={lang === 'en' ? 'Search or type a new name' : lang === 'es' ? 'Buscar o escribir un nombre' : lang === 'it' ? 'Cerca o scrivi un nome' : 'Rechercher ou saisir un nouveau nom'}
+              value={contractForm.empId}
+              onChange={e => { setContractForm(f => ({ ...f, empId: e.target.value })); setEmpExistantId(null); setComboOuvert(true); setSurvol(0) }}
+              onFocus={() => setComboOuvert(true)}
+              onKeyDown={e => {
+                if (!comboOuvert || suggestions.length === 0) return
+                if (e.key === 'ArrowDown') { e.preventDefault(); setSurvol(i => (i + 1) % suggestions.length) }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); setSurvol(i => (i - 1 + suggestions.length) % suggestions.length) }
+                else if (e.key === 'Enter') { e.preventDefault(); choisirEmploye(suggestions[survol]) }
+                else if (e.key === 'Escape') { setComboOuvert(false) }
+              }}
+            />
+            {comboOuvert && suggestions.length > 0 && (
+              <ul id="nc-emp-list" role="listbox" className="nc-combo-list">
+                {suggestions.map((e, idx) => (
+                  <li key={e.id} role="option" aria-selected={idx === survol}
+                    className={`nc-combo-opt${idx === survol ? ' nc-combo-on' : ''}`}
+                    onMouseEnter={() => setSurvol(idx)}
+                    onMouseDown={ev => { ev.preventDefault(); choisirEmploye(e) }}>
+                    <span className="nc-combo-av" style={{ background:`${e.color}22`, color:e.color }}>{e.avatar}</span>
+                    <span className="nc-combo-txt">
+                      <strong>{e.name}</strong>
+                      <em>{roleLabel(e.role, lang)} · {deptLabel(e.dept, lang)}</em>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {/* ⚠️ On DIT lequel des deux chemins va s'exécuter. Sans cette ligne, « mettre à
+                jour » et « créer un homonyme » ont exactement la même apparence. */}
+            {empExistantId !== null && (
+              <div className="nc-combo-note nc-combo-note-maj">
+                {lang === 'en' ? 'Existing member — their contract will be updated.' : lang === 'es' ? 'Miembro existente — se actualizará su contrato.' : lang === 'it' ? 'Membro esistente — il suo contratto sarà aggiornato.' : 'Membre existant — son contrat sera mis à jour.'}
+              </div>
+            )}
+            {empExistantId === null && contractForm.empId.trim().length > 0 && (
+              <div className="nc-combo-note">
+                {lang === 'en' ? 'New person — a member will be created.' : lang === 'es' ? 'Nueva persona — se creará un miembro.' : lang === 'it' ? 'Nuova persona — sarà creato un membro.' : 'Nouvelle personne — un membre sera créé.'}
+              </div>
+            )}
           </div>
           <ResponsiveGrid min={160} gap={12}>
             <div>
@@ -114,6 +210,20 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
               color: COLORS[employees.length % COLORS.length],
               // ⚠️ `perf:3` notait 3 un employé créé depuis un contrat. `null` = non évalué.
               active: true, phone:'', email:'', perf:null,
+            }
+            /* ⚠️ DEUX CHEMINS, et c'est tout l'enjeu. Avant, il n'y en avait qu'un :
+               `[...prev, newEmp]`. Un contrat établi pour quelqu'un de l'équipe créait
+               un HOMONYME — id différent, donc bulletin de paie séparé, ligne de
+               planning séparée, et deux fois la même personne dans l'effectif. */
+            if (empExistantId !== null) {
+              setEmployees(prev => prev.map(e => e.id === empExistantId ? {
+                ...e,
+                role: newEmp.role, dept: newEmp.dept, salary: newEmp.salary,
+                type: newEmp.type, hiredAt: newEmp.hiredAt, endAt: newEmp.endAt,
+              } : e))
+              toast.success(lang === 'en' ? 'Contract updated!' : lang === 'es' ? '¡Contrato actualizado!' : lang === 'it' ? 'Contratto aggiornato!' : 'Contrat mis à jour !')
+              setShowNewContractModal(false)
+              return
             }
             setEmployees(prev=>[...prev, newEmp])
             toast.success(lang === 'en' ? 'Contract created!' : lang === 'es' ? '¡Contrato creado!' : lang === 'it' ? 'Contratto creato!' : 'Contrat créé !')

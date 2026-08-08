@@ -15,12 +15,12 @@ interface Props {
 
 export default function HRAttendanceTab({ employees, lang, attendance, onSaveAttendance, attendanceDate, setAttendanceDate }: Props) {
   const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: JSX.Element }> = {
-    present: { label: lang === 'en' ? 'Present' : lang === 'es' ? 'Presente' : lang === 'it' ? 'Presente' : 'Présent',  color:'var(--acc2)', bg:'rgba(0,208,132,.1)',  icon:<CheckCircle size={11}/> },
-    late:    { label: lang === 'en' ? 'Late' : lang === 'es' ? 'Retraso' : lang === 'it' ? 'Ritardo' : 'Retard',      color:'#F59E0B', bg:'rgba(245,158,11,.1)', icon:<Clock size={11}/> },
-    absent:  { label: lang === 'en' ? 'Absent' : lang === 'es' ? 'Ausente' : lang === 'it' ? 'Assente' : 'Absent',    color:'#EF4444', bg:'rgba(239,68,68,.1)',  icon:<XCircle size={11}/> },
-    half:    { label: lang === 'en' ? 'Half' : lang === 'es' ? 'Media jornada' : lang === 'it' ? 'Mezza giornata' : 'Mi-temps',    color:'#3B82F6', bg:'rgba(59,130,246,.1)', icon:<AlertTriangle size={11}/> },
-    leave:   { label: lang === 'en' ? 'Leave' : lang === 'es' ? 'Permiso' : lang === 'it' ? 'Congedo' : 'Congé',  color:'#14B8A6', bg:'rgba(20,184,166,.12)', icon:<Umbrella size={11}/> },
-    rest:    { label: lang === 'en' ? 'Rest' : lang === 'es' ? 'Descanso' : lang === 'it' ? 'Riposo' : 'Repos',   color:'#64748B', bg:'rgba(100,116,139,.14)', icon:<Coffee size={11}/> },
+    present: { label: lang === 'en' ? 'Present' : lang === 'es' ? 'Presente' : lang === 'it' ? 'Presente' : 'Présent',  color:'var(--acc2)', bg:'rgba(0,208,132,.1)',  icon:<CheckCircle size={16}/> },
+    late:    { label: lang === 'en' ? 'Late' : lang === 'es' ? 'Retraso' : lang === 'it' ? 'Ritardo' : 'Retard',      color:'#F59E0B', bg:'rgba(245,158,11,.1)', icon:<Clock size={16}/> },
+    absent:  { label: lang === 'en' ? 'Absent' : lang === 'es' ? 'Ausente' : lang === 'it' ? 'Assente' : 'Absent',    color:'#EF4444', bg:'rgba(239,68,68,.1)',  icon:<XCircle size={16}/> },
+    half:    { label: lang === 'en' ? 'Half' : lang === 'es' ? 'Media jornada' : lang === 'it' ? 'Mezza giornata' : 'Mi-temps',    color:'#3B82F6', bg:'rgba(59,130,246,.1)', icon:<AlertTriangle size={16}/> },
+    leave:   { label: lang === 'en' ? 'Leave' : lang === 'es' ? 'Permiso' : lang === 'it' ? 'Congedo' : 'Congé',  color:'#14B8A6', bg:'rgba(20,184,166,.12)', icon:<Umbrella size={16}/> },
+    rest:    { label: lang === 'en' ? 'Rest' : lang === 'es' ? 'Descanso' : lang === 'it' ? 'Riposo' : 'Repos',   color:'#64748B', bg:'rgba(100,116,139,.14)', icon:<Coffee size={16}/> },
   }
 
   const dayEmp = employees.filter(e => e.active !== false)
@@ -114,6 +114,21 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Departure' : lang === 'es' ? 'Salida' : lang === 'it' ? 'Uscita' : 'Départ'}</span>
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Actions' : lang === 'es' ? 'Acciones' : lang === 'it' ? 'Azioni' : 'Actions'}</span>
         </div>
+
+        {/* ⚠️ LÉGENDE — c'est ELLE le correctif, pas le style des boutons. Six icônes
+            muettes exigeaient six survols pour être comprises, et l'infobulle n'existe
+            pas au toucher. La légende les enseigne UNE fois, en haut, et le coût est
+            payé une seule fois par le lecteur. */}
+        <div className="att-legend">
+          {(['present','late','absent','half','leave','rest'] as const).map(st => (
+            <span key={st} className="att-legend-item">
+              <span className="att-legend-dot" style={{ color: STATUS_CONFIG[st].color, background: STATUS_CONFIG[st].bg }}>
+                {STATUS_CONFIG[st].icon}
+              </span>
+              {STATUS_CONFIG[st].label}
+            </span>
+          ))}
+        </div>
         {dayEmp.map((emp, i) => {
           const key = `${String(emp.id)}_${todayKey}`
           const a = attendance[key] ?? { in: null, out: null, status: 'absent' as const }
@@ -155,22 +170,34 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
                   style={{ width:80, height:30, fontSize:'var(--fs-label)', textAlign:'center', padding:'0 4px' }} />
               </div>
               {/* Boutons statut */}
-              <div style={{ display:'flex', justifyContent:'center', gap:4, flexWrap:'wrap' }}>
-                {(['present','late','absent','half','leave','rest'] as const).map(s => (
-                  <button key={s} type="button"
-                    onClick={() => setEmpField(String(emp.id), 'status', s)}
-                    title={STATUS_CONFIG[s].label}
-                    style={{
-                      width:36, height:36, borderRadius:8, border:'none', cursor:'pointer',
-                      background: a.status === s ? STATUS_CONFIG[s].bg : 'var(--bg3)',
-                      color: STATUS_CONFIG[s].color,
-                      outline: a.status === s ? `1.5px solid ${STATUS_CONFIG[s].color}` : 'none',
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      transition:'all .15s ease',
-                    }}>
-                    {STATUS_CONFIG[s].icon}
-                  </button>
-                ))}
+              {/* ⚠️ CONTRÔLE SEGMENTÉ, pas six boutons. Six carrés détachés se lisent
+                  « six actions » ; ici c'est UNE décision — le statut de la journée — et
+                  la forme doit le dire. `role="radiogroup"` porte cette sémantique aux
+                  lecteurs d'écran, que six <button> ne donnaient pas.
+                  ⚠️ `aria-label` EN PLUS de `title` : l'infobulle n'apparaît JAMAIS au
+                  toucher, et c'est sur mobile qu'un gérant fait l'appel. */}
+              <div className="att-seg" role="radiogroup"
+                aria-label={`${lang === 'en' ? 'Attendance status' : lang === 'es' ? 'Estado de asistencia' : lang === 'it' ? 'Stato presenza' : 'Statut de présence'} — ${emp.name}`}>
+                {(['present','late','absent','half','leave','rest'] as const).map(st => {
+                  const actif = a.status === st
+                  return (
+                    <button key={st} type="button"
+                      role="radio" aria-checked={actif}
+                      onClick={() => setEmpField(String(emp.id), 'status', st)}
+                      title={STATUS_CONFIG[st].label}
+                      aria-label={`${STATUS_CONFIG[st].label} — ${emp.name}`}
+                      className={`att-seg-btn${actif ? ' att-seg-on' : ''}`}
+                      style={{
+                        // La couleur du statut porte l'identité de chaque segment, même
+                        // inactif : autrement les six ne se distinguent qu'une fois cliqués.
+                        color: STATUS_CONFIG[st].color,
+                        background: actif ? STATUS_CONFIG[st].bg : undefined,
+                        boxShadow: actif ? `inset 0 0 0 1.5px ${STATUS_CONFIG[st].color}` : undefined,
+                      }}>
+                      {STATUS_CONFIG[st].icon}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )

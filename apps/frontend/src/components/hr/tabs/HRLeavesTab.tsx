@@ -1,5 +1,6 @@
 import { Clock, Umbrella, Plus } from 'lucide-react'
 import { type Employee, type LeaveRequest, EmpAvatar, LEAVE_STATUS_CFG, leaveStatusLabel } from '@/components/hr/hrShared'
+import { fmtDate } from '@/lib/formatDate'
 
 interface Props {
   employees: Employee[]
@@ -54,7 +55,7 @@ export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, le
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-body)', marginBottom: 2 }}>{displayName}</div>
                   <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>
-                    {leave.type} · {leave.from} → {leave.to} · <strong>{leave.days}{lang === 'en' ? 'd' : lang === 'es' ? 'd' : lang === 'it' ? 'g' : 'j'}</strong>
+                    {leave.type} · {fmtDate(leave.from)} → {fmtDate(leave.to)} · <strong>{leave.days}{lang === 'en' ? 'd' : lang === 'es' ? 'd' : lang === 'it' ? 'g' : 'j'}</strong>
                   </div>
                   {leave.motif && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', marginTop: 2 }}>"{leave.motif}"</div>}
                 </div>

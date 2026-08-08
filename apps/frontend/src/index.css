@@ -925,6 +925,107 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
   }
 }
 
+/* ── Planning : colonne d'heures + ligne de couverture ─────────────────────── */
+/* Heures de la semaine, DANS la cellule employé : une colonne dédiée poussait la
+   table en défilement horizontal — un défaut échangé contre un autre. */
+.pl-emp-h {
+  font-family:var(--mono); font-weight:var(--fw-semibold); color:var(--p2);
+  background:var(--c-purple-bg); border-radius:var(--r-full);
+  padding:1px 7px; font-size:var(--fs-caption); flex-shrink:0;
+}
+.pl-couv-tot {
+  margin-left:8px; font-family:var(--mono); color:var(--p2);
+  text-transform:none; letter-spacing:0;
+}
+
+.pl-couv { border-top:1px solid var(--border2); background:var(--bg2) }
+.pl-couv-lab {
+  padding:9px 16px; text-align:left; white-space:nowrap;
+  font-size:var(--fs-caption); font-weight:var(--fw-bold);
+  text-transform:uppercase; letter-spacing:.5px; color:var(--text3);
+  position:sticky; left:0; z-index:1; background:var(--bg2);
+}
+.pl-couv-c {
+  padding:9px 6px; text-align:center;
+  font-family:var(--mono); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+  color:var(--text2);
+}
+/* Le SEUL chiffre qui doit alerter : personne ce jour-là. Les autres restent neutres —
+   une couleur sur chaque cellule ne signalerait plus rien. */
+.pl-couv-zero { color:var(--danger); font-weight:var(--fw-bold) }
+
+/* ── Combobox employé (Nouveau contrat) ─────────────────────────────────────
+   Écrit à la main : aucune directive `@tailwind` dans ce fichier. */
+.nc-combo-list {
+  position:absolute; left:0; right:0; top:100%; z-index:20;
+  margin:4px 0 0; padding:4px; list-style:none;
+  max-height:246px; overflow-y:auto;
+  background:var(--card); border:1px solid var(--border2);
+  border-radius:var(--r-md); box-shadow:var(--sh-lg);
+}
+.nc-combo-opt {
+  display:flex; align-items:center; gap:10px;
+  padding:7px 9px; border-radius:var(--r-sm); cursor:pointer;
+}
+.nc-combo-on { background:var(--bg3) }
+.nc-combo-av {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:var(--r-sm); flex-shrink:0;
+  font-size:var(--fs-caption); font-weight:var(--fw-bold);
+}
+.nc-combo-txt { display:flex; flex-direction:column; min-width:0 }
+.nc-combo-txt strong { font-size:var(--fs-sm); font-weight:var(--fw-semibold); color:var(--text) }
+.nc-combo-txt em { font-size:var(--fs-caption); font-style:normal; color:var(--text3) }
+/* Dire lequel des deux chemins s'exécutera : sans ça, « mettre à jour » et
+   « créer un homonyme » ont exactement la même apparence. */
+.nc-combo-note { margin-top:6px; font-size:var(--fs-caption); color:var(--text3) }
+.nc-combo-note-maj { color:var(--p2); font-weight:var(--fw-semibold) }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FEUILLE DE PRÉSENCE — contrôle segmenté + légende
+   ══════════════════════════════════════════════════════════════════════════════
+   ⚠️ Écrit à la main : `index.css` ne porte aucune directive `@tailwind`, une classe
+   utilitaire dans un `className` serait inerte (cf. § TAILWIND N'ÉMET RIEN). */
+
+/* Un seul objet, six segments : la forme dit qu'il y a UNE décision à prendre. */
+.att-seg {
+  display:inline-flex; align-items:center;
+  border:1px solid var(--border); border-radius:var(--r-md);
+  background:var(--bg2); overflow:hidden; max-width:100%;
+}
+.att-seg-btn {
+  display:flex; align-items:center; justify-content:center;
+  width:38px; height:34px; flex-shrink:0;
+  border:none; background:transparent; cursor:pointer;
+  /* Inactif : l'icône garde SA couleur, atténuée. Sans cela les six segments sont
+     indiscernables tant qu'on n'a pas cliqué — le défaut signalé. */
+  opacity:.5;
+  transition:opacity .12s var(--ease), background .12s var(--ease);
+}
+.att-seg-btn + .att-seg-btn { border-left:1px solid var(--border) }
+.att-seg-btn:hover { opacity:1; background:var(--bg3) }
+.att-seg-btn:focus-visible { outline:2px solid var(--p2); outline-offset:-2px; opacity:1; z-index:1 }
+.att-seg-on { opacity:1 }
+
+/* Légende : lue une fois, elle rend les six icônes lisibles pour toujours. */
+.att-legend {
+  display:flex; flex-wrap:wrap; align-items:center; gap:6px 16px;
+  padding:9px 16px;
+  border-bottom:1px solid var(--border); background:var(--bg2);
+  font-size:var(--fs-caption); color:var(--text3);
+}
+.att-legend-item { display:inline-flex; align-items:center; gap:6px; white-space:nowrap }
+.att-legend-dot {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px; border-radius:var(--r-sm); flex-shrink:0;
+}
+
+/* Étroit : la légende passe au-dessus sans écraser la table. */
+@media (max-width:760px) {
+  .att-legend { gap:6px 12px; padding:8px 12px }
+  .att-seg-btn { width:34px }
+}
+
 /* GlobalSearch — cmdk keyboard navigation highlight */
 [cmdk-item] { cursor: pointer; }
 [cmdk-item][aria-selected="true"],
