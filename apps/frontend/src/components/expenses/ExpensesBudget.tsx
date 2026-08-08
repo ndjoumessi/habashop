@@ -3,19 +3,26 @@ import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { Settings } from 'lucide-react'
 import { CATEGORIES, CatPill } from './expensesShared'
 import type { Category } from './expensesShared'
+import type { BudgetSummary } from './budgetSummary'
 
 interface Props {
   budgets: Record<Category, number>
-  catSpent: Record<Category, number>
-  totalBudget: number
-  budgetLeft: number
+  /**
+   * ⚠️ Le résumé COMPLET, calculé une fois par l'appelant. Ce composant recevait
+   * `catSpent` + `totalBudget` + `budgetLeft` et refaisait DEUX sommes lui-même :
+   * c'est là que la divergence naissait. Il n'additionne plus rien.
+   */
+  summary: BudgetSummary
+  /** Période décrite par les chiffres, DITE à l'écran (« Août 2026 »). */
+  monthLabel: string
   onEditBudgets: () => void
 }
 
-export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetLeft, onEditBudgets }: Props) {
+export default function ExpensesBudget({ budgets, summary, monthLabel, onEditBudgets }: Props) {
   const { lang } = useConfig()
   const fmt = useFormatAmount()
   const tr = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  const { spentByCategory: catSpent, totalBudget, totalSpent, variance: budgetLeft, usagePct } = summary
 
   return (
     <div className="space-y-4">
@@ -24,6 +31,25 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
           <Settings size={13} /> {tr('Modifier les budgets','Edit budgets','Editar presupuestos','Modifica budget')}
         </button>
       </div>
+
+      {/* ⚠️ L'ÉTAT VIDE SE DIT. Huit cartes à 0 % sont EXACTES mais se lisent « mes
+          dépenses ont disparu » — d'autant plus qu'avant ce correctif, elles montraient
+          tout l'historique. On constate, sans féliciter : ni coche, ni couleur de
+          succès, ni « budget respecté ». Trois états, jamais deux. */}
+      {totalSpent === 0 && (
+        <div style={{
+          padding:'10px 14px', borderRadius:'var(--r-sm)',
+          background:'var(--bg2)', border:'1px solid var(--border)',
+          color:'var(--text3)', fontSize:'var(--fs-label)',
+        }}>
+          {tr(
+            `Aucune dépense enregistrée en ${monthLabel}. Les budgets ci-dessous portent sur ce mois.`,
+            `No expense recorded in ${monthLabel}. The budgets below cover this month.`,
+            `Ningún gasto registrado en ${monthLabel}. Los presupuestos siguientes cubren este mes.`,
+            `Nessuna spesa registrata a ${monthLabel}. I budget seguenti riguardano questo mese.`,
+          )}
+        </div>
+      )}
 
       <ResponsiveGrid min={160} gap={12}>
         {CATEGORIES.filter(cat => budgets[cat] > 0).map(cat => {
@@ -74,7 +100,14 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
         borderRadius:12, padding:16,
       }}>
         <div className="panel-head" style={{ marginBottom:16 }}>
-          <span className="panel-title">{lang === 'en' ? 'Monthly summary' : lang === 'es' ? 'Resumen mensual' : lang === 'it' ? 'Riepilogo mensile' : 'Résumé mensuel'}</span>
+          {/* ⚠️ La période est NOMMÉE. « Résumé mensuel » sans son mois laissait le
+              lecteur supposer la période — et il supposait « tout », ce qui était
+              justement ce que le calcul faisait. Un chiffre sans son périmètre
+              n'est pas une mesure. */}
+          <span className="panel-title">
+            {lang === 'en' ? 'Monthly summary' : lang === 'es' ? 'Resumen mensual' : lang === 'it' ? 'Riepilogo mensile' : 'Résumé mensuel'}
+            {' — '}<span style={{ color:'var(--text3)', fontWeight:'var(--fw-regular)' }}>{monthLabel}</span>
+          </span>
         </div>
         {/* Total dépensé — mis en valeur (pattern total POS : encart bg2, 24px mono) */}
         <div style={{
@@ -86,13 +119,15 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
             {tr('Total dépensé','Total spent','Total gastado','Totale speso')}
           </span>
           <span style={{ fontSize:'var(--fs-display)', fontWeight:'var(--fw-bold)', color:'var(--text)', fontFamily:'var(--mono)', letterSpacing:'-.5px' }}>
-            {fmt(Object.values(catSpent).reduce((s,v) => s+v, 0))}
+            {fmt(totalSpent)}
           </span>
         </div>
         {[
           { label:tr('Budget total mensuel','Total monthly budget','Presupuesto total mensual','Budget mensile totale'),  value:fmt(totalBudget),            color:'var(--text2)' },
           { label:tr('Écart','Variance','Variación','Variazione'),                  value:fmt(Math.abs(budgetLeft)),   color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', prefix: budgetLeft >= 0 ? '▲ +' : '▼ -' },
-          { label:tr("Taux d'utilisation",'Usage rate','Tasa de uso','Tasso di utilizzo'),    value:`${Math.round(Object.values(catSpent).reduce((s,v)=>s+v,0)/totalBudget*100)} %`, color: 'var(--p2)' },
+          // ⚠️ Sans budget, PAS de pourcentage : `spent / 0 * 100` rendait `Infinity`,
+          // affiché « Infinity % » à tout commerçant qui remettait ses budgets à zéro.
+          { label:tr("Taux d'utilisation",'Usage rate','Tasa de uso','Tasso di utilizzo'),    value: usagePct === null ? '—' : `${usagePct} %`, color: 'var(--p2)' },
         ].map(r => (
           <div key={r.label} style={{ display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
             <span style={{ fontSize:'var(--fs-sm)', color:'var(--text3)' }}>{r.label}</span>

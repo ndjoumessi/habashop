@@ -1,5 +1,6 @@
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { TrendingDown, Clock, RefreshCw, BarChart2 } from 'lucide-react'
+import { monthYearLabel } from './expensesShared'
 
 interface Props {
   totalThisMonth: number
@@ -15,7 +16,8 @@ export default function ExpensesKpis({ totalThisMonth, totalPending, pendingCoun
   const tr = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
   const monthName = new Date().toLocaleDateString(locale, { month: 'long' })
-  const monthYear = (() => { const m = new Date().toLocaleDateString(locale, { month: 'long', year: 'numeric' }); return m.charAt(0).toUpperCase() + m.slice(1) })()
+  // Source unique — le panneau « Budget vs Réel » nomme la MÊME période.
+  const monthYear = monthYearLabel(lang)
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

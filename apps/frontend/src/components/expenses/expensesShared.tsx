@@ -9,6 +9,21 @@ export interface Expense {
   status: ExpStatus; recurrent: boolean
 }
 
+/**
+ * Libellé « Août 2026 » de la période courante — SOURCE UNIQUE.
+ *
+ * ⚠️ `now` INJECTÉ (défaut `new Date()`), jamais un littéral de date : la valeur
+ * était fabriquée à deux endroits avec deux `new Date()` séparés, et le panneau
+ * budgétaire n'en nommait aucun. Deux libellés d'une même période n'ont aucune
+ * raison de rester d'accord — c'est exactement ce qui rendait la divergence de
+ * population invisible : personne ne disait de QUEL mois on parlait.
+ */
+export function monthYearLabel(lang: string, now: Date = new Date()): string {
+  const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+  const m = now.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
+  return m.charAt(0).toUpperCase() + m.slice(1)
+}
+
 export const BUDGETS_INIT: Record<Category, number> = {
   Loyer: 500000, Énergie: 150000, Transport: 100000, Maintenance: 200000,
   Fournitures: 50000, Marketing: 100000, Formation: 200000, Autre: 50000,

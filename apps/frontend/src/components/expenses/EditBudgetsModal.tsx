@@ -41,7 +41,11 @@ export default function EditBudgetsModal({ editBudgets, setEditBudgets, onClose,
         </div>
         <div style={{ display:'flex', gap:10, marginTop:20 }}>
           <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={onClose}>{tr('Annuler','Cancel','Cancelar','Annulla')}</button>
-          <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={onSave}>{tr('Sauvegarder','Save','Guardar','Salva')}</button>
+          {/* ⚠️ « Appliquer », pas « Sauvegarder » : rien n'est enregistré — il n'existe
+              ni modèle `Budget` en base, ni colonne de réglages sur `Tenant`, et la
+              valeur repart du défaut au rechargement. Un verbe qui promet une
+              persistance inexistante est la même faute que le toast qui l'affirmait. */}
+          <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={onSave}>{tr('Appliquer','Apply','Aplicar','Applica')}</button>
         </div>
       </div>
     </div>

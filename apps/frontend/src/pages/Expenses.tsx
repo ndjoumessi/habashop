@@ -6,12 +6,13 @@ import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
 import {
-  BUDGETS_INIT, CATEGORIES, ttcAmount, mapApiExpense, nextExpId,
+  BUDGETS_INIT, CATEGORIES, ttcAmount, mapApiExpense, nextExpId, monthYearLabel,
   type Category, type Expense, type ExpStatus,
 } from '@/components/expenses/expensesShared'
 import ExpensesKpis from '@/components/expenses/ExpensesKpis'
 import ExpensesJournal from '@/components/expenses/ExpensesJournal'
 import ExpensesBudget from '@/components/expenses/ExpensesBudget'
+import { buildBudgetSummary } from '@/components/expenses/budgetSummary'
 import AddExpenseModal from '@/components/expenses/AddExpenseModal'
 import ExpenseDetailModal from '@/components/expenses/ExpenseDetailModal'
 import EditBudgetsModal from '@/components/expenses/EditBudgetsModal'
@@ -95,8 +96,19 @@ export default function Expenses() {
   const totalPending = expenses.filter(e => e.status === 'EN ATTENTE').reduce((s, e) => s + e.amount, 0)
   const pendingCount = expenses.filter(e => e.status === 'EN ATTENTE').length
   const recurrentCount = expenses.filter(e => e.recurrent).length
-  const totalBudget = Object.values(budgets).reduce((s, v) => s + v, 0)
-  const budgetLeft  = totalBudget - totalThisMonth
+  /**
+   * SOURCE UNIQUE du panneau budgétaire. `totalBudget` et `budgetLeft` en
+   * dérivent — ils étaient calculés ICI pendant que le total et le taux affichés
+   * l'étaient dans `ExpensesBudget` à partir d'une AUTRE population. Deux calculs
+   * séparés d'une même grandeur n'ont aucune raison de rester d'accord, et ils ne
+   * l'étaient pas : 1 350 000 contre 285 000.
+   */
+  const budgetSummary = buildBudgetSummary(thisMonth, budgets, CATEGORIES)
+  const monthLabel = monthYearLabel(lang, now)
+  // ⚠️ `catSpent` et `totalBudget` ne sont plus des locaux : le panneau reçoit le
+  // résumé ENTIER. Les redéclarer ici recréerait deux chemins vers la même grandeur,
+  // c'est-à-dire exactement la structure qui avait produit la divergence.
+  const budgetLeft = budgetSummary.variance
 
   // Filtered journal
   const filtered = expenses.filter(e => {
@@ -194,9 +206,23 @@ export default function Expenses() {
     setNLabel(''); setNHT(''); setNVat(0); setNRecurrent(false); setNNotes('')
   }
 
+  /**
+   * ⚠️ CE MESSAGE DISAIT « Budgets mis à jour ». C'était FAUX : `setBudgets` est un
+   * état React, il n'existe aucun modèle `Budget` en base ni aucune colonne de
+   * réglages sur `Tenant` — les valeurs disparaissent au rechargement. Un écran qui
+   * annonce un enregistrement qui n'a pas eu lieu est le défaut que `lib/saved.ts`
+   * a été écrit pour fermer ; ici il n'y a même pas de requête à surveiller, la
+   * phrase était simplement inventée. On dit ce qui se passe réellement.
+   * DETTE OUVERTE : persister les budgets par boutique (nouveau modèle + migration).
+   */
   function saveBudgets() {
     setBudgets({ ...editBudgets })
-    toast.success(tr('Budgets mis à jour','Budgets updated','Presupuestos actualizados','Budget aggiornati'))
+    toast.success(tr(
+      'Budgets appliqués — non enregistrés, ils repartiront des valeurs par défaut au rechargement',
+      'Budgets applied — not saved; they will reset to defaults on reload',
+      'Presupuestos aplicados — no guardados; volverán a los valores por defecto al recargar',
+      'Budget applicati — non salvati; torneranno ai valori predefiniti al ricaricamento',
+    ))
     setBudgetOpen(false)
   }
 
@@ -218,10 +244,6 @@ export default function Expenses() {
     toast.success(`${lang === 'en' ? 'Expense updated' : lang === 'es' ? 'Gasto modificado' : lang === 'it' ? 'Spesa modificata' : 'Dépense modifiée'}`)
   }
 
-  const catSpent: Record<Category, number> = CATEGORIES.reduce((acc, cat) => {
-    acc[cat] = expenses.filter(e => e.category === cat).reduce((s, e) => s + e.amount, 0)
-    return acc
-  }, {} as Record<Category, number>)
 
   return (
     <div className="space-y-5 animate-in">
@@ -282,9 +304,8 @@ export default function Expenses() {
       {tab === 'budget' && (
         <ExpensesBudget
           budgets={budgets}
-          catSpent={catSpent}
-          totalBudget={totalBudget}
-          budgetLeft={budgetLeft}
+          summary={budgetSummary}
+          monthLabel={monthLabel}
           onEditBudgets={() => { setEditBudgets({ ...budgets }); setBudgetOpen(true) }}
         />
       )}
