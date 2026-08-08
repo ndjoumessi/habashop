@@ -2,7 +2,7 @@
 
 SaaS de gestion commerciale multi-tenant **et multi-boutiques** (boutiques/superettes, Afrique de l'Ouest). **Monorepo unique `habashop`** : web (npm workspaces `apps/*`) + `mobile/` (Expo, hors workspaces) + `legal/` (pages légales).
 
-> ## ⚠️ ALLÉGER CE FICHIER — plafond 150 000 CARACTÈRES, et une compression a déjà coûté cinq règles
+> ## ⚠️ ALLÉGER CE FICHIER — plafond 160 000 CARACTÈRES, et une compression a déjà coûté cinq règles
 >
 > **Le critère** — reste ici ce qui **change un comportement sans qu'on l'ait demandé** (le piège du pipe sur `tsc`, le contexte Docker, la garde de dépense, le jumeau, le sabotage copié, le contrôle discriminant, l'arité) ; part dans `docs/lessons/` ce qu'on **consulte une fois déjà sur le sujet** (récits d'incident, tableaux de mesure, chiffres datés).
 > ⚠️ **Une règle rétrogradée vers une leçon est une règle qui ne se charge plus.** Le texte existe encore, il ne s'applique plus tout seul — c'est ainsi que 3 des 5 régressions du 2026-08-07 sont passées (compression à 149 844 conforme, **cinq règles supprimées**, dont la trace d'audit qui borne une fraude de caisse ; une revue les a rattrapées).
@@ -11,8 +11,10 @@ SaaS de gestion commerciale multi-tenant **et multi-boutiques** (boutiques/super
 >
 > ⚠️ **L'extraction REDISTRIBUE, elle ne réduit pas.** Mesuré le 2026-08-07 : `CLAUDE.md` **−7 722**, `docs/lessons/` **+6 584**, documentation totale **−1 138**. Le plafond mesure donc la **CONCENTRATION** — ce qui se charge à CHAQUE session — pas le coût réel : graphify indexe les deux répertoires, et une session peut se faire lire une leçon. Sortir une page n'est un gain que si elle n'est pas lue à chaque fois.
 >
-> ⚠️ **Si 150 000 est inatteignable sans toucher une protection : s'arrêter et le dire** — combien de caractères manquent, quelles règles il faudrait sacrifier. Un fichier conforme amputé d'une protection est un mauvais échange.
+> ⚠️ **Si 160 000 est inatteignable sans toucher une protection : s'arrêter et le dire** — combien de caractères manquent, quelles règles il faudrait sacrifier. Un fichier conforme amputé d'une protection est un mauvais échange.
 > Compter en **caractères**, pas en octets — `wc -c` en annonce 4 % de trop ici (accents, émojis).
+>
+> ⚠️ **Relevé de 150 000 à 160 000 le 2026-08-09, sur décision de Nelson**, parce que deux règles mesurées ne tenaient plus. Ce n'est PAS une invitation à écrire : le plafond mesure ce qui se charge à CHAQUE session, et +10 000 caractères ≈ **+3 300 jetons par démarrage**, payés à chaque fois. Le critère du tri n'a pas bougé d'un pouce.
 
 ## Stack
 
@@ -378,6 +380,7 @@ les règles **transverses** : celles qu'on enfreint sans même travailler sur le
 - **`transform` sur ancêtre** → casse `position:fixed`. Animer opacité seule.
 - **`applyAccentColor()`** écrase `--p/--p2/--p3` via `ACCENT_PAIRS` (plus de verrouillage `body.className` depuis le retrait de `gold`/`soleil`). Détection clair = **`isThemeLight(theme)`** d'appStore (résout `system`), jamais une comparaison littérale à `'light'`/`'soleil'`.
 - **Date « now »** : param injectable défaut `new Date()` — jamais de littéral `new Date('...')`.
+- **Dates SAISIES** ⚠️ : jamais un `<input type="date">` nu — tout passe par `components/ui/DatePicker.tsx` (`DateField`/`MonthField`/`DateRangeField`). Le composant **conserve l'input natif** comme porteur de valeur (clavier, lecteurs d'écran, sélecteur au doigt sur mobile, et `hrContractDomain.test.ts` qui interdit la saisie libre) : on ne remplace que le CALENDRIER. Panneau en **portail** — `.modal-box` porte `overflow:hidden` et la plupart des champs vivent dans une modale. Méta-test à périmètre dérivé de `src/`.
 - **Dates AFFICHÉES** : `fmtDate()` de `lib/formatDate.ts` (jj/mm/aaaa, convention fr). Parse par **découpage de chaîne**, jamais `new Date(iso).toLocaleDateString()` qui décale le jour d'un cran en fuseau négatif (le 05 s'affiche « 04 »). Jamais l'ISO brut `{e.date}`.
 - **SVG + `var()`** : `fill="var(--…)"` ne résout pas → `style={{color}}` + `fill="currentColor"`.
 - **`var(--)` + alpha concaténée = MORT ⚠️** : `` `${x.hex}28` `` avec `x.hex='var(--p)'` rend `var(--p)28` = couleur INVALIDE → la propriété retombe à sa valeur initiale (`border:none`, fond transparent), **invisible à tsc ET aux tests**. Un champ couleur concaténé avec une alpha reste un **`#hex` littéral** (8-chiffres, PAS `color-mix` — compat WebView Android), jamais tokenisé en `var(--…)`. Verrou AST : `noVarInConcatenatedColor.test.ts` (résout `${obj.champ}NN` → tableau `.map` → échoue si `champ` y vaut une chaîne `var(--`). Bug trouvé à l'écran, pas par les gates (2026-08-01, #211/#212).
@@ -796,7 +799,7 @@ absence du bundle est **vérifiée** par `verify:demo-flag` (marqueur
 
 ⚠️ **`pourcentagesEntiers` est la SOURCE UNIQUE de la répartition en entiers** (`apps/frontend/src/lib/pourcentages.ts`). Le Dashboard corrigeait le **dernier** secteur à `100 − Σ` : la somme valait 100, mais toute l'erreur atterrissait sur une seule part — la dernière, donc la plus petite. Ne pas en écrire une troisième — deux écrans, deux arrondis, ils divergent au premier cas limite.
 
-⚠️ **BALAYAGE DE LA CLASSE FAIT — la « quatrième occurrence » attendue N'EXISTE PAS.** 681 fichiers sur les trois workspaces : `analytics.ts` était le **seul** site dont la troncature alimentait un dénominateur. Les autres sont d'une autre nature et **correctes** (total calculé AVANT le `slice`, barres relatives au maximum). *Écrit pour qu'on ne re-balaye pas cette classe en croyant qu'elle est ouverte.* ⚠️ **Il portait sur la TRONCATURE.** La famille SŒUR — deux totaux d'une même grandeur sur deux **POPULATIONS** — y échappe : mesurée en prod le 2026-08-08 (« Budget vs Réel »). 📖 *`docs/lessons/chiffres-affiches.md`.*
+⚠️ **BALAYAGE DE LA CLASSE FAIT — la « quatrième occurrence » attendue N'EXISTE PAS.** 681 fichiers sur les trois workspaces : `analytics.ts` était le **seul** site dont la troncature alimentait un dénominateur. Les autres sont d'une autre nature et **correctes** (total calculé AVANT le `slice`, barres relatives au maximum). *Écrit pour qu'on ne re-balaye pas cette classe en croyant qu'elle est ouverte.* ⚠️ **Il portait sur la TRONCATURE.** La famille SŒUR — deux totaux d'une même grandeur sur deux **POPULATIONS** — y échappe : mesurée en prod le 2026-08-08 (« Budget vs Réel »). **Parade : une source unique qui reçoit une liste DÉJÀ FILTRÉE** — la période est décidée en UN endroit, donc indécidable ailleurs (`buildBudgetSummary` ; y remettre un filtre de date recréerait le second endroit où elle diverge). ⚠️ **Et la cohérence ne suffit PAS** : depuis ce refactor, total, écart et taux dérivent du même résumé — ils restent d'accord **même si l'appelant passe la MAUVAISE liste**. La POPULATION s'épingle séparément, sinon le défaut revient sous un verrou vert. 📖 *`docs/lessons/chiffres-affiches.md`.*
 
 **Dette voisine, NON traitée et distincte** : `routes/export.ts:56` plafonne l'export CSV des
 ventes à `take: 1000` sans le dire. Aucun total n'en dérive — ce n'est pas cette famille — mais
