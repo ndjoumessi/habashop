@@ -1,4 +1,4 @@
-# Les chiffres affichés — huit défauts mesurés, une même famille
+# Les chiffres affichés — neuf défauts mesurés, une même famille
 
 *Chantiers du 2026-08-06/07. Cette page porte les mesures, les incidents et les calibrages de
 scanner ; les règles survivantes vivent dans `CLAUDE.md` (§ La VÉRITÉ VACANTE, § Le CHAMP
@@ -322,3 +322,100 @@ n'existait pas :
 
 Le motif est constant : **l'affirmation est plausible, jamais exécutée, et personne ne la vérifie
 parce qu'elle sert de justification à autre chose.**
+
+## 9. Deux totaux, deux populations — le panneau « Budget vs Réel »
+
+**Trouvé sur une capture de la PRODUCTION, puis mesuré en base plutôt que déduit des pixels.**
+Le 2026-08-08, `demo-tenant-001` portait 15 dépenses, toutes en mars/avril/mai 2026
+(3 × 355 000 XOF), et zéro en août. L'écran affichait, sous un titre « Résumé **MENSUEL** » :
+
+| Ligne | Valeur | D'où elle venait |
+|---|---|---|
+| Total dépensé | 1 065 000 | Σ des catégories, **sans filtre de date** |
+| Budget total mensuel | 1 350 000 | somme des budgets |
+| Écart | 1 350 000 | budget − dépenses du **mois courant** (0) |
+| Taux d'utilisation | 79 % | Σ des catégories / budget **mensuel** |
+
+Les trois ne pouvaient pas être vrais ensemble : 1 350 000 − 1 065 000 = 285 000, pas
+1 350 000. Chacun était pourtant correct *localement*, ce qui est la raison pour laquelle
+personne ne l'avait vu à la relecture.
+
+### Ce n'est PAS la famille de la section 5
+
+La section 5 traite d'un total calculé sur ce qui est **AFFICHÉ** — une troncature qui
+alimente un dénominateur. Ici il n'y a **aucune troncature** : deux `reduce` complets sur
+deux populations différentes. Le balayage de la section 5 (681 fichiers, un seul site
+fautif) était juste, et ne pouvait pas attraper celui-ci. *Un balayage clos ne referme que
+la forme qu'il cherchait.*
+
+### La conséquence n'était pas cosmétique
+
+Les cartes de catégorie lisaient la même somme sans date : « Loyer 600 000 » contre un
+budget **mensuel** de 500 000 affichait « Dépassé de 100 000 » — alors que 600 000, c'est
+**trois loyers de 200 000**. Ce n'est pas un dépassement, c'est une erreur d'**unité**, et
+elle s'aggrave mécaniquement : au sixième mois d'exploitation, « dépassé de 700 000 » sur
+un loyer payé normalement. *Une alerte qui crie toujours n'alerte plus quand elle devient
+vraie.*
+
+### La parade : rendre la période INDÉCIDABLE ailleurs
+
+`components/expenses/budgetSummary.ts` expose `buildBudgetSummary(expensesOfPeriod, …)` qui
+reçoit une liste **DÉJÀ filtrée**. `totalSpent` est Σ des catégories *par construction*, et
+`variance` = budget − ce total. Le composant n'additionne plus rien : il recevait `catSpent`
++ `totalBudget` + `budgetLeft` et refaisait deux sommes lui-même, et c'est là que la
+divergence naissait.
+
+⚠️ **Ne PAS ajouter de filtre de date dans le module.** Ce serait un second endroit où la
+période se décide, donc un second endroit où elle diverge. Elle est décidée une seule fois,
+dans `pages/Expenses.tsx` (`thisMonth`).
+
+### Trois enseignements de méthode, tous payés par un verrou passé vert
+
+1. **Le premier test cherchait un littéral que le jeu d'essai ne produit jamais.** Il
+   assertait l'absence de « 1 065 000 » — un nombre de la PRODUCTION. L'assertion ne pouvait
+   pas échouer. C'est l'angle mort nº 3, la FORME. Réécrit sur la relation entre les trois
+   nombres réellement rendus, séparateurs de milliers normalisés (quatre coexistent).
+2. **Le jeu d'essai était calé PILE sur la valeur limite.** Il n'avait aucune dépense dans le
+   mois courant : `budget − 0` et `budget − total` y sont identiques, donc le sabotage
+   « l'écart repart d'une autre base » passait VERT. Même piège que `demo-tenant-001` et ses
+   exactement 6 catégories (section 5). Une dépense d'août a rendu le sabotage détectable.
+3. **La cohérence interne ne dit RIEN de la population.** Après le refactor, `total`, `écart`
+   et `taux` dérivent tous du même résumé : ils restent d'accord *même si l'appelant passe la
+   mauvaise liste*. Mesuré — le sabotage « repasser `expenses` au lieu de `thisMonth` »
+   laissait l'invariant vert. **La population s'épingle séparément.**
+
+### Ce qui mentait aussi, et qui a été traité dans le même geste
+
+`saveBudgets` affichait « Budgets mis à jour » et le bouton disait « Sauvegarder ». Faux :
+aucun modèle `Budget` n'existait au schéma (29 modèles vérifiés), aucune colonne de réglages
+sur `Tenant` — la valeur disparaissait au rechargement. Les budgets sont désormais persistés
+(`ExpenseBudget`, cf. `docs/modules.md`), et `BUDGETS_INIT` vaut **zéro** : garder des
+littéraux « de départ » aurait reconduit le défaut sous un autre nom.
+
+⚠️ **Conséquence à traiter quand on ferme ce genre de défaut** : sans budget, aucune carte ne
+se rend et l'onglet devient muet. Échanger un mensonge contre un écran qui a l'air cassé
+n'est pas un progrès — l'état vide dit ce qui manque et par où le poser.
+
+**Verrous** : `budgetSummary.test.tsx` (pur + câblage sur le DOM rendu, jumelage de
+`expense-categories.json` dans les DEUX sens) · `expenseBudgets.test.ts` (routes) ·
+`tenantSwitchReload.test.tsx` (la justesse empruntée, ci-dessous) · vérifications de
+production `verify-expense-budgets-prod.ts` et `verify-expense-budgets-multishop-prod.ts`.
+
+### La justesse empruntée découverte en testant
+
+`pages/Expenses.tsx` charge les budgets dans un `useEffect(..., [])` : une seule fois, au
+montage. Ce code n'est correct **que parce que** `TenantSwitcher` fait
+`window.location.assign(...)` après `switchTenant` et remonte toute l'application. Rien ne
+l'enregistrait. Le jour où quelqu'un remplace la navigation dure par un `navigate()` client
+— amélioration raisonnable, et **invisible depuis `Expenses.tsx`** — un gérant basculerait de
+Dakar vers Abidjan et continuerait de voir les budgets de Dakar.
+
+C'est le motif `spendGuard.quotaLimit` : *une justesse qui dépend d'un invariant distant et
+que rien n'enregistre disparaît au premier réordonnancement.* Le verrou
+`tenantSwitchReload.test.tsx` ne garde pas les budgets, il garde **ce dont ils dépendent**, et
+son message d'échec nomme la ligne à corriger.
+
+⚠️ **Il a été trouvé en TESTANT, pas en relisant.** Le test demandé portait sur le serveur ;
+c'est en écrivant l'assertion qu'est apparue la question « et si l'écran ne rechargeait
+pas ? ». Aucun des deux niveaux existants ne pouvait la poser : l'unitaire simule Prisma, le
+script de production ne monte aucune interface.

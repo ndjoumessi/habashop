@@ -14,7 +14,7 @@ Produits (expiration de promo) · Codes-barres (Chantier A) · Étiquettes · Ab
 Transferts stock · OCR factures · Facture PDF backend · Facture/devis client · Ticket Z ·
 WhatsApp · Finance · RH/Planning · Paie · Rapport comptable · Intégrations · Auth · Audit ·
 Multi-boutiques · Admin PLATEFORME (coquille opérateur, contenu console, états vides) ·
-Sidebar · Emails Resend · GlobalSearch · Onboarding
+Sidebar · Emails Resend · GlobalSearch · Onboarding · Dépenses & budgets · Sélecteurs de date
 
 ---
 
@@ -132,3 +132,51 @@ Sidebar · Emails Resend · GlobalSearch · Onboarding
 - **Emails Resend** : `escHtml()` + `baseTemplate()`. `email @unique` libéré au soft-delete.
 - **GlobalSearch** : `GlobalSearch.tsx` (cmdk), Cmd+K/Ctrl+K dans AppLayout. Catégories : produits, clients, commandes, fournisseurs, actions rapides. Filtrées par `canAccess(role, slug)`.
 - **Onboarding** : wizard 5 étapes `Onboarding.tsx`, route `/onboarding`. Flag `habashop_onboarded` localStorage. Auto-redirect depuis Dashboard pour ADMIN sans produits/ventes.
+
+## Dépenses & budgets
+
+**Écrans** : `pages/Expenses.tsx` (onglets Journal / Budget vs Réel) · `components/expenses/*`.
+
+### Budgets — persistés par boutique depuis le 2026-08-08
+
+| | |
+|---|---|
+| Table | `ExpenseBudget` — `@@unique([tenantId, category])` |
+| Routes | `GET` / `PUT /api/expense-budgets` (`routes/expenseBudgets.ts`) |
+| Migration | `20260808200000_add_expense_budget` — additive, rejouable |
+| Domaine | `lib/expenseCategories.ts` (back) ↔ `CATEGORIES` (front), fixture `expense-categories.json` |
+
+⚠️ **`getActiveTenantId`, PAS `getTenantId`.** Les budgets appartiennent à la boutique
+REGARDÉE, pas à celle du JWT : un gérant multi-boutiques écrirait sinon les budgets de Dakar
+depuis l'écran d'Abidjan. Vérifié en production sur deux boutiques jetables, refus d'un
+non-membre en **403** inclus.
+
+⚠️ **Une catégorie inconnue est REFUSÉE en 400 `UNKNOWN_EXPENSE_CATEGORY`**, jamais filtrée en
+silence : répondre 200 en ignorant la clé ferait croire à un enregistrement qui n'a pas eu lieu.
+Le zod `strict()` ferme la STRUCTURE, la liste blanche ferme le DOMAINE.
+
+⚠️ **`GET` rend TOUJOURS les huit catégories, à zéro quand rien n'est posé.** Un dictionnaire
+partiel obligerait chaque appelant à inventer un défaut — et ils en inventeraient des
+différents. C'est exactement d'où venaient les littéraux du front.
+
+⚠️ **`BUDGETS_INIT` vaut ZÉRO.** Ce n'est pas un repli, c'est un fait : « aucun budget posé ».
+Y remettre des montants « de départ » réafficherait des chiffres que personne n'a saisis.
+
+⚠️ **L'écriture passe par `saved()`**, jamais `.catch(() => {})` : le store n'est mis à jour
+qu'en cas de succès et la modale reste ouverte sur échec, avec le message DU SERVEUR.
+
+Trace : `EXPENSE_BUDGET_CHANGE`, AVANT → APRÈS des seules catégories qui bougent (catégories et
+nombres uniquement, aucune donnée personnelle).
+
+📖 *Le POURQUOI — les deux populations, les trois verrous passés verts, la justesse
+empruntée : `docs/lessons/chiffres-affiches.md` § 9.*
+
+### Sélecteurs de date
+
+Tout champ de date passe par `components/ui/DatePicker.tsx` (`DateField`, `MonthField`,
+`DateRangeField`). ⚠️ Le composant **conserve un `<input type="date">` natif** comme porteur de
+valeur — on ne remplace que le calendrier : le clavier, les lecteurs d'écran et le sélecteur
+natif au doigt gardent leur chemin, et `hrContractDomain.test.ts` (qui interdit la saisie
+libre) reste satisfait. Le panneau est en **portail** : `.modal-box` porte `overflow:hidden` et
+la plupart des champs vivent dans une modale. Méta-test : plus aucun `type="date"` / `"month"`
+nu dans `src/`.
