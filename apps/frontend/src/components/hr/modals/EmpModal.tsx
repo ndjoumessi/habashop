@@ -8,6 +8,7 @@ import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import { type Employee, COLORS, CONTRACT_TYPES, DEPT_COLORS, deptLabel, contractLabel, isOpenEnded, toInputDate } from '@/components/hr/hrShared'
+import { DateField } from '@/components/ui/DatePicker'
 
 export default function EmpModal({ emp, onClose, onSave, onDelete }: {
   emp: Employee | null
@@ -127,12 +128,15 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
           <ResponsiveGrid min={160} gap={12}>
             <div>
               <label className="form-label">{T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')}</label>
-              <input aria-label={T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')} className="input" type="date" value={hiredAt} onChange={e => setHiredAt(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
+              <DateField ariaLabel={T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')}
+                value={hiredAt} onChange={setHiredAt} style={{ width: '100%', boxSizing: 'border-box' }} />
             </div>
             {!isOpenEnded(type) && (
               <div>
                 <label className="form-label">{T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')}</label>
-                <input aria-label={T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')} className="input" type="date" value={endAt} onChange={e => setEndAt(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
+                <DateField ariaLabel={T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')}
+                  min={hiredAt || undefined}
+                  value={endAt} onChange={setEndAt} style={{ width: '100%', boxSizing: 'border-box' }} />
               </div>
             )}
           </ResponsiveGrid>

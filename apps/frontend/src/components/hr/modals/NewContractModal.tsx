@@ -11,6 +11,7 @@ import { type Employee, type ContractForm, COLORS, CONTRACT_TYPES, DEPT_COLORS, 
 // prop (qui reconvertirait). Verrou : `payrollConvertOnce.test.ts`.
 import { payrollDisplay, fmtDisplay } from '@/components/payroll/payrollShared'
 import { useConfig } from '@/stores/appStore'
+import { DateField } from '@/components/ui/DatePicker'
 
 interface Props {
   lang: string
@@ -62,12 +63,19 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
             </div>
             <div>
               <label style={labelStyle}>{lang === 'en' ? 'START DATE' : lang === 'es' ? 'FECHA INICIO' : lang === 'it' ? 'DATA INIZIO' : 'DATE DÉBUT'}</label>
-              <input aria-label={lang === 'en' ? 'START DATE' : lang === 'es' ? 'FECHA INICIO' : lang === 'it' ? 'DATA INIZIO' : 'DATE DÉBUT'} className="input" type="date" value={contractForm.hiredAt} onChange={e=>setContractForm(f=>({...f,hiredAt:e.target.value}))}/>
+              <DateField
+                ariaLabel={lang === 'en' ? 'START DATE' : lang === 'es' ? 'FECHA INICIO' : lang === 'it' ? 'DATA INIZIO' : 'DATE DÉBUT'}
+                style={{ width:'100%', boxSizing:'border-box' }}
+                value={contractForm.hiredAt} onChange={v=>setContractForm(f=>({...f,hiredAt:v}))}/>
             </div>
             {!isOpenEnded(contractForm.type)&&(
               <div style={{ gridColumn:'1/-1' }}>
                 <label style={labelStyle}>{lang === 'en' ? 'CONTRACT END DATE' : lang === 'es' ? 'FECHA FIN CONTRATO' : lang === 'it' ? 'DATA FINE CONTRATTO' : 'DATE FIN CONTRAT'}</label>
-                <input aria-label={lang === 'en' ? 'CONTRACT END DATE' : lang === 'es' ? 'FECHA FIN CONTRATO' : lang === 'it' ? 'DATA FINE CONTRATTO' : 'DATE FIN CONTRAT'} className="input" type="date" value={contractForm.contractEnd} onChange={e=>setContractForm(f=>({...f,contractEnd:e.target.value}))}/>
+                <DateField
+                  ariaLabel={lang === 'en' ? 'CONTRACT END DATE' : lang === 'es' ? 'FECHA FIN CONTRATO' : lang === 'it' ? 'DATA FINE CONTRATTO' : 'DATE FIN CONTRAT'}
+                  style={{ width:'100%', boxSizing:'border-box' }}
+                  min={contractForm.hiredAt || undefined}
+                  value={contractForm.contractEnd} onChange={v=>setContractForm(f=>({...f,contractEnd:v}))}/>
               </div>
             )}
             <div style={{ gridColumn:'1/-1' }}>

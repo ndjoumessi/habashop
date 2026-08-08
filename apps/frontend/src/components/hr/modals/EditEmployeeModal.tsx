@@ -19,6 +19,7 @@ import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type Employee, CONTRACT_TYPES, DEPT_COLORS, displayDate, roleLabel, deptLabel, contractLabel, isOpenEnded } from '@/components/hr/hrShared'
+import { DateField } from '@/components/ui/DatePicker'
 
 interface Props {
   lang: string
@@ -161,7 +162,10 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                 </select>
               </ViewField>
               <ViewField label={lang === 'en' ? 'HIRE DATE' : lang === 'es' ? 'FECHA CONTRATACIÓN' : lang === 'it' ? 'DATA ASSUNZIONE' : 'DATE EMBAUCHE'} value={displayDate(editEmpForm.hiredAt)} editing={empEditMode}>
-                <input className="input" type="date" value={editEmpForm.hiredAt ?? ''} onChange={e => setEditEmpForm((f:any) => ({ ...f, hiredAt:e.target.value }))} />
+                <DateField
+                  ariaLabel={lang === 'en' ? 'Hire date' : lang === 'es' ? 'Fecha de contratación' : lang === 'it' ? 'Data di assunzione' : "Date d'embauche"}
+                  value={editEmpForm.hiredAt ?? ''} onChange={v => setEditEmpForm((f:any) => ({ ...f, hiredAt:v }))}
+                  style={{ width:'100%', boxSizing:'border-box' }} />
               </ViewField>
               {isOpenEnded(editEmpForm.type ?? 'CDI') ? (
                 <ViewField label={lang === 'en' ? 'CONTRACT END' : lang === 'es' ? 'FIN DE CONTRATO' : lang === 'it' ? 'FINE CONTRATTO' : 'FIN DE CONTRAT'} value={lang === 'en' ? '∞ Permanent' : lang === 'es' ? '∞ Indefinido' : lang === 'it' ? '∞ Indeterminato' : '∞ Indéterminé'} color="var(--acc2)" editing={empEditMode}>
@@ -171,7 +175,10 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                 </ViewField>
               ) : (
                 <ViewField label={lang === 'en' ? 'CONTRACT END' : lang === 'es' ? 'FIN DE CONTRATO' : lang === 'it' ? 'FINE CONTRATTO' : 'FIN DE CONTRAT'} value={displayDate(editEmpForm.contractEnd)} editing={empEditMode}>
-                  <input className="input" type="date" value={editEmpForm.contractEnd??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, contractEnd:e.target.value }))} />
+                  <DateField
+                    ariaLabel={lang === 'en' ? 'Contract end' : lang === 'es' ? 'Fin de contrato' : lang === 'it' ? 'Fine contratto' : 'Fin de contrat'}
+                    value={editEmpForm.contractEnd??''} onChange={v => setEditEmpForm((f:any) => ({ ...f, contractEnd:v }))}
+                    style={{ width:'100%', boxSizing:'border-box' }} />
                 </ViewField>
               )}
             </ResponsiveGrid>

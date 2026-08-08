@@ -12,6 +12,7 @@ import { lookupProductByEan } from '@/lib/productLookup'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { normalizeBarcode, isValidBarcode, barcodeFormat, generateEAN13, quietZonePx } from '@/lib/barcode'
 import { confirm } from '@/lib/confirm'
+import { DateField } from '@/components/ui/DatePicker'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 
@@ -614,7 +615,10 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                       <input className="input text-sm" type="number" value={form.promotionPrice || ''} onChange={e => setForm(f => ({...f, promotionPrice:+e.target.value}))} />
                     </ViewField>
                     <ViewField label={i('DATE FIN PROMO', 'PROMO END DATE', 'FECHA FIN PROMO', 'DATA FINE PROMO')} value={form.promotionEnd||''} editing={productEditMode} emptyLabel={emptyLabel}>
-                      <input className="input text-sm" type="date" value={form.promotionEnd} onChange={e => setForm(f => ({...f, promotionEnd:e.target.value}))} />
+                      <DateField
+                        ariaLabel={i('Date de fin de promotion', 'Promo end date', 'Fecha fin de promoción', 'Data fine promozione')}
+                        value={form.promotionEnd} onChange={v => setForm(f => ({...f, promotionEnd:v}))}
+                        style={{ width:'100%', boxSizing:'border-box' }} />
                     </ViewField>
                   </ResponsiveGrid>
                 )}

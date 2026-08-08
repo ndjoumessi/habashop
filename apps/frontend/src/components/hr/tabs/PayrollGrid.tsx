@@ -8,6 +8,7 @@ import { sanitizeCsv } from '@/lib/csv'
 // commentaire affirmait l'unicité, le code la contredisait. Les taux et le calcul viennent
 // désormais de `payrollShared`, pour de vrai.
 import { payrollDisplay, fmtDisplay, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
+import { MonthField } from '@/components/ui/DatePicker'
 
 /** Retenues d'un employé du mois, en devise d'AFFICHAGE — cohérentes entre elles
  *  (total = somme des lignes). Jamais un calcul local, jamais une reconversion. */
@@ -48,10 +49,10 @@ export default function PayrollGrid({ employees, fmt: _fmt, lang, payrollMonth, 
     <>
       {/* Contrôles */}
       <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
-        <input className="input" type="month"
-          style={{ width:'auto' }}
+        <MonthField
+          ariaLabel={lang === 'en' ? 'Payroll period' : lang === 'es' ? 'Período de nómina' : lang === 'it' ? 'Periodo di paga' : 'Période de paie'}
           value={payrollMonth}
-          onChange={e => setPayrollMonth(e.target.value)} />
+          onChange={setPayrollMonth} />
         <button className="btn btn-sm" onClick={() => {
           const BOM = '﻿'
           const activeEmps = (employees ?? []).filter(e => e.active)

@@ -8,6 +8,7 @@ import { subscriptionsApi, customersApi, productsApi } from '@/lib/api'
 import { useAppStore, useFormatAmount, formatDate } from '@/stores/appStore'
 import { announce } from '@/lib/announce'
 import { useModalFocus } from '@/hooks/useModalFocus'
+import { DateField } from '@/components/ui/DatePicker'
 import {
   DAY_SHORT, DAY_LABELS, tx, totalAmountColor, missingSubscriptionFields, missingLabel,
   subscriptionTotal, firstDeliveryFrom, toDateInput,
@@ -538,13 +539,11 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
 
             <div style={{ marginTop: 13 }}>
               <SLabel label={`${tx('start_date', lang)} ${tx('optional', lang)}`} />
-              <input
+              <DateField
                 id="sub-start-date"
-                type="date"
-                className="input"
-                aria-label={tx('start_date', lang)}
+                ariaLabel={tx('start_date', lang)}
                 value={startDate}
-                onChange={e => setStartDate(e.target.value)}
+                onChange={setStartDate}
                 style={{ width: '100%', maxWidth: 220, minHeight: 42 }}
               />
               {firstDelivery && (

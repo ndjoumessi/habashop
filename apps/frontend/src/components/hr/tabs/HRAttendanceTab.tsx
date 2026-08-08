@@ -1,6 +1,7 @@
 import { Clock, CheckCircle, XCircle, AlertTriangle, CheckCheck, Download, Umbrella, Coffee } from 'lucide-react'
 import { type Employee, type AttendUiStatus, roleLabel, attendStatusLabel } from '@/components/hr/hrShared'
 import { sanitizeCsv } from '@/lib/csv'
+import { DateField } from '@/components/ui/DatePicker'
 
 type AttendEntry = { in: string | null; out: string | null; status: AttendUiStatus }
 interface Props {
@@ -71,9 +72,11 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
         <span style={{ fontSize:'var(--fs-md)', fontWeight:'var(--fw-bold)', color:'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
           <Clock size={16}/> {lang === 'en' ? 'Attendance sheet' : lang === 'es' ? 'Hoja de asistencia' : lang === 'it' ? 'Foglio presenze' : 'Feuille de présence'}
         </span>
-        <input type="date" className="input" value={attendanceDate}
-          onChange={e => setAttendanceDate(e.target.value)}
-          style={{ width:150, height:34, fontSize:'var(--fs-sm)' }} />
+        <DateField
+          ariaLabel={lang === 'en' ? 'Attendance date' : lang === 'es' ? 'Fecha de asistencia' : lang === 'it' ? 'Data presenze' : 'Date de la feuille de présence'}
+          value={attendanceDate}
+          onChange={setAttendanceDate}
+          style={{ width:178 }} />
         <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
           <button className="btn btn-sm" onClick={markAllPresent} style={{display:'flex',alignItems:'center',gap:5}}>
             <CheckCheck size={13}/> {lang === 'en' ? 'All present' : lang === 'es' ? 'Todos presentes' : lang === 'it' ? 'Tutti presenti' : 'Tous présents'}

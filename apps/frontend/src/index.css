@@ -739,6 +739,192 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 .gm-style .gm-style-iw-tc { display: none !important; }
 .gm-style .gm-style-iw-c button.gm-ui-hover-effect { display: none !important; }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   SÉLECTEURS DE DATE (components/ui/DatePicker.tsx)
+   ══════════════════════════════════════════════════════════════════════════════
+   ⚠️ ÉCRIT À LA MAIN, ET C'EST OBLIGATOIRE. `index.css` ne porte AUCUNE directive
+   `@tailwind` : une classe utilitaire écrite dans un `className` n'est ni générée ni
+   appliquée. Toute variante responsive de ce bloc s'écrit ici, en media query réelle.
+
+   ⚠️ L'INDICATEUR NATIF EST MASQUÉ, PAS LE CHAMP. `::-webkit-calendar-picker-indicator`
+   est la petite icône du navigateur — c'est elle, et elle seule, qui ouvrait le
+   calendrier système qu'on remplace. Le `<input type="date">` reste en place : il porte
+   la valeur, la saisie clavier et l'étiquette accessible. */
+
+/* ── Pastille : champ natif + bouton calendrier ── */
+.dp-pill {
+  display:inline-flex; align-items:center; gap:2px;
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:0 4px 0 10px; height:38px; max-width:100%;
+  transition:border-color .15s var(--ease), box-shadow .15s var(--ease);
+}
+.dp-pill:hover { border-color:var(--border2) }
+.dp-pill:focus-within { border-color:var(--p2); box-shadow:var(--sh-glow) }
+.dp-pill-input {
+  flex:1; min-width:0; width:100%;
+  background:transparent; border:none; outline:none; padding:0;
+  color:var(--text); font-family:var(--font); font-size:var(--fs-sm);
+  font-weight:var(--fw-regular);
+}
+.dp-pill-input::-webkit-calendar-picker-indicator { display:none; -webkit-appearance:none }
+.dp-pill-input::-webkit-inner-spin-button { display:none }
+.dp-pill-input:disabled { opacity:.5; cursor:not-allowed }
+.dp-pill-btn {
+  flex-shrink:0; display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border:none; border-radius:var(--r-sm);
+  background:transparent; color:var(--text3); cursor:pointer;
+  transition:background .15s var(--ease), color .15s var(--ease);
+}
+.dp-pill-btn:hover { background:var(--bg3); color:var(--p2) }
+
+/* ── Déclencheur de PLAGE (Rapports) ── */
+.dp-range-trigger {
+  display:inline-flex; align-items:center; gap:8px;
+  height:38px; padding:0 14px;
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--r-md);
+  color:var(--text); font-family:var(--font); font-size:var(--fs-sm);
+  font-weight:var(--fw-semibold); cursor:pointer;
+  transition:border-color .15s var(--ease), box-shadow .15s var(--ease);
+}
+.dp-range-trigger:hover { border-color:var(--border2) }
+.dp-range-trigger-on { border-color:var(--p2); box-shadow:var(--sh-glow) }
+.dp-range-trigger > svg { color:var(--text3); flex-shrink:0 }
+.dp-range-value { white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+
+/* ── Panneau flottant (portail vers <body>) ── */
+.dp-panel {
+  z-index:500; box-sizing:border-box;
+  max-width:calc(100vw - 16px);
+  background:var(--card); border:1px solid var(--border2);
+  border-radius:var(--r-lg); box-shadow:var(--sh-xl);
+  padding:12px;
+}
+
+/* ── En-tête de navigation du mois ── */
+.dp-nav { display:flex; align-items:center; justify-content:space-between; gap:4px; margin-bottom:8px }
+.dp-nav-btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:30px; height:30px; flex-shrink:0;
+  background:transparent; border:none; border-radius:var(--r-sm);
+  color:var(--text3); cursor:pointer; transition:background .15s var(--ease), color .15s var(--ease);
+}
+.dp-nav-btn:hover { background:var(--bg3); color:var(--text) }
+.dp-nav-title {
+  flex:1; text-align:center; font-size:var(--fs-body); font-weight:var(--fw-semibold);
+  color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* ── Grille des jours ── */
+/* ⚠️ Gouttière VERTICALE seulement (`2px 0`). Avec une gouttière horizontale, la bande de
+   plage se coupait entre chaque jour : sept pastilles détachées au lieu d'une semaine
+   continue. Défaut INVISIBLE en test — jsdom ne fait aucune mise en page — vu à l'écran. */
+.dp-weekdays, .dp-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px 0 }
+.dp-weekdays {
+  margin-bottom:4px;
+  font-size:var(--fs-caption); font-weight:var(--fw-semibold); color:var(--text4);
+  text-align:center;
+}
+.dp-day {
+  display:flex; align-items:center; justify-content:center;
+  height:34px; border:none; border-radius:var(--r-sm);
+  background:transparent; color:var(--text);
+  font-family:var(--font); font-size:var(--fs-sm); font-weight:var(--fw-regular);
+  cursor:pointer; transition:background .12s var(--ease), color .12s var(--ease);
+}
+.dp-day:hover { background:var(--bg3) }
+.dp-day:focus-visible { outline:2px solid var(--p2); outline-offset:-2px }
+/* Jour hors du mois affiché : présent (la grille fait toujours 6 semaines) mais en retrait. */
+.dp-day-out { color:var(--text4) }
+/* Intérieur de la plage : bande continue, donc pas de rayon sur les côtés. */
+.dp-day-in { background:color-mix(in srgb, var(--p) 16%, transparent); border-radius:0 }
+/* Bornes de la plage / date choisie. */
+.dp-day-on {
+  background:var(--p); color:#fff; font-weight:var(--fw-semibold);
+  box-shadow:var(--sh-p);
+}
+.dp-day-on:hover { background:var(--p) }
+/* Aujourd'hui, quand il n'est pas déjà sélectionné : anneau, jamais un fond plein —
+   un fond plein se lit comme une sélection que personne n'a faite. */
+.dp-day-today { box-shadow:inset 0 0 0 1px var(--p2); color:var(--p2); font-weight:var(--fw-semibold) }
+.dp-day[aria-disabled="true"] { opacity:.35; cursor:not-allowed }
+.dp-day[aria-disabled="true"]:hover { background:transparent }
+
+/* ── Sélecteur de MOIS (paie) ── */
+.dp-months { display:grid; grid-template-columns:repeat(3,1fr); gap:4px }
+.dp-month {
+  height:36px; border:1px solid transparent; border-radius:var(--r-sm);
+  background:var(--bg2); color:var(--text);
+  font-family:var(--font); font-size:var(--fs-sm); cursor:pointer;
+  transition:background .12s var(--ease), color .12s var(--ease);
+}
+.dp-month:hover { background:var(--bg3) }
+.dp-month-on { background:var(--p); color:#fff; font-weight:var(--fw-semibold) }
+
+/* ── Corps du sélecteur de plage : raccourcis à gauche, calendrier à droite ── */
+.dp-range-body { display:flex; align-items:stretch; gap:12px }
+.dp-presets {
+  display:flex; flex-direction:column; gap:2px;
+  width:168px; flex-shrink:0;
+  padding-right:12px; border-right:1px solid var(--border);
+}
+.dp-preset {
+  text-align:left; padding:8px 10px; border:none; border-radius:var(--r-sm);
+  background:transparent; color:var(--text2);
+  font-family:var(--font); font-size:var(--fs-sm); font-weight:var(--fw-regular);
+  cursor:pointer; white-space:nowrap;
+  transition:background .12s var(--ease), color .12s var(--ease);
+}
+.dp-preset:hover { background:var(--bg3); color:var(--text) }
+.dp-preset-on { background:var(--c-purple-bg); color:var(--p2); font-weight:var(--fw-semibold) }
+.dp-range-cal { flex:1; min-width:0 }
+.dp-range-inputs { display:flex; align-items:center; gap:6px; margin-top:10px }
+.dp-range-sep { font-size:var(--fs-label); color:var(--text3); flex-shrink:0 }
+.dp-mini-input {
+  flex:1; min-width:0;
+  height:32px; padding:0 8px;
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--r-sm);
+  color:var(--text); font-family:var(--font); font-size:var(--fs-label);
+}
+.dp-mini-input:focus { outline:none; border-color:var(--p2); box-shadow:var(--sh-glow) }
+/* Indicateur natif masqué ICI AUSSI : ces deux champs vivent DANS le panneau, et son
+   calendrier est juste au-dessus. Laisser l'icône y ouvrait le calendrier du navigateur
+   par-dessus le nôtre — exactement ce qu'on remplace. Ils restent saisissables au clavier. */
+.dp-mini-input::-webkit-calendar-picker-indicator { display:none; -webkit-appearance:none }
+
+/* Ce qui MANQUE, dit en toutes lettres — le bouton « Appliquer » n'est jamais éteint. */
+.dp-missing {
+  margin-top:10px; padding:7px 10px; border-radius:var(--r-sm);
+  background:var(--c-amber-bg); border:1px solid var(--c-amber-border);
+  color:var(--text); font-size:var(--fs-label);
+}
+
+/* ── Pied : Effacer / Appliquer ── */
+.dp-foot {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  margin-top:12px; padding-top:10px; border-top:1px solid var(--border);
+}
+.dp-foot-clear, .dp-foot-apply {
+  display:inline-flex; align-items:center; gap:6px;
+  height:34px; padding:0 14px; border-radius:var(--r-sm);
+  font-family:var(--font); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+  cursor:pointer; transition:background .15s var(--ease), color .15s var(--ease);
+}
+.dp-foot-clear { background:transparent; border:none; color:var(--text3) }
+.dp-foot-clear:hover { background:var(--bg3); color:var(--text) }
+.dp-foot-apply { background:var(--p); border:none; color:#fff; box-shadow:var(--sh-p) }
+.dp-foot-apply:hover { background:var(--p2) }
+
+/* Étroit : les raccourcis passent AU-DESSUS du calendrier plutôt que d'écraser sa
+   largeur — à 168 px de colonne, un calendrier de 7 colonnes devenait illisible. */
+@media (max-width:560px) {
+  .dp-range-body { flex-direction:column }
+  .dp-presets {
+    width:auto; flex-direction:row; flex-wrap:wrap;
+    padding-right:0; padding-bottom:10px;
+    border-right:none; border-bottom:1px solid var(--border);
+  }
+}
+
 /* GlobalSearch — cmdk keyboard navigation highlight */
 [cmdk-item] { cursor: pointer; }
 [cmdk-item][aria-selected="true"],

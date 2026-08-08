@@ -1,6 +1,12 @@
 import { TrendingUp, TrendingDown } from 'lucide-react'
 
-export type Period = 'today' | '7days' | '30days' | '3months' | 'year'
+/**
+ * ⚠️ SOURCE UNIQUE — le domaine des périodes vit dans `lib/dateRange.ts`, aux côtés des
+ * BORNES qui en dérivent (`presetRange`). Le redéclarer ici avait un coût concret : le
+ * jour où un raccourci s'ajoute, le type et les bornes divergent en silence, et le
+ * `Record<Period, …>` qui devait rougir reste complet sur l'ancien domaine.
+ */
+export type { Period } from '@/lib/dateRange'
 
 export const RADIAN = Math.PI / 180
 

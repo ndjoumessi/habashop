@@ -15,6 +15,9 @@ import { salesApi, expensesApi, productsApi, employeesApi } from '@/lib/api'
 const ReportsTabs = lazy(() => import('@/components/reports/ReportsTabs'))
 import { type Period, Trend } from '@/components/reports/reportsShared'
 import { buildPaymentBreakdown, pctLabel } from '@/components/reports/paymentBreakdown'
+import { DateRangeField, PERIOD_LABELS } from '@/components/ui/DatePicker'
+import { type IsoDate, presetRange, rangeToMs } from '@/lib/dateRange'
+import { fmtDate } from '@/lib/formatDate'
 
 const WEEK_ABBR: Record<string, string[]> = {
   fr: ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],
@@ -22,6 +25,9 @@ const WEEK_ABBR: Record<string, string[]> = {
   es: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
   it: ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'],
 }
+
+/** Période affichée à l'ouverture, et cible du bouton « Effacer » du panneau. */
+const PRESET_DEFAUT: Period = '30days'
 
 export default function Reports() {
   const { lang, currency } = useConfig()
@@ -41,11 +47,17 @@ export default function Reports() {
       .finally(() => setLoading(false))
   }, [])
 
-  const [period,     setPeriod]     = useState<Period>('30days')
   const [reportTab,  setReportTab]  = useState<'ventes' | 'stock' | 'clients' | 'finance' | 'rh'>('ventes')
-  // Plage de dates personnalisée ("YYYY-MM-DD") : si from+to renseignés, elle PRIME sur les presets.
-  const [customFrom, setCustomFrom] = useState('')
-  const [customTo,   setCustomTo]   = useState('')
+  /**
+   * SÉLECTION DE PÉRIODE — un seul état, trois champs qui bougent ENSEMBLE.
+   * `preset` à `null` signifie « plage saisie à la main » ; `from`/`to` sont TOUJOURS
+   * renseignés, y compris sous un raccourci. Avant, un preset ne portait aucune date et
+   * la plage personnalisée aucun preset : deux sources pour une même période, et le
+   * libellé affiché pouvait décrire autre chose que ce qui était filtré.
+   */
+  const [sel, setSel] = useState<{ preset: Period | null; from: IsoDate; to: IsoDate }>(
+    () => ({ preset: PRESET_DEFAUT, ...presetRange(PRESET_DEFAUT) }),
+  )
   // Filtres additionnels (locaux) : catégorie produit (Ventes/Stock) + employé (Paie).
   const [filterCat,  setFilterCat]  = useState('')
   const i = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
@@ -75,17 +87,21 @@ export default function Reports() {
     return [...set].sort()
   }, [salesData])
 
-  // Plage active (ms) : personnalisée si from+to, sinon dérivée du preset.
+  /**
+   * Plage active en millisecondes, DÉRIVÉE de la sélection — plus aucun calcul de bornes ici.
+   *
+   * ⚠️ Les bornes sont des JOURS CIVILS COMPLETS (minuit → 23:59:59.999), pas `now − N jours`.
+   * L'ancien calcul soustrayait une durée à l'instant courant : « 30 derniers jours » ouvert
+   * à 14 h 32 démarrait à 14 h 32, et les ventes du matin du 30ᵉ jour tombaient hors période.
+   * Le même rapport rendait donc deux chiffres différents selon l'heure d'ouverture.
+   */
   const range = useMemo(() => {
-    const now = Date.now(); const DAY = 86400000
-    if (customFrom && customTo) {
-      const from = new Date(`${customFrom}T00:00:00`).getTime()
-      const to   = new Date(`${customTo}T23:59:59`).getTime()
-      if (Number.isFinite(from) && Number.isFinite(to) && to >= from) return { from, to, custom: true }
-    }
-    const span = ({ today: DAY, '7days': 7 * DAY, '30days': 30 * DAY, '3months': 90 * DAY, year: 365 * DAY } as Record<Period, number>)[period]
-    return { from: now - span, to: now, custom: false }
-  }, [period, customFrom, customTo])
+    const ms = rangeToMs({ from: sel.from, to: sel.to })
+      // Plage inexploitable (saisie clavier en cours, année à un chiffre) : on retombe sur
+      // le raccourci par défaut plutôt que sur une période vide qui afficherait « 0 vente ».
+      ?? rangeToMs(presetRange(PRESET_DEFAUT))!
+    return { from: ms.from, to: ms.to, custom: sel.preset === null }
+  }, [sel])
 
   // Export Excel (.xlsx multi-feuilles, sans dépendance) des données BRUTES de la plage active.
   const handleExcelExport = async () => {
@@ -107,18 +123,18 @@ export default function Reports() {
     }
   }
 
-  const PERIOD_LABELS: Record<Period, string> = {
-    today:    t('reports_today'),
-    '7days':  t('reports_7days'),
-    '30days': t('reports_30days'),
-    '3months':t('reports_3months'),
-    year:     t('reports_year'),
-  }
-  const _loc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
-  // Libellé de période affiché : plage custom si active, sinon le preset.
-  const periodLabel = range.custom
-    ? `${new Date(range.from).toLocaleDateString(_loc)} → ${new Date(range.to).toLocaleDateString(_loc)}`
-    : PERIOD_LABELS[period]
+  /**
+   * Libellé de période : le raccourci s'il y en a un, sinon les deux dates.
+   *
+   * ⚠️ Les libellés viennent de `DatePicker` (source unique, 4 langues) et NON plus des
+   * clés `reports_*` : le panneau et le sous-titre nommaient la même période avec deux
+   * jeux de chaînes, qui n'avaient aucune raison de rester d'accord.
+   * ⚠️ `fmtDate`, pas `toLocaleDateString` — cf. `lib/formatDate.ts` (décalage d'un jour
+   * en fuseau négatif).
+   */
+  const periodLabel = sel.preset
+    ? PERIOD_LABELS[lang][sel.preset]
+    : `${fmtDate(sel.from)} → ${fmtDate(sel.to)}`
 
   // KPIs + graphique 7j + top produits calculés depuis les vraies ventes
   // (les items incluent product.buyPrice → vraie marge brute = CA − coût d'achat).
@@ -232,36 +248,18 @@ export default function Reports() {
 
       {/* Sélecteur période (presets + plage personnalisée) + exports */}
       <div className="flex flex-wrap gap-2 items-center">
-        {(Object.keys(PERIOD_LABELS) as Period[]).map(p => {
-          const active = !range.custom && period === p
-          return (
-            <button key={p}
-              className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
-              aria-pressed={active}
-              style={{
-                background: active ? 'var(--p)' : 'var(--card)',
-                color: active ? '#fff' : 'var(--text2)',
-                border: active ? 'none' : '1px solid var(--border)',
-                cursor: 'pointer', fontFamily: 'inherit',
-                boxShadow: active ? 'var(--sh-xs)' : 'none',
-              }}
-              onClick={() => { setCustomFrom(''); setCustomTo(''); setPeriod(p) }}
-            >{PERIOD_LABELS[p]}</button>
-          )
-        })}
-        {/* Plage de dates personnalisée */}
-        <div className="flex items-center gap-1.5" style={{ padding: '4px 10px', borderRadius: 12, border: `1px solid ${range.custom ? 'var(--p)' : 'var(--border)'}`, background: 'var(--card)' }}>
-          <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>{i('Du', 'From', 'Desde', 'Dal')}</span>
-          <input type="date" value={customFrom} max={customTo || undefined} onChange={e => setCustomFrom(e.target.value)}
-            className="input" style={{ height: 32, width: 'auto', fontSize: 'var(--fs-label)', padding: '2px 8px' }} aria-label={i('Date de début', 'Start date', 'Fecha de inicio', 'Data inizio')} />
-          <span style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>{i('au', 'to', 'hasta', 'al')}</span>
-          <input type="date" value={customTo} min={customFrom || undefined} onChange={e => setCustomTo(e.target.value)}
-            className="input" style={{ height: 32, width: 'auto', fontSize: 'var(--fs-label)', padding: '2px 8px' }} aria-label={i('Date de fin', 'End date', 'Fecha de fin', 'Data fine')} />
-          {range.custom && (
-            <button onClick={() => { setCustomFrom(''); setCustomTo('') }} title={i('Effacer', 'Clear', 'Borrar', 'Cancella')}
-              style={{ border: 'none', background: 'transparent', color: 'var(--text3)', cursor: 'pointer', fontSize: 'var(--fs-md)', lineHeight: 1, padding: '0 2px' }}>×</button>
-          )}
-        </div>
+        {/* UN SEUL contrôle : raccourcis + plage + calendrier. Avant, les 5 boutons de
+            raccourci et les 2 champs Du/au étaient deux contrôles concurrents sur la même
+            grandeur — on pouvait avoir un raccourci « actif » à l'écran et une plage
+            personnalisée réellement appliquée. */}
+        <DateRangeField
+          from={sel.from}
+          to={sel.to}
+          preset={sel.preset}
+          presetParDefaut={PRESET_DEFAUT}
+          onChange={setSel}
+          ariaLabel={i('Période du rapport', 'Report period', 'Período del informe', 'Periodo del report')}
+        />
         {/* Dropdown « Exporter ▾ » — un seul déclencheur, aligné à droite ; 3 options au clic */}
         <div ref={exportRef} style={{ position: 'relative', marginLeft: 'auto' }}>
           <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => setExportOpen(o => !o)}

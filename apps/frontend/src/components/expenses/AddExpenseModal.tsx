@@ -6,6 +6,7 @@ import IconButton from '@/components/ui/IconButton'
 import { CATEGORIES, MODES, VAT_RATES, catLabel } from './expensesShared'
 import type { Category } from './expensesShared'
 import { useModalFocus } from '@/hooks/useModalFocus'
+import { DateField } from '@/components/ui/DatePicker'
 
 interface Props {
   nDate: string; setNDate: (v: string) => void
@@ -44,7 +45,7 @@ export default function AddExpenseModal(props: Props) {
           <ResponsiveGrid min={160} gap={10}>
             <div>
               <label style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-regular)', color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Date','Date','Fecha','Data')}</label>
-              <input aria-label={tr('Date','Date','Fecha','Data')} className="input" type="date" value={nDate} onChange={e => setNDate(e.target.value)}
+              <DateField ariaLabel={tr('Date','Date','Fecha','Data')} value={nDate} onChange={setNDate}
                 style={{ width:'100%', boxSizing:'border-box' }} />
             </div>
             <div>

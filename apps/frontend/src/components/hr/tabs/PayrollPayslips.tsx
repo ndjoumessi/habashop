@@ -6,6 +6,7 @@ import { type Employee, roleLabel, deptLabel } from '@/components/hr/hrShared'
 // au prochain changement de loi — et un oubli aurait produit deux nets pour un salaire.
 import { payrollDisplay, fmtDisplay, printBulletin, payRecordFromEmployee, CNSS_RATE, IR_RATE } from '@/components/payroll/payrollShared'
 import { useConfig } from '@/stores/appStore'
+import { MonthField } from '@/components/ui/DatePicker'
 
 interface Props {
   employees: Employee[]
@@ -28,10 +29,10 @@ export default function PayrollPayslips({ employees, fmt: _fmt, lang, payrollMon
         <label style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:'var(--text3)' }}>
           {lang === 'en' ? 'Period:' : lang === 'es' ? 'Período:' : lang === 'it' ? 'Periodo:' : 'Période :'}
         </label>
-        <input className="input" type="month"
-          style={{ width:'auto' }}
+        <MonthField
+          ariaLabel={lang === 'en' ? 'Payroll period' : lang === 'es' ? 'Período de nómina' : lang === 'it' ? 'Periodo di paga' : 'Période de paie'}
           value={payrollMonth}
-          onChange={e => setPayrollMonth(e.target.value)} />
+          onChange={setPayrollMonth} />
         <button className="topbar-btn"
           style={{ fontSize:'var(--fs-label)', padding:'7px 14px', display:'flex', alignItems:'center', gap:6 }}
           onClick={() => generateAllPayslips()}>

@@ -5,6 +5,7 @@ import { X, Pencil, FileText, Check, Trash2 } from 'lucide-react'
 import { CATEGORIES, MODES, VAT_RATES, catLabel } from './expensesShared'
 import type { Category, Expense } from './expensesShared'
 import { useModalFocus } from '@/hooks/useModalFocus'
+import { DateField } from '@/components/ui/DatePicker'
 
 interface EditExpForm {
   date: string; label: string; category: Category
@@ -58,7 +59,10 @@ export default function ExpenseDetailModal(props: Props) {
           <ResponsiveGrid min={160} gap={10}>
             <div>
               {vf(lang === 'en' ? 'Date' : lang === 'es' ? 'Fecha' : lang === 'it' ? 'Data' : 'Date', editExpForm.date)}
-              {expEditMode && <input className="input" type="date" value={editExpForm.date} onChange={e => setEditExpForm(f => ({...f, date:e.target.value}))} style={{ width:'100%', boxSizing:'border-box' }} />}
+              {expEditMode && <DateField
+                ariaLabel={lang === 'en' ? 'Date' : lang === 'es' ? 'Fecha' : lang === 'it' ? 'Data' : 'Date'}
+                value={editExpForm.date} onChange={v => setEditExpForm(f => ({...f, date:v}))}
+                style={{ width:'100%', boxSizing:'border-box' }} />}
             </div>
             <div>
               {vf(lang === 'en' ? 'Category' : lang === 'es' ? 'Categoría' : lang === 'it' ? 'Categoria' : 'Catégorie', editExpForm.category)}

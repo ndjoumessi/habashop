@@ -3,6 +3,7 @@ import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { type Employee, labelStyle } from '@/components/hr/hrShared'
+import { DateField } from '@/components/ui/DatePicker'
 
 interface Props {
   lang: string
@@ -57,15 +58,20 @@ export default function LeaveRequestModal({ lang, employees, leaveForm, setLeave
           <ResponsiveGrid min={160} gap={12}>
             <div>
               <label style={labelStyle}>{lang === 'en' ? 'FROM' : lang === 'es' ? 'DEL' : lang === 'it' ? 'DAL' : 'DU'}</label>
-              <input aria-label={lang === 'en' ? 'FROM' : lang === 'es' ? 'DEL' : lang === 'it' ? 'DAL' : 'DU'} className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
+              <DateField
+                ariaLabel={lang === 'en' ? 'FROM' : lang === 'es' ? 'DEL' : lang === 'it' ? 'DAL' : 'DU'}
+                style={{ width: '100%', boxSizing: 'border-box' }}
                 value={leaveForm.startDate}
-                onChange={e => setLeaveForm(f => ({ ...f, startDate: e.target.value }))} />
+                onChange={v => setLeaveForm(f => ({ ...f, startDate: v }))} />
             </div>
             <div>
               <label style={labelStyle}>{lang === 'en' ? 'TO' : lang === 'es' ? 'AL' : lang === 'it' ? 'AL' : 'AU'}</label>
-              <input aria-label={lang === 'en' ? 'TO' : lang === 'es' ? 'AL' : lang === 'it' ? 'AL' : 'AU'} className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
+              <DateField
+                ariaLabel={lang === 'en' ? 'TO' : lang === 'es' ? 'AL' : lang === 'it' ? 'AL' : 'AU'}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+                min={leaveForm.startDate || undefined}
                 value={leaveForm.endDate}
-                onChange={e => setLeaveForm(f => ({ ...f, endDate: e.target.value }))} />
+                onChange={v => setLeaveForm(f => ({ ...f, endDate: v }))} />
             </div>
           </ResponsiveGrid>
           <div>
