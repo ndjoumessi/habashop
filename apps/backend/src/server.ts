@@ -44,6 +44,7 @@ import { whatsappRoutes }     from './routes/whatsapp'
 import { aiRoutes }           from './routes/ai'
 import { docsRoutes }         from './routes/docs'
 import { goalsRoutes }        from './routes/goals'
+import { expenseBudgetRoutes } from './routes/expenseBudgets'
 import { attendanceRoutes }   from './routes/attendance'
 import { shiftRoutes }        from './routes/shifts'
 import { leaveRequestRoutes } from './routes/leaveRequests'
@@ -248,6 +249,7 @@ async function start() {
   await app.register(authRoutes)
   await app.register(accountRoutes)
   await app.register(tenantRoutes)
+  await app.register(expenseBudgetRoutes)
   await app.register(productRoutes)
   await app.register(stockTransferRoutes)
   await app.register(customerRoutes)

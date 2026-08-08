@@ -402,6 +402,19 @@ export const goalsApi = {
   delete: (id: string)                  => api.delete<{ success: boolean }>(`/api/goals/${id}`),
 }
 
+/**
+ * Budgets de dépense, persistés par boutique (table `ExpenseBudget`).
+ *
+ * ⚠️ Le serveur rend TOUJOURS les huit catégories, à zéro quand rien n'est posé :
+ * le front n'a donc aucun défaut à inventer. C'est exactement ce qu'il inventait
+ * avant — des littéraux identiques pour toutes les boutiques.
+ */
+export const expenseBudgetsApi = {
+  get: () => api.get<{ budgets: Record<string, number> }>('/api/expense-budgets'),
+  put: (budgets: Record<string, number>) =>
+    api.put<{ budgets: Record<string, number> }>('/api/expense-budgets', { budgets }),
+}
+
 export const expensesApi = {
   list:   () => api.get<ApiExpense[]>('/api/expenses'),
   create: (data: ExpenseWrite) => api.post<ApiExpense>('/api/expenses', data),

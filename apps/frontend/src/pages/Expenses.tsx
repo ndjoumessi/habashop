@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useAppStore, useConfig, useFormatAmount, convertFromXOF, t } from '@/stores/appStore'
-import { expensesApi, salesApi } from '@/lib/api'
+import { expensesApi, salesApi, expenseBudgetsApi } from '@/lib/api'
 import { Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
+import { saved } from '@/lib/saved'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
 import {
   BUDGETS_INIT, CATEGORIES, ttcAmount, mapApiExpense, nextExpId, monthYearLabel,
@@ -53,6 +54,19 @@ export default function Expenses() {
     return () => window.removeEventListener('habashop:new-expense', handler)
   }, [])
   const [budgets, setBudgets]   = useState<Record<Category, number>>(BUDGETS_INIT)
+
+  /**
+   * ⚠️ Les budgets viennent du SERVEUR, plus de `BUDGETS_INIT`. En cas d'échec réseau
+   * on garde les valeurs par défaut de l'état initial : c'est un repli d'AFFICHAGE,
+   * pas une décision — aucune écriture n'en découle, et le prochain enregistrement
+   * partira de ce que le commerçant voit.
+   */
+  useEffect(() => {
+    expenseBudgetsApi.get()
+      .then(r => { if (r?.budgets) setBudgets(prev => ({ ...prev, ...r.budgets } as typeof prev)) })
+      .catch(() => { /* repli d'affichage : les défauts restent en place */ })
+  }, [])
+
   const [tab, setTab]           = useState<'journal' | 'budget'>('journal')
 
   // Filters
@@ -63,6 +77,7 @@ export default function Expenses() {
   // Modals
   const [addOpen, setAddOpen]             = useState(false)
   const [budgetOpen, setBudgetOpen]       = useState(false)
+  const [savingBudgets, setSavingBudgets] = useState(false)
   const [editBudgets, setEditBudgets]     = useState<Record<Category, number>>(BUDGETS_INIT)
 
   // Modifier dépense
@@ -207,22 +222,30 @@ export default function Expenses() {
   }
 
   /**
-   * ⚠️ CE MESSAGE DISAIT « Budgets mis à jour ». C'était FAUX : `setBudgets` est un
-   * état React, il n'existe aucun modèle `Budget` en base ni aucune colonne de
-   * réglages sur `Tenant` — les valeurs disparaissent au rechargement. Un écran qui
-   * annonce un enregistrement qui n'a pas eu lieu est le défaut que `lib/saved.ts`
-   * a été écrit pour fermer ; ici il n'y a même pas de requête à surveiller, la
-   * phrase était simplement inventée. On dit ce qui se passe réellement.
-   * DETTE OUVERTE : persister les budgets par boutique (nouveau modèle + migration).
+   * ENREGISTREMENT RÉEL depuis 2026-08-08 (table `ExpenseBudget`).
+   *
+   * ⚠️ `saved(...)`, PAS `.catch(() => {})`. Ce site affichait un toast de succès sur
+   * une valeur qui n'allait nulle part ; le remplacer par une requête AVALÉE serait le
+   * même mensonge sous une autre forme — l'écran affirmerait un enregistrement que le
+   * serveur a refusé. `saved` RAPPORTE (message du serveur préféré au nôtre) et rend
+   * un booléen : la décision reste ici.
+   *
+   * ⚠️ Le store local n'est mis à jour QU'EN CAS DE SUCCÈS, et la modale reste ouverte
+   * sur échec — le commerçant garde sa saisie et voit pourquoi elle n'est pas passée.
+   * L'inverse (optimiste puis silence) est exactement ce que `lib/saved.ts` ferme.
    */
-  function saveBudgets() {
+  async function saveBudgets() {
+    if (savingBudgets) return
+    setSavingBudgets(true)
+    const ok = await saved(
+      expenseBudgetsApi.put(editBudgets),
+      tr('les budgets de dépense', 'the expense budgets', 'los presupuestos de gastos', 'i budget di spesa'),
+    )
+    setSavingBudgets(false)
+    if (!ok) return
     setBudgets({ ...editBudgets })
-    toast.success(tr(
-      'Budgets appliqués — non enregistrés, ils repartiront des valeurs par défaut au rechargement',
-      'Budgets applied — not saved; they will reset to defaults on reload',
-      'Presupuestos aplicados — no guardados; volverán a los valores por defecto al recargar',
-      'Budget applicati — non salvati; torneranno ai valori predefiniti al ricaricamento',
-    ))
+    toast.success(tr('Budgets enregistrés','Budgets saved','Presupuestos guardados','Budget salvati'))
+    announce(tr('Budgets enregistrés','Budgets saved','Presupuestos guardados','Budget salvati'))
     setBudgetOpen(false)
   }
 

@@ -1,7 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { buildBudgetSummary } from '@/components/expenses/budgetSummary'
 import { CATEGORIES, BUDGETS_INIT, monthYearLabel } from '@/components/expenses/expensesShared'
+
+/**
+ * ⚠️ Jeu de budgets EXPLICITE. Les cas s'appuyaient sur `BUDGETS_INIT`, qui portait
+ * les littéraux inventés (1 350 000 au total). Ces montants sont désormais à ZÉRO —
+ * ils ne sont plus une donnée, ils sont l'absence de donnée. Un test qui continuerait
+ * à s'y adosser mesurerait la valeur par défaut, plus un budget.
+ */
+const BUDGETS = {
+  Loyer: 500_000, Énergie: 150_000, Transport: 100_000, Maintenance: 200_000,
+  Fournitures: 50_000, Marketing: 100_000, Formation: 200_000, Autre: 50_000,
+} as const
 import type { Category } from '@/components/expenses/expensesShared'
 
 /**
@@ -38,14 +51,14 @@ describe('buildBudgetSummary — les trois nombres décrivent LA MÊME période'
   it('⚠️ totalSpent est EXACTEMENT la somme des catégories', () => {
     // C'est l'invariant qui était rompu : le total venait d'un `reduce` sur une autre
     // liste que celle des cartes. Ici il ne PEUT plus diverger, il en est dérivé.
-    const s = buildBudgetSummary(duMois('2026-05'), BUDGETS_INIT, CATEGORIES)
+    const s = buildBudgetSummary(duMois('2026-05'), BUDGETS, CATEGORIES)
     const somme = CATEGORIES.reduce((acc, c) => acc + s.spentByCategory[c], 0)
     expect(s.totalSpent).toBe(somme)
     expect(s.totalSpent).toBe(355_000)
   })
 
   it('⚠️ variance = budget − total AFFICHÉ, jamais − une autre période', () => {
-    const s = buildBudgetSummary(duMois('2026-05'), BUDGETS_INIT, CATEGORIES)
+    const s = buildBudgetSummary(duMois('2026-05'), BUDGETS, CATEGORIES)
     expect(s.totalBudget).toBe(1_350_000)
     expect(s.variance).toBe(s.totalBudget - s.totalSpent)
     expect(s.variance).toBe(995_000)
@@ -54,7 +67,7 @@ describe('buildBudgetSummary — les trois nombres décrivent LA MÊME période'
   it('⚠️ LE CAS DE PRODUCTION : mois sans dépense → tout à zéro, PAS l’historique', () => {
     // Août 2026 : aucune dépense. L'ancien calcul rendait 1 065 000 (mars+avril+mai)
     // pour le total et le taux, et 1 350 000 pour l'écart. Les trois se contredisaient.
-    const s = buildBudgetSummary(duMois('2026-08'), BUDGETS_INIT, CATEGORIES)
+    const s = buildBudgetSummary(duMois('2026-08'), BUDGETS, CATEGORIES)
     expect(s.totalSpent).toBe(0)
     expect(s.variance).toBe(1_350_000)
     expect(s.usagePct).toBe(0)
@@ -63,12 +76,12 @@ describe('buildBudgetSummary — les trois nombres décrivent LA MÊME période'
 
   it('⚠️ le cumul de TROIS mois n’est jamais comparé à un budget MENSUEL', () => {
     // 600 000 de loyer, c'est 3 × 200 000 — pas un dépassement d'un budget de 500 000.
-    const cumul = buildBudgetSummary(DEPENSES_REELLES, BUDGETS_INIT, CATEGORIES)
+    const cumul = buildBudgetSummary(DEPENSES_REELLES, BUDGETS, CATEGORIES)
     expect(cumul.spentByCategory.Loyer, 'témoin : le cumul vaut bien 600 000').toBe(600_000)
-    const unMois = buildBudgetSummary(duMois('2026-05'), BUDGETS_INIT, CATEGORIES)
+    const unMois = buildBudgetSummary(duMois('2026-05'), BUDGETS, CATEGORIES)
     expect(unMois.spentByCategory.Loyer).toBe(200_000)
     expect(unMois.spentByCategory.Loyer, 'un loyer mensuel ne dépasse pas son budget mensuel')
-      .toBeLessThanOrEqual(BUDGETS_INIT.Loyer)
+      .toBeLessThanOrEqual(BUDGETS.Loyer)
   })
 })
 
@@ -82,22 +95,48 @@ describe('buildBudgetSummary — cas limites', () => {
   })
 
   it('liste vide : tout à zéro, et le taux vaut 0 (pas null — le budget existe)', () => {
-    const s = buildBudgetSummary([], BUDGETS_INIT, CATEGORIES)
+    const s = buildBudgetSummary([], BUDGETS, CATEGORIES)
     expect(s.totalSpent).toBe(0)
     expect(s.usagePct).toBe(0)
   })
 
   it('une catégorie inconnue n’est pas silencieusement comptée', () => {
-    const s = buildBudgetSummary([{ category: 'Crypto', amount: 999 }], BUDGETS_INIT, CATEGORIES)
+    const s = buildBudgetSummary([{ category: 'Crypto', amount: 999 }], BUDGETS, CATEGORIES)
     expect(s.totalSpent, 'une catégorie hors domaine ne gonfle aucun total').toBe(0)
   })
 
   it('un montant non numérique ne propage pas NaN', () => {
     const s = buildBudgetSummary(
       [{ category: 'Loyer', amount: Number.NaN }, { category: 'Loyer', amount: 200_000 }],
-      BUDGETS_INIT, CATEGORIES,
+      BUDGETS, CATEGORIES,
     )
     expect(s.totalSpent).toBe(200_000)
+  })
+})
+
+describe('domaine partagé front ↔ back', () => {
+  /**
+   * ⚠️ CETTE MOITIÉ MANQUAIT. Le test backend comparait SA liste à la fixture, donc
+   * retirer une catégorie côté back rougissait — mais la retirer côté FRONT ne
+   * déclenchait rien. Un jumelage vérifié dans un seul sens n'est pas un jumelage :
+   * il garde le fichier qu'on regarde et laisse filer celui qu'on oublie.
+   */
+  const fixture = JSON.parse(readFileSync(
+    resolve(__dirname, '..', '..', '..', '..', 'docs', 'shared-fixtures', 'expense-categories.json'),
+    'utf8',
+  )) as { categories: string[] }
+
+  it('⚠️ le test LIT vraiment la fixture', () => {
+    expect(fixture.categories.length).toBeGreaterThan(4)
+    expect(fixture.categories).toContain('Loyer')
+  })
+
+  it('la liste frontend est EXACTEMENT celle de la fixture', () => {
+    expect([...CATEGORIES]).toEqual(fixture.categories)
+  })
+
+  it('BUDGETS_INIT couvre le domaine, sans clé en trop', () => {
+    expect(Object.keys(BUDGETS_INIT).sort()).toEqual([...fixture.categories].sort())
   })
 })
 
@@ -154,6 +193,13 @@ function lireResume(root: HTMLElement) {
 }
 
 
+/**
+ * FAUX SERVEUR DE BUDGETS, piloté par les tests.
+ * `vi.hoisted` : les fabriques de `vi.mock` sont remontées au-dessus du module, elles
+ * ne peuvent référencer qu'un état lui aussi hoisté.
+ */
+const SRV = vi.hoisted(() => ({ budgets: {} as Record<string, number>, echec: false }))
+
 vi.mock('react-hot-toast', () => ({
   default: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }),
 }))
@@ -176,10 +222,25 @@ vi.mock('@/lib/api', () => ({
     create: vi.fn(), update: vi.fn(), delete: vi.fn(),
   },
   salesApi: { list: vi.fn(() => Promise.resolve([])) },
+  // ⚠️ Le mock APPLIQUE ce qu'on lui envoie : `put` renvoie les budgets reçus et
+  // `get` les relit. Un `mockResolvedValue` figé resterait vert si la page cessait
+  // d'envoyer quoi que ce soit — le mock qui ignore ses arguments.
+  expenseBudgetsApi: {
+    get: vi.fn(() => Promise.resolve({ budgets: { ...SRV.budgets } })),
+    put: vi.fn((b: Record<string, number>) => {
+      if (SRV.echec) return Promise.reject(new Error('Budget refusé par le serveur'))
+      Object.assign(SRV.budgets, b)
+      return Promise.resolve({ budgets: { ...SRV.budgets } })
+    }),
+  },
 }))
 
 describe('Expenses — le panneau est COHÉRENT à l’écran', () => {
-  beforeEach(() => { vi.setSystemTime(AUJOURDHUI) })
+  beforeEach(() => {
+    vi.setSystemTime(AUJOURDHUI)
+    for (const k of Object.keys(SRV.budgets)) delete SRV.budgets[k]
+    SRV.echec = false
+  })
 
   const ouvrirBudget = async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
@@ -252,9 +313,60 @@ describe('Expenses — le panneau est COHÉRENT à l’écran', () => {
     vi.useRealTimers()
   })
 
-  it('⚠️ « Modifier les budgets » n’annonce PAS un enregistrement', async () => {
-    // Le message disait « Budgets mis à jour » alors qu'aucun modèle `Budget`
-    // n'existe en base : la valeur disparaît au rechargement.
+  it('⚠️ boutique SANS budget : l’onglet ne reste pas muet', async () => {
+    /**
+     * Conséquence directe du passage aux vrais budgets : une boutique neuve n'en a
+     * aucun, donc AUCUNE carte ne se rend (`budgets[cat] > 0`). Avant, l'écran
+     * montrait huit budgets inventés ; le remplacer par un panneau vide sans un mot
+     * échangerait un mensonge contre un écran qui a l'air cassé.
+     */
+    const { container } = await ouvrirBudget()      // le faux serveur ne rend aucun budget
+    expect(container.textContent).toMatch(/Aucun budget défini/i)
+    expect(container.textContent, 'aucun montant inventé ne doit subsister').not.toMatch(/500\s?000/)
+    vi.useRealTimers()
+  })
+
+  it('⚠️ les budgets viennent du SERVEUR, pas d’un littéral du front', async () => {
+    SRV.budgets.Loyer = 777_000
+    const { container } = await ouvrirBudget()
+    await waitFor(() => expect(container.textContent).toMatch(/777\s?000/))
+    expect(container.textContent).not.toMatch(/Aucun budget défini/i)
+    vi.useRealTimers()
+  })
+
+  it('⚠️ un REFUS du serveur n’est jamais annoncé comme un succès', async () => {
+    /**
+     * Le cas que `lib/saved.ts` existe pour fermer. Remplacer un toast inventé par
+     * une requête AVALÉE (`.catch(() => {})`) serait le même mensonge sous une autre
+     * forme : l'écran affirmerait un enregistrement que le serveur a refusé, et la
+     * valeur disparaîtrait au rechargement — sans que personne ne l'ait vu.
+     */
+    const { default: toast } = await import('react-hot-toast')
+    SRV.echec = true
+    await ouvrirBudget()
+    fireEvent.click(screen.getByRole('button', { name: /Modifier les budgets|Edit budgets/i }))
+    const dialog = await screen.findByRole('dialog')
+    fireEvent.click(dialog.querySelector('.btn-primary') as HTMLButtonElement)
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalled())
+    // Le message du SERVEUR est préféré au nôtre : c'est lui qui nomme le refus.
+    const erreur = (toast.error as unknown as { mock: { calls: unknown[][] } }).mock.calls.at(-1)?.[0]
+    expect(String(erreur)).toMatch(/refusé par le serveur/i)
+
+    const succes = (toast.success as unknown as { mock: { calls: unknown[][] } }).mock.calls
+      .map(c => String(c[0])).filter(m => /enregistr|saved/i.test(m))
+    expect(succes, 'un succès annoncé sur une écriture refusée').toHaveLength(0)
+    // ⚠️ La modale RESTE ouverte : le commerçant garde sa saisie et voit pourquoi.
+    expect(screen.queryByRole('dialog'), 'la modale s’est fermée sur un échec').not.toBeNull()
+    vi.useRealTimers()
+  })
+
+  it('⚠️ « Modifier les budgets » ENREGISTRE vraiment, et le dit', async () => {
+    // ⚠️ CE TEST DISAIT L'INVERSE il y a une heure : il exigeait que l'écran
+    // n'annonce PAS d'enregistrement, parce qu'aucune table ne le portait. Depuis
+    // `ExpenseBudget`, c'est le contraire qu'il faut garder. Un test qui fige un
+    // état transitoire du produit devient un frein au changement qu'il devrait
+    // accompagner — d'où sa réécriture plutôt que sa suppression.
     const { default: toast } = await import('react-hot-toast')
     await ouvrirBudget()
     fireEvent.click(screen.getByRole('button', { name: /Modifier les budgets|Edit budgets/i }))
@@ -264,9 +376,11 @@ describe('Expenses — le panneau est COHÉRENT à l’écran', () => {
     const valider = dialog.querySelector('.btn-primary') as HTMLButtonElement | null
     expect(valider, 'bouton principal introuvable dans la modale').not.toBeNull()
     fireEvent.click(valider!)
+    const { expenseBudgetsApi } = await import('@/lib/api')
+    await waitFor(() => expect(expenseBudgetsApi.put).toHaveBeenCalled())
     const dit = (toast.success as unknown as { mock: { calls: unknown[][] } }).mock.calls.at(-1)?.[0]
-    expect(String(dit)).toMatch(/non enregistr|not saved/i)
-    expect(String(dit), 'ne doit plus affirmer une mise à jour').not.toMatch(/^Budgets mis à jour$/)
+    expect(String(dit)).toMatch(/enregistr|saved/i)
+    expect(String(dit), 'plus de mention « non enregistré »').not.toMatch(/non enregistr/i)
     vi.useRealTimers()
   })
 })

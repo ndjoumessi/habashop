@@ -87,34 +87,35 @@ model Tenant {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime? // null = actif (soft delete ; suppression de boutique par l'admin)
 
-  users          User[]
-  products       Product[]
-  sales          Sale[]
-  customers      Customer[]
-  suppliers      Supplier[]
-  purchaseOrders PurchaseOrder[]
-  employees      Employee[]
-  expenses       Expense[]
-  auditLogs      AuditLog[]
-  planRequests   PlanRequest[]
-  pushTokens     PushToken[]
-  goals          Goal[]
-  attendance     Attendance[]
-  shifts         Shift[]
-  leaveRequests  LeaveRequest[]
-  loyaltyTxns    LoyaltyTransaction[]
-  ticketZ        TicketZ[]
-  subscriptions  Subscription[]
-  campaigns      Campaign[]
-  userTenants    UserTenant[]
+  users           User[]
+  products        Product[]
+  sales           Sale[]
+  customers       Customer[]
+  suppliers       Supplier[]
+  purchaseOrders  PurchaseOrder[]
+  employees       Employee[]
+  expenses        Expense[]
+  auditLogs       AuditLog[]
+  planRequests    PlanRequest[]
+  pushTokens      PushToken[]
+  goals           Goal[]
+  attendance      Attendance[]
+  shifts          Shift[]
+  leaveRequests   LeaveRequest[]
+  loyaltyTxns     LoyaltyTransaction[]
+  ticketZ         TicketZ[]
+  expenseBudgets  ExpenseBudget[]
+  subscriptions   Subscription[]
+  campaigns       Campaign[]
+  userTenants     UserTenant[]
   // Relations inverses de #183 — exigées par Prisma dès qu'`EmployeeBonus`/`SalaryHistory`
   // déclarent leur `tenant`. Elles rendent l'intégrité référentielle RÉELLE, là où il n'y
   // avait qu'une colonne `tenantId` et un index.
-  employeeBonuses  EmployeeBonus[]
-  salaryHistories  SalaryHistory[]
-  payrolls       Payroll[]
-  transfersFrom  StockTransfer[]      @relation("TransferFrom")
-  transfersTo    StockTransfer[]      @relation("TransferTo")
+  employeeBonuses EmployeeBonus[]
+  salaryHistories SalaryHistory[]
+  payrolls        Payroll[]
+  transfersFrom   StockTransfer[]      @relation("TransferFrom")
+  transfersTo     StockTransfer[]      @relation("TransferTo")
 
   @@index([deletedAt])
 }
@@ -884,4 +885,30 @@ model Campaign {
 
   @@index([tenantId])
   @@index([tenantId, createdAt])
+}
+
+/// Budget MENSUEL par catégorie de dépense, propre à chaque boutique.
+///
+/// ⚠️ POURQUOI CETTE TABLE EXISTE. Les budgets vivaient dans un `useState` du front,
+/// initialisé par des littéraux IDENTIQUES pour toutes les boutiques, et le bouton
+/// « Sauvegarder » n'écrivait nulle part : la valeur disparaissait au rechargement
+/// pendant que l'écran annonçait « Budgets mis à jour ». On comparait donc des
+/// dépenses réelles à des chiffres que personne n'avait saisis.
+///
+/// ⚠️ `@@unique([tenantId, category])` — UNE ligne par catégorie et par boutique.
+/// C'est ce qui rend l'écriture idempotente (`upsert`) et interdit deux budgets
+/// concurrents pour la même catégorie.
+model ExpenseBudget {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  /// Valeur canonique FR (« Loyer », « Énergie »…), la même clé que `Expense.category`.
+  category  String
+  /// Montant mensuel, en XOF comme tout le reste de la base.
+  amount    Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, category])
+  @@index([tenantId])
 }

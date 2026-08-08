@@ -63,6 +63,16 @@ const GOAL_FIELDS = {
 export const GOAL_CREATE = z.object(GOAL_FIELDS).passthrough()
 export const GOAL_UPDATE = z.object(GOAL_FIELDS).passthrough()
 
+// ── Budgets de dépense ──
+// ⚠️ `strict()`, PAS `passthrough()`. Le corps est un dictionnaire catégorie → montant
+// et il alimente un `upsert` : une clé inconnue écrirait une ligne de budget qu'AUCUN
+// écran ne rend (l'UI itère sur la liste connue), donc invisible et jamais corrigeable.
+// Le handler revalide chaque clé contre la liste blanche `EXPENSE_CATEGORIES` — le zod
+// ferme la structure, la liste blanche ferme le domaine.
+export const EXPENSE_BUDGETS_PUT = z.object({
+  budgets: z.record(z.string(), z.coerce.number().finite().nonnegative()),
+}).strict()
+
 // ── Subscriptions ── (handler mappe explicitement) ──
 const SUB_ITEM = z.object({}).passthrough()
 export const SUB_CREATE = z.object({

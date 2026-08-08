@@ -1,0 +1,18 @@
+{
+  "_pourquoi": "Domaine des catégories de dépense, PARTAGÉ front ↔ back. La valeur est la clé canonique FR : elle sert d'identifiant d'API et de clé unique dans ExpenseBudget, elle n'est PAS traduite (seul l'affichage l'est). Un ajout d'un seul côté fait rougir le jumeau de l'autre.",
+  "_lu_par": [
+    "apps/backend/src/tests/expenseBudgets.test.ts",
+    "apps/frontend/src/tests/budgetSummary.test.tsx"
+  ],
+  "_attention": "Lu à l'EXÉCUTION par les tests (readFileSync), jamais par import : le contexte Docker du backend est apps/backend SEUL, docs/ n'y est pas — un import statique compilerait en local puis casserait le déploiement en TS2307.",
+  "categories": [
+    "Loyer",
+    "Énergie",
+    "Transport",
+    "Maintenance",
+    "Fournitures",
+    "Marketing",
+    "Formation",
+    "Autre"
+  ]
+}

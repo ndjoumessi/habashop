@@ -24,9 +24,19 @@ export function monthYearLabel(lang: string, now: Date = new Date()): string {
   return m.charAt(0).toUpperCase() + m.slice(1)
 }
 
+/**
+ * État de départ des budgets : TOUT À ZÉRO.
+ *
+ * ⚠️ Ces huit champs valaient 500000/150000/100000/200000/50000/100000/200000/50000
+ * — des montants inventés, IDENTIQUES pour toutes les boutiques, présentés comme
+ * « le budget » du commerçant. C'est le défaut qu'on ferme : les vraies valeurs
+ * viennent de la table `ExpenseBudget` (`GET /api/expense-budgets`). Zéro n'est pas
+ * un repli, c'est un FAIT : « aucun budget posé ». Le laisser à des littéraux les
+ * réafficherait le temps du chargement, et pour toujours en cas d'échec réseau.
+ */
 export const BUDGETS_INIT: Record<Category, number> = {
-  Loyer: 500000, Énergie: 150000, Transport: 100000, Maintenance: 200000,
-  Fournitures: 50000, Marketing: 100000, Formation: 200000, Autre: 50000,
+  Loyer: 0, Énergie: 0, Transport: 0, Maintenance: 0,
+  Fournitures: 0, Marketing: 0, Formation: 0, Autre: 0,
 }
 
 export const CATEGORIES: Category[] = ['Loyer','Énergie','Transport','Maintenance','Fournitures','Marketing','Formation','Autre']

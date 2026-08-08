@@ -51,6 +51,25 @@ export default function ExpensesBudget({ budgets, summary, monthLabel, onEditBud
         </div>
       )}
 
+      {/* ⚠️ Aucun budget posé → AUCUNE carte ne se rend (`budgets[cat] > 0`), et un
+          onglet vide sans explication se lit comme un écran cassé. On dit ce qui
+          manque et par où le poser — l'état vide se constate et s'oriente, il ne
+          se félicite pas et ne se laisse pas deviner. */}
+      {totalBudget === 0 && (
+        <div style={{
+          padding:'14px 16px', borderRadius:'var(--r-md)',
+          background:'var(--bg2)', border:'1px dashed var(--border2)',
+          color:'var(--text2)', fontSize:'var(--fs-sm)',
+        }}>
+          {tr(
+            'Aucun budget défini pour cette boutique. Utilisez « Modifier les budgets » pour poser vos montants mensuels.',
+            'No budget set for this shop. Use “Edit budgets” to enter your monthly amounts.',
+            'Ningún presupuesto definido para esta tienda. Use «Editar presupuestos» para introducir sus importes mensuales.',
+            'Nessun budget definito per questo negozio. Usa «Modifica budget» per inserire i tuoi importi mensili.',
+          )}
+        </div>
+      )}
+
       <ResponsiveGrid min={160} gap={12}>
         {CATEGORIES.filter(cat => budgets[cat] > 0).map(cat => {
           const spent = catSpent[cat] ?? 0

@@ -17,6 +17,14 @@ vi.mock('@/lib/api', () => ({
     delete: vi.fn().mockResolvedValue({}),
   },
   salesApi: { list: vi.fn().mockResolvedValue([]) },
+  // ⚠️ La page charge désormais ses budgets depuis le serveur. Un mock partiel du
+  // module fait lever `expenseBudgetsApi.get is not a function` au montage : c'est
+  // le mock qu'on complète, JAMAIS la page qu'on rend défensive — un `?.` posé pour
+  // satisfaire un test masquerait une vraie panne de chargement en production.
+  expenseBudgetsApi: {
+    get: vi.fn().mockResolvedValue({ budgets: {} }),
+    put: vi.fn().mockResolvedValue({ budgets: {} }),
+  },
 }))
 vi.mock('@/utils/export', () => ({ exportCSV: vi.fn(), openPDF: vi.fn(), htmlTable: vi.fn(() => ''), htmlKPIs: vi.fn(() => ''), exportAccountingExcel: vi.fn() }))
 vi.mock('react-hot-toast', () => ({ default: { success: vi.fn(), error: vi.fn() } }))
