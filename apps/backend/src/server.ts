@@ -240,8 +240,25 @@ async function start() {
         unit:  'MB',
       },
       tables,
-      routes: ['/api/bonuses', '/api/salary-history'],
-      buildTime: new Date().toISOString(),
+      // ⚠️ `routes: ['/api/bonuses', '/api/salary-history']` A ÉTÉ SUPPRIMÉ. Un champ nommé
+      // « routes » qui en listait DEUX sur 43 groupes enregistrés : reliquat de mise au point
+      // de ces deux routes-là, jamais mis à jour, aucun consommateur. C'est le champ déclaré
+      // qui se fait passer pour une mesure — et sa forme tronquée-en-silence par-dessus.
+      // Le rendre juste voudrait dire énumérer les 43, ce que personne n'a demandé ; le
+      // laisser à deux, c'est répondre faux à qui demande ce que le serveur expose.
+      // ⚠️ `buildTime` A ÉTÉ RENOMMÉ EN `serverTime` — le champ n'a JAMAIS porté un temps
+      // de build : c'était `new Date()`, donc l'instant de la RÉPONSE, le même appel que le
+      // `timestamp` de `/health` sous un nom qui affirmait autre chose. Aucun consommateur
+      // (mesuré : 1 occurrence dans tout le dépôt, sa propre définition) — le coût était
+      // d'induire en erreur qui l'ouvre pour dater un déploiement.
+      //
+      // ⚠️ ET IL NE PEUT PAS ÊTRE RENDU VRAI ICI : `gen-version.mjs` ne bake aucun
+      // horodatage, et il NO-OP dans l'image Docker (contexte = `apps/backend` seul, la
+      // racine du monorepo est absente). Un horodatage baké dirait l'heure de la dernière
+      // régénération LOCALE committée, pas celle du déploiement Railway — un mensonge plus
+      // subtil que celui qu'on corrige. La preuve de déploiement reste `uptime` remis à
+      // zéro, et `serverTime` en donne l'instant de bascule : boot = serverTime − uptime.
+      serverTime: new Date().toISOString(),
     })
   })
 

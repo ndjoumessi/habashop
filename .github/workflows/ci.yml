@@ -70,6 +70,28 @@ jobs:
       # `src/tests/classesLivrees.test.ts` ; ici on juge le `dist/` livré.
       - name: Classes CSS — aucun jeton écrit mais absent de l'artefact
         run: npm run verify:classes --workspace=apps/frontend
+      # ⚠️ CES DEUX GARDES EXISTAIENT ET N'ÉTAIENT LANCÉS PAR PERSONNE. Ils étaient
+      # documentés comme « à lancer à la main avant tout push » — donc en pratique jamais,
+      # et `CLAUDE.md` les décrivait comme des gardes locaux qu'on croit automatiques.
+      # Une garde qu'on croit automatique et qui ne l'est pas ne protège rien : c'est la
+      # famille de `notify-failure` sortant en `exit 0` sur un secret absent, resté VERT
+      # sur un run rouge pendant 6 h. Vérifié avant de brancher : les deux passent sur un
+      # `dist/` construit dans les conditions exactes de ce job.
+      - name: Bundle prod — demo1234 absent de l'artefact
+        # Le raccourci démo doit rester derrière `VITE_DEMO_MODE`, dans la BRANCHE : un
+        # `lazy(() => import(…))` inconditionnel laisse Rollup émettre le chunk et livre le
+        # mot de passe démo en production. ⚠️ Ce n'est PAS la sécurité — les tenants démo
+        # sont protégés côté SERVEUR par `isDemo` (403). C'est le garde qui empêche un
+        # raccourci de connexion par rôle d'apparaître dans l'interface d'un commerçant.
+        run: npm run verify:demo-flag --workspace=apps/frontend
+      - name: SEO — aucun marqueur %VITE_*% non substitué dans le dist livré
+        # `index.html` traverse Vite (substitution native) mais `public/` est copié OCTET
+        # POUR OCTET : si `VITE_APP_URL` manque à l'environnement de BUILD, le `canonical`
+        # part avec le littéral `%VITE_APP_URL%` et la vitrine se désindexe. Invisible pour
+        # tsc, les tests et la revue — la SOURCE est correcte, c'est l'ENV qui manque.
+        # Couvre aussi deux défauts d'artefact mesurés : un `<!--` à l'intérieur d'une balise
+        # (le `content` disparaît du DOM) et un JSON-LD non `JSON.parse`-able.
+        run: npm run verify:seo-urls --workspace=apps/frontend
       - name: Bundle size check (< 100KB gzip)
         working-directory: apps/frontend
         run: |

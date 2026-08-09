@@ -4,6 +4,22 @@ import { authenticate } from '../middleware/authenticate'
 import { sanitizeCsv } from '../lib/csv'
 import { exportHeaders } from '../lib/exportHeaders'
 
+/**
+ * Plafond de l'export CSV des ventes — 10× l'ancien, et il s'ANNONCE quand il mord.
+ *
+ * ⚠️ Un plafond subsiste DÉLIBÉRÉMENT : sans lui, une boutique à 500 000 ventes ferait
+ * construire une chaîne de plusieurs dizaines de Mo en mémoire dans le conteneur. Le
+ * défaut n'était pas le plafond, c'était son SILENCE.
+ *
+ * ⚠️ Le passage de 1 000 à 10 000 n'est tenable QUE parce que la requête ne charge plus
+ * les articles (`_count` au lieu d'`include: { items: true }`) : chaque ligne pèse
+ * désormais cinq scalaires.
+ */
+export const PLAFOND_EXPORT_VENTES = 10_000
+
+/** Au-delà de ce nombre, le rapport mensuel ne détaille plus toutes les ventes — et le DIT. */
+export const DETAIL_VENTES_RAPPORT = 30
+
 export async function exportRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/export/:resource', { preHandler: [authenticate] }, async (request, reply) => {
     const { resource } = request.params as { resource: string }
@@ -53,10 +69,37 @@ export async function exportRoutes(app: FastifyInstance): Promise<void> {
         break
       }
       case 'sales': {
-        const data = await prisma.sale.findMany({ where: { tenantId }, include: { items: true }, orderBy: { createdAt: 'desc' }, take: 1000 })
-        filename = `ventes-${new Date().toISOString().slice(0,10)}.csv`
+        // ⚠️ CE PLAFOND SE DIT. Il était à 1 000, MUET — un document qui SORT du produit et
+        // part chez un comptable, tronqué sans un mot. Plus grave qu'un graphique tronqué :
+        // le CSV se recopie, et rien dans le fichier ne dit qu'il est incomplet.
+        //
+        // ⚠️ CE N'EST PAS la famille « le total est la somme de ce qu'on montre » : aucun
+        // total ne dérive de ces lignes (le CSV n'a pas de ligne de total). C'en est une
+        // autre — la troncature silencieuse d'un document exporté.
+        //
+        // ⚠️ ET LA ROUTE NE PREND AUCUNE PÉRIODE : ce ne sont pas « 1 000 ventes de la
+        // période », ce sont les N ventes les plus récentes, toutes périodes confondues.
+        const [totalVentes, data] = await Promise.all([
+          prisma.sale.count({ where: { tenantId } }),
+          prisma.sale.findMany({
+            where: { tenantId },
+            // ⚠️ `include: { items: true }` chargeait TOUS les articles de toutes les ventes
+            // pour ne lire que `items.length`. `_count` fait compter Postgres : c'est ce qui
+            // rend le plafond ci-dessous tenable sans gonfler la mémoire du conteneur.
+            include: { _count: { select: { items: true } } },
+            orderBy: { createdAt: 'desc' },
+            take: PLAFOND_EXPORT_VENTES,
+          }),
+        ])
+        const jour = new Date().toISOString().slice(0, 10)
+        // ⚠️ LA TRONCATURE S'ANNONCE DANS LE NOM DE FICHIER, jamais dans une ligne du CSV :
+        // une ligne de plus est une LIGNE DE DONNÉES pour le tableur — elle se trie, se somme
+        // et se recopie. Le nom, lui, se lit avant l'ouverture et survit à l'envoi par e-mail.
+        filename = totalVentes > data.length
+          ? `ventes-${jour}-${data.length}-sur-${totalVentes}.csv`
+          : `ventes-${jour}.csv`
         headers = exportHeaders('sales', lang)
-        rows = data.map(v => [new Date(v.createdAt).toLocaleDateString('fr-FR'), v.id.slice(-6), v.items.length, v.total, v.paymentMode ?? ''])
+        rows = data.map(v => [new Date(v.createdAt).toLocaleDateString('fr-FR'), v.id.slice(-6), v._count.items, v.total, v.paymentMode ?? ''])
         break
       }
       case 'employees': {
@@ -92,11 +135,26 @@ export async function exportRoutes(app: FastifyInstance): Promise<void> {
     const start = new Date(now.getFullYear(), now.getMonth(), 1)
     const [tenant, sales] = await Promise.all([
       prisma.tenant.findUnique({ where: { id: tenantId } }),
-      prisma.sale.findMany({ where: { tenantId, createdAt: { gte: start } }, include: { items: true } }),
+      // ⚠️ `orderBy` AJOUTÉ. Sans lui, Postgres ne garantit AUCUN ordre : le `slice(0,30)`
+      // ci-dessous ne prenait pas « les 30 plus récentes » mais 30 ventes arbitraires, sous
+      // un titre qui laissait croire au début du mois. Le tri fait de la légende une vérité.
+      prisma.sale.findMany({
+        where: { tenantId, createdAt: { gte: start } },
+        include: { _count: { select: { items: true } } },
+        orderBy: { createdAt: 'desc' },
+      }),
     ])
     const totalCA = sales.reduce((s: number, v) => s + v.total, 0)
+    // ⚠️ Le KPI « Ventes » compte `sales.length` — le jeu COMPLET — pendant que la table
+    // n'en détaille que 30. C'est le bon motif (cf. `services/email.ts:473`, qui calcule
+    // `totalCount` AVANT son `slice`), mais il ne suffit pas : l'écart était seulement
+    // INFÉRABLE par un lecteur qui compare deux chiffres. On le DIT.
+    const detail = sales.slice(0, DETAIL_VENTES_RAPPORT)
+    const mentionTronque = sales.length > detail.length
+      ? `<p style="color:#666;font-size:12px;margin:4px 0 12px">Les ${detail.length} ventes les plus récentes, sur ${sales.length} au total ce mois-ci.</p>`
+      : ''
     const monthName = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/><title>Rapport ${monthName}</title><style>body{font-family:sans-serif;margin:40px;color:#1a1a2e}h1{color:#6C47FF}table{width:100%;border-collapse:collapse}th{background:#6C47FF;color:#fff;padding:10px;text-align:left}td{padding:8px;border-bottom:1px solid #eee}.kpi{display:flex;gap:20px;margin:20px 0}.k{background:#f8f8ff;border-radius:12px;padding:16px;text-align:center;flex:1}.kv{font-size:24px;font-weight:900;color:#6C47FF}.kl{font-size:11px;color:#666;text-transform:uppercase}</style></head><body><h1>🏪 ${tenant?.name??'HabaShop'}</h1><p>Rapport — <strong>${monthName}</strong></p><div class="kpi"><div class="k"><div class="kv">${totalCA.toLocaleString('fr-FR')} F</div><div class="kl">CA Total</div></div><div class="k"><div class="kv">${sales.length}</div><div class="kl">Ventes</div></div></div><h2>Détail des ventes</h2><table><thead><tr><th>Date</th><th>Réf</th><th>Articles</th><th>Total</th><th>Paiement</th></tr></thead><tbody>${sales.slice(0,30).map((s:any)=>`<tr><td>${new Date(s.createdAt).toLocaleDateString('fr-FR')}</td><td>#${s.id.slice(-6)}</td><td>${s.items?.length??0}</td><td>${s.total.toLocaleString('fr-FR')} F</td><td>${s.paymentMode??'—'}</td></tr>`).join('')}</tbody></table><p style="margin-top:40px;color:#999;font-size:11px;text-align:center">Généré par HabaShop le ${new Date().toLocaleDateString('fr-FR')}</p></body></html>`
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/><title>Rapport ${monthName}</title><style>body{font-family:sans-serif;margin:40px;color:#1a1a2e}h1{color:#6C47FF}table{width:100%;border-collapse:collapse}th{background:#6C47FF;color:#fff;padding:10px;text-align:left}td{padding:8px;border-bottom:1px solid #eee}.kpi{display:flex;gap:20px;margin:20px 0}.k{background:#f8f8ff;border-radius:12px;padding:16px;text-align:center;flex:1}.kv{font-size:24px;font-weight:900;color:#6C47FF}.kl{font-size:11px;color:#666;text-transform:uppercase}</style></head><body><h1>🏪 ${tenant?.name??'HabaShop'}</h1><p>Rapport — <strong>${monthName}</strong></p><div class="kpi"><div class="k"><div class="kv">${totalCA.toLocaleString('fr-FR')} F</div><div class="kl">CA Total</div></div><div class="k"><div class="kv">${sales.length}</div><div class="kl">Ventes</div></div></div><h2>Détail des ventes</h2>${mentionTronque}<table><thead><tr><th>Date</th><th>Réf</th><th>Articles</th><th>Total</th><th>Paiement</th></tr></thead><tbody>${detail.map(s=>`<tr><td>${new Date(s.createdAt).toLocaleDateString('fr-FR')}</td><td>#${s.id.slice(-6)}</td><td>${s._count.items}</td><td>${s.total.toLocaleString('fr-FR')} F</td><td>${s.paymentMode??'—'}</td></tr>`).join('')}</tbody></table><p style="margin-top:40px;color:#999;font-size:11px;text-align:center">Généré par HabaShop le ${new Date().toLocaleDateString('fr-FR')}</p></body></html>`
     reply.header('Content-Type', 'text/html; charset=utf-8')
     reply.header('Content-Disposition', `attachment; filename="rapport-${monthName.replace(' ','-')}.html"`)
     return reply.send(html)

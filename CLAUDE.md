@@ -15,6 +15,8 @@ SaaS de gestion commerciale multi-tenant **et multi-boutiques** (boutiques/super
 > Compter en **caractères**, pas en octets — `wc -c` en annonce 4 % de trop ici (accents, émojis).
 >
 > ⚠️ **Relevé de 150 000 à 160 000 le 2026-08-09, sur décision de Nelson**, parce que deux règles mesurées ne tenaient plus. Ce n'est PAS une invitation à écrire : le plafond mesure ce qui se charge à CHAQUE session, et +10 000 caractères ≈ **+3 300 jetons par démarrage**, payés à chaque fois. Le critère du tri n'a pas bougé d'un pouce.
+>
+> ✅ **Ce plafond est APPLIQUÉ depuis le 2026-08-09** — `apps/frontend/src/tests/claudeMdPlafond.test.ts` (4, 3 sabotages), en CI comme le reste de la suite front (`ci.yml` n'a aucun filtre de chemin : un commit qui ne touche que ce fichier la déclenche). La règle existait depuis des mois et **rien ne l'appliquait** — un garde qu'on n'écrit pas est un vœu, exactement comme `sanitizeCsv` en `const` locale avant #173. ⚠️ **Le nombre est écrit DEUX fois, ici et dans le test, et c'est voulu** : le relever exige deux éditions visibles dans le même diff (forme du cliquet de lint). Un plafond DÉRIVÉ de ce fichier serait sans valeur — le commit qui déborde relèverait la limite du même geste. ⚠️ Le garde ne juge **que ce fichier**, pas `docs/lessons/` : il mesure la CONCENTRATION, cf. ci-dessus.
 
 ## Stack
 
@@ -883,10 +885,13 @@ règles du service worker et que le contexte Docker (§ Déploiement).
 **Règle : tout ce qui est GÉNÉRÉ se vérifie sur le PRODUIT, jamais sur ce qui l'a produit.**
 `verify:seo-urls` porte les gardes correspondantes — aucun `<!--` dans une balise, `content` non
 vide sur chaque `<meta name>`, JSON-LD `JSON.parse`-able ; sabotages écrits avec les formes
-**réellement commises**, pas retapées. ⚠️ **Il n'est PAS lancé par la CI** (`ci.yml` n'exécute
-que `verify:sw-routes` et `verify:classes`) : garde LOCALE, à lancer à la main avant tout push
-touchant `index.html` ou `gen-seo.mjs` — *une garde qu'on croit automatique et qui ne l'est pas
-ne protège rien.*
+**réellement commises**, pas retapées. ✅ **EN CI depuis le 2026-08-09** — il ne l'était pas, et
+`verify:demo-flag` non plus : **deux gardes sur quatre ne tournaient nulle part**, décrits ici
+comme « à lancer à la main avant tout push », donc en pratique jamais. *Une garde qu'on croit
+automatique et qui ne l'est pas ne protège rien* — même famille que `notify-failure` sortant en
+`exit 0`. ⚠️ **Les QUATRE sont désormais dans `ci.yml`, après le build** (ils inspectent le
+`dist/`) ; vérifié avant branchement : les quatre passent sur un artefact construit dans les
+conditions exactes du job.
 
 ⚠️ **Corollaire — un fait peut être encodé en DONNÉES, pas en texte.** Le JSON-LD portait
 `serviceArea.geoMidpoint = 14.6928 / -17.4467` : Dakar. Un signal de ciblage géographique aussi
@@ -1059,21 +1064,28 @@ l'exercer, et être vérifié **dans les deux sens**.
     ménage lisait `auth-storage`, **clé qui n'existe nulle part** → `Bearer ` → 401 muet.
   - ⚠️ **Une purge sur un tenant réel** : périmètre **en dur dans le script**, garde `CONFIRM=1`,
     refus si `isDemo`, instantané avant / diff de l'objet entier après.
-- **Export CSV des ventes : plafond SILENCIEUX à 1 000 lignes** (`apps/backend/src/routes/export.ts:56`, `take: 1000`). **S**
-  - ⚠️ **Ce n'est PAS la famille « le total est la somme de ce qu'on montre »** : aucun total
-    n'en dérive (le balayage du 2026-08-07 a établi qu'`analytics.ts` en était le **seul** site).
-    C'en est une autre : *un document qui SORT du produit est tronqué en silence* — et c'est plus
-    grave qu'un graphique, car le CSV part chez un comptable et se recopie.
-  - **DÉCLENCHEUR DE RÉOUVERTURE : le premier commerçant dépassant 1 000 ventes sur une période
-    exportée.** Avec zéro client, personne n'exporte — c'est **cela** qui rend l'attente
-    acceptable, pas la gravité du défaut. ⚠️ Une question ouverte sans condition de réouverture
-    ne se rouvre jamais : le déclencheur fait partie de la dette, pas du commentaire.
-  - **Correctif attendu le jour venu** : lever le plafond, **ou le DIRE** (en-tête dans le CSV,
-    ou avertissement à l'écran). *Un export tronqué qui s'annonce est utilisable ; muet, non.*
-  - **Frère plus léger, même dette** : `export.ts:99` — le rapport mensuel HTML/PDF liste
-    `sales.slice(0,30)` sous « Détail des ventes » sans dire que ce sont les 30 premières. Moins
-    grave : le KPI voisin affiche `sales.length`, donc l'écart est au moins *inférable* par le
-    lecteur. À traiter dans le même geste.
+- ✅ **Export tronqué en silence : CLOS le 2026-08-09.** *Un document qui SORT du produit ne se
+  tronque pas sans le dire* — le CSV part chez un comptable et se recopie. ⚠️ **Famille DISTINCTE
+  de « le total est la somme de ce qu'on montre »** : aucun total n'en dérivait (`analytics.ts`
+  en était le seul site, balayage du 2026-08-07) — ne pas les fondre.
+  - **La troncature s'annonce dans le NOM DE FICHIER** (`ventes-JJ-10000-sur-42130.csv`), jamais
+    dans une ligne du CSV : une ligne de plus est une **ligne de données** pour le tableur, elle
+    se trie, entre dans une somme et se recopie. Le nom se lit avant l'ouverture.
+  - Plafond **1 000 → 10 000**, tenable UNIQUEMENT parce que la requête ne charge plus les
+    articles (`_count` au lieu d'`include: { items: true }`, qui chargeait tous les `SaleItem`
+    pour ne lire qu'un `.length`). **Un plafond subsiste délibérément** — le défaut était son
+    silence, pas son existence.
+  - ⚠️ **La route ne prend AUCUNE période** : ce ne sont pas « N ventes de la période » mais les
+    N plus récentes, toutes périodes confondues. La dette était écrite avec un déclencheur qui
+    décrivait un paramètre inexistant — *un déclencheur qui nomme ce qui n'existe pas ne se
+    déclenche jamais.*
+  - **Rapport mensuel** : mention « Les 30 ventes les plus récentes, sur N au total ». ⚠️ Le
+    `findMany` n'avait **aucun `orderBy`** — « les 30 premières » n'était même pas « les plus
+    récentes », c'étaient 30 ventes dans un ordre que Postgres ne garantit pas. *Poser la légende
+    sans le tri aurait remplacé un silence par une affirmation fausse.*
+  - Verrou : `exportTroncature.test.ts` (7, **5 sabotages** aux formes extraites par
+    `git show HEAD`) — le mock **applique `take`**, sinon il rendrait la même liste quel que soit
+    l'argument et resterait vert si le code cessait de plafonner.
   - ✅ **Balayage de CETTE famille : FAIT le 2026-08-07 — ne pas le refaire.** 15 producteurs
     de documents (export, facture PDF, ticket, reçu, e-mail, rapport, étiquette, xlsx), web +
     API + mobile : les deux ci-dessus sont les **seuls** défauts. Le bon motif à copier —
