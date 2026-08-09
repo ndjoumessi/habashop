@@ -79,7 +79,11 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
                   onKeyDown={e=>{ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPickDay(day) } }}
                   title={dayTitle}
                   style={{
-                    minHeight:84, padding:'6px 6px 7px', cursor:'pointer',
+                    /* 84 → 66 : six rangées de 84 px pour des cellules portant au plus
+                       deux pastilles, c'est ~110 px de vide sur la hauteur d'écran. Un
+                       calendrier de mois est une surface de COMPARAISON — le vide y est
+                       de la place qu'on n'a pas donnée à l'information. */
+                    minHeight:66, padding:'5px 6px 6px', cursor:'pointer',
                     borderRight: (idx%7!==6)?'1px solid var(--border)':'none',
                     borderBottom: (idx<35)?'1px solid var(--border)':'none',
                     /* fond « aujourd'hui » : teinte primaire thémée (remplace le rgba violet en dur) */

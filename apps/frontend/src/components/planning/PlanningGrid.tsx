@@ -28,6 +28,8 @@ export default function PlanningGrid(props: Props) {
   const totaux = calculerTotaux(filtered, shifts)
   const T_HEURES = lang === 'en' ? 'Hours' : lang === 'es' ? 'Horas' : lang === 'it' ? 'Ore' : 'Heures'
   const T_COUV = lang === 'en' ? 'Coverage' : lang === 'es' ? 'Cobertura' : lang === 'it' ? 'Copertura' : 'Couverture'
+  /** La semaine a-t-elle été TOUCHÉE ? Congés compris — les poser est un acte de planification. */
+  const planifie = totaux.nbAffectations > 0
   const DAY_LABELS = getDayLabels(lang)
   const lockedTitle = lang === 'en' ? 'Approved leave — cannot be modified'
     : lang === 'es' ? 'Permiso aprobado — no modificable'
@@ -55,8 +57,16 @@ export default function PlanningGrid(props: Props) {
         overflow:'hidden', clip:'rect(0 0 0 0)', whiteSpace:'nowrap', border:0,
       }}>{announce}</div>
       <div style={{overflowX:'auto'}}>
+        {/* ⚠️ `table-layout: fixed` — MESURÉ le 2026-08-09 : en `auto`, les colonnes
+            suivaient leur contenu et les jours allaient de 74 à 241 px. Lundi faisait
+            TROIS FOIS dimanche, donc une semaine chargée écrasait les jours calmes et
+            la grille cessait d'être comparable colonne par colonne. Le défaut n'apparaît
+            QU'AVEC du contenu : sur une semaine vide, les sept colonnes sont égales et
+            tout semble correct.
+            `minWidth` relevé à 860 : sous cette largeur on fait DÉFILER plutôt que
+            d'écraser « 08:00-18:00 » à l'illisible. */}
         <table aria-label={T.title} style={{
-          width:'100%', borderCollapse:'collapse', minWidth:720,
+          width:'100%', borderCollapse:'collapse', minWidth:860, tableLayout:'fixed',
         }}>
           <thead>
             <tr style={{
@@ -252,7 +262,7 @@ export default function PlanningGrid(props: Props) {
                         }}
                         onDoubleClick={()=>{ if (!isLocked) onClearShift(emp.id,di) }}
                         style={{
-                          minHeight:58, borderRadius:10,
+                          minHeight:46, borderRadius:10,
                           cursor: isLocked ? 'not-allowed' : 'pointer',
                           display:'flex', flexDirection:'column',
                           alignItems:'center', justifyContent:'center',
@@ -360,10 +370,15 @@ export default function PlanningGrid(props: Props) {
                             })}
                           </div>
                         ) : (
-                          <span style={{
-                            fontSize:'var(--fs-xl)', color:'var(--text4)',
-                            opacity:.3, fontWeight:'var(--fw-regular)',
-                          }}>+</span>
+                          /* ⚠️ DISCRET, PAS SUPPRIMÉ. À 20 px et opacité .3, ce « + »
+                             était répété 35 fois sur une semaine 5×7 : du bruit qui
+                             occupait tout l'espace sans rien dire de plus que la barre
+                             « Sélectionnez un type puis cliquez sur une case ».
+                             ⚠️ Mais le RETIRER l'aurait rendu invisible AU TOUCHER, où il
+                             n'y a pas de survol — exactement la faute que le `title` des
+                             boutons de présence vient de nous coûter. Il reste donc là,
+                             estompé, et le survol/focus le ravive. */
+                          <span className="pl-plus" aria-hidden>+</span>
                         )}
                       </div>
                     </td>
@@ -385,6 +400,12 @@ export default function PlanningGrid(props: Props) {
                 </th>
                 {weekDays.map((_, di) => {
                   const n = totaux.couvertureParJour[di] ?? 0
+                  /* ⚠️ TROIS ÉTATS, jamais deux. Une semaine vierge affichait SEPT zéros
+                     ROUGES — vu en production sur la 2.20.0. Le rouge doit dire « ce jour
+                     n'est couvert par personne », pas « vous n'avez pas commencé ». Sans
+                     planification du tout, le chiffre n'est pas une mesure : c'est une
+                     absence, et elle se rend « — » comme partout ailleurs. */
+                  if (!planifie) return <td key={di} className="pl-couv-c pl-couv-vide">—</td>
                   return <td key={di} className={`pl-couv-c${n === 0 ? ' pl-couv-zero' : ''}`}>{n}</td>
                 })}
               </tr>

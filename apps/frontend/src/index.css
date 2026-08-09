@@ -925,6 +925,17 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
   }
 }
 
+/* ── Planning : affordance des cases vides ──────────────────────────────────
+   Le « + » reste présent (le survol n'existe pas au toucher) mais s'efface : il
+   était répété 35 fois à 20 px sur une semaine 5×7. Survol et focus le ravivent. */
+.pl-plus {
+  font-size:var(--fs-sm); color:var(--text4); opacity:.16;
+  font-weight:var(--fw-regular); line-height:1;
+  transition:opacity .12s var(--ease), transform .12s var(--ease);
+}
+[data-pcell]:hover .pl-plus,
+[data-pcell]:focus-visible .pl-plus { opacity:.55; transform:scale(1.25) }
+
 /* ── Planning : colonne d'heures + ligne de couverture ─────────────────────── */
 /* Heures de la semaine, DANS la cellule employé : une colonne dédiée poussait la
    table en défilement horizontal — un défaut échangé contre un autre. */
@@ -953,6 +964,8 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 /* Le SEUL chiffre qui doit alerter : personne ce jour-là. Les autres restent neutres —
    une couleur sur chaque cellule ne signalerait plus rien. */
 .pl-couv-zero { color:var(--danger); font-weight:var(--fw-bold) }
+/* Semaine jamais planifiée : ni chiffre, ni couleur. On constate, on n'alerte pas. */
+.pl-couv-vide { color:var(--text4); font-weight:var(--fw-regular) }
 
 /* ── Combobox employé (Nouveau contrat) ─────────────────────────────────────
    Écrit à la main : aucune directive `@tailwind` dans ce fichier. */

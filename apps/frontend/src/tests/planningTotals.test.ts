@@ -85,6 +85,34 @@ describe('calculerTotaux', () => {
     expect(t.heuresParEmploye.a).toBe(0)
   })
 
+  it('⚠️ TROIS ÉTATS : « pas planifié » ≠ « planifié mais découvert »', () => {
+    /**
+     * Vu en PRODUCTION sur la 2.20.0 : une semaine vierge affichait SEPT zéros ROUGES.
+     * Le rouge doit dire « ce jour n'est couvert par personne », pas « vous n'avez pas
+     * commencé » — sinon il crie toujours et n'alerte plus quand il devient vrai.
+     * `nbAffectations` est ce qui sépare les deux, et c'est ici qu'il peut être faux.
+     */
+    const vierge = calculerTotaux(EMP, S({}))
+    expect(vierge.nbAffectations, 'semaine jamais touchée').toBe(0)
+
+    const planifiee = calculerTotaux(EMP, S({ a: { 0: ['full'] } }))
+    expect(planifiee.nbAffectations).toBe(1)
+    expect(planifiee.couvertureParJour[3], 'jeudi réellement découvert').toBe(0)
+  })
+
+  it('⚠️ poser un CONGÉ compte comme une planification, sans couvrir', () => {
+    // Une semaine où le gérant n'a saisi que des congés A ÉTÉ planifiée : afficher
+    // « — » y serait faux. Mais le congé ne couvre pas pour autant.
+    const t = calculerTotaux(EMP, S({ a: { 2: ['leave'] }, b: { 5: ['rest'] } }))
+    expect(t.nbAffectations, 'congé et repos sont des actes de planification').toBe(2)
+    expect(t.couvertureParJour[2], 'mais ils ne couvrent personne').toBe(0)
+    expect(t.heuresTotal).toBe(0)
+  })
+
+  it('plusieurs shifts dans une case comptent chacun', () => {
+    expect(calculerTotaux(EMP, S({ a: { 0: ['morning', 'afternoon'] } })).nbAffectations).toBe(2)
+  })
+
   it('semaine vide : que des zéros, aucun NaN', () => {
     const t = calculerTotaux(EMP, S({}))
     expect(t.heuresTotal).toBe(0)

@@ -45,6 +45,16 @@ export interface TotauxPlanning {
   couvertureParJour: number[]
   /** Total de la semaine — Σ des heures par employé, PAR CONSTRUCTION. */
   heuresTotal: number
+  /**
+   * Nombre de cases portant AU MOINS un shift, congé et repos COMPRIS.
+   *
+   * ⚠️ Sert à distinguer « pas encore planifié » de « planifié mais ce jour n'est
+   * couvert par personne ». Sans cette distinction, une semaine vierge affiche SEPT
+   * zéros rouges — et une alerte qui crie toujours n'alerte plus quand elle devient
+   * vraie. On compte les congés ici (contrairement à la couverture) : poser un congé
+   * EST un acte de planification, même s'il ne couvre pas la boutique.
+   */
+  nbAffectations: number
 }
 
 /**
@@ -61,12 +71,14 @@ export function calculerTotaux(
 ): TotauxPlanning {
   const heuresParEmploye: Record<string, number> = {}
   const couvertureParJour = Array.from({ length: nbJours }, () => 0)
+  let nbAffectations = 0
 
   for (const emp of employes) {
     const parJour = shifts[emp.id] ?? {}
     let total = 0
     for (let di = 0; di < nbJours; di++) {
       const cellule = parJour[di] ?? []
+      if (cellule.length > 0) nbAffectations += cellule.length
       for (const s of cellule) total += shiftHours(s.type)
       if (cellule.some(s => estTravaille(s.type))) couvertureParJour[di] += 1
     }
@@ -77,6 +89,7 @@ export function calculerTotaux(
     heuresParEmploye,
     couvertureParJour,
     heuresTotal: employes.reduce((acc, e) => acc + (heuresParEmploye[e.id] ?? 0), 0),
+    nbAffectations,
   }
 }
 
