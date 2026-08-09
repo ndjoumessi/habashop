@@ -15,17 +15,9 @@ import {
   isBiometricAvailable, isBiometricEnabled, authenticateWithBiometric,
   enableBiometric, getSavedCredentials, type BiometricType,
 } from '@/services/biometric'
+// Raccourci démo — GATÉ par EXPO_PUBLIC_DEMO_MODE, comme VITE_DEMO_MODE côté web.
+import { DEMO_MODE, DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/lib/demoAccounts'
 
-// Les 5 comptes démo seedés dans le backend (mot de passe commun « demo1234 »).
-// Un tap préremplit email + mot de passe → connexion réelle au backend Railway.
-const DEMO_PASSWORD = 'demo1234'
-const DEMO_ACCOUNTS = [
-  { label: 'Admin',      email: 'admin@habashop.com' },
-  { label: 'Manager',    email: 'manager@habashop.com' },
-  { label: 'Caissier',   email: 'cashier@habashop.com' },
-  { label: 'Comptable',  email: 'accountant@habashop.com' },
-  { label: 'RH',         email: 'hr@habashop.com' },
-] as const
 
 export default function LoginScreen() {
   const { C } = useTheme()
@@ -234,6 +226,7 @@ export default function LoginScreen() {
                 loading={loading}
               />
 
+              {DEMO_MODE && (
               <View style={s.demoWrap}>
                 <Text style={s.demoLabel}>
                   {i('Comptes démo :','Demo accounts:','Cuentas demo:','Account demo:')}
@@ -256,6 +249,7 @@ export default function LoginScreen() {
                   ))}
                 </View>
               </View>
+              )}
             </>
           )}
         </View>
