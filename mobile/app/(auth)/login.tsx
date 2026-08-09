@@ -15,8 +15,8 @@ import {
   isBiometricAvailable, isBiometricEnabled, authenticateWithBiometric,
   enableBiometric, getSavedCredentials, type BiometricType,
 } from '@/services/biometric'
-// Raccourci démo — GATÉ par EXPO_PUBLIC_DEMO_MODE, comme VITE_DEMO_MODE côté web.
-import { DEMO_MODE, DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/lib/demoAccounts'
+// Raccourci démo — LA garde vit DANS le composant (il rend null si le drapeau est éteint).
+import DemoAccountsRow from '@/components/DemoAccountsRow'
 
 
 export default function LoginScreen() {
@@ -226,30 +226,7 @@ export default function LoginScreen() {
                 loading={loading}
               />
 
-              {DEMO_MODE && (
-              <View style={s.demoWrap}>
-                <Text style={s.demoLabel}>
-                  {i('Comptes démo :','Demo accounts:','Cuentas demo:','Account demo:')}
-                </Text>
-                <View style={s.demoRow}>
-                  {DEMO_ACCOUNTS.map(acc => (
-                    <TouchableOpacity
-                      key={acc.email}
-                      style={s.demoChip}
-                      onPress={() => { setEmail(acc.email); setPassword(DEMO_PASSWORD) }}
-                      accessibilityRole="button"
-                      accessibilityLabel={i(
-                        `Préremplir le compte démo ${acc.label}`,
-                        `Prefill ${acc.label} demo account`,
-                        `Rellenar la cuenta demo ${acc.label}`,
-                        `Precompila l'account demo ${acc.label}`,
-                      )}>
-                      <Text style={s.demoChipTxt}>{acc.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-              )}
+              <DemoAccountsRow onPick={(mail, pwd) => { setEmail(mail); setPassword(pwd) }} />
             </>
           )}
         </View>
@@ -351,24 +328,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   eyeBtn:{
     position:'absolute',right:Spacing.md,
     top:0,bottom:0,justifyContent:'center',
-  },
-  demoWrap:{alignItems:'center',gap:Spacing.sm},
-  demoLabel:{
-    fontSize:FontSize.xs,fontFamily:'Geist_400Regular',
-    color:C.text3,
-  },
-  demoRow:{
-    flexDirection:'row',flexWrap:'wrap',
-    justifyContent:'center',gap:Spacing.xs,
-  },
-  demoChip:{
-    paddingHorizontal:Spacing.md,paddingVertical:6,
-    borderRadius:BorderRadius.full,
-    backgroundColor:C.bg3,borderWidth:1,borderColor:C.border,
-  },
-  demoChipTxt:{
-    fontSize:FontSize.xs,fontFamily:'Geist_700Bold',
-    color:C.primary3,
   },
   biometricBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,

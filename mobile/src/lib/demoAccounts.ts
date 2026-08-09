@@ -27,14 +27,23 @@
  * substitution de chaîne, pas une lecture d'environnement à l'exécution. Un accès
  * calculé (`process.env[clef]`) ne serait jamais remplacé, et rendrait `undefined`
  * dans tous les builds — un drapeau qui ne peut pas s'allumer.
+ *
+ * ⚠️ FONCTION, PAS CONSTANTE DE MODULE — et ce n'est pas un détail de style. La
+ * substitution étant TEXTUELLE, elle opère aussi bien dans un corps de fonction
+ * (`return "1" === '1'` après inlining) : on ne perd donc rien côté build. Mais on
+ * gagne la testabilité du RENDU. Une const figée à l'import obligeait le test à
+ * faire `jest.resetModules()` + `require`, ce qui charge un SECOND React pendant
+ * que la bibliothèque de rendu garde le premier — « Invalid hook call », et cinq
+ * cas rouges pour une raison qui n'a rien à voir avec le sujet.
  */
-export const DEMO_MODE: boolean = process.env.EXPO_PUBLIC_DEMO_MODE === '1'
+export function demoModeEnabled(): boolean {
+  return resolveDemoMode(process.env.EXPO_PUBLIC_DEMO_MODE)
+}
 
 /**
- * ⚠️ Séparé de `DEMO_MODE` pour rester TESTABLE. `DEMO_MODE` dépend de ce que babel
- * a inliné au bundling ; `resolveDemoMode` prend sa valeur en argument, donc un test
- * peut exercer la règle sans dépendre de l'environnement de build. Même découpage
- * que `normalizeAppUrl(raw)` / `appUrl()` dans `src/lib/appUrl.ts`.
+ * ⚠️ Séparé de la lecture d'environnement pour rester exerçable sur des valeurs
+ * arbitraires. Même découpage que `normalizeAppUrl(raw)` / `appUrl()` dans
+ * `src/lib/appUrl.ts`.
  */
 export function resolveDemoMode(raw: unknown): boolean {
   return raw === '1'

@@ -18,9 +18,13 @@ import { resolveDemoMode, DEMO_ACCOUNTS, DEMO_PASSWORD } from '../lib/demoAccoun
  *   demo1234                éteint=1  allumé=1   ← la chaîne RESTE dans les deux
  *   admin@habashop.com      éteint=1  allumé=1
  *   « Demo accounts: »      éteint=1  allumé=1
- *   taille du .hbc          6 396 969 octets dans les deux cas
+ *   taille du .hbc          6 397 924 éteint / 6 397 922 allumé (2 octets d'écart)
  *
- * Metro n'élimine pas la branche morte comme le fait Rollup. Le drapeau MASQUE
+ * ⚠️ Les deux bundles DIFFÈRENT bien (2 octets) : le drapeau atteint l'artefact.
+ * Ce sont les CHAÎNES qui restent — Metro n'élimine pas la branche morte comme le
+ * fait Rollup côté web. Re-mesuré le 2026-08-09 APRÈS l'extraction en composant :
+ * mêmes conclusions, chiffres ci-dessus à jour.
+ * Le drapeau MASQUE
  * les boutons à l'exécution ; il ne retire rien de l'artefact. Écrire l'inverse
  * ici serait une garantie de sûreté posée par RAISONNEMENT — la faute exacte qui
  * a produit trois fuites de numéros dans ce dépôt.
@@ -74,7 +78,7 @@ describe('drapeau du raccourci démo', () => {
 
     // le littéral est revenu dans app/ (entorse à la règle mobile n°9)
     expect(src).not.toContain("= 'demo1234'")
-    // le rendu doit rester gardé par le drapeau
-    expect(src).toContain('DEMO_MODE &&')
+    // le bloc doit passer par le composant, qui porte LA garde (et rend null si éteint)
+    expect(src).toContain('<DemoAccountsRow')
   })
 })
