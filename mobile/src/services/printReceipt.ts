@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger'
 import { mixedSplitParts, type TicketOptions } from '@/services/whatsappTicket'
 import { appUrlHost } from '@/lib/appUrl'
 import { paymentModeLabel } from '@/lib/paymentLabel'
+import { escHtml } from '@/lib/html'
 
 // Reçu imprimable / PDF via la boîte de dialogue d'impression de l'OS (AirPrint iOS,
 // service d'impression Android → imprimante Bluetooth thermique ou « Enregistrer en PDF »).
@@ -25,9 +26,8 @@ const L: Record<string, Record<string, string>> = {
 }
 const t = (key: string, lang: string): string => L[key]?.[lang] ?? L[key]?.['fr'] ?? key
 
-// Échappe le texte injecté dans le HTML (noms de produits, boutique).
-const esc = (s: string): string =>
-  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c))
+// Échappe le texte injecté dans le HTML — règle canonique partagée.
+const esc = escHtml
 
 function buildReceiptHtml(opts: TicketOptions): string {
   const { items, total, paymentMode, saleId, shopName, lang, vatRate, fmt, split } = opts

@@ -245,10 +245,9 @@ export function printableAmount(s: string): string {
 // \u00C9chappement HTML \u2014 TOUTE donn\u00E9e dynamique interpol\u00E9e dans un document
 // d'impression passe par escHtml() (m\u00EAme r\u00E8gle que le rapport Ticket Z, anti-XSS :
 // noms client/article/boutique = donn\u00E9es utilisateur).
-function escHtml(v: unknown): string {
-  return String(v ?? '').replace(/[&<>"']/g, c =>
-    c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;')
-}
+// ⚠️ Règle déplacée dans `@/lib/html` : ce fichier en portait DEUX copies (ici et
+// dans `exportLabels`), et le méta-test raisonne par SITE D'ÉCRITURE pour cette raison.
+import { escHtml } from '@/lib/html'
 
 // ─── DEVIS / FACTURE PDF ─────────────────────
 const INV_STR: Record<string, Record<string, string>> = {
@@ -532,8 +531,8 @@ export function printProductLabels(
   }
   const s = SIZES[options.size]
 
-  // Échappement HTML défensif (interpolations dans document.write — valeurs viennent du tenant/produits)
-  const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' } as Record<string, string>)[c])
+  // Échappement HTML défensif (interpolations dans document.write — valeurs du tenant/produits)
+  const esc = escHtml
 
   // ── Mode d'affichage : grille Avery vs flex-wrap (custom/legacy) ──
   type GridPreset = {

@@ -10,8 +10,19 @@ import type {
   DashboardStats, Customer, TenantUser, LoyaltyResponse, LoyaltyCardData,
 } from '@/types'
 
-const BASE = process.env.EXPO_PUBLIC_API_URL
+/**
+ * ⚠️ EXPORTÉE — l'écran Réglages affichait cette URL en DUR sous le libellé
+ * « Backend », donc il annonçait la production même si `EXPO_PUBLIC_API_URL`
+ * pointait ailleurs : un champ déclaré qui se fait passer pour une mesure.
+ * ⚠️ `EXPO_PUBLIC_API_URL` doit rester écrite EN TOUTES LETTRES (inlining textuel).
+ */
+export const API_BASE = process.env.EXPO_PUBLIC_API_URL
   ?? 'https://habashop-production.up.railway.app'
+
+/** Hôte seul, pour affichage. */
+export const apiHost = (): string => API_BASE.replace(/^https?:\/\//, '').replace(/\/+$/, '')
+
+const BASE = API_BASE
 
 export const apiClient = axios.create({
   baseURL: BASE, timeout: 10000,

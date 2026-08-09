@@ -1,0 +1,27 @@
+{
+  "_pourquoi": "Cas PARTAGÉS de l'échappement HTML — lus à l'EXÉCUTION par les jumeaux backend, frontend et mobile. Modifier la règle d'un seul côté fait rougir les autres. ⚠️ readFileSync, JAMAIS import : le contexte Docker du backend est `apps/backend` SEUL, docs/ n'y est pas — un import statique compile en local et casse le déploiement en TS2307.",
+  "_perimetre": "HTML uniquement. `utils/xlsxWriter.ts` est EXCLU par raison nommée : il produit de l'OOXML et émet `&apos;` là où le HTML veut `&#39;`. Deux langages de balisage, deux règles — les fondre ferait perdre ce que chacun distingue.",
+  "cas": [
+    { "nom": "les cinq caractères, un par un", "entree": "&", "attendu": "&amp;" },
+    { "nom": "inférieur", "entree": "<", "attendu": "&lt;" },
+    { "nom": "supérieur", "entree": ">", "attendu": "&gt;" },
+    { "nom": "guillemet double", "entree": "\"", "attendu": "&quot;" },
+    { "nom": "⚠️ APOSTROPHE — c'est elle qui manquait à CustomerMap", "entree": "'", "attendu": "&#39;" },
+
+    { "nom": "balise script complète", "entree": "<script>alert(1)</script>", "attendu": "&lt;script&gt;alert(1)&lt;/script&gt;" },
+    { "nom": "⚠️ évasion d'attribut en guillemets SIMPLES", "entree": "x' onerror='alert(1)", "attendu": "x&#39; onerror=&#39;alert(1)" },
+    { "nom": "évasion d'attribut en guillemets doubles", "entree": "x\" onmouseover=\"alert(1)", "attendu": "x&quot; onmouseover=&quot;alert(1)" },
+    { "nom": "esperluette déjà encodée — on ré-encode, sans quoi on rouvre le vecteur", "entree": "&amp;", "attendu": "&amp;amp;" },
+    { "nom": "occurrences multiples du même caractère", "entree": "a<b<c", "attendu": "a&lt;b&lt;c" },
+
+    { "nom": "texte ordinaire — inchangé", "entree": "Alimentation Koné — Abidjan", "attendu": "Alimentation Koné — Abidjan" },
+    { "nom": "accents et émojis — inchangés", "entree": "Épicerie 🏪 déjà", "attendu": "Épicerie 🏪 déjà" },
+    { "nom": "chaîne vide", "entree": "", "attendu": "" },
+
+    { "nom": "null → chaîne vide, JAMAIS le texte « null »", "entree": null, "attendu": "" },
+    { "nom": "absent → chaîne vide", "entree": null, "attendu": "", "_note": "JSON n'a pas d'undefined ; le cas undefined est exercé en dur dans les tests jumeaux." },
+    { "nom": "nombre → sa représentation, jamais un plantage", "entree": 1900, "attendu": "1900" },
+    { "nom": "zéro → « 0 », surtout pas la chaîne vide", "entree": 0, "attendu": "0" },
+    { "nom": "booléen faux → « false », pas vide", "entree": false, "attendu": "false" }
+  ]
+}

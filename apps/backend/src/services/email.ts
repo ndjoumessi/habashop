@@ -445,12 +445,10 @@ export async function sendTrialExpired(opts: {
   })
 }
 
-// Échappement HTML — défense contre injection via shopName / userName / tempPassword
-function escHtml(v: unknown): string {
-  return String(v ?? '').replace(/[&<>"']/g, c =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]
-  )
-}
+// Échappement HTML — règle canonique partagée (lib/html.ts), jumelle front + mobile.
+// Elle vivait ICI en `function` locale, donc non importable : c'est ce qui a laissé
+// SEPT copies diverger et le rapport mensuel n'échapper rien du tout.
+import { escHtml } from '../lib/html'
 
 // ════════════════════════════════════════════
 // EMAIL — Alerte stock bas (cron quotidien)

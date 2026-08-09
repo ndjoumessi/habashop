@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Search, Eye, X, ShoppingCart, MapPin, Navigation2, Globe, Flame } from 'lucide-react'
 import { type GeoCustomer, getMapStyle, MAP_BG, createMarkerIcon, getMapCfg, typeLabel, GMAPS_KEY } from '@/components/customers/customersShared'
 import { useAppStore } from '@/stores/appStore'
+import { escHtml } from '@/lib/html'
 
 // Couleurs (hex) par type — utilisées dans le HTML du popup InfoWindow,
 // où les `var(--…)` ne peuvent pas servir au calcul d'alpha (`${color}40`).
@@ -9,8 +10,10 @@ const POPUP_HEX: Record<string, string> = {
   Grossiste: '#6C47FF', 'Semi-gros': '#00B8FF', 'Fidèle': '#00D084', 'Détail': '#FF9500',
 }
 // Échappe le contenu utilisateur injecté dans le HTML du popup (anti-XSS).
-const esc = (s: any): string => String(s ?? '')
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+// ⚠️ CETTE COPIE ÉTAIT LA DIVERGENTE : elle couvrait `& < > "` mais PAS l'apostrophe,
+// celle qui permet de sortir d'un attribut en guillemets simples. Sept copies de la
+// même règle, une qui dérive, et rien pour le dire — d'où le module partagé.
+const esc = escHtml
 
 export default function CustomerMap({
   customers, geoPositions, geocoding, mapsLoaded, fmt, lang, navigate, onOpenDetail,

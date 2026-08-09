@@ -3,6 +3,7 @@ import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { sanitizeCsv } from '../lib/csv'
 import { exportHeaders } from '../lib/exportHeaders'
+import { escHtml } from '../lib/html'
 
 /**
  * Plafond de l'export CSV des ventes — 10× l'ancien, et il s'ANNONCE quand il mord.
@@ -154,7 +155,12 @@ export async function exportRoutes(app: FastifyInstance): Promise<void> {
       ? `<p style="color:#666;font-size:12px;margin:4px 0 12px">Les ${detail.length} ventes les plus récentes, sur ${sales.length} au total ce mois-ci.</p>`
       : ''
     const monthName = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/><title>Rapport ${monthName}</title><style>body{font-family:sans-serif;margin:40px;color:#1a1a2e}h1{color:#6C47FF}table{width:100%;border-collapse:collapse}th{background:#6C47FF;color:#fff;padding:10px;text-align:left}td{padding:8px;border-bottom:1px solid #eee}.kpi{display:flex;gap:20px;margin:20px 0}.k{background:#f8f8ff;border-radius:12px;padding:16px;text-align:center;flex:1}.kv{font-size:24px;font-weight:900;color:#6C47FF}.kl{font-size:11px;color:#666;text-transform:uppercase}</style></head><body><h1>🏪 ${tenant?.name??'HabaShop'}</h1><p>Rapport — <strong>${monthName}</strong></p><div class="kpi"><div class="k"><div class="kv">${totalCA.toLocaleString('fr-FR')} F</div><div class="kl">CA Total</div></div><div class="k"><div class="kv">${sales.length}</div><div class="kl">Ventes</div></div></div><h2>Détail des ventes</h2>${mentionTronque}<table><thead><tr><th>Date</th><th>Réf</th><th>Articles</th><th>Total</th><th>Paiement</th></tr></thead><tbody>${detail.map(s=>`<tr><td>${new Date(s.createdAt).toLocaleDateString('fr-FR')}</td><td>#${s.id.slice(-6)}</td><td>${s._count.items}</td><td>${s.total.toLocaleString('fr-FR')} F</td><td>${s.paymentMode??'—'}</td></tr>`).join('')}</tbody></table><p style="margin-top:40px;color:#999;font-size:11px;text-align:center">Généré par HabaShop le ${new Date().toLocaleDateString('fr-FR')}</p></body></html>`
+    // ⚠️ TOUTE donnée dynamique passe par `escHtml` (règle canonique `lib/html.ts`).
+    // Ce document n'échappait RIEN : `tenant.name` est saisi par le commerçant et
+    // `paymentMode` vient de la base. Les autres interpolations sont sûres par
+    // construction — nombres via `toLocaleString`, `s.id.slice(-6)` (cuid), et
+    // `monthName`/la date, produits par `toLocaleDateString`.
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/><title>Rapport ${monthName}</title><style>body{font-family:sans-serif;margin:40px;color:#1a1a2e}h1{color:#6C47FF}table{width:100%;border-collapse:collapse}th{background:#6C47FF;color:#fff;padding:10px;text-align:left}td{padding:8px;border-bottom:1px solid #eee}.kpi{display:flex;gap:20px;margin:20px 0}.k{background:#f8f8ff;border-radius:12px;padding:16px;text-align:center;flex:1}.kv{font-size:24px;font-weight:900;color:#6C47FF}.kl{font-size:11px;color:#666;text-transform:uppercase}</style></head><body><h1>🏪 ${escHtml(tenant?.name ?? 'HabaShop')}</h1><p>Rapport — <strong>${monthName}</strong></p><div class="kpi"><div class="k"><div class="kv">${totalCA.toLocaleString('fr-FR')} F</div><div class="kl">CA Total</div></div><div class="k"><div class="kv">${sales.length}</div><div class="kl">Ventes</div></div></div><h2>Détail des ventes</h2>${mentionTronque}<table><thead><tr><th>Date</th><th>Réf</th><th>Articles</th><th>Total</th><th>Paiement</th></tr></thead><tbody>${detail.map(s=>`<tr><td>${new Date(s.createdAt).toLocaleDateString('fr-FR')}</td><td>#${s.id.slice(-6)}</td><td>${s._count.items}</td><td>${s.total.toLocaleString('fr-FR')} F</td><td>${escHtml(s.paymentMode ?? '—')}</td></tr>`).join('')}</tbody></table><p style="margin-top:40px;color:#999;font-size:11px;text-align:center">Généré par HabaShop le ${new Date().toLocaleDateString('fr-FR')}</p></body></html>`
     reply.header('Content-Type', 'text/html; charset=utf-8')
     reply.header('Content-Disposition', `attachment; filename="rapport-${monthName.replace(' ','-')}.html"`)
     return reply.send(html)

@@ -12,6 +12,7 @@ import { useI18n, useTheme } from '@/stores/appStore'
 import { ThemeColors, Spacing, BorderRadius, FontSize, withAlpha } from '@/constants/theme'
 import { logger } from '@/lib/logger'
 import { discountForTierDisplay, type LoyaltyTier } from '@/lib/loyalty'
+import { escHtml } from '@/lib/html'
 
 // Design carte = web (zone haute sombre par palier / zone basse fond thème).
 // Bronze = specs web ; Silver/Gold déclinés sur le même schéma dark/mid/accent.
@@ -275,7 +276,7 @@ function buildCardHtml(
   currentPct: number,
 ): string {
   const cfg = TIER_CFG[data.tier] ?? TIER_CFG.Bronze
-  const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c))
+  const esc = escHtml
   const nextThreshold = data.tier === 'Bronze' ? data.bronzeThreshold : data.tier === 'Silver' ? data.silverThreshold : null
   const progress = nextThreshold ? Math.min(100, Math.round((data.points / nextThreshold) * 100)) : 100
   return `<!DOCTYPE html><html><head><meta charset="utf-8"/>

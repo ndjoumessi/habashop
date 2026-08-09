@@ -10,6 +10,7 @@ import POSCashField from '@/components/pos/POSCashField'
 import { msisdnFormatLabel } from '@/lib/posMsisdnPolicy'
 import type { Lang } from '@/i18n'
 import { useModalFocus } from '@/hooks/useModalFocus'
+import { escHtml } from '@/lib/html'
 
 interface POSModalsProps {
   showDiscountModal: boolean; setShowDiscountModal: (b: boolean) => void
@@ -385,8 +386,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 onClick={() => {
                   // ⚠️ Rapport bâti en HTML : TOUTE valeur dynamique passe par esc() —
                   // cashierName (donnée utilisateur) et libellés/valeurs interpolés (anti-XSS).
-                  const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c =>
-                    c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;')
+                  const esc = escHtml
                   // Rapport en 'Courier New' (monospace) : normalise l'espace fine U+202F
                   // des montants (sinon rendue « / » — même P0 que la facture PDF).
                   const pfmt = (n: number) => printableAmount(fmt(n))

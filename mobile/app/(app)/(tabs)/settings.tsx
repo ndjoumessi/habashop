@@ -26,6 +26,7 @@ import { registerWidgetRefresh, unregisterWidgetRefresh } from '@/tasks/backgrou
 import {
   Spacing, BorderRadius, FontSize, Shadow, withAlpha, ThemeColors,
 } from '@/constants/theme'
+import { apiHost } from '@/services/api'
 
 const LANGS: { code: Lang; flag: string; label: string }[] = [
   { code: 'fr', flag: '🇫🇷', label: 'Français' },
@@ -474,7 +475,7 @@ export default function SettingsScreen() {
           </View>
           <View style={[s.infoRow, s.listRowBorderTop]}>
             <Text style={s.infoKey}>Backend</Text>
-            <Text style={s.infoVal} numberOfLines={1}>habashop-production.up.railway.app</Text>
+            <Text style={s.infoVal} numberOfLines={1}>{apiHost()}</Text>
           </View>
           <TouchableOpacity
             style={[s.actionRow, s.listRowBorderTop]}

@@ -140,6 +140,17 @@ jobs:
         run: npx tsc --noEmit
       - name: Unit tests
         run: npm test
+      # ⚠️ LE MOBILE N'AVAIT AUCUNE GARDE D'ARTEFACT, là où le web en a quatre. Les seules
+      # mesures sur son bundle avaient été faites à la main, donc périmées dès le commit
+      # suivant. Ce contrôle construit le bundle Android (~20 s) et l'inspecte :
+      #   · un identifiant `EXPO_PUBLIC_*` qui SURVIT = accès calculé que le bundler n'a pas
+      #     pu remplacer, donc une variable impossible à régler dans TOUS les builds ;
+      #   · l'URL de l'API absente = app livrée sans backend (aucun environnement EAS ne pose
+      #     `EXPO_PUBLIC_API_URL`, chaque build dépend du repli littéral d'`api.ts`).
+      # ⚠️ Il ne peut PAS vérifier l'absence du mot de passe démo, contrairement au web :
+      # MESURÉ, Metro n'élimine pas la branche morte comme Rollup.
+      - name: Bundle mobile — artefact livré
+        run: npm run verify:bundle
 
   # ─── Sécurité ────────────────────────────
   security:
