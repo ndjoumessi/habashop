@@ -21,6 +21,11 @@ const EMPLOYEE_FIELDS = {
   isActive: z.boolean().optional(),
   color:    z.string().optional(),
   hiredAt:  z.any().optional(),
+  // ⚠️ DATE DE FIN DE CONTRAT — absente de cette liste jusqu'au 2026-08-11, donc jetée.
+  // `z.any()` comme `hiredAt` : le serveur accepte une chaîne ISO, et **`null` doit passer**
+  // (vider le champ est une intention légitime — un CDD requalifié en CDI n'a plus d'échéance).
+  // Un `z.string().optional()` refuserait ce `null` et rendrait la date ineffaçable.
+  endAt:    z.any().optional(),
   // ⚠️ `.nullable()` AVANT toute coercition, et jamais `z.coerce.number()` seul :
   // `Number(null)` vaut **0**, une note impossible (l'échelle est 1..5) qui se serait
   // affichée « 0/5 » — un jugement là où il n'y a pas d'évaluation. `ZodNullable`

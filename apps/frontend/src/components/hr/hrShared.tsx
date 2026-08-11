@@ -264,6 +264,8 @@ export type EmployeeWrite = {
   isActive?: boolean
   color?: string
   hiredAt?: string
+  /** Fin de contrat. `null` = échéance EFFACÉE ; `undefined` = champ non transmis. */
+  endAt?: string | null
   /** `null` = non évalué ; `undefined` = champ non transmis. Les deux sont distincts. */
   perf?: number | null
   avatar?: string
@@ -338,10 +340,11 @@ export type EmpForm = {
   dept: string
   type: string
   hiredAt: string
-  /** ⚠️ Nom d'ÉCRAN pour `Employee.endAt`. ⚠️ ET IL N'EST PAS PERSISTABLE : ni `EMPLOYEE_FIELDS`
-   *  (zod) ni `routes/employees.ts` n'acceptent de date de fin. Le champ est saisi et jeté —
-   *  mesuré le 2026-08-09, le seul CDD de production porte `endAt: null`. Dette BACKEND, pas
-   *  un oubli d'ici : `toEmployeeWrite` ne l'envoie donc pas, plutôt que de le faire stripper. */
+  /** ⚠️ Nom d'ÉCRAN pour `Employee.endAt` — c'est `toEmployeeWrite` qui convertit.
+   *  Il a été SAISI ET JETÉ jusqu'au 2026-08-11 : ni `EMPLOYEE_FIELDS` (zod) ni
+   *  `routes/employees.ts` n'acceptaient de date de fin, si bien que le seul CDD de
+   *  production portait `endAt: null`. Les deux sont désormais ouverts ; le verrou
+   *  `hrEmployeeMapping.test.ts` relit la liste blanche du serveur À L'EXÉCUTION. */
   contractEnd?: string
   color: string
   /** ⚠️ `isActive`, PAS `active` : ce formulaire suit le nom du FIL, et zod l'accepte tel quel.
@@ -412,6 +415,13 @@ export function toEmployeeWrite(form: EmpForm, extra: { salary?: number; avatar?
     isActive: form.isActive,
     color: form.color,
     hiredAt: form.hiredAt,
+    // ⚠️ `contractEnd` à l'écran, `endAt` sur le fil — le second mappage qui manquait, et il
+    // a coûté la même chose que la photo : le champ était saisi, la modale l'affichait, et
+    // rien n'arrivait en base. La conversion vit ICI, pas chez l'appelant : `toEmployeeWrite`
+    // est la seule voie d'écriture, donc le seul endroit où l'oubli est impossible.
+    // ⚠️ Champ vidé ⇒ `null` EXPLICITE, jamais `undefined` ni `''` : effacer une échéance est
+    // une intention (requalification en CDI), et `new Date('')` serait une date invalide.
+    endAt: form.contractEnd ? new Date(form.contractEnd).toISOString() : null,
     perf: form.perf,
   }
 }

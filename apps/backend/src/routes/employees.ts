@@ -15,7 +15,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
     const {
       name, role, dept, type, salary,
       phone, email, isActive, color,
-      hiredAt, perf, avatar,
+      hiredAt, endAt, perf, avatar,
     } = request.body as EmployeeBody
 
     if (!name?.trim()) {
@@ -38,6 +38,10 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
           color:    color    ?? '#6C47FF',
           avatar:   avatar   ?? name.split(' ').map((n: string) => n[0] ?? '').join('').slice(0, 2).toUpperCase(),
           hiredAt:  hiredAt ? new Date(hiredAt) : new Date(),
+          // ⚠️ ASYMÉTRIE VOULUE avec `hiredAt` : une embauche sans date retombe sur AUJOURD'HUI
+          // (elle a forcément eu lieu), une fin de contrat sans date reste `null` — l'inventer
+          // daterait une échéance que personne n'a fixée, et le CDI n'en a pas.
+          endAt:    endAt ? new Date(endAt) : null,
           // ⚠️ `Number(perf ?? 3)` NOTAIT 3 tout nouvel employé — une évaluation que
           // personne n'avait faite, indiscernable d'un vrai 3. `null` = pas encore évalué.
           perf:     perf == null ? null : Number(perf),
@@ -56,7 +60,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
     const {
       name, role, dept, type, salary,
       phone, email, address, photo, isActive, color,
-      hiredAt, perf,
+      hiredAt, endAt, perf,
     } = request.body as EmployeeBody
 
     try {
@@ -75,6 +79,10 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
           ...(isActive !== undefined && { isActive }),
           ...(color    !== undefined && { color    }),
           ...(hiredAt  !== undefined && { hiredAt: new Date(hiredAt) }),
+          // ⚠️ `endAt` transmis mais VIDE (`null` ou `''`) EFFACE l'échéance — ce n'est pas
+          // une absence de donnée, c'est la seule façon de requalifier un CDD en CDI. La
+          // distinction porte sur le `!== undefined` : non transmis ⇒ on n'y touche pas.
+          ...(endAt    !== undefined && { endAt: endAt ? new Date(endAt) : null }),
           ...(perf     !== undefined && { perf: Number(perf) }),
         }
       })

@@ -49,6 +49,8 @@ export interface EmployeeBody {
   name?: string; role?: string; dept?: string; type?: string; salary?: number
   phone?: string; email?: string; address?: string; photo?: string
   isActive?: boolean; color?: string; hiredAt?: string; perf?: number; avatar?: string
+  /** Fin de contrat. ⚠️ `null` = échéance EFFACÉE (intention), `undefined` = champ non transmis. */
+  endAt?: string | null
 }
 export interface SaleBody {
   items?: any[]; paymentMode?: string; total?: number

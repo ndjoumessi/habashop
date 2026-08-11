@@ -110,7 +110,9 @@ describe('toEmployeeWrite — sens écran → API', () => {
     // « aucune clé inconnue » serait vrai par vacuité. Angle mort n°1.
     expect(acceptees.size).toBeGreaterThanOrEqual(10)
     expect(acceptees.has('photo'), 'témoin positif').toBe(true)
+    expect(acceptees.has('endAt'), 'témoin positif — la date de fin est persistable').toBe(true)
     expect(acceptees.has('photoUrl'), 'témoin négatif — le serveur ne connaît PAS ce nom').toBe(false)
+    expect(acceptees.has('contractEnd'), 'témoin négatif — nom d’ÉCRAN, absent du fil').toBe(false)
 
     const envoyees = Object.keys(toEmployeeWrite(form, { salary: 1, avatar: 'AT' }))
     const inconnues = envoyees.filter(k => !acceptees.has(k))
@@ -127,13 +129,36 @@ describe('toEmployeeWrite — sens écran → API', () => {
     expect(toEmployeeWrite(form, { salary: 42 }).salary).toBe(42)
   })
 
-  it('⚠️ `contractEnd` n’est PAS envoyé — le serveur ne l’accepte pas', () => {
-    // Le formulaire le collecte, la liste blanche ne le porte pas : l'envoyer
-    // reviendrait à le faire stripper en silence. Dette BACKEND, écrite plutôt
-    // que masquée par une clé qui part dans le vide.
+  it('⚠️ la DATE DE FIN traverse : `contractEnd` à l’écran devient `endAt` sur le fil', () => {
+    /**
+     * ⚠️ CE CAS DISAIT L'INVERSE JUSQU'AU 2026-08-11, et il avait raison : le champ était
+     * saisi par la modale puis JETÉ, faute d'`endAt` dans `EMPLOYEE_FIELDS` et dans le
+     * handler. C'est ainsi qu'Aminata Touré était en CDD avec `endAt: null` en production.
+     * Le test décrivait donc fidèlement le défaut — et, ce faisant, le PROTÉGEAIT.
+     */
     const w = toEmployeeWrite({ ...form, contractEnd: '2026-12-31' }) as Record<string, unknown>
-    expect('contractEnd' in w).toBe(false)
-    expect('endAt' in w).toBe(false)
+    expect(w.endAt).toBe('2026-12-31T00:00:00.000Z')
+    expect('contractEnd' in w, 'la clé d’écran partirait sur le fil et serait strippée').toBe(false)
+  })
+
+  it('⚠️ un champ VIDÉ envoie `null` — effacer une échéance est une intention', () => {
+    // `undefined` laisserait le serveur ne rien faire (`endAt !== undefined` est faux) :
+    // un CDD requalifié en CDI garderait son échéance pour toujours. `''` produirait une
+    // date invalide côté serveur. Seul `null` efface, et c'est ce qui doit partir.
+    const w = toEmployeeWrite({ ...form, contractEnd: '' }) as Record<string, unknown>
+    expect(w.endAt).toBeNull()
+    expect('endAt' in w, 'la clé doit PARTIR, sinon rien n’est effacé').toBe(true)
+
+    // Contrôle positif : le formulaire vide (aucune date jamais saisie) se comporte pareil.
+    expect(toEmployeeWrite(empFormVide()).endAt).toBeNull()
+  })
+
+  it('la date de fin fait l’aller-retour sans dériver d’un jour', () => {
+    // `new Date('2026-12-31')` est parsé en UTC — pas de décalage de fuseau qui ferait
+    // afficher le 30. C'est la même famille que `fmtDate` (§ Dates AFFICHÉES).
+    const aller = toEmployeeWrite({ ...form, contractEnd: '2026-12-31' }).endAt
+    const retour = employeeFromApi({ ...DEPUIS_LA_PROD, endAt: aller } as ApiEmployee, 0).endAt
+    expect(retour).toBe('2026-12-31')
   })
 
   it('un aller-retour préserve ce qui compte', () => {

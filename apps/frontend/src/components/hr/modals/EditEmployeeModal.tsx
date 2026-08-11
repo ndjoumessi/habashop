@@ -370,6 +370,10 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                     ...e, avatar,
                     name: editEmpForm.name, role: editEmpForm.role, dept: editEmpForm.dept,
                     type: editEmpForm.type, salary: salaryXOF, color: editEmpForm.color,
+                    // ⚠️ Sans cette ligne, la date de fin est bien ENREGISTRÉE mais l'onglet
+                    // Contrats continue d'afficher l'ancienne jusqu'au rechargement — et
+                    // l'alerte d'échéance, qui se dérive de `endAt`, reste muette.
+                    endAt: editEmpForm.contractEnd || undefined,
                     active: editEmpForm.isActive, phone: editEmpForm.phone, email: editEmpForm.email,
                     perf: editEmpForm.perf, address: editEmpForm.address, photoUrl: editEmpForm.photoUrl,
                   } : e))
