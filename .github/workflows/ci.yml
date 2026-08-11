@@ -152,6 +152,39 @@ jobs:
       - name: Bundle mobile — artefact livré
         run: npm run verify:bundle
 
+  # ─── Le déploiement a-t-il ATTERRI ? ──────
+  # ⚠️ DIX DÉPLOIEMENTS RAILWAY ONT ÉCHOUÉ EN DEUX MOIS SANS QU'AUCUN SIGNAL NE PARTE
+  # (mesuré le 2026-08-11). La production s'en remet toujours — l'ancien conteneur reste
+  # servi — donc rien ne casse, et c'est ce qui rend le silence coûteux : le jour où un
+  # correctif urgent n'atterrit pas, on le croira déployé. Nelson a découvert le dernier
+  # en ouvrant la console par hasard. C'est `notify-failure` sortant en `exit 0`,
+  # transposé au déploiement.
+  #
+  # ⚠️ `smoke:version` NE PEUT PAS le voir : il compare la VERSION, et un commit qui ne
+  # touche qu'un test n'en bump aucune — c'était exactement le cas ce jour-là. La preuve
+  # utilisée ici est l'ÂGE du conteneur : `boot = serverTime − uptime`, calculé
+  # entièrement sur l'horloge SERVEUR, donc insensible à la dérive du runner.
+  #
+  # ⚠️ AUCUN SECRET REQUIS — il ne sonde qu'une URL publique. Pas de `exit 0` possible
+  # sur une configuration absente, le piège que ce garde existe pour ne pas reproduire.
+  deploy-landed:
+    name: Déploiement backend — atterri ?
+    runs-on: ubuntu-latest
+    # Uniquement sur `main` : une PR ne déclenche aucun déploiement Railway, et un garde
+    # qui rougirait là où rien ne se déploie se ferait désarmer en une semaine.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Attendre un conteneur démarré APRÈS le début de ce job
+        working-directory: apps/backend
+        # Fenêtre GÉNÉREUSE : un déploiement réussi prend ~60 s (mesuré). 12 minutes
+        # laissent douze fois la marge — un garde qui rougit sur une lenteur normale
+        # se fait désarmer, et on perdrait l'alarme qu'on installe.
+        run: npm run verify:deploy
+
   # ─── Sécurité ────────────────────────────
   security:
     name: Security Scan
