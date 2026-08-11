@@ -25,7 +25,9 @@ const { db } = vi.hoisted(() => ({
 }))
 vi.mock('../db', () => ({ prisma: db }))
 vi.mock('../middleware/authenticate', () => ({
-  authenticate: async (req: any) => { req.user = { role: 'ADMIN', tenantId: 'MINE', userId: 'u1' }; req.tenantId = 'MINE' },
+  authenticate: async (req: { user?: unknown; tenantId?: string }) => {
+    req.user = { role: 'ADMIN', tenantId: 'MINE', userId: 'u1' }; req.tenantId = 'MINE'
+  },
 }))
 
 import { employeeRoutes } from '../routes/employees'
@@ -33,7 +35,7 @@ import { employeeRoutes } from '../routes/employees'
 async function buildApp() {
   const app = Fastify({ logger: false })
   app.setValidatorCompiler(validatorCompiler)
-  app.setErrorHandler((error: any, _req, reply) => {
+  app.setErrorHandler((error: Error & { statusCode?: number }, _req, reply) => {
     if (hasZodFastifySchemaValidationErrors(error)) return reply.code(400).send({ error: 'invalid', code: 'VALIDATION' })
     return reply.code(error?.statusCode ?? 500).send({ error: error?.message ?? 'Erreur serveur' })
   })
@@ -45,7 +47,7 @@ async function buildApp() {
 beforeEach(() => vi.clearAllMocks())
 
 /** Données réellement transmises à Prisma par le dernier appel — c'est le seul juge. */
-const dataDe = (m: { mock: { calls: any[][] } }) => m.mock.calls[0][0].data
+const dataDe = (m: { mock: { calls: { data: Record<string, unknown> }[][] } }) => m.mock.calls[0][0].data
 
 describe('POST /api/employees — la date de fin est ÉCRITE', () => {
   it('une chaîne ISO devient une vraie Date en base', async () => {

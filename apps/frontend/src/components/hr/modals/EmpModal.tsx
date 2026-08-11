@@ -7,13 +7,26 @@ import ValidatedInput from '@/components/ui/ValidatedInput'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
-import { type Employee, COLORS, CONTRACT_TYPES, DEPT_COLORS, deptLabel, contractLabel, isOpenEnded, toInputDate } from '@/components/hr/hrShared'
+import { type Employee, type EmpForm, COLORS, CONTRACT_TYPES, DEPT_COLORS, deptLabel, contractLabel, isOpenEnded, toInputDate, initialesDe } from '@/components/hr/hrShared'
 import { DateField } from '@/components/ui/DatePicker'
 
+/**
+ * ⚠️ `onSave` était `(data: any) => void`, et l'appelant construisait un `Employee` à la main
+ * avec `id: Date.now()` — RIEN n'était envoyé au serveur, l'employé disparaissait au
+ * rechargement pendant que l'écran affichait « Employé ajouté ». Le `any` est ce qui rendait
+ * l'écart indolore : la modale émettait `active`, la liste blanche zod attend `isActive`.
+ *
+ * La signature rend désormais la faute inécrivable — un `EmpForm`, plus les deux valeurs que
+ * seule cette modale sait calculer (salaire converti en XOF, initiales). L'appelant n'a plus
+ * qu'à le passer à `toEmployeeWrite`, dont le retour est le miroir d'`EMPLOYEE_FIELDS`.
+ *
+ * ⚠️ `onSave` peut être ASYNCHRONE : la modale attend son issue avant de rendre la main, ce
+ * qui permet à l'appelant de ne PAS fermer sur un refus serveur (cf. `saved`).
+ */
 export default function EmpModal({ emp, onClose, onSave, onDelete }: {
   emp: Employee | null
   onClose: () => void
-  onSave: (data: any) => void
+  onSave: (form: EmpForm, extra: { salary: number; avatar: string }) => void | Promise<void>
   onDelete?: (id: number) => void
 }) {
   const toXOF   = useConvertToXOF()
@@ -42,6 +55,11 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
   // ⚠️ `?? 3` NOTAIT 3 tout nouvel employé, sans que personne n'ait cliqué une étoile.
   // `null` = pas encore évalué, et l'enregistrement transmet cette absence telle quelle.
   const [perf, setPerf]       = useState<number | null>(emp?.perf ?? null)
+  // Requête en vol — anti double-soumission. ⚠️ C'est la SEULE raison admise de désactiver ce
+  // CTA : jamais la validation (cf. `landingClaims.test.ts`), qui gronderait sans nommer le
+  // champ manquant. Depuis que l'enregistrement part au serveur, deux clics créeraient DEUX
+  // fiches — un doublon de personne, pas un doublon d'écran.
+  const [saving, setSaving]   = useState(false)
 
   const deptColor = DEPT_COLORS[dept] ?? color
   const boxRef = useModalFocus<HTMLDivElement>()
@@ -199,12 +217,38 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
         {/* Fixed footer */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', gap: 10 }}>
           <button className="btn" style={{ flex: 1 }} onClick={onClose}>{T('Annuler', 'Cancel', 'Cancelar', 'Annulla')}</button>
-          <button className="btn btn-primary" style={{ flex: 1 }}
-            onClick={() => {
+          <button className="btn btn-primary" style={{ flex: 1 }} disabled={saving}
+            onClick={async () => {
               if (!name.trim() || !role.trim()) { toast.error(T('Nom et poste requis', 'Name and position required', 'Nombre y puesto requeridos', 'Nome e posizione richiesti')); return }
-              onSave({ name, role, dept, salary: toXOF(Number(salary) || 0), type, hiredAt, endAt: endAt || undefined, phone, email, color, active, perf })
+              if (saving) return
+              setSaving(true)
+              try {
+                await onSave(
+                  {
+                    name: name.trim(), role: role.trim(), dept, type,
+                    // ISO `yyyy-mm-dd` rendu par `DateField` — envoyé tel quel. ⚠️ Ne PAS le
+                    // reformater en `fr-FR` : `new Date('05/01/2024')` est lu M/J/A côté serveur
+                    // et rangerait le 5 janvier au 1er mai.
+                    hiredAt,
+                    contractEnd: endAt || undefined,
+                    color,
+                    // ⚠️ `isActive`, PAS `active` : ce formulaire suit le nom du FIL. La modale
+                    // émettait `active`, que la liste blanche zod STRIPPE en silence.
+                    isActive: active,
+                    phone, email, perf,
+                    // Cette modale n'offre ni adresse ni photo — champs vides, pas absents :
+                    // `EmpForm` les déclare et `toEmployeeWrite` les convertit en `null`.
+                    address: '', photoUrl: '',
+                  },
+                  { salary: Math.round(toXOF(Number(salary) || 0)), avatar: initialesDe(name) },
+                )
+              } finally {
+                setSaving(false)
+              }
             }}>
-            {emp ? T('Enregistrer', 'Save', 'Guardar', 'Salva') : T('Ajouter', 'Add', 'Agregar', 'Aggiungi')}
+            {saving
+              ? T('Enregistrement…', 'Saving…', 'Guardando…', 'Salvataggio…')
+              : emp ? T('Enregistrer', 'Save', 'Guardar', 'Salva') : T('Ajouter', 'Add', 'Agregar', 'Aggiungi')}
           </button>
         </div>
       </div>

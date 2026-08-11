@@ -8,7 +8,15 @@ import HRModals from '@/components/hr/HRModals'
 // AVANT et APRÈS la découpe (assertions inchangées). Priorité : la modale d'édition
 // employé (la plus riche en props/état).
 
-vi.mock('@/lib/api', () => ({ employeesApi: { update: vi.fn(() => Promise.resolve()) } }))
+// ⚠️ `create` MANQUAIT à ce mock, et rien ne le signalait : les deux modales de création
+// n'appelaient aucune API — elles empilaient un `Employee` fabriqué avec `id: Date.now()`
+// dans l'état local. Un mock incomplet ne peut pas trahir un appel qui n'existe pas.
+vi.mock('@/lib/api', () => ({
+  employeesApi: {
+    update: vi.fn(() => Promise.resolve()),
+    create: vi.fn((data: any) => Promise.resolve({ id: 'emp-cuid-neuf', ...data })),
+  },
+}))
 vi.mock('@/lib/confirm', () => ({ confirm: vi.fn(() => Promise.resolve(true)) }))
 vi.mock('react-hot-toast', () => ({ default: { success: vi.fn(), error: vi.fn() } }))
 vi.mock('@/stores/appStore', () => ({
@@ -121,7 +129,11 @@ describe('HRModals — modale prime/augmentation', () => {
 })
 
 describe('HRModals — modale ajout employé (EmpModal)', () => {
-  it('saisie nom + poste + "Ajouter" → onSave câblé (setEmployees)', () => {
+  // ⚠️ Ce test n'assertait QUE `setEmployees`, donc il restait VERT alors que la création
+  // n'atteignait jamais le serveur : il décrivait ce que le code faisait au lieu d'affirmer ce
+  // qu'il doit faire. C'est `employeesApi.create` qui discrimine, pas l'état local.
+  it('saisie nom + poste + "Ajouter" → POST /api/employees, PUIS setEmployees + ferme', async () => {
+    const { employeesApi } = await import('@/lib/api') as any
     const p = makeProps({ showModal: true })
     render(<HRModals {...p} />)
     expect(screen.getByText(/Nouvel employé/)).toBeInTheDocument()
@@ -131,27 +143,38 @@ describe('HRModals — modale ajout employé (EmpModal)', () => {
     // motif que `signup.anchor` figeant « Sénégal » : un test qui nomme le défaut le protège.
     fireEvent.change(screen.getByLabelText(/^Nom complet/), { target: { value: 'Jean Test' } })
     fireEvent.change(screen.getByLabelText(/^Poste/), { target: { value: 'Vendeur' } })
-    fireEvent.click(screen.getByText(/Ajouter/))
+    fireEvent.click(screen.getByText(/^Ajouter$/))
+    await waitFor(() => expect(employeesApi.create).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Jean Test', role: 'Vendeur', isActive: true }),
+    ))
     expect(p.setEmployees).toHaveBeenCalled()
+    await waitFor(() => expect(p.setShowModal).toHaveBeenCalledWith(false))
   })
 })
 
 describe('HRModals — modale nouveau contrat', () => {
-  it('formulaire rempli + "Créer le contrat" → setEmployees + ferme', () => {
+  it('formulaire rempli + "Créer le contrat" → POST /api/employees, PUIS setEmployees + ferme', async () => {
+    const { employeesApi } = await import('@/lib/api') as any
     const p = makeProps({ showNewContractModal: true, contractForm: { empId: 'Jean Test', role: 'Vendeur', dept: 'Ventes', type: 'CDI', hiredAt: '2026-05-01', contractEnd: '', salary: 150000 } })
     render(<HRModals {...p} />)
     fireEvent.click(screen.getByText(/Créer le contrat/))
+    await waitFor(() => expect(employeesApi.create).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Jean Test', role: 'Vendeur', salary: 150000, hiredAt: '2026-05-01' }),
+    ))
     expect(p.setEmployees).toHaveBeenCalled()
-    expect(p.setShowNewContractModal).toHaveBeenCalledWith(false)
+    await waitFor(() => expect(p.setShowNewContractModal).toHaveBeenCalledWith(false))
   })
 
-  it('formulaire vide → validation bloque (toast.error, pas de setEmployees)', async () => {
+  it('formulaire vide → validation bloque (toast.error, ni POST ni setEmployees)', async () => {
     const toast = (await import('react-hot-toast')).default as any
+    const { employeesApi } = await import('@/lib/api') as any
     const p = makeProps({ showNewContractModal: true })
     render(<HRModals {...p} />)
     fireEvent.click(screen.getByText(/Créer le contrat/))
     expect(toast.error).toHaveBeenCalled()
     expect(p.setEmployees).not.toHaveBeenCalled()
+    // La validation refuse AVANT de dépenser un aller-retour réseau.
+    expect(employeesApi.create).not.toHaveBeenCalled()
   })
 })
 

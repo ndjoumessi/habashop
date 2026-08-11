@@ -3,7 +3,9 @@ import { useState, useRef, useEffect } from 'react'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
-import { type Employee, type ContractForm, COLORS, CONTRACT_TYPES, DEPT_COLORS, labelStyle, deptLabel, roleLabel, contractLabel, isOpenEnded } from '@/components/hr/hrShared'
+import { type Employee, type ContractForm, type EmpForm, COLORS, CONTRACT_TYPES, DEPT_COLORS, labelStyle, deptLabel, roleLabel, contractLabel, isOpenEnded, toEmployeeWrite, employeeFromApi, initialesDe, toInputDate, contractEndToWire } from '@/components/hr/hrShared'
+import { employeesApi } from '@/lib/api'
+import { saved } from '@/lib/saved'
 // ⚠️ Taux et calcul importés de la SOURCE UNIQUE (`payrollShared`). Ces fichiers codaient
 // `0.08`/`0.05`/`0.87` en dur — le `0.87` étant le pire : un net magique qui devient
 // silencieusement faux dès qu'un taux change.
@@ -41,6 +43,9 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
   const [comboOuvert, setComboOuvert] = useState(false)
   const [survol, setSurvol] = useState(0)
   const [empExistantId, setEmpExistantId] = useState<Employee['id'] | null>(null)
+  // Requête en vol — anti double-soumission (seule raison admise de désactiver ce CTA).
+  // Depuis que les deux chemins écrivent au serveur, deux clics créeraient deux fiches.
+  const [saving, setSaving] = useState(false)
   const comboRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -191,44 +196,89 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
         </div>
         <div style={{ display:'flex', gap:10, marginTop:24 }}>
           <button className="btn" style={{ flex:1 }} onClick={()=>setShowNewContractModal(false)}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
-          <button className="btn btn-primary" style={{ flex:1 }} onClick={()=>{
+          <button className="btn btn-primary" style={{ flex:1 }} disabled={saving} onClick={async ()=>{
             if (!contractForm.empId.trim()||!contractForm.role.trim()) {
               toast.error(lang === 'en' ? 'Name and position required' : lang === 'es' ? 'Nombre y puesto requeridos' : lang === 'it' ? 'Nome e posizione richiesti' : 'Nom et poste requis'); return
             }
-            const newEmp: Employee = {
-              id: Date.now(),
-              name: contractForm.empId.trim(),
-              role: contractForm.role,
-              dept: contractForm.dept,
-              salary: toXOF(contractForm.salary || 0),  // saisi en devise d'affichage → stocké en XOF (base)
-              type: contractForm.type,
-              hiredAt: contractForm.hiredAt ? new Date(contractForm.hiredAt).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR'),
-              // ⚠️ La date de fin était JETÉE pour tout type autre que CDD — un Stage saisi avec sa
-              // date de fin était enregistré sans elle, en silence. La borne est `isOpenEnded`.
-              endAt: !isOpenEnded(contractForm.type)&&contractForm.contractEnd ? new Date(contractForm.contractEnd).toLocaleDateString('fr-FR') : undefined,
-              avatar: contractForm.empId.trim().split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase(),
-              color: COLORS[employees.length % COLORS.length],
-              // ⚠️ `perf:3` notait 3 un employé créé depuis un contrat. `null` = non évalué.
-              active: true, phone:'', email:'', perf:null,
-            }
-            /* ⚠️ DEUX CHEMINS, et c'est tout l'enjeu. Avant, il n'y en avait qu'un :
-               `[...prev, newEmp]`. Un contrat établi pour quelqu'un de l'équipe créait
-               un HOMONYME — id différent, donc bulletin de paie séparé, ligne de
-               planning séparée, et deux fois la même personne dans l'effectif. */
-            if (empExistantId !== null) {
-              setEmployees(prev => prev.map(e => e.id === empExistantId ? {
-                ...e,
-                role: newEmp.role, dept: newEmp.dept, salary: newEmp.salary,
-                type: newEmp.type, hiredAt: newEmp.hiredAt, endAt: newEmp.endAt,
-              } : e))
-              toast.success(lang === 'en' ? 'Contract updated!' : lang === 'es' ? '¡Contrato actualizado!' : lang === 'it' ? 'Contratto aggiornato!' : 'Contrat mis à jour !')
+            if (saving) return
+            const nom = contractForm.empId.trim()
+            // Saisi en devise d'AFFICHAGE → stocké en XOF (base). Arrondi comme dans
+            // `EditEmployeeModal` : la base est en XOF, sans décimale.
+            const salaryXof = Math.round(toXOF(contractForm.salary || 0))
+            // ⚠️ ISO `yyyy-mm-dd` rendu par `DateField`, envoyé TEL QUEL. Ce bloc écrivait
+            // `toLocaleDateString('fr-FR')` — côté serveur, `new Date('05/01/2024')` est lu
+            // M/J/A et aurait rangé le 5 janvier au 1er mai.
+            const hiredAtIso = toInputDate(contractForm.hiredAt) || undefined
+            const quoi = lang === 'en' ? 'the contract' : lang === 'es' ? 'el contrato' : lang === 'it' ? 'il contratto' : 'le contrat'
+            setSaving(true)
+            try {
+              /* ⚠️ DEUX CHEMINS, et c'est tout l'enjeu. Un contrat établi pour quelqu'un de
+                 l'équipe ne doit PAS créer un HOMONYME — id différent, donc bulletin de paie
+                 séparé, ligne de planning séparée, et deux fois la même personne dans
+                 l'effectif. ⚠️ Mais AUCUN des deux n'atteignait le serveur : les deux
+                 écrivaient en état LOCAL, sous un toast de succès, et le contrat disparaissait
+                 au rechargement. Le chemin création fabriquait en plus un `id: Date.now()` qui
+                 n'était l'id d'aucune ligne. */
+              if (empExistantId !== null) {
+                const ok = await saved(
+                  // `String(...)` comme dans `EditEmployeeModal` : `Employee.id` est déclaré
+                  // `number` mais porte un cuid — l'écart est traversé, pas nié.
+                  employeesApi.update(String(empExistantId), {
+                    role: contractForm.role, dept: contractForm.dept,
+                    salary: salaryXof, type: contractForm.type,
+                    ...(hiredAtIso !== undefined && { hiredAt: hiredAtIso }),
+                    // ⚠️ RÉTABLI le 2026-08-11 : le serveur accepte désormais `endAt`. Corps
+                    // PARTIEL délibérément — y passer tout le formulaire écraserait téléphone,
+                    // e-mail et photo avec du vide. La conversion passe par la règle unique.
+                    endAt: contractEndToWire(contractForm.contractEnd),
+                  }),
+                  quoi,
+                )
+                if (!ok) return
+                setEmployees(prev => prev.map(e => e.id === empExistantId ? {
+                  ...e,
+                  role: contractForm.role, dept: contractForm.dept, salary: salaryXof,
+                  type: contractForm.type, hiredAt: hiredAtIso ?? e.hiredAt,
+                  // ⚠️ RÉTABLI : il avait été retiré parce que le serveur ne l'acceptait pas —
+                  // l'afficher aurait affirmé un enregistrement inexistant. Ce n'est plus le
+                  // cas, et l'envoi juste au-dessus est ce qui rend cet affichage honnête.
+                  endAt: contractForm.contractEnd || undefined,
+                } : e))
+                toast.success(lang === 'en' ? 'Contract updated!' : lang === 'es' ? '¡Contrato actualizado!' : lang === 'it' ? 'Contratto aggiornato!' : 'Contrat mis à jour !')
+                setShowNewContractModal(false)
+                return
+              }
+              const form: EmpForm = {
+                name: nom,
+                role: contractForm.role,
+                dept: contractForm.dept,
+                type: contractForm.type,
+                hiredAt: hiredAtIso ?? '',   // vide ⇒ le serveur pose `new Date()`
+                // ⚠️ RÉTABLI : `toEmployeeWrite` le convertit en `endAt`. Un CDD créé depuis
+                // cette modale sans échéance, c'est le défaut qu'on vient de fermer.
+                contractEnd: contractForm.contractEnd || undefined,
+                color: COLORS[employees.length % COLORS.length],
+                isActive: true,
+                phone: '', email: '',
+                // ⚠️ `perf:3` notait 3 un employé créé depuis un contrat. `null` = non évalué.
+                perf: null,
+                address: '', photoUrl: '',
+              }
+              const requete = employeesApi.create(toEmployeeWrite(form, { salary: salaryXof, avatar: initialesDe(nom) }))
+              const ok = await saved(requete, quoi)
+              if (!ok) return
+              // Déjà résolue, rejet déjà traité par `saved` : la ré-attendre ne relance aucune
+              // requête et ne peut plus lever.
+              const cree = await requete
+              setEmployees(prev => [...prev, employeeFromApi(cree, prev.length)])
+              toast.success(lang === 'en' ? 'Contract created!' : lang === 'es' ? '¡Contrato creado!' : lang === 'it' ? 'Contratto creato!' : 'Contrat créé !')
               setShowNewContractModal(false)
-              return
+            } finally {
+              setSaving(false)
             }
-            setEmployees(prev=>[...prev, newEmp])
-            toast.success(lang === 'en' ? 'Contract created!' : lang === 'es' ? '¡Contrato creado!' : lang === 'it' ? 'Contratto creato!' : 'Contrat créé !')
-            setShowNewContractModal(false)
-          }}>{lang === 'en' ? 'Create contract' : lang === 'es' ? 'Crear el contrato' : lang === 'it' ? 'Crea il contratto' : 'Créer le contrat'}</button>
+          }}>{saving
+            ? (lang === 'en' ? 'Saving…' : lang === 'es' ? 'Guardando…' : lang === 'it' ? 'Salvataggio…' : 'Enregistrement…')
+            : (lang === 'en' ? 'Create contract' : lang === 'es' ? 'Crear el contrato' : lang === 'it' ? 'Crea il contratto' : 'Créer le contrat')}</button>
         </div>
       </div>
     </div>

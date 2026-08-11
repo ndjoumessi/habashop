@@ -12,9 +12,14 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/employees', { preHandler: authenticate, schema: { body: EMPLOYEE_CREATE } }, async (request, reply) => {
+    // ⚠️ `address` et `photo` MANQUAIENT à cette destructuration, alors que le `PUT` les écrit
+    // et que `EMPLOYEE_FIELDS` (zod) les accepte : le corps passait la validation puis le
+    // handler les ignorait. Jumeau divergent du chemin de mise à jour — même famille que la
+    // photo qui ne s'enregistrait jamais. Inoffensif tant qu'aucun écran de CRÉATION n'offrait
+    // ces champs ; ça cesse d'être vrai dès qu'un seul les offre, et ça n'aurait rien signalé.
     const {
       name, role, dept, type, salary,
-      phone, email, isActive, color,
+      phone, email, address, photo, isActive, color,
       hiredAt, endAt, perf, avatar,
     } = request.body as EmployeeBody
 
@@ -34,6 +39,8 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
           salary:   Number(salary ?? 0),
           phone:    phone    ?? '',
           email:    email    ?? '',
+          address:  address  ?? null,
+          photo:    photo    ?? null,
           isActive: isActive !== false,
           color:    color    ?? '#6C47FF',
           avatar:   avatar   ?? name.split(' ').map((n: string) => n[0] ?? '').join('').slice(0, 2).toUpperCase(),

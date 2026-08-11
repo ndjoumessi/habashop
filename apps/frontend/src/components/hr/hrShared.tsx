@@ -421,9 +421,26 @@ export function toEmployeeWrite(form: EmpForm, extra: { salary?: number; avatar?
     // est la seule voie d'écriture, donc le seul endroit où l'oubli est impossible.
     // ⚠️ Champ vidé ⇒ `null` EXPLICITE, jamais `undefined` ni `''` : effacer une échéance est
     // une intention (requalification en CDI), et `new Date('')` serait une date invalide.
-    endAt: form.contractEnd ? new Date(form.contractEnd).toISOString() : null,
+    endAt: contractEndToWire(form.contractEnd),
     perf: form.perf,
   }
+}
+
+/**
+ * Date de fin d'écran → valeur du fil.
+ *
+ * ⚠️ EXTRAITE parce qu'il y a DEUX appelants : `toEmployeeWrite` (corps complet) et le chemin
+ * de MISE À JOUR de `NewContractModal`, qui envoie un corps PARTIEL — y passer tout le
+ * formulaire écraserait téléphone, e-mail et photo avec du vide. Deux appelants, une règle :
+ * la recopier serait le motif du jumeau divergent, sur le champ qui vient précisément d'être
+ * réparé pour avoir été saisi et jeté.
+ *
+ * ⚠️ Champ vidé ⇒ `null` EXPLICITE, jamais `undefined` ni `''`. `undefined` laisserait le
+ * serveur ne rien faire (`endAt !== undefined` est faux) et un CDD requalifié en CDI garderait
+ * son échéance pour toujours ; `''` produirait une date invalide.
+ */
+export function contractEndToWire(contractEnd?: string): string | null {
+  return contractEnd ? new Date(contractEnd).toISOString() : null
 }
 
 /** Formulaire employé vide — l'état initial doit satisfaire `EmpForm`, pas `{}`. */

@@ -1,6 +1,8 @@
 import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
-import { type Employee } from '@/components/hr/hrShared'
+import { employeesApi } from '@/lib/api'
+import { saved } from '@/lib/saved'
+import { type Employee, toEmployeeWrite, employeeFromApi } from '@/components/hr/hrShared'
 import SalaryModal from '@/components/hr/modals/SalaryModal'
 import EmpModal from '@/components/hr/modals/EmpModal'
 import EditEmployeeModal from '@/components/hr/modals/EditEmployeeModal'
@@ -63,14 +65,30 @@ export default function HRModals(props: HRModalsProps) {
         <EmpModal
           emp={null}
           onClose={() => setShowModal(false)}
-          onSave={(data) => {
-            const newEmp: Employee = {
-              ...data,
-              id: Date.now(),
-              avatar: data.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
-              active: true,
-            }
-            setEmployees(prev => [...prev, newEmp])
+          /* ⚠️ CE BLOC N'ENVOYAIT RIEN AU SERVEUR. Il fabriquait un `Employee` avec
+             `id: Date.now()`, l'empilait dans l'état local et affichait « Employé ajouté » :
+             la fiche disparaissait au rechargement. Pire que la disparition — l'id inventé
+             n'était celui d'AUCUNE ligne, donc toute écriture ultérieure sur cette personne
+             (modification, suppression, bulletin de paie) partait vers un id inexistant.
+
+             ⚠️ L'id ne vient plus d'ici : il vient du SERVEUR, via `employeeFromApi`. C'est
+             aussi ce qui rend l'écart `Employee.id: number` / cuid string sans effet ici —
+             l'adaptateur le traverse déjà pour les fiches chargées par `GET /api/employees`
+             (hrShared.tsx:369). Le corriger reste un chantier à part, il ne bloque pas. */
+          onSave={async (form, extra) => {
+            const requete = employeesApi.create(toEmployeeWrite(form, extra))
+            // `saved` RAPPORTE (message du serveur préféré au nôtre) et rend un booléen ; la
+            // décision reste ici — et ici, un refus ne ferme pas la modale, n'ajoute rien à la
+            // liste et n'annonce aucun succès. La saisie du gérant est conservée à l'écran.
+            const ok = await saved(
+              requete,
+              lang === 'en' ? 'the employee' : lang === 'es' ? 'el empleado' : lang === 'it' ? 'il dipendente' : 'l’employé',
+            )
+            if (!ok) return
+            // La promesse est déjà résolue et son rejet déjà traité par `saved` : la ré-attendre
+            // ne relance aucune requête et ne peut plus lever.
+            const cree = await requete
+            setEmployees(prev => [...prev, employeeFromApi(cree, prev.length)])
             toast.success(lang === 'en' ? 'Employee added' : lang === 'es' ? 'Empleado agregado' : lang === 'it' ? 'Dipendente aggiunto' : 'Employé ajouté')
             announce(lang === 'en' ? 'Employee added' : lang === 'es' ? 'Empleado agregado' : lang === 'it' ? 'Dipendente aggiunto' : 'Employé ajouté')
             setShowModal(false)
