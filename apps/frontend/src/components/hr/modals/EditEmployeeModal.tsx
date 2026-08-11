@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react'
-import { DollarSign, FileText, Pencil, Star, UserX, User, Eye, MapPin } from 'lucide-react'
+import { DollarSign, FileText, Pencil, Star, UserX, User, Eye, MapPin, Camera } from 'lucide-react'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
 import { employeesApi } from '@/lib/api'
 import { saved } from '@/lib/saved'
 import { resizeToDataUrl, AVATAR_MAX_PX } from '@/lib/imageResize'
-import { type EmpForm, toEmployeeWrite, initialesDe } from '@/components/hr/hrShared'
+import { type EmpForm, toEmployeeWrite, initialesDe, avatarHex } from '@/components/hr/hrShared'
 import { confirm } from '@/lib/confirm'
 import ViewField from '@/components/ui/ViewField'
 import ValidatedInput from '@/components/ui/ValidatedInput'
@@ -65,15 +65,43 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
         {/* HEADER */}
         <div style={{ padding:'24px 24px 20px', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'}18,${editEmpForm.color??'var(--p)'}05)`, borderBottom:'1px solid var(--border)', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-            <div
-              style={{ width:60, height:60, borderRadius:18, overflow:'hidden', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'},${editEmpForm.color??'var(--p)'}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-xl)', fontWeight:'var(--fw-semibold)', color:'#fff', flexShrink:0, boxShadow:`0 8px 24px ${editEmpForm.color??'var(--p)'}50`, border:`2px solid ${editEmpForm.color??'var(--p)'}40`, letterSpacing:'-1px', cursor: empEditMode ? 'pointer' : 'default', position:'relative' }}
-              title={empEditMode ? (lang === 'en' ? 'Click to change photo' : lang === 'es' ? 'Clic para cambiar la foto' : lang === 'it' ? 'Clicca per cambiare la foto' : 'Cliquer pour changer la photo') : undefined}
-              onClick={() => empEditMode && (document.getElementById('emp-photo-input') as HTMLInputElement)?.click()}>
-              {editEmpForm.photoUrl
-                ? <img src={editEmpForm.photoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                : (editEmpForm.name || selectedEmp.name || '??').split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase()
-              }
-            </div>
+            {/* ⚠️ RIEN NE MONTRAIT QUE L'AVATAR EST CLIQUABLE. L'affordance tenait à deux
+                signaux INVISIBLES AU TOUCHER : `cursor:pointer` et un attribut `title`, qui
+                n'apparaît qu'au SURVOL. Sur mobile — le terrain de ce produit — la photo
+                d'employé était donc inatteignable sans le deviner. Même famille que le CTA
+                éteint qui « n'affiche aucune infobulle au toucher » (§ landingClaims).
+
+                ⚠️ ET CE N'ÉTAIT PAS UN BOUTON : un `<div onClick>` n'est ni atteignable au
+                clavier, ni annoncé par un lecteur d'écran. Le badge appareil photo est le
+                signal VISIBLE ; le `<button>` est ce qui le rend utilisable. Le `title` reste,
+                mais en supplément — jamais comme seule voie.
+
+                ⚠️ Le badge vit HORS du carré clippé : le conteneur porte `overflow:hidden`
+                pour découper la photo, et un badge posé dedans serait rogné à l'angle. */}
+            {empEditMode ? (
+              <button type="button"
+                onClick={() => (document.getElementById('emp-photo-input') as HTMLInputElement)?.click()}
+                aria-label={lang === 'en' ? `Change ${selectedEmp.name}'s photo` : lang === 'es' ? `Cambiar la foto de ${selectedEmp.name}` : lang === 'it' ? `Cambia la foto di ${selectedEmp.name}` : `Changer la photo de ${selectedEmp.name}`}
+                title={lang === 'en' ? 'Click to change photo' : lang === 'es' ? 'Clic para cambiar la foto' : lang === 'it' ? 'Clicca per cambiare la foto' : 'Cliquer pour changer la photo'}
+                style={{ position:'relative', width:60, height:60, padding:0, border:'none', background:'transparent', cursor:'pointer', flexShrink:0 }}>
+                <span style={{ display:'flex', alignItems:'center', justifyContent:'center', width:'100%', height:'100%', borderRadius:18, overflow:'hidden', background:`linear-gradient(135deg,${avatarHex(editEmpForm.color)},${avatarHex(editEmpForm.color)}88)`, fontSize:'var(--fs-xl)', fontWeight:'var(--fw-semibold)', color:'#fff', letterSpacing:'-1px', boxShadow:`0 8px 24px ${avatarHex(editEmpForm.color)}50`, border:`2px solid ${avatarHex(editEmpForm.color)}40` }}>
+                  {editEmpForm.photoUrl
+                    ? <img src={editEmpForm.photoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                    : initialesDe(editEmpForm.name || selectedEmp.name)
+                  }
+                </span>
+                <span aria-hidden style={{ position:'absolute', right:-4, bottom:-4, width:24, height:24, borderRadius:'50%', background:'var(--p)', border:'2px solid var(--bg2)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>
+                  <Camera size={13}/>
+                </span>
+              </button>
+            ) : (
+              <div style={{ width:60, height:60, borderRadius:18, overflow:'hidden', background:`linear-gradient(135deg,${avatarHex(editEmpForm.color)},${avatarHex(editEmpForm.color)}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-xl)', fontWeight:'var(--fw-semibold)', color:'#fff', flexShrink:0, boxShadow:`0 8px 24px ${avatarHex(editEmpForm.color)}50`, border:`2px solid ${avatarHex(editEmpForm.color)}40`, letterSpacing:'-1px' }}>
+                {editEmpForm.photoUrl
+                  ? <img src={editEmpForm.photoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                  : initialesDe(editEmpForm.name || selectedEmp.name)
+                }
+              </div>
+            )}
             <input id="emp-photo-input" type="file" accept="image/*" style={{ display:'none' }} onChange={e => {
               const f = e.target.files?.[0]
               if (!f) return

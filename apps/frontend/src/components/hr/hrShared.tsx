@@ -445,7 +445,7 @@ export function contractEndToWire(contractEnd?: string): string | null {
 
 /** Formulaire employé vide — l'état initial doit satisfaire `EmpForm`, pas `{}`. */
 export function empFormVide(): EmpForm {
-  return { name: '', role: '', dept: 'Ventes', type: 'CDI', hiredAt: '', color: 'var(--p)',
+  return { name: '', role: '', dept: 'Ventes', type: 'CDI', hiredAt: '', color: COLORS[0],   // ⚠️ un HEX : cette couleur reçoit des alphas concaténées
            isActive: true, phone: '', email: '', perf: null, address: '', photoUrl: '' }
 }
 
@@ -455,6 +455,25 @@ export function initialesDe(nom: string): string {
 }
 
 export const COLORS = ['#6C3FD6','#3B82F6','#10B981','#F59E0B','#EF4444','#EC4899','#8B5CF6','#F472B6']
+
+/**
+ * Couleur d'avatar SÛRE POUR LA CONCATÉNATION.
+ *
+ * ⚠️ Une couleur destinée à recevoir une alpha (`${c}88`, `${c}50`, `${c}40`) doit être un
+ * `#hex` LITTÉRAL. `var(--p)88` est une couleur INVALIDE : la propriété retombe à sa valeur
+ * INITIALE — bordure absente, ombre absente, fond transparent — et c'est invisible pour `tsc`
+ * comme pour les tests, puisque la source est parfaitement valide. C'est le défaut mesuré le
+ * 2026-08-01 (#211/#212), trouvé à l'écran et par aucune garde.
+ *
+ * ⚠️ CHEMIN LATENT, PAS VIVANT — mesuré avant d'écrire : `empFormVide()` posait bien
+ * `color: 'var(--p)'`, mais la modale ne rend que via `openEditModal`, qui reçoit toujours un
+ * hex d'`employeeFromApi`. On neutralise l'embuscade, on ne corrige pas un défaut visible.
+ *
+ * ⚠️ `#hex` et non `color-mix` : compatibilité WebView Android.
+ */
+export function avatarHex(couleur?: string): string {
+  return /^#[0-9a-f]{6}$/i.test(couleur ?? '') ? (couleur as string) : COLORS[0]
+}
 export const DEPT_COLORS: Record<string, string> = {
   'Ventes':     '#6C3FD6',
   'Stock':      '#F59E0B',
