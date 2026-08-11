@@ -320,6 +320,113 @@ export function mapApiLeave(r: any): LeaveRequest {
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
+/**
+ * ÉTAT DU FORMULAIRE EMPLOYÉ — le type qui manquait à la liste.
+ *
+ * ⚠️ `HR.tsx` le tenait en `useState<any>({})` et `EditEmployeeModal` en `editEmpForm: any`.
+ * C'est le membre absent de la série qui a permis le `strict: true` (`StockForm`, `CatForm`,
+ * `CustomerForm`, `ContractForm`, `LeaveForm`, `DiscountForm`) — et son absence a coûté trois
+ * défauts mesurés en production le 2026-08-09, tous invisibles à `tsc` :
+ *   • la photo n'était JAMAIS persistée ni relue (`photoUrl` envoyé, `photo` attendu) ;
+ *   • un CDD s'affichait « CDI » (l'adaptateur lisait `e.contractType`, qui n'existe pas) ;
+ *   • la couleur enregistrée était écrasée par la palette à chaque chargement.
+ * Un `any` ne laisse pas passer une faute de frappe : il laisse passer une API imaginaire.
+ */
+export type EmpForm = {
+  name: string
+  role: string
+  dept: string
+  type: string
+  hiredAt: string
+  /** ⚠️ Nom d'ÉCRAN pour `Employee.endAt`. ⚠️ ET IL N'EST PAS PERSISTABLE : ni `EMPLOYEE_FIELDS`
+   *  (zod) ni `routes/employees.ts` n'acceptent de date de fin. Le champ est saisi et jeté —
+   *  mesuré le 2026-08-09, le seul CDD de production porte `endAt: null`. Dette BACKEND, pas
+   *  un oubli d'ici : `toEmployeeWrite` ne l'envoie donc pas, plutôt que de le faire stripper. */
+  contractEnd?: string
+  color: string
+  /** ⚠️ `isActive`, PAS `active` : ce formulaire suit le nom du FIL, et zod l'accepte tel quel.
+   *  Le renommer en `active` casserait la modale, qui le lit sous ce nom. Vérifié avant d'écrire. */
+  isActive: boolean
+  phone: string
+  email: string
+  perf?: number | null
+  address?: string
+  /** ⚠️ Nom d'ÉCRAN. Le fil porte `photo` — c'est `toEmployeeWrite` qui convertit. */
+  photoUrl?: string
+}
+
+/**
+ * ADAPTATEUR API → ÉCRAN. Seule voie autorisée pour construire un `Employee`.
+ *
+ * ⚠️ Le paramètre est `ApiEmployee`, PAS `any` : lire un champ que le serveur n'envoie pas
+ * devient une **erreur de compilation** (TS2339) au lieu d'un `undefined` silencieux. C'est
+ * la parade appliquée à `routes/export.ts` après quatre lectures de champs inexistants.
+ */
+export function employeeFromApi(e: ApiEmployee, index: number): Employee {
+  return {
+    // ⚠️ `Employee.id` est déclaré `number` alors que le fil porte un cuid STRING. Écart connu,
+    // documenté en tête de fichier, HORS PÉRIMÈTRE ici : le corriger ripple sur tout le module.
+    id: (e.id ?? index + 1) as unknown as number,
+    name: e.name,
+    role: e.role,
+    dept: e.dept,
+    salary: e.salary ?? 0,
+    // ⚠️ `e.type`, PAS `e.contractType` — ce dernier n'existe pas sur le fil, donc le repli
+    // `?? 'CDI'` s'appliquait TOUJOURS : Aminata Touré était en CDD en base et « CDI » à l'écran.
+    type: e.type || 'CDI',
+    hiredAt: toInputDate(e.hiredAt) || '01/01/2024',
+    endAt: toInputDate(e.endAt) || undefined,
+    avatar: e.avatar || initialesDe(e.name),
+    // ⚠️ La couleur ENREGISTRÉE prime ; la palette n'est qu'un repli pour un employé qui n'en a
+    // pas. `COLORS[index % n]` inconditionnel jetait le choix du gérant à chaque rechargement.
+    color: e.color || COLORS[index % COLORS.length],
+    active: e.isActive,
+    phone: e.phone ?? '',
+    email: e.email ?? '',
+    perf: e.perf,
+    address: e.address ?? '',
+    photoUrl: e.photo ?? undefined,
+  }
+}
+
+/**
+ * ADAPTATEUR ÉCRAN → API. Seule voie autorisée pour construire un corps d'écriture.
+ *
+ * ⚠️ Étaler le formulaire brut (`{ ...editEmpForm }`) était LE défaut : la liste blanche zod du
+ * serveur **strippe** les clés inconnues, donc `photoUrl` partait et disparaissait sans un mot,
+ * pendant que l'écran affichait « Sauvegardé ! ». Le retour est `EmployeeWrite`, miroir
+ * d'`EMPLOYEE_FIELDS` — ajouter un champ ici sans l'ajouter au zod ne compile pas.
+ */
+export function toEmployeeWrite(form: EmpForm, extra: { salary?: number; avatar?: string } = {}): EmployeeWrite {
+  return {
+    ...(extra.salary !== undefined && { salary: extra.salary }),
+    ...(extra.avatar !== undefined && { avatar: extra.avatar }),
+    name: form.name,
+    role: form.role,
+    dept: form.dept,
+    type: form.type,
+    phone: form.phone || null,
+    email: form.email || null,
+    address: form.address || null,
+    photo: form.photoUrl || null,   // ⚠️ LE mappage qui manquait — `photoUrl` à l'écran, `photo` sur le fil
+    isActive: form.isActive,
+    color: form.color,
+    hiredAt: form.hiredAt,
+    perf: form.perf,
+  }
+}
+
+/** Formulaire employé vide — l'état initial doit satisfaire `EmpForm`, pas `{}`. */
+export function empFormVide(): EmpForm {
+  return { name: '', role: '', dept: 'Ventes', type: 'CDI', hiredAt: '', color: 'var(--p)',
+           isActive: true, phone: '', email: '', perf: null, address: '', photoUrl: '' }
+}
+
+/** Initiales d'un nom — repli d'avatar quand la base n'en porte pas. */
+export function initialesDe(nom: string): string {
+  return (nom || '?').split(' ').map(n => n[0] ?? '').join('').slice(0, 2).toUpperCase()
+}
+
 export const COLORS = ['#6C3FD6','#3B82F6','#10B981','#F59E0B','#EF4444','#EC4899','#8B5CF6','#F472B6']
 export const DEPT_COLORS: Record<string, string> = {
   'Ventes':     '#6C3FD6',

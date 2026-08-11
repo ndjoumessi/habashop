@@ -21,7 +21,7 @@ import HREmployeeGrid from '@/components/hr/HREmployeeGrid'
 import HRTabs from '@/components/hr/HRTabs'
 import HRModals from '@/components/hr/HRModals'
 import EmptyState from '@/components/ui/EmptyState'
-import { type Employee, type LeaveRequest, type AttendUiStatus, type ContractForm, type LeaveForm, COLORS, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusToApi, attendStatusFromApi, mapApiLeave } from '@/components/hr/hrShared'
+import { type Employee, type LeaveRequest, type AttendUiStatus, type ContractForm, type LeaveForm, type EmpForm, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusToApi, attendStatusFromApi, mapApiLeave, employeeFromApi, empFormVide } from '@/components/hr/hrShared'
 // ⚠️ Taux et calcul de paie : SOURCE UNIQUE (`payrollShared`). Ce fichier codait 0.08/0.05
 // en dur — 6 fichiers le faisaient, donc 6 endroits à corriger au prochain changement de loi.
 import { payRecordFromEmployee, printBulletin } from '@/components/payroll/payrollShared'
@@ -52,7 +52,7 @@ export default function HR() {
   const [selectedEmp, setSelectedEmp] = useState<Employee | null>(null)
   const [showEditEmpModal, setShowEditEmpModal] = useState(false)
   const [empEditMode, setEmpEditMode] = useState(false)
-  const [editEmpForm, setEditEmpForm] = useState<any>({})
+  const [editEmpForm, setEditEmpForm] = useState<EmpForm>(empFormVide)
 
   // Contracts
   const [showNewContractModal, setShowNewContractModal] = useState(false)
@@ -113,23 +113,12 @@ export default function HR() {
     employeesApi.list()
       .then((data) => {
         if (data?.length) {
-          setEmployees(data.map((e: any, i: number) => ({
-            id: e.id ?? i + 1,
-            name: e.name ?? e.firstName + ' ' + e.lastName,
-            role: e.role ?? e.position ?? 'Employé',
-            dept: e.department ?? e.dept ?? 'Général',
-            salary: e.salary ?? e.baseSalary ?? 0,
-            type: e.contractType ?? 'CDI',
-            hiredAt: toInputDate(e.hiredAt ?? e.startDate) || '01/01/2024',
-            endAt: toInputDate(e.endAt) || e.endAt,
-            avatar: (e.name ?? e.firstName ?? '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
-            color: COLORS[i % COLORS.length],
-            active: e.active ?? e.isActive ?? e.status !== 'inactive',
-            phone: e.phone ?? '',
-            email: e.email ?? '',
-            address: e.address ?? '',
-            perf: e.perf ?? e.performance,
-          })))
+          // ⚠️ `data.map((e: any) => …)` a été SUPPRIMÉ ici. C'est cet `any` qui laissait lire
+          // `e.contractType`, `e.firstName`, `e.department`, `e.baseSalary`, `e.performance` —
+          // des champs que le serveur n'envoie PAS. Chaque repli `?? …` s'appliquait donc
+          // toujours, et un CDD s'affichait « CDI ». `employeeFromApi` prend un `ApiEmployee` :
+          // lire un champ absent devient TS2339.
+          setEmployees(data.map(employeeFromApi))
         }
       })
       .catch(() => {})

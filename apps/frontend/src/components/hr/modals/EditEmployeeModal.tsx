@@ -4,6 +4,9 @@ import { useModalFocus } from '@/hooks/useModalFocus'
 import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
 import { employeesApi } from '@/lib/api'
+import { saved } from '@/lib/saved'
+import { resizeToDataUrl, AVATAR_MAX_PX } from '@/lib/imageResize'
+import { type EmpForm, toEmployeeWrite, initialesDe } from '@/components/hr/hrShared'
 import { confirm } from '@/lib/confirm'
 import ViewField from '@/components/ui/ViewField'
 import ValidatedInput from '@/components/ui/ValidatedInput'
@@ -25,7 +28,7 @@ interface Props {
   lang: string
   fmt: (n: number) => string
   selectedEmp: Employee
-  editEmpForm: any; setEditEmpForm: (v: any) => void
+  editEmpForm: EmpForm; setEditEmpForm: React.Dispatch<React.SetStateAction<EmpForm>>
   empEditMode: boolean; setEmpEditMode: (b: boolean) => void
   salaryInput: string; setSalaryInput: (v: string) => void
   toXOF: (n: number) => number
@@ -75,9 +78,12 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               const f = e.target.files?.[0]
               if (!f) return
               if (f.size > 2 * 1024 * 1024) { toast.error(lang === 'en' ? 'Photo too large (max 2MB)' : lang === 'es' ? 'Foto demasiado pesada (máx 2MB)' : lang === 'it' ? 'Foto troppo pesante (max 2MB)' : 'Photo trop lourde (max 2MB)'); return }
-              const r = new FileReader()
-              r.onload = ev => setEditEmpForm((fm:any) => ({ ...fm, photoUrl: ev.target?.result as string }))
-              r.readAsDataURL(f)
+              // ⚠️ On REDIMENSIONNE avant d'encoder. `readAsDataURL` brut stockait le fichier
+              // ENTIER en base64 dans une colonne Postgres : mesuré, 5 employés × 2 Mo = 14 Mo
+              // rendus à chaque ouverture de la page RH. À 256 px la même photo pèse ~20 Ko.
+              resizeToDataUrl(f, AVATAR_MAX_PX)
+                .then(dataUrl => setEditEmpForm(fm => ({ ...fm, photoUrl: dataUrl })))
+                .catch(() => toast.error(lang === 'en' ? 'Unreadable image' : lang === 'es' ? 'Imagen ilegible' : lang === 'it' ? 'Immagine illeggibile' : 'Image illisible'))
               e.target.value = ''
             }} />
             <div style={{ flex:1, minWidth:0 }}>
@@ -340,20 +346,34 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               <button
                 onClick={async () => {
                   if (!editEmpForm.name?.trim()) { toast.error(lang === 'en' ? 'Name required' : lang === 'es' ? 'Nombre requerido' : lang === 'it' ? 'Nome richiesto' : 'Nom requis'); return }
-                  const avatar = (editEmpForm.name||'??').split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase()
-                  const salaryXOF = toXOF(+salaryInput || 0)
-                  const data = { ...editEmpForm, avatar, salary: Math.round(salaryXOF) }
-                  try {
-                    await employeesApi.update(String(selectedEmp!.id), {
-                      ...data,
-                      hiredAt: data.hiredAt ? new Date(data.hiredAt).toISOString() : undefined,
-                    })
-                    setEmployees((prev: Employee[]) => prev.map(e => e.id===selectedEmp!.id ? {...e, ...data, avatar} : e))
-                    toast.success(lang === 'en' ? 'Saved!' : lang === 'es' ? '¡Guardado!' : lang === 'it' ? 'Salvato!' : 'Sauvegardé !')
-                  } catch {
-                    setEmployees((prev: Employee[]) => prev.map(e => e.id===selectedEmp!.id ? {...e, ...data, avatar} : e))
-                    toast.success('Local')
-                  }
+                  const avatar = initialesDe(editEmpForm.name)
+                  const salaryXOF = Math.round(toXOF(+salaryInput || 0))
+                  // ⚠️ `{ ...editEmpForm }` ÉTALÉ BRUT était le défaut : le formulaire porte
+                  // `photoUrl`, la liste blanche zod attend `photo` — elle STRIPPE la clé
+                  // inconnue, donc la photo ne s'est JAMAIS enregistrée (mesuré en prod :
+                  // 5 employés, 0 photo). `toEmployeeWrite` rend un `EmployeeWrite`, miroir
+                  // d'`EMPLOYEE_FIELDS` : un champ non accepté ne compile plus.
+                  const payload = toEmployeeWrite(
+                    { ...editEmpForm, hiredAt: editEmpForm.hiredAt ? new Date(editEmpForm.hiredAt).toISOString() : '' },
+                    { avatar, salary: salaryXOF },
+                  )
+                  // ⚠️ `catch { toast.success('Local') }` SUPPRIMÉ. Un refus serveur s'affichait
+                  // en SUCCÈS, par-dessus une mise à jour optimiste : l'écran affirmait un
+                  // enregistrement qui n'existait pas. `saved()` RAPPORTE et rend un booléen —
+                  // la décision reste ici, et ici on ne ferme pas sur un échec.
+                  const ok = await saved(
+                    employeesApi.update(String(selectedEmp!.id), payload),
+                    lang === 'en' ? 'the employee' : lang === 'es' ? 'el empleado' : lang === 'it' ? 'il dipendente' : 'l’employé',
+                  )
+                  if (!ok) return
+                  setEmployees((prev: Employee[]) => prev.map(e => e.id===selectedEmp!.id ? {
+                    ...e, avatar,
+                    name: editEmpForm.name, role: editEmpForm.role, dept: editEmpForm.dept,
+                    type: editEmpForm.type, salary: salaryXOF, color: editEmpForm.color,
+                    active: editEmpForm.isActive, phone: editEmpForm.phone, email: editEmpForm.email,
+                    perf: editEmpForm.perf, address: editEmpForm.address, photoUrl: editEmpForm.photoUrl,
+                  } : e))
+                  toast.success(lang === 'en' ? 'Saved!' : lang === 'es' ? '¡Guardado!' : lang === 'it' ? 'Salvato!' : 'Sauvegardé !')
                   announce(lang === 'en' ? 'Employee updated' : lang === 'es' ? 'Empleado actualizado' : lang === 'it' ? 'Dipendente aggiornato' : 'Employé mis à jour')
                   setEmpEditMode(false)
                   setShowEditEmpModal(false)
