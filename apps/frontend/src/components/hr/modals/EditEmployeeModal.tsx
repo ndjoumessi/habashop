@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { DollarSign, FileText, Pencil, Star, Trash2, User, Eye, MapPin } from 'lucide-react'
+import { DollarSign, FileText, Pencil, Star, UserX, User, Eye, MapPin } from 'lucide-react'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
@@ -95,7 +95,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:8 }}>
                 <button type="button"
-                  onClick={() => empEditMode && setEditEmpForm((f:any) => ({ ...f, isActive:!f.isActive }))}
+                  onClick={() => empEditMode && setEditEmpForm(f => ({ ...f, isActive: !f.isActive }))}
                   style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 12px', borderRadius:99, border:'none', cursor: empEditMode ? 'pointer' : 'default', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', background: editEmpForm.isActive?'rgba(0,208,132,.15)':'rgba(255,59,92,.15)', color: editEmpForm.isActive?'var(--acc2)':'var(--danger)', transition:'all .15s' }}>
                   <div style={{ width:6, height:6, borderRadius:'50%', background: editEmpForm.isActive?'var(--acc2)':'var(--danger)', boxShadow: editEmpForm.isActive?'0 0 6px var(--acc2)':'0 0 6px var(--danger)' }} />
                   {editEmpForm.isActive ? (lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Employé actif') : (lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif')}
@@ -395,15 +395,58 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                 style={{ padding:'12px 16px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:'var(--fs-sm)', fontFamily:'var(--font)', fontWeight:'var(--fw-regular)' }}>
                 {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
               </button>
+              {/* ⚠️ CE BOUTON DISAIT « SUPPRIMER » ET NE SUPPRIMAIT RIEN. Derrière une
+                  confirmation qui annonçait « action irréversible », il ne faisait qu'un
+                  `setEmployees(prev => prev.filter(...))` — aucun octet n'atteignait le
+                  serveur (`employeesApi.delete` n'avait AUCUN site d'appel), et la personne
+                  revenait au rechargement. Un mot qui promet la destruction sur une action
+                  qui n'agit pas est pire qu'un bouton absent : on lui fait confiance.
+
+                  ⚠️ DÉCISION DE NELSON (2026-08-11) : on DÉSACTIVE, on ne supprime pas. Le
+                  backend le disait déjà à sa façon — sa route `DELETE` fait un
+                  `prisma.employee.delete()` DUR et refuse en `409 EMPLOYEE_HAS_PAYROLL` dès
+                  qu'un bulletin existe. Effacer quelqu'un qui a été payé rendrait la paie
+                  passée irrécupérable, exactement ce que l'instantané gelé des bulletins
+                  existe pour empêcher.
+
+                  ⚠️ L'ICÔNE ET LA COULEUR SUIVENT LA RÉALITÉ : plus de corbeille rouge pour
+                  une action réversible. L'œil croit le signal, pas la légende. */}
+              {selectedEmp.active && (
               <button
                 onClick={async () => {
-                  if (!(await confirm({ title: lang === 'en' ? 'Delete employee' : lang === 'es' ? 'Eliminar empleado' : lang === 'it' ? 'Elimina dipendente' : "Supprimer l'employé", message: lang === 'en' ? `Delete ${selectedEmp!.name}? This action is irreversible.` : lang === 'es' ? `¿Eliminar ${selectedEmp!.name}? Esta acción es irreversible.` : lang === 'it' ? `Eliminare ${selectedEmp!.name}? L'azione è irreversibile.` : `Supprimer ${selectedEmp!.name} ? Cette action est irréversible.`, danger: true }))) return
-                  setEmployees((prev: Employee[]) => prev.filter(e=>e.id!==selectedEmp!.id))
+                  if (!(await confirm({
+                    title: lang === 'en' ? 'Deactivate employee' : lang === 'es' ? 'Desactivar empleado' : lang === 'it' ? 'Disattiva dipendente' : "Désactiver l'employé",
+                    message: lang === 'en'
+                      ? `Deactivate ${selectedEmp!.name}? They leave payroll and planning, their history is kept, and you can reactivate them from this card.`
+                      : lang === 'es'
+                      ? `¿Desactivar a ${selectedEmp!.name}? Sale de la nómina y del horario, se conserva su historial y puede reactivarlo desde esta ficha.`
+                      : lang === 'it'
+                      ? `Disattivare ${selectedEmp!.name}? Esce dal libro paga e dal planning, lo storico è conservato e puoi riattivarlo da questa scheda.`
+                      : `Désactiver ${selectedEmp!.name} ? Il sort de la paie et du planning, son historique est conservé, et vous pouvez le réactiver depuis cette fiche.`,
+                    // ⚠️ `danger: false` : l'action est RÉVERSIBLE. Peindre en rouge ce qui se
+                    // défait d'un clic use l'alarme pour le jour où elle sera vraie.
+                    danger: false,
+                  }))) return
+                  // ⚠️ Corps MINIMAL, pas `toEmployeeWrite(editEmpForm)` : la fiche peut être
+                  // ouverte en lecture, avec un formulaire non modifié — envoyer tout
+                  // écraserait des champs que personne n'a touchés. `isActive` est bien lu par
+                  // le handler du PUT (verrou `employeeFieldsReachable.test.ts`).
+                  const ok = await saved(
+                    employeesApi.update(String(selectedEmp!.id), { isActive: false }),
+                    lang === 'en' ? 'the employee' : lang === 'es' ? 'el empleado' : lang === 'it' ? 'il dipendente' : 'l’employé',
+                  )
+                  if (!ok) return
+                  // ⚠️ On ne RETIRE pas de la liste : le filtre de statut vaut « all » par
+                  // défaut, la personne reste donc visible, marquée inactive. La faire
+                  // disparaître ferait lire « désactivé » comme « supprimé ».
+                  setEmployees((prev: Employee[]) => prev.map(e => e.id === selectedEmp!.id ? { ...e, active: false } : e))
                   setShowEditEmpModal(false)
-                  toast.success(lang === 'en' ? 'Deleted' : lang === 'es' ? 'Eliminado' : lang === 'it' ? 'Eliminato' : 'Supprimé')
+                  toast.success(lang === 'en' ? 'Deactivated' : lang === 'es' ? 'Desactivado' : lang === 'it' ? 'Disattivato' : 'Désactivé')
+                  announce(lang === 'en' ? 'Employee deactivated' : lang === 'es' ? 'Empleado desactivado' : lang === 'it' ? 'Dipendente disattivato' : 'Employé désactivé')
                 }}
-                aria-label={lang === 'en' ? 'Delete employee' : lang === 'es' ? 'Eliminar empleado' : lang === 'it' ? 'Elimina dipendente' : "Supprimer l'employé"}
-                style={{ width:44, padding:'12px', background:'rgba(255,59,92,.1)', border:'1px solid rgba(255,59,92,.2)', borderRadius:12, cursor:'pointer', color:'var(--danger)', display:'flex', alignItems:'center', justifyContent:'center' }}><Trash2 size={16}/></button>
+                aria-label={lang === 'en' ? 'Deactivate employee' : lang === 'es' ? 'Desactivar empleado' : lang === 'it' ? 'Disattiva dipendente' : "Désactiver l'employé"}
+                style={{ width:44, padding:'12px', background:'var(--c-amber-bg)', border:'1px solid var(--c-amber-border)', borderRadius:12, cursor:'pointer', color:'var(--warn)', display:'flex', alignItems:'center', justifyContent:'center' }}><UserX size={16}/></button>
+              )}
             </>
           )}
         </div>
