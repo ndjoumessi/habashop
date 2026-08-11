@@ -108,31 +108,20 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.delete('/api/employees/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
-    const tenantId = getTenantId(request)
-    const { id } = request.params as { id: string }
-    try {
-      await prisma.employee.delete({ where: { id, tenantId } })
-      return { success: true }
-    } catch (err) {
-      // ⚠️ Ceci est un HARD delete : les FK vers Employee décident du sort des données liées.
-      // Présences, shifts, congés, primes et historique de salaire partent en CASCADE ; les
-      // BULLETINS DE PAIE, eux, sont en RESTRICT (`model Payroll`) — ils sont la preuve de ce
-      // qui a été versé et ne doivent pas disparaître avec la fiche. La contrainte refuse donc
-      // la suppression, et ce refus doit être LISIBLE : un 500 au message Prisma brut ferait
-      // conclure à une panne, pas à une règle (et fuiterait du détail interne, cf. § P1.6).
-      if ((err as { code?: string }).code === 'P2003') {
-        return reply.code(409).send({
-          error: "Cet employé a des bulletins de paie : suppression impossible. Désactivez la fiche plutôt que de la supprimer.",
-          code: 'EMPLOYEE_HAS_PAYROLL',
-        })
-      }
-      // P2025 : la fiche n'existe pas, ou appartient à une autre boutique (le `where` est
-      // scopé) → 404, jamais un 500.
-      if ((err as { code?: string }).code === 'P2025') {
-        return reply.code(404).send({ error: 'Employé introuvable' })
-      }
-      throw err   // le handler global journalise et masque le détail interne
-    }
-  })
+  /* ⚠️ IL N'Y A PLUS DE ROUTE `DELETE /api/employees/:id`, ET C'EST DÉLIBÉRÉ.
+     Décision de Nelson (2026-08-11) : un employé se DÉSACTIVE, il ne se supprime pas.
+     Elle faisait un HARD delete (`prisma.employee.delete`) et n'avait plus AUCUN
+     appelant — l'écran passe par `PUT { isActive: false }`.
+
+     ⚠️ CE QUE SA SUPPRESSION COÛTE, écrit plutôt que découvert : aucun chemin d'API ne
+     permet plus d'effacer une fiche. Une fiche créée par erreur reste (désactivable,
+     mais présente), et une demande d'effacement de données personnelles passe par une
+     opération en base. `Employee.deletedAt` existe au schéma et n'est utilisé par
+     personne — c'est la voie douce si le besoin revient, pas un hard delete.
+
+     ⚠️ NE PAS LA RÉTABLIR « pour le ménage » : les cinq FK vers Employee sont en CASCADE
+     (présences, shifts, congés, primes, historique de salaire) — supprimer une fiche
+     emportait tout cela. Seuls les BULLETINS étaient protégés, par un `Restrict` dont le
+     refus (409 `EMPLOYEE_HAS_PAYROLL`) devait être rendu lisible à la main. */
+
 }

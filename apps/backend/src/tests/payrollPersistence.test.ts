@@ -256,33 +256,34 @@ describe('garde de rôle — miroir de ROLE_PERMISSIONS[\'payroll\'] côté fron
  * refus doit être lisible (409 nommé), pas un 500 au message Prisma brut qui ferait conclure
  * à une panne et fuiterait du détail interne.
  */
-describe('suppression d’un employé — le refus est LISIBLE', () => {
-  it('P2003 (bulletins existants) → 409 EMPLOYEE_HAS_PAYROLL, pas 500', async () => {
-    const { employeeRoutes } = await import('../routes/employees')
-    // on génère d'abord les bulletins du mois : c'est ce qui rend la suppression impossible
-    const payApp = await buildApp()
-    await payApp.inject({ method: 'POST', url: '/api/payroll/generate', payload: { month: '2026-07' } })
-    expect(payrolls.some(p => p.employeeId === 'e1')).toBe(true)
-
-    const app = Fastify()
-    app.setValidatorCompiler(validatorCompiler)
-    await app.register(employeeRoutes)
-    await app.ready()
-    const res = await app.inject({ method: 'DELETE', url: '/api/employees/e1' })
-    expect(res.statusCode).toBe(409)
-    expect(res.json().code).toBe('EMPLOYEE_HAS_PAYROLL')
-    // Le message Prisma brut ne doit JAMAIS atteindre le client.
-    expect(res.json().error).not.toMatch(/constraint|foreign key|Payroll_/i)
-  })
-
-  it('CONTRÔLE POSITIF — sans bulletin, la suppression PASSE (sinon le 409 ne prouve rien)', async () => {
+describe('suppression d’un employé — la route N’EXISTE PLUS', () => {
+  /**
+   * ⚠️ DEUX CAS ONT ÉTÉ SUPPRIMÉS ICI, et c'est voulu. Ils exerçaient
+   * `DELETE /api/employees/:id` : le 409 `EMPLOYEE_HAS_PAYROLL` et son contrôle
+   * positif. La route a été retirée le 2026-08-11 (décision de Nelson : un employé
+   * se DÉSACTIVE), donc ces tests gardaient un comportement qui n'existe plus.
+   * *Un test qui n'affirme plus rien se supprime, il ne se répare pas.*
+   *
+   * ⚠️ CE QUI EST GARDÉ À LA PLACE, c'est l'ABSENCE — sans quoi la route pourrait
+   * revenir « pour le ménage » sans que rien ne le signale, et avec elle les cinq
+   * CASCADE (présences, shifts, congés, primes, historique de salaire) qu'un hard
+   * delete emportait. Le `Restrict` sur `Payroll` reste au schéma comme dernière
+   * barrière ; il n'est plus la seule.
+   */
+  it('⚠️ DELETE /api/employees/:id n’est plus enregistrée', async () => {
     const { employeeRoutes } = await import('../routes/employees')
     const app = Fastify()
     app.setValidatorCompiler(validatorCompiler)
     await app.register(employeeRoutes)
     await app.ready()
-    expect(payrolls).toHaveLength(0)
+
     const res = await app.inject({ method: 'DELETE', url: '/api/employees/e1' })
-    expect(res.statusCode).toBe(200)
+    expect(res.statusCode, 'la route est revenue — un hard delete emporte 5 tables en CASCADE').toBe(404)
+
+    // ⚠️ CONTRÔLE DISCRIMINANT : un 404 ne prouve rien tout seul — il serait rendu par
+    // n'importe quel chemin inconnu, y compris si `employeeRoutes` n'enregistrait RIEN.
+    // On vérifie donc qu'une route qu'on SAIT présente répond, elle, autre chose.
+    const temoin = await app.inject({ method: 'GET', url: '/api/employees' })
+    expect(temoin.statusCode, 'aucune route employé n’est montée : le 404 ci-dessus ne prouve rien').not.toBe(404)
   })
 })

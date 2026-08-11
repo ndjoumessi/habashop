@@ -626,7 +626,8 @@ model Payroll {
 
   // ⚠️ RESTRICT, pas CASCADE — DIVERGENCE ASSUMÉE avec les 5 autres FK vers Employee
   // (Attendance, Shift, LeaveRequest, EmployeeBonus, SalaryHistory : toutes CASCADE).
-  // MESURÉ : `DELETE /api/employees/:id` fait un HARD delete (`prisma.employee.delete`),
+  // ⚠️ La route `DELETE /api/employees/:id` a été SUPPRIMÉE le 2026-08-11 — un employé se
+  // désactive. Ce `Restrict` reste la DERNIÈRE barrière si un hard delete revenait un jour :
   // le CASCADE se déclencherait donc pour de vrai. Un bulletin est la PREUVE de ce qui a été
   // versé : supprimer une fiche employé ne doit pas effacer l'historique de paie. RESTRICT
   // garde aussi `employeeId` NON-NULLABLE, donc l'unicité (tenantId, employeeId, month)

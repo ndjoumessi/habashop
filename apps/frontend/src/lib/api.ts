@@ -360,8 +360,8 @@ export const employeesApi = {
   list:   () => api.get<ApiEmployee[]>('/api/employees'),
   create: (data: EmployeeWrite) => api.post<ApiEmployee>('/api/employees', data),
   update: (id: string, data: EmployeeWrite) => api.put<ApiEmployee>(`/api/employees/${id}`, data),
-  // Suppression DURE côté serveur (`prisma.employee.delete`) → `{ success: true }`.
-  delete: (id: string) => api.delete<{ success: boolean }>(`/api/employees/${id}`),
+  // ⚠️ PAS de `delete` : la route serveur a été SUPPRIMÉE (2026-08-11). Un employé se
+  // désactive — `update(id, { isActive: false })`. Le laisser ici pointerait vers un 404.
 }
 
 // Bulletins de paie PERSISTÉS. ⚠️ `month` = clé ISO « YYYY-MM » (cf. `monthKey`) — le
