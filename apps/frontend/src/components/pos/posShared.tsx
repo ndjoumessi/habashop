@@ -69,6 +69,11 @@ export type DiscountForm = { type: 'percent' | 'amount'; value: number; reason: 
 
 export type PosProduct = typeof PRODUCTS[0] & {
   id: number | string
+  /**
+   * URL de la photo produit, ou absente. ⚠️ Une URL, JAMAIS des données : cette liste
+   * est relue à chaque ouverture de caisse ET persistée hors ligne côté mobile.
+   */
+  image?: string | null
   sku?: string
   barcode?: string
   priceTiers?: { minQty: number; price: number; label?: string }[]
@@ -97,6 +102,9 @@ export function toPosProduct(p: Record<string, any>): PosProduct {
     priceSemiWholesale: p.semiWholesalePrice ?? p.sellPrice ?? 0,
     cat: (p.category || 'grocery').toLowerCase().replace(/[éè]/g, 'e').replace(/\s+/g, ''),
     emoji: p.emoji || '📦',
+    // ⚠️ `?? null` et non `|| null` : une chaîne vide reste une absence, mais on ne veut
+    // pas qu'un `0` ou un `false` venu d'une API malformée devienne une URL.
+    image: p.image ?? null,
     stock: p.stockQty ?? 0,
     promotion: p.hasPromotion ?? false,
     promotionPrice: p.promotionPrice ?? 0,

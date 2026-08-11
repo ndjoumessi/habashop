@@ -6,6 +6,7 @@ import type { Product } from '@/types'
 import { useTheme, type AmountParts } from '@/stores/appStore'
 import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
+import ProductThumb from '../../components/ui/ProductThumb'
 
 // ── Carte produit ────────────────────────────────
 // memo : un tap d'ajout au panier modifie `cart` → sans memo, TOUTES les cartes
@@ -49,7 +50,7 @@ const ProductCard = memo(function ProductCard({
         </View>
       )}
       {low && <View style={s.prodLowDot} />}
-      <Text style={s.prodEmoji}>{product.emoji ?? '📦'}</Text>
+      <ProductThumb p={product} size={40} fontSize={30} />
       <Text style={s.prodName} numberOfLines={2}>{product.name?.trim()}</Text>
       <Text style={s.prodPrice}>
         {price.prefix}{price.amount}

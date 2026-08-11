@@ -42,6 +42,7 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
         hasPromotion: true,
         promotionEnd: true,
         emoji: true,
+        image: true,
         stockQty: true,
         unit: true,
         category: true,

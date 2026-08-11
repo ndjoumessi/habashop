@@ -14,6 +14,7 @@ import {
   subscriptionTotal, firstDeliveryFrom, toDateInput,
   type Sub, type SubCustomer, type SubProduct, type DraftItem,
 } from './subscriptionShared'
+import ProductThumb from '@/components/ui/ProductThumb'
 
 interface Props {
   lang: string
@@ -367,13 +368,11 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                         }}
                         onMouseDown={() => addProduct(p)}
                       >
-                        <div style={{
-                          width: 28, height: 28, borderRadius: 'var(--r-sm)', flexShrink: 0,
-                          background: 'var(--bg3)', border: '1px solid var(--border)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-title)', lineHeight: 1,
-                        }}>
-                          {p.emoji || <Package size={13} color="var(--text4)" />}
-                        </div>
+                        <ProductThumb
+                          p={p} size={28} radius="var(--r-sm)" fontSize="var(--fs-title)"
+                          style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}
+                          fallback={<Package size={13} color="var(--text4)" />}
+                        />
                         <span style={{ flex: 1, fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)' }}>{p.name}</span>
                         <span style={{ fontSize: 'var(--fs-label)', flexShrink: 0, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
                           {fmt(p.sellPrice)}
@@ -404,13 +403,11 @@ export default function SubscriptionModal({ lang, sub, onClose, onSaved }: Props
                       style={{ borderBottom: idx === items.length - 1 ? 'none' : '1px solid var(--border)' }}
                     >
                       {/* L'emoji est du contenu marchand, pas une icône d'UI. */}
-                      <div style={{
-                        width: 32, height: 32, borderRadius: 'var(--r-sm)', flexShrink: 0,
-                        background: 'var(--bg3)', border: '1px solid var(--border)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-md)', lineHeight: 1,
-                      }}>
-                        {it.product.emoji || <Package size={14} color="var(--text4)" />}
-                      </div>
+                      <ProductThumb
+                        p={it.product} size={32} radius="var(--r-sm)" fontSize="var(--fs-md)"
+                        style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}
+                        fallback={<Package size={14} color="var(--text4)" />}
+                      />
 
                       <div className="sub-line-nm">
                         <div style={{

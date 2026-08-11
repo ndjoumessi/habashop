@@ -122,6 +122,9 @@ export interface Product {
   promotionPrice?: number | null
   promotionEnd?: string | null
   emoji: string
+  /** URL de la photo produit. ⚠️ Une URL, jamais des données : ce catalogue est
+   *  persisté dans AsyncStorage pour le POS hors ligne (`PERSISTED_KEYS`). */
+  image?: string | null
   notes?: string | null
   priceTiers?: PriceTier[] | null
   createdAt?: string

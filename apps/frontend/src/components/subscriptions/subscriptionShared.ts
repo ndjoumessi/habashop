@@ -1,7 +1,7 @@
 import { isThemeLight } from '@/stores/appStore'
 
 // ─── Types partagés page ↔ modale ─────────────────────────────────────────────
-export interface SubProduct { id: string; name: string; sellPrice: number; emoji: string; stockQty: number }
+export interface SubProduct { id: string; name: string; sellPrice: number; emoji: string; image?: string | null; stockQty: number }
 export interface SubItem    { id: string; productId: string; quantity: number; product: SubProduct }
 export interface SubCustomer{ id: string; name: string; phone?: string }
 export interface Sub {

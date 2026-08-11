@@ -59,6 +59,7 @@ const PRODUCT_CREATE = z.object({
   supplierId: z.string().nullish(),
   notes: z.string().optional(),
   priceTiers: z.any().optional(),
+  image: z.string().nullish(),
 }).passthrough()
 // UPDATE : liste blanche STRICTE (strip par défaut) → ferme le mass-assignment
 // (le handler faisait `...data` dans prisma.update : un `tenantId`/`id` injecté
@@ -84,6 +85,10 @@ const PRODUCT_UPDATE = z.object({
   emoji: z.string().optional(),
   notes: z.string().nullish(),
   priceTiers: z.any().optional(),
+  // ⚠️ Sans cette ligne le champ serait STRIPPÉ : `PRODUCT_UPDATE` est une liste blanche
+  // STRICTE et le handler fait `...data` — ici c'est le zod qui décide, contrairement
+  // au CREATE (passthrough) où c'est la destructuration.
+  image: z.string().nullish(),
   sku: z.any().optional(),
 })
 
@@ -129,7 +134,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/products', { preHandler: authenticate, schema: { body: PRODUCT_CREATE } }, async (request, reply) => {
     const {
       name, category, buyPrice, sellPrice,
-      stockQty, stockMin, unit, emoji, taxRate,
+      stockQty, stockMin, unit, emoji, image, taxRate,
       description, barcode, isActive,
       wholesalePrice, semiWholesalePrice,
       hasPromotion, promotionPrice, promotionEnd,
@@ -178,6 +183,10 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
           stockMin: stockMin || 5,
           unit: unit || 'unité',
           emoji: emoji || '📦',
+          // ⚠️ DESTRUCTURER NE SUFFIT PAS. Le zod du CREATE est en `.passthrough()` : c'est
+          // cette ligne qui décide si le champ atteint la base. `avatar` l'avait appris le
+          // 2026-08-11 — déclaré, envoyé, et jeté parce que le handler ne l'écrivait pas.
+          image: image ?? null,
           taxRate: taxRate || 18,
           description: description || '',
           barcode: bc.barcode,

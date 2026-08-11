@@ -32,7 +32,8 @@ export interface ProductBody {
   sku?: string; name?: string; category?: string; unit?: string
   buyPrice?: number; sellPrice?: number; stockQty?: number; stockMin?: number
   taxRate?: number; description?: string; barcode?: string; isActive?: boolean
-  emoji?: string; wholesalePrice?: number; semiWholesalePrice?: number
+  emoji?: string; image?: string | null
+  wholesalePrice?: number; semiWholesalePrice?: number
   hasPromotion?: boolean; promotionPrice?: number; promotionEnd?: string | null
   supplierId?: string | null
   notes?: string

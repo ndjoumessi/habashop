@@ -1,0 +1,14 @@
+# Les formes de rendu d'émoji produit telles qu'elles existaient AVANT ProductThumb.
+# ⚠️ EXTRAITES PAR `git show HEAD:<fichier>`, jamais retapées : un sabotage écrit de
+# mémoire hérite des hypothèses du détecteur, et les deux tombent ensemble.
+# Source : HEAD du 2026-08-11, avant le câblage des dix surfaces.
+      }} aria-hidden="true">{p.emoji}</div>
+                          {p.emoji || <Package size={13} color="var(--text4)" />}
+                        {it.product.emoji || <Package size={14} color="var(--text4)" />}
+                      <div style={{ fontSize: 'var(--fs-xl)', marginBottom: 4 }}>{product.emoji ?? '📦'}</div>
+                    <span style={{ fontSize: 'var(--fs-md)' }}>{item.emoji}</span>
+                        <span>{t.product?.emoji ?? '📦'}</span>{t.product?.name}
+                <span>{selected.emoji ?? '📦'}</span>
+                        <span>{p.emoji ?? '📦'}</span>
+            {it.product.emoji && <span style={{ fontSize: 'var(--fs-sm)' }}>{it.product.emoji}</span>}
+              <div style={{ fontSize:42, lineHeight:1, textAlign:'center', padding:'8px 0' }}>{p.emoji ?? '📦'}</div>

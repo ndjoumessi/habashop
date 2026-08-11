@@ -12,6 +12,7 @@ import { barcodeMatches } from '@/lib/barcode'
 import { Spacing, BorderRadius, FontSize, withAlpha, ThemeColors } from '@/constants/theme'
 import Chip from '@/components/ui/Chip'
 import ErrorState from '@/components/ui/ErrorState'
+import ProductThumb from '@/components/ui/ProductThumb'
 
 type ResultType = 'product' | 'customer'
 interface SearchResult {
@@ -20,6 +21,8 @@ interface SearchResult {
   title: string
   subtitle: string
   emoji: string
+  /** Photo produit — absente pour un client, qui n'en porte pas. */
+  image?: string | null
   data: Product | Customer
 }
 
@@ -59,7 +62,7 @@ export default function SearchScreen() {
         found.push({
           id: p.id, type: 'product', title: p.name,
           subtitle: `${fmt(p.sellPrice ?? 0)} · ${p.stockQty ?? 0} ${i('en stock', 'in stock', 'en stock', 'in stock')}`,
-          emoji: p.emoji ?? '📦', data: p,
+          emoji: p.emoji ?? '📦', image: p.image ?? null, data: p,
         })
       }
     }
@@ -168,7 +171,7 @@ export default function SearchScreen() {
               accessibilityLabel={`${item.title} — ${item.subtitle}`}
             >
               <View style={s.resultEmoji}>
-                <Text style={{ fontSize: 22 }}>{item.emoji}</Text>
+                <ProductThumb p={item} size={28} fontSize={22} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.resultTitle} numberOfLines={1}>{item.title}</Text>

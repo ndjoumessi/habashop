@@ -87,7 +87,7 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        product:    { select: { id: true, name: true, sku: true, emoji: true } },
+        product:    { select: { id: true, name: true, sku: true, emoji: true, image: true } },
         fromTenant: { select: { id: true, name: true } },
         toTenant:   { select: { id: true, name: true } },
       },
@@ -155,6 +155,7 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
             barcode: srcBarcode, // copie canonique (même règle que products.ts)
             taxRate: src.taxRate,
             emoji: src.emoji,
+            image: src.image,
             description: src.description,
             isActive: true,
           },

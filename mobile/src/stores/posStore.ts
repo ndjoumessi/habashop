@@ -11,7 +11,7 @@ export interface CartItem {
   // Tous les consommateurs (affichage panier, ticket WhatsApp, payload vente, total) le lisent
   // directement → le total affiché correspond à ce que le backend facturera réellement.
   price: number
-  quantity: number; emoji: string; stockQty: number
+  quantity: number; emoji: string; image?: string | null; stockQty: number
   // Données de résolution conservées pour recalculer `price` quand la quantité change.
   // Optionnelles : les lignes créées par le store les posent toujours ; un CartItem
   // reconstruit ailleurs (ex. renvoi de ticket d'une vente passée) peut s'en passer.
@@ -130,7 +130,7 @@ export const usePosStore = create<PosState>((set, get) => ({
       const r = resolveLinePrice(base, 1, tiers, promoActive, promotionPrice)
       set({ cart:[...cart, {
         productId:p.id, name:p.name, price:r.price,
-        quantity:1, emoji:p.emoji??'📦', stockQty:p.stockQty??0,
+        quantity:1, emoji:p.emoji??'📦', image:p.image??null, stockQty:p.stockQty??0,
         // On stocke hasPromotion + promotionEnd BRUTS → repriceLine ré-évalue l'expiration.
         basePrice:base, hasPromotion, promotionPrice, promotionEnd, priceTiers:tiers, tierLabel:r.tierLabel,
       }]})

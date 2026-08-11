@@ -18,6 +18,7 @@ import { useI18n, useFmt, useAppStore } from '@/stores/appStore'
 import CustomerPicker from '@/components/pos/CustomerPicker'
 import ErrorState from '@/components/ui/ErrorState'
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
+import ProductThumb from '@/components/ui/ProductThumb'
 
 // Boundary localisé du mode kiosque : un crash affiche un fallback (sortie possible)
 // plutôt qu'un écran figé sur un poste caissier non supervisé.
@@ -226,7 +227,7 @@ export default function KioskScreen() {
                   accessibilityLabel={`${p.name} ${fmt(p.sellPrice)}`}
                   accessibilityState={{ disabled: isOut }}
                 >
-                  <Text style={s.productEmoji}>{p.emoji ?? '📦'}</Text>
+                  <ProductThumb p={p} size={42} fontSize={32} style={{ marginBottom: 4 }} />
                   {inCart > 0 && (
                     <View style={s.cartBadge}>
                       <Text style={s.cartBadgeText}>{inCart}</Text>
@@ -264,7 +265,7 @@ export default function KioskScreen() {
             )}
             renderItem={({ item }) => (
               <View style={s.cartRow}>
-                <Text style={s.cartEmoji}>{item.emoji}</Text>
+                <ProductThumb p={item} size={28} fontSize={20} />
                 <View style={{ flex: 1 }}>
                   <Text style={s.cartName} numberOfLines={1}>{item.name}</Text>
                   <Text style={s.cartSubtotal}>{fmt(item.price * item.quantity)}</Text>

@@ -5,6 +5,7 @@ import { publicApi } from '@/lib/api'
 import { convertAmount, formatInCurrency } from '@/stores/appStore'
 import { isPromotionActive } from '@/lib/pricing'
 import { appUrl } from '@/lib/appUrl'
+import ProductThumb from '@/components/ui/ProductThumb'
 
 type TenantPublic = {
   id: string
@@ -267,7 +268,7 @@ export default function PublicCatalog() {
                   {i(lang, 'Rupture', 'Sold out', 'Agotado', 'Esaurito')}
                 </span>
               )}
-              <div style={{ fontSize:42, lineHeight:1, textAlign:'center', padding:'8px 0' }}>{p.emoji ?? '📦'}</div>
+              <ProductThumb p={p} size={64} fontSize={42} style={{ margin: '8px auto' }} />
               <div style={{ minHeight:32 }}>
                 <div style={{ fontSize:'var(--fs-sm)', fontWeight:700, color:'var(--text)', lineHeight:1.25, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' as const, overflow:'hidden' }}>
                   {p.name}

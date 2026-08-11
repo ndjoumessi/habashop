@@ -6,6 +6,7 @@ import { stockTransfersApi, productsApi, type StockTransfer } from '@/lib/api'
 import { confirm } from '@/lib/confirm'
 import { announce } from '@/lib/announce'
 import { ArrowLeftRight, Plus, ArrowRight, Check, X, Package, Loader2, Search } from 'lucide-react'
+import ProductThumb from '@/components/ui/ProductThumb'
 
 const MANAGER_ROLES = ['MANAGER', 'ADMIN', 'SUPER_ADMIN']
 
@@ -146,7 +147,7 @@ export default function StockTransfers() {
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
-                        <span>{t.product?.emoji ?? '📦'}</span>{t.product?.name}
+                        <ProductThumb p={t.product ?? {}} size={22} radius="var(--r-sm)" fontSize="var(--fs-md)" />{t.product?.name}
                       </span>
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{t.quantity}</td>
@@ -249,7 +250,7 @@ function NewTransferModal({ tenants, onClose, onCreated }: { tenants: { id: stri
             <label style={lbl}>{i('Produit', 'Product', 'Producto', 'Prodotto')} *</label>
             {selected ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: '1px solid var(--p3)', background: 'var(--bg3)' }}>
-                <span>{selected.emoji ?? '📦'}</span>
+                <ProductThumb p={selected} size={26} radius="var(--r-sm)" fontSize="var(--fs-md)" />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{selected.name}</div>
                   <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{i('Stock', 'Stock', 'Stock', 'Stock')}: {selected.stockQty}</div>
@@ -269,7 +270,7 @@ function NewTransferModal({ tenants, onClose, onCreated }: { tenants: { id: stri
                     ) : matches.map(p => (
                       <button key={p.id} type="button" onClick={() => { setProductId(p.id); setQuantity(1) }}
                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 12px', border: 'none', borderBottom: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font)', textAlign: 'left' }}>
-                        <span>{p.emoji ?? '📦'}</span>
+                        <ProductThumb p={p} size={24} radius="var(--r-sm)" fontSize="var(--fs-md)" />
                         <span style={{ flex: 1, fontSize: 'var(--fs-sm)', color: 'var(--text)' }}>{p.name}</span>
                         <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{p.stockQty}</span>
                       </button>

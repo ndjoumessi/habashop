@@ -213,6 +213,14 @@ model Product {
   promotionPrice     Float?
   promotionEnd       DateTime?
   emoji              String    @default("📦")
+  /// URL de la photo produit. ⚠️ Une URL, JAMAIS des données : `GET /api/products` est
+  /// relu à CHAQUE ouverture de caisse (la règle SW `products-cache` a été supprimée —
+  /// un prix périmé y serait pire qu'un aller-retour) ET persisté dans AsyncStorage côté
+  /// mobile pour le POS hors ligne (`PERSISTED_KEYS`). MESURÉ le 2026-08-11 : 600 produits
+  /// avec des photos base64 de 256 px pèseraient 16,4 Mo par réponse, 98 Mo à 800 px.
+  /// Le stockage objet reste à monter (R2 : egress gratuit, compatible S3) ; ce champ
+  /// existe pour que TOUT l'affichage soit câblé et testé d'ici là.
+  image              String?
   notes              String?
   // Paliers de prix par quantité — Format : [{ minQty: number, price: number, label?: string }]
   // null OU [] = pas de paliers, on utilise sellPrice (+ promotion si active)

@@ -9,6 +9,7 @@ import { useModalFocus } from '@/hooks/useModalFocus'
 import { normalizeClientType } from '@/lib/clientType'
 import { clientTypeToLabel, typeLabel } from '@/components/customers/customersShared'
 import { suppliersApi } from '@/lib/api'
+import ProductThumb from '@/components/ui/ProductThumb'
 
 interface NewOrderItem { id: string; name: string; price: number; qty: number; emoji: string }
 export interface NewOrderForm { clientName: string; clientPhone: string; items: NewOrderItem[]; note: string }
@@ -471,7 +472,7 @@ export default function NewOrderModal({
                           fontSize: 'var(--fs-caption)', color: '#fff', fontWeight: 'var(--fw-semibold)',
                         }}>✓</div>
                       )}
-                      <div style={{ fontSize: 'var(--fs-xl)', marginBottom: 4 }}>{product.emoji ?? '📦'}</div>
+                      <ProductThumb p={product} size={32} fontSize="var(--fs-xl)" style={{ margin: '0 auto 4px' }} />
                       <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', color: 'var(--text)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</div>
                       <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{fmt(product.price)}</div>
                     </button>
@@ -495,7 +496,7 @@ export default function NewOrderModal({
                     border: `1px solid ${item.id.startsWith('ocr-') ? 'rgba(108,71,255,.25)' : 'var(--border)'}`,
                     borderRadius: 10,
                   }}>
-                    <span style={{ fontSize: 'var(--fs-md)' }}>{item.emoji}</span>
+                    <ProductThumb p={item} size={22} radius="var(--r-sm)" fontSize="var(--fs-md)" />
                     <span style={{ flex: 1, fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-regular)', color: 'var(--text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <button type="button"

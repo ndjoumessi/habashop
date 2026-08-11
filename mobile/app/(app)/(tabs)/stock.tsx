@@ -20,6 +20,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader'
 import SegmentedControl from '@/components/ui/SegmentedControl'
 import AccessibleButton from '@/components/ui/AccessibleButton'
 import BarcodeScanner from '@/components/pos/BarcodeScanner'
+import ProductThumb from '@/components/ui/ProductThumb'
 
 type Filter = 'all' | 'low' | 'out'
 
@@ -49,7 +50,7 @@ function ProductRow({
     <TouchableOpacity style={s.row} activeOpacity={0.7} onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${product.name?.trim() ?? ''}, ${product.stockQty ?? 0}, ${statusLabel(st)}`}>
-      <Text style={{ fontSize: 28 }}>{product.emoji ?? '📦'}</Text>
+      <ProductThumb p={product} size={36} fontSize={28} />
       <View style={{ flex: 1 }}>
         <Text style={s.rowName} numberOfLines={1}>{product.name?.trim()}</Text>
         <Text style={s.rowCat} numberOfLines={1}>{product.category ?? '—'} · {fmt(product.sellPrice ?? 0)}</Text>
@@ -285,7 +286,7 @@ export default function StockScreen() {
             <View style={{ padding: Spacing.lg, gap: Spacing.lg }}>
               {/* Produit */}
               <View style={s.prodHead}>
-                <Text style={{ fontSize: 44 }}>{editP.emoji ?? '📦'}</Text>
+                <ProductThumb p={editP} size={56} fontSize={44} />
                 <View style={{ flex: 1 }}>
                   <Text style={s.prodName}>{editP.name?.trim()}</Text>
                   <Text style={s.prodCat}>{editP.category ?? '—'}</Text>

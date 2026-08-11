@@ -6,6 +6,7 @@ import { t } from '@/stores/appStore'
 import { salesApi } from '@/lib/api'
 import { CATS, catLabel, payModeLabel, showStrikePrice, type PosProduct, type CartItem } from '@/components/pos/posShared'
 import { isPromotionActive } from '@/lib/pricing'
+import ProductThumb from '@/components/ui/ProductThumb'
 
 interface POSProductGridProps {
   posTab: 'pos' | 'history'
@@ -212,11 +213,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
       )}
 
       {/* Zone visuelle produit (maquette : 38px, centrée) */}
-      <div style={{
-        height: 38,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 'var(--fs-2xl)',
-      }} aria-hidden="true">{p.emoji}</div>
+      <ProductThumb p={p} size={38} style={{ width: '100%' }} />
 
       {/* Nom — gauche, 12px (maquette) */}
       <div style={{

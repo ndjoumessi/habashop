@@ -18,6 +18,7 @@ import {
   DAY_LABELS, tx, subscriptionTotal, type Sub,
 } from '@/components/subscriptions/subscriptionShared'
 import type { CartItem } from '@/components/pos/posShared'
+import ProductThumb from '@/components/ui/ProductThumb'
 
 // ─── Carte abonnement ─────────────────────────────────────────────────────────
 interface CardProps {
@@ -99,7 +100,7 @@ function SubCard({ sub, lang, canManage, fmt, onEdit, onToggle, onDelete, onLoad
             border: '1px solid var(--border)', color: 'var(--text2)',
             display: 'flex', alignItems: 'center', gap: 4,
           }}>
-            {it.product.emoji && <span style={{ fontSize: 'var(--fs-sm)' }}>{it.product.emoji}</span>}
+            {(it.product.emoji || it.product.image) && <ProductThumb p={it.product} size={14} radius="var(--r-sm)" fontSize="var(--fs-sm)" />}
             {it.product.name} ×{it.quantity}
           </span>
         ))}

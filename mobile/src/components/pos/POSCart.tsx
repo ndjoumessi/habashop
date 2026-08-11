@@ -16,6 +16,7 @@ import {
 } from '@/lib/paymentSplit'
 import { useAuthStore } from '@/stores/authStore'
 import { tierForPoints, discountForTierDisplay, loyaltyConfig, loyaltyDiscountFor } from '@/lib/loyalty'
+import ProductThumb from '../../components/ui/ProductThumb'
 
 // ── Ligne panier ─────────────────────────────────
 function CartRow({
@@ -31,7 +32,7 @@ function CartRow({
   const atMax = item.stockQty > 0 && item.quantity >= item.stockQty
   return (
     <View style={s.cartRow}>
-      <Text style={{ fontSize: 26 }}>{item.emoji}</Text>
+      <ProductThumb p={item} size={32} fontSize={26} />
       <View style={{ flex: 1 }}>
         <Text style={s.cartName} numberOfLines={1}>{item.name?.trim()}</Text>
         <Text style={s.cartLine}>{fmt(item.price)} × {item.quantity} = {fmt(item.price * item.quantity)}</Text>

@@ -37,7 +37,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
         customer: { select: { id: true, name: true, phone: true } },
         items: {
           include: {
-            product: { select: { id: true, name: true, sellPrice: true, emoji: true, stockQty: true } },
+            product: { select: { id: true, name: true, sellPrice: true, emoji: true, image: true, stockQty: true } },
           },
         },
       },
@@ -60,7 +60,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
         customer: { select: { id: true, name: true, phone: true } },
         items: {
           include: {
-            product: { select: { id: true, name: true, sellPrice: true, emoji: true, stockQty: true } },
+            product: { select: { id: true, name: true, sellPrice: true, emoji: true, image: true, stockQty: true } },
           },
         },
       },
@@ -79,7 +79,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
       include: {
         items: {
           include: {
-            product: { select: { id: true, name: true, sellPrice: true, emoji: true, stockQty: true } },
+            product: { select: { id: true, name: true, sellPrice: true, emoji: true, image: true, stockQty: true } },
           },
         },
       },
@@ -117,7 +117,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
         customer: { select: { id: true, name: true, phone: true } },
         items: {
           include: {
-            product: { select: { id: true, name: true, sellPrice: true, emoji: true, stockQty: true } },
+            product: { select: { id: true, name: true, sellPrice: true, emoji: true, image: true, stockQty: true } },
           },
         },
       },
@@ -168,7 +168,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
         customer: { select: { id: true, name: true, phone: true } },
         items: {
           include: {
-            product: { select: { id: true, name: true, sellPrice: true, emoji: true, stockQty: true } },
+            product: { select: { id: true, name: true, sellPrice: true, emoji: true, image: true, stockQty: true } },
           },
         },
       },

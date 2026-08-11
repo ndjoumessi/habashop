@@ -20,6 +20,7 @@ import Chip from '@/components/ui/Chip'
 import RefundSheet from '@/components/pos/RefundSheet'
 import InvoiceButton from '@/components/sales/InvoiceButton'
 import { Spacing, BorderRadius, FontSize, Shadow, withAlpha, ThemeColors } from '@/constants/theme'
+import ProductThumb from '@/components/ui/ProductThumb'
 
 type Period = 'today' | '7d' | '30d'
 const PERIODS: { key: Period; days: number; fr: string; en: string; es: string; it: string }[] = [
@@ -111,6 +112,7 @@ export default function SalesScreen() {
       price: it.unitPrice ?? 0,
       quantity: it.qty ?? 0,
       emoji: it.product?.emoji ?? '📦',
+      image: it.product?.image ?? null,
       stockQty: 0,
     })),
     total: sale.total ?? 0, paymentMode: sale.paymentMode,
@@ -240,7 +242,7 @@ export default function SalesScreen() {
               <View style={s.card}>
                 {(sel.items ?? []).map(it => (
                   <View key={it.id} style={s.itemRow}>
-                    <Text style={{ fontSize: 20 }}>{it.product?.emoji ?? '📦'}</Text>
+                    <ProductThumb p={it.product ?? {}} size={26} fontSize={20} />
                     <View style={{ flex: 1 }}>
                       <Text style={s.itemName} numberOfLines={1}>{it.product?.name ?? '—'}</Text>
                       <Text style={s.itemSub}>{it.qty} × {fmt(it.unitPrice ?? 0)}</Text>
