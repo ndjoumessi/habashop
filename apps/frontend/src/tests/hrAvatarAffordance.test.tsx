@@ -37,12 +37,13 @@ const EMP = {
 }
 
 function monter(edition: boolean, photoUrl?: string) {
+  const setForm = vi.fn()
   render(
     <EditEmployeeModal
       lang="fr" fmt={(n: number) => String(n)}
       selectedEmp={EMP as never}
       editEmpForm={{ ...empFormVide(), name: EMP.name, color: EMP.color, isActive: true, photoUrl }}
-      setEditEmpForm={vi.fn()}
+      setEditEmpForm={setForm}
       empEditMode={edition} setEmpEditMode={vi.fn()}
       salaryInput="120000" setSalaryInput={vi.fn()}
       toXOF={(n: number) => n}
@@ -50,9 +51,13 @@ function monter(edition: boolean, photoUrl?: string) {
       setEmployees={vi.fn()} setShowEditEmpModal={vi.fn()} openEditModal={vi.fn()}
     />,
   )
+  return { setForm }
 }
 
-const bouton = () => screen.queryByRole('button', { name: /photo/i })
+// ⚠️ DEUX boutons portent « photo » depuis l'ajout du retrait : un sélecteur sur
+// `/photo/i` en matchait deux et levait. On vise l'INTENTION, pas le mot.
+const bouton = () => screen.queryByRole('button', { name: /Changer la photo/i })
+const boutonRetrait = () => screen.queryByRole('button', { name: /Retirer la photo/i })
 
 beforeEach(() => vi.clearAllMocks())
 
@@ -99,6 +104,35 @@ describe('affordance de la photo d’employé', () => {
     // qui rendrait le bouton en toute circonstance, y compris là où il n'agit pas.
     monter(false)
     expect(bouton()).toBeNull()
+  })
+
+  it('⚠️ ON PEUT RETIRER la photo — pas seulement la remplacer', () => {
+    /**
+     * Signalé sur capture : une fois la photo chargée, aucun chemin ne ramenait aux
+     * initiales. Le serveur savait pourtant effacer (`photo: z.string().nullish()`) —
+     * c'est l'écran qui n'offrait pas l'intention.
+     */
+    const { setForm } = monter(true, 'data:image/jpeg;base64,ZZZ')
+    const b = boutonRetrait()
+    expect(b, 'aucun bouton de retrait : la photo est définitive').not.toBeNull()
+    fireEvent.click(b!)
+    expect(setForm).toHaveBeenCalledTimes(1)
+    const maj = setForm.mock.calls[0][0] as (f: Record<string, unknown>) => Record<string, unknown>
+    // ⚠️ Chaîne VIDE et non `undefined` : `toEmployeeWrite` en fait un `photo: null`
+    // EXPLICITE, seule valeur qui EFFACE côté serveur. `undefined` ne toucherait à rien.
+    expect(maj({ photoUrl: 'x', name: 'A' }).photoUrl).toBe('')
+  })
+
+  it('⚠️ le bouton de retrait N’EXISTE PAS sans photo — rien à retirer', () => {
+    // Contrôle discriminant : sans lui, le cas ci-dessus serait vert d'un composant qui
+    // rendrait ce bouton en toute circonstance, y compris là où il ne fait rien.
+    monter(true)
+    expect(boutonRetrait()).toBeNull()
+  })
+
+  it('le retrait n’apparaît pas non plus en LECTURE', () => {
+    monter(false, 'data:image/jpeg;base64,ZZZ')
+    expect(boutonRetrait()).toBeNull()
   })
 
   it('⚠️ le `title` RESTE — en supplément, jamais comme seule voie', () => {

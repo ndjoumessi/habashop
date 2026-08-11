@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { DollarSign, FileText, Pencil, Star, UserX, User, Eye, MapPin, Camera } from 'lucide-react'
+import { DollarSign, FileText, Pencil, Star, UserX, User, Eye, MapPin, Camera, X } from 'lucide-react'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
@@ -79,6 +79,10 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                 ⚠️ Le badge vit HORS du carré clippé : le conteneur porte `overflow:hidden`
                 pour découper la photo, et un badge posé dedans serait rogné à l'angle. */}
             {empEditMode ? (
+              /* ⚠️ ENVELOPPE : le bouton de RETRAIT doit être un FRÈRE du bouton photo, pas
+                 un enfant — un `<button>` dans un `<button>` est du HTML invalide, et le
+                 navigateur défait la structure de façon imprévisible. */
+              <div style={{ position:'relative', width:60, height:60, flexShrink:0 }}>
               <button type="button"
                 onClick={() => (document.getElementById('emp-photo-input') as HTMLInputElement)?.click()}
                 aria-label={lang === 'en' ? `Change ${selectedEmp.name}'s photo` : lang === 'es' ? `Cambiar la foto de ${selectedEmp.name}` : lang === 'it' ? `Cambia la foto di ${selectedEmp.name}` : `Changer la photo de ${selectedEmp.name}`}
@@ -94,6 +98,26 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                   <Camera size={13}/>
                 </span>
               </button>
+              {/* ⚠️ ON POUVAIT REMPLACER UNE PHOTO, JAMAIS LA RETIRER. Une fois chargée, aucun
+                  chemin ne ramenait aux initiales — signalé par Nelson sur capture.
+
+                  ⚠️ AUCUNE CONFIRMATION, et c'est délibéré : ce bouton ne touche que
+                  `editEmpForm`. Rien ne part au serveur avant « Sauvegarder », donc
+                  « Annuler » restaure la photo. Confirmer une action que le bouton d'à côté
+                  défait déjà userait l'alarme pour rien.
+
+                  Le serveur, lui, sait effacer : `photo: z.string().nullish()`, et
+                  `toEmployeeWrite` envoie `photo: null` sur une chaîne vide. */}
+              {editEmpForm.photoUrl && (
+                <button type="button"
+                  onClick={() => setEditEmpForm(f => ({ ...f, photoUrl: '' }))}
+                  aria-label={lang === 'en' ? `Remove ${selectedEmp.name}'s photo` : lang === 'es' ? `Quitar la foto de ${selectedEmp.name}` : lang === 'it' ? `Rimuovi la foto di ${selectedEmp.name}` : `Retirer la photo de ${selectedEmp.name}`}
+                  title={lang === 'en' ? 'Remove photo' : lang === 'es' ? 'Quitar la foto' : lang === 'it' ? 'Rimuovi la foto' : 'Retirer la photo'}
+                  style={{ position:'absolute', top:-6, right:-6, width:22, height:22, borderRadius:'50%', background:'var(--danger)', border:'2px solid var(--bg2)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', cursor:'pointer', padding:0 }}>
+                  <X size={11}/>
+                </button>
+              )}
+              </div>
             ) : (
               <div style={{ width:60, height:60, borderRadius:18, overflow:'hidden', background:`linear-gradient(135deg,${avatarHex(editEmpForm.color)},${avatarHex(editEmpForm.color)}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-xl)', fontWeight:'var(--fw-semibold)', color:'#fff', flexShrink:0, boxShadow:`0 8px 24px ${avatarHex(editEmpForm.color)}50`, border:`2px solid ${avatarHex(editEmpForm.color)}40`, letterSpacing:'-1px' }}>
                 {editEmpForm.photoUrl
