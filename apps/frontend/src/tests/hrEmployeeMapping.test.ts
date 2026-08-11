@@ -91,13 +91,21 @@ describe('toEmployeeWrite — sens écran → API', () => {
 
   it('⚠️ AUCUNE clé du corps n’est inconnue de la liste blanche zod du SERVEUR', () => {
     /**
-     * C'EST LE VERROU QUI REND LE DÉFAUT IMPOSSIBLE. La liste blanche est lue à
-     * l'EXÉCUTION dans `apps/backend/src/schemas/writesB.ts` : une clé que le
-     * serveur n'accepte pas est STRIPPÉE en silence, l'écran affiche « Sauvegardé ! »
-     * et rien n'est enregistré. C'est exactement ce qui est arrivé à la photo.
+     * La liste blanche est lue à l'EXÉCUTION dans `apps/backend/src/schemas/writesB.ts`.
+     * ⚠️ Ce n'est pas une recopie — la recopier créerait un second endroit qui diverge,
+     * ce qui est le défaut qu'on ferme.
      *
-     * ⚠️ Ce n'est pas une recopie de la liste — la recopier créerait un second
-     * endroit qui diverge, ce qui est le défaut qu'on ferme.
+     * ⚠️ CORRECTION DE MA PROPRE JUSTIFICATION (2026-08-11). Ce commentaire affirmait
+     * qu'« une clé que le serveur n'accepte pas est STRIPPÉE en silence ». C'EST FAUX :
+     * `EMPLOYEE_CREATE`/`EMPLOYEE_UPDATE` sont en `.passthrough()`, le zod ne strippe
+     * rien. Ce qui jette la clé, c'est la DESTRUCTURATION du handler — démontré par
+     * sabotage, pas par lecture. La fausse cause avait survécu à deux chantiers.
+     *
+     * ⚠️ CE QUE CE CAS PROUVE, ET CE QU'IL NE PROUVE PAS : il prouve que la clé est
+     * DÉCLARÉE, jamais qu'elle est LUE. Un champ ajouté au zod et oublié du handler
+     * passerait ici au vert en étant jeté en base — c'est arrivé à `avatar`, accepté
+     * et lu au POST mais absent du PUT. La vraie propriété est gardée côté backend par
+     * `employeeFieldsReachable.test.ts`.
      */
     const src = readFileSync(
       join(__dirname, '../../../backend/src/schemas/writesB.ts'), 'utf8',

@@ -67,7 +67,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
     const {
       name, role, dept, type, salary,
       phone, email, address, photo, isActive, color,
-      hiredAt, endAt, perf,
+      hiredAt, endAt, perf, avatar,
     } = request.body as EmployeeBody
 
     try {
@@ -91,6 +91,14 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
           // distinction porte sur le `!== undefined` : non transmis ⇒ on n'y touche pas.
           ...(endAt    !== undefined && { endAt: endAt ? new Date(endAt) : null }),
           ...(perf     !== undefined && { perf: Number(perf) }),
+          // ⚠️ `avatar` ÉTAIT ACCEPTÉ PAR LE ZOD, ENVOYÉ PAR LE FRONT, ET JAMAIS LU ICI —
+          // il manquait à la destructuration du PUT alors qu'il est dans `EMPLOYEE_FIELDS`
+          // et dans celle du POST. Renommer quelqu'un envoyait donc les nouvelles initiales
+          // et gardait les anciennes en base ; `employeeFromApi` les réaffichait, son repli
+          // `|| initialesDe(name)` ne jouant jamais puisque la colonne est toujours peuplée.
+          // Troisième champ de la même forme après `photo` et `endAt` — le zod étant en
+          // `.passthrough()`, c'est TOUJOURS le handler qui décide, jamais la liste blanche.
+          ...(avatar   !== undefined && { avatar }),
         }
       })
       return updated
