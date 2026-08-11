@@ -33,11 +33,16 @@ const EMP = {
   id: 'emp-cuid' as unknown as number, name: 'Kofi Diallo', role: 'Magasinier',
   dept: 'Stock', type: 'CDI', salary: 120000, hiredAt: '2023-01-01',
   avatar: 'KD', color: '#F59E0B', active: true, phone: '', email: '',
-  perf: 4, address: '', photoUrl: undefined,
+  perf: 4, address: '',
+  // ⚠️ PORTE une photo : c'est de cet objet que « Annuler » réamorce, et sans elle
+  // le cas de restauration serait vrai du vide.
+  photoUrl: 'photo-origine',
 }
 
 function monter(edition: boolean, photoUrl?: string) {
   const setForm = vi.fn()
+  const setEmployees = vi.fn()
+  const ouvrirFiche = vi.fn()
   render(
     <EditEmployeeModal
       lang="fr" fmt={(n: number) => String(n)}
@@ -48,10 +53,10 @@ function monter(edition: boolean, photoUrl?: string) {
       salaryInput="120000" setSalaryInput={vi.fn()}
       toXOF={(n: number) => n}
       currency="XOF" currencySymbol="FCFA"
-      setEmployees={vi.fn()} setShowEditEmpModal={vi.fn()} openEditModal={vi.fn()}
+      setEmployees={setEmployees} setShowEditEmpModal={vi.fn()} openEditModal={ouvrirFiche}
     />,
   )
-  return { setForm }
+  return { setForm, setEmployees, ouvrirFiche }
 }
 
 // ⚠️ DEUX boutons portent « photo » depuis l'ajout du retrait : un sélecteur sur
@@ -133,6 +138,34 @@ describe('affordance de la photo d’employé', () => {
   it('le retrait n’apparaît pas non plus en LECTURE', () => {
     monter(false, 'data:image/jpeg;base64,ZZZ')
     expect(boutonRetrait()).toBeNull()
+  })
+
+  it('⚠️ RÉVERSIBLE — le retrait ne quitte pas le formulaire avant « Sauvegarder »', () => {
+    /**
+     * C'EST CE QUI JUSTIFIE L'ABSENCE DE CONFIRMATION. Si un `X` cliqué par erreur était
+     * définitif, il faudrait demander confirmation ; s'il se défait par « Annuler », la
+     * demander userait l'alarme pour rien. La justification ne vaut que si elle est VRAIE
+     * — je l'avais écrite avant de l'avoir prouvée.
+     *
+     * Le retrait ne doit toucher QUE `editEmpForm`. Rien vers la liste, rien vers le
+     * serveur : `selectedEmp` conserve la photo, et c'est de LUI que « Annuler » réamorce.
+     */
+    const { setForm, setEmployees } = monter(true, 'data:image/jpeg;base64,ZZZ')
+    fireEvent.click(boutonRetrait()!)
+    expect(setForm).toHaveBeenCalledTimes(1)
+    expect(setEmployees, 'la liste ne doit pas bouger tant qu’on n’a pas sauvegardé').not.toHaveBeenCalled()
+  })
+
+  it('⚠️ « Annuler » réamorce depuis l’employé D’ORIGINE, photo comprise', () => {
+    // `openEditModal(selectedEmp)` relit `emp.photoUrl` (HR.tsx:103). Comme le retrait
+    // n'a pas touché `selectedEmp`, la photo revient. Le chaînon testé ici est l'APPEL
+    // avec le bon objet — celui qui porte encore la photo.
+    const { ouvrirFiche } = monter(true, '')
+    fireEvent.click(screen.getByText(/^Annuler$/))
+    expect(ouvrirFiche).toHaveBeenCalledTimes(1)
+    const arg = ouvrirFiche.mock.calls[0][0] as { photoUrl?: string; name: string }
+    expect(arg.name).toBe('Kofi Diallo')
+    expect(arg.photoUrl, 'on réamorce depuis un objet SANS photo : la restauration serait vide').toBe('photo-origine')
   })
 
   it('⚠️ le `title` RESTE — en supplément, jamais comme seule voie', () => {
