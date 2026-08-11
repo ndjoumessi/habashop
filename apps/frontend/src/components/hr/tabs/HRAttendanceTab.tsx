@@ -1,5 +1,5 @@
 import { Clock, CheckCircle, XCircle, AlertTriangle, CheckCheck, Download, Umbrella, Coffee } from 'lucide-react'
-import { type Employee, type AttendUiStatus, roleLabel, attendStatusLabel } from '@/components/hr/hrShared'
+import { type Employee, type AttendUiStatus, roleLabel, attendStatusLabel, EmpAvatar } from '@/components/hr/hrShared'
 import { sanitizeCsv } from '@/lib/csv'
 import { DateField } from '@/components/ui/DatePicker'
 
@@ -143,9 +143,11 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
             }}>
               {/* Employé */}
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <div style={{ width:32, height:32, borderRadius:8, background:`${emp.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', color:emp.color, flexShrink:0 }}>
-                  {emp.avatar}
-                </div>
+                {/* ⚠️ Troisième copie du même avatar, la seule à teinte plate. En laisser
+                    une seule en ligne rouvrirait la dérive qu'on ferme : c'est précisément
+                    ainsi que la photo s'affichait dans la fiche et nulle part ailleurs.
+                    Le dessin s'harmonise sur les autres écrans — assumé, et dit. */}
+                <EmpAvatar emp={emp} size={32} radius={8} />
                 <div>
                   <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{emp.name.split(' ')[0]}</div>
                   <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>

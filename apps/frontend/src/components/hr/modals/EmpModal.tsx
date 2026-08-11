@@ -7,7 +7,7 @@ import ValidatedInput from '@/components/ui/ValidatedInput'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
-import { type Employee, type EmpForm, COLORS, CONTRACT_TYPES, DEPT_COLORS, deptLabel, contractLabel, isOpenEnded, toInputDate, initialesDe } from '@/components/hr/hrShared'
+import { type Employee, type EmpForm, COLORS, CONTRACT_TYPES, DEPT_COLORS, deptLabel, contractLabel, isOpenEnded, toInputDate, initialesDe, EmpAvatar } from '@/components/hr/hrShared'
 import { DateField } from '@/components/ui/DatePicker'
 
 /**
@@ -79,14 +79,7 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {emp && (
-              <div style={{
-                width: 40, height: 40, borderRadius: '50%',
-                background: `linear-gradient(135deg, ${color}, ${color}99)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-bold)', color: '#fff', flexShrink: 0,
-              }}>
-                {emp.avatar}
-              </div>
+              <EmpAvatar emp={emp} size={40} />
             )}
             <div>
               <h3 style={{ margin: 0, fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>

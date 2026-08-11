@@ -667,16 +667,44 @@ export function calcAnciennete(hiredAt: string, lang: string = 'fr', now: Date =
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
-export function EmpAvatar({ emp, size = 36 }: { emp: Employee; size?: number }) {
+/**
+ * AVATAR D'EMPLOYÉ — rendu UNIQUE, photo comprise.
+ *
+ * ⚠️ IL EXISTAIT DÉJÀ, ET DEUX ÉCRANS SEULEMENT S'EN SERVAIENT. Quatre autres
+ * redessinaient le même carré dégradé en ligne — et aucun n'affichait la photo.
+ * Résultat mesuré le 2026-08-11 : une photo enregistrée et relue s'affichait dans la
+ * fiche et NULLE PART ailleurs, la liste montrant toujours les initiales. Six copies
+ * d'un même dessin, une seule au courant de la photo : le motif du jumeau non traité.
+ *
+ * ⚠️ LA PHOTO GAGNE SUR LES INITIALES partout où l'avatar sert à RECONNAÎTRE
+ * quelqu'un. Les surfaces de PAIE en sont volontairement exclues : un bulletin est un
+ * instantané GELÉ qui porte son propre `avatar`, et y injecter la photo du jour
+ * réécrirait un document passé.
+ *
+ * ⚠️ `avatarHex` et non `emp.color` brut : la couleur reçoit des alphas concaténées
+ * (`${c}99`, `${c}44`) et `var(--p)99` est une couleur INVALIDE — la propriété
+ * retomberait à sa valeur initiale, sans que rien ne le signale.
+ */
+export function EmpAvatar({ emp, size = 36, radius = '50%' }: {
+  emp: Pick<Employee, 'avatar' | 'color' | 'name'> & { photoUrl?: string }
+  size?: number
+  /** `'50%'` (rond) ou un nombre de pixels (carré arrondi). */
+  radius?: string | number
+}) {
+  const c = avatarHex(emp.color)
   return (
     <div style={{
-      width: size, height: size, borderRadius: '50%',
-      background: `linear-gradient(135deg, ${emp.color}, ${emp.color}99)`,
+      width: size, height: size, borderRadius: radius, overflow: 'hidden',
+      background: `linear-gradient(135deg, ${c}, ${c}99)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontSize: size * 0.36, fontWeight: 'var(--fw-bold)', color: '#fff', flexShrink: 0,
-      boxShadow: `0 2px 8px ${emp.color}44`,
+      boxShadow: `0 2px 8px ${c}44`,
     }}>
-      {emp.avatar}
+      {emp.photoUrl
+        // `alt=""` : le nom est TOUJOURS écrit à côté dans chacun des appelants —
+        // le répéter ferait dire deux fois la même chose au lecteur d'écran.
+        ? <img src={emp.photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : (emp.avatar || initialesDe(emp.name))}
     </div>
   )
 }

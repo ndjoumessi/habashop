@@ -124,15 +124,11 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                     <div style={{ padding:'14px 16px' }}>
                       {/* Avatar + Nom + Badge statut */}
                       <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
-                        <div style={{
-                          width:44, height:44, borderRadius:12,
-                          background:`linear-gradient(135deg,${emp.color??'var(--p)'},${emp.color??'var(--p)'}66)`,
-                          display:'flex', alignItems:'center', justifyContent:'center',
-                          fontSize:'var(--fs-body)', fontWeight:'var(--fw-bold)', color:'#fff', flexShrink:0,
-                          boxShadow:`0 3px 10px ${emp.color??'var(--p)'}35`,
-                        }}>
-                          {emp.avatar}
-                        </div>
+                        {/* ⚠️ La photo ne s'affichait QUE dans la fiche : cette carte redessinait
+                            l'avatar en ligne et ignorait `photoUrl`. `EmpAvatar` est le rendu
+                            unique — et il corrige au passage le `${emp.color ?? 'var(--p)'}66`,
+                            une couleur INVALIDE si le repli s'appliquait. */}
+                        <EmpAvatar emp={emp} size={44} radius={12} />
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-bold)', color:'var(--text)', lineHeight:1.2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{emp.name}</div>
                           <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{roleLabel(emp.role, lang)}</div>

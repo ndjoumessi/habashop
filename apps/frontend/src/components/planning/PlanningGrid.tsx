@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Skeleton from '@/components/ui/skeleton'
 import { Users, MousePointer2, Lock, GripVertical } from 'lucide-react'
-import { deptLabel } from '@/components/hr/hrShared'
+import { deptLabel, EmpAvatar } from '@/components/hr/hrShared'
 import { SHIFT_TYPES, shiftLabel, getDayLabels, buildT } from './planningShared'
 import { calculerTotaux, formatHeures } from './planningTotals'
 import type { ShiftType, PlanningEmployee } from './planningShared'
@@ -155,18 +155,7 @@ export default function PlanningGrid(props: Props) {
                   <div style={{
                     display:'flex', alignItems:'center', gap:8,
                   }}>
-                    <div style={{
-                      width:34, height:34, borderRadius:10,
-                      background:`linear-gradient(135deg,
-                        ${emp.color},${emp.color}66)`,
-                      display:'flex', alignItems:'center',
-                      justifyContent:'center',
-                      fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', color:'#fff',
-                      flexShrink:0,
-                      boxShadow:`0 2px 8px ${emp.color}35`,
-                    }}>
-                      {emp.avatar}
-                    </div>
+                    <EmpAvatar emp={emp} size={34} radius={10} />
                     <div>
                       <div style={{
                         fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)',
