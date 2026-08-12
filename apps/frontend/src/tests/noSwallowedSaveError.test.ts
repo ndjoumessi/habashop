@@ -65,6 +65,55 @@ const avale = (src: string): boolean => {
   return AVALE_ÉCRITURE.test(src)
 }
 
+/**
+ * ─── LA SECONDE FORME, AJOUTÉE LE 2026-08-12 ─────────────────────────────────
+ * Le motif ci-dessus ne voit que la forme CHAÎNÉE. `try { await xxxApi.update(…) }
+ * catch {}` lui échappait entièrement — et le balayage en a trouvé **CINQ**, dont
+ * trois dans `Stock.tsx`, plus un client et une dépense. Mon relevé À LA MAIN n'en
+ * avait vu que deux : c'est la mesure qui a trouvé les trois autres.
+ *
+ * ⚠️ APPARIEMENT D'ACCOLADES, JAMAIS UNE REGEX. Un `try` contient des blocs
+ * imbriqués ; une expression régulière s'arrête au premier `}` venu et rend un
+ * verdict au hasard. Même raison que `blocsSelect` côté backend.
+ *
+ * ⚠️ Un `catch` qui FAIT quelque chose n'est pas fautif — `Expenses.tsx` en a un
+ * qui affiche puis sort, et il ne doit pas être signalé. Ce qui est jugé, c'est le
+ * catch VIDE sur une ÉCRITURE : la lecture silencieuse reste légitime, rien n'a été
+ * promis à l'utilisateur.
+ */
+const ÉCRITURE_API =
+  /\b\w+Api\.(?:create|update|remove|delete|patch|post|put|save|send|upload|import)\w*\s*\(/
+
+function finDeBloc(src: string, ouvrante: number): number {
+  let prof = 0
+  for (let k = ouvrante; k < src.length; k++) {
+    if (src[k] === '{') prof++
+    else if (src[k] === '}') { prof--; if (prof === 0) return k }
+  }
+  return -1
+}
+
+function sitesTryCatchVide(src: string): { index: number; extrait: string }[] {
+  const trouvés: { index: number; extrait: string }[] = []
+  const re = /\btry\s*\{/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(src)) !== null) {
+    const ouvT = m.index + m[0].length - 1
+    const finT = finDeBloc(src, ouvT)
+    if (finT < 0) continue
+    const corpsTry = src.slice(ouvT + 1, finT)
+    const mc = /^\s*catch\s*(\([^)]*\))?\s*\{/.exec(src.slice(finT + 1))
+    if (!mc) continue
+    const ouvC = finT + 1 + mc[0].length - 1
+    const finC = finDeBloc(src, ouvC)
+    if (finC < 0) continue
+    if (src.slice(ouvC + 1, finC).trim() !== '') continue   // le catch fait quelque chose
+    if (!ÉCRITURE_API.test(corpsTry)) continue              // pas une écriture d'API
+    trouvés.push({ index: m.index, extrait: corpsTry.replace(/\s+/g, ' ').trim().slice(0, 110) })
+  }
+  return trouvés
+}
+
 function sitesFautifs(): { fichier: string; ligne: number; extrait: string }[] {
   const trouvés: { fichier: string; ligne: number; extrait: string }[] = []
   for (const f of fichiersSource(RACINE)) {
@@ -77,6 +126,13 @@ function sitesFautifs(): { fichier: string; ligne: number; extrait: string }[] {
         fichier: f.slice(RACINE.length + 1),
         ligne: src.slice(0, m.index).split('\n').length,
         extrait: m[0].replace(/\s+/g, ' ').slice(0, 110),
+      })
+    }
+    for (const t of sitesTryCatchVide(src)) {
+      trouvés.push({
+        fichier: f.slice(RACINE.length + 1),
+        ligne: src.slice(0, t.index).split('\n').length,
+        extrait: `try { ${t.extrait} } catch {}`,
       })
     }
   }
@@ -133,6 +189,38 @@ describe('aucune soumission n’avale une erreur serveur', () => {
       'tenantApi.update(p)\nconst x = 1\nfoo.catch(() => {})',
     ]) {
       expect(avale(légitime), légitime).toBe(false)
+    }
+  })
+
+  it('⚠️ détecte la forme try/catch VIDE — celle qui a échappé au verrou pendant quatre jours', () => {
+    // Formes RÉELLES, copiées des cinq sites trouvés le 2026-08-12.
+    for (const forme of [
+      'try { await productsApi.update(editingId, apiBody) } catch {}',
+      'try { await customersApi.update(id, { name }) } catch {}',
+      'try {\n  const c = await expensesApi.create(x)\n  e._apiId = c.id\n} catch {}',
+      'try { await productsApi.update(p._id, { barcode }); ok.push(s) } catch {}',
+      'try { await tenantApi.update(p) } catch (e) {}',
+      'try { await tenantApi.update(p) } catch (_) {  }',
+      // imbrication : une regex s'arrêterait au premier `}` du bloc interne
+      'try { if (x) { await productsApi.create(a) } } catch {}',
+    ]) {
+      expect(sitesTryCatchVide(forme).length, forme).toBe(1)
+    }
+  })
+
+  it('⚠️ la forme try/catch ne crie PAS au loup', () => {
+    for (const légitime of [
+      // un catch qui FAIT quelque chose — le cas réel d'Expenses.tsx
+      'try { await expensesApi.delete(id) } catch { toast.error(m); return }',
+      // une LECTURE silencieuse reste légitime : rien n'a été promis
+      'try { await statsApi.get() } catch {}',
+      'try { const r = await tenantApi.list() } catch {}',
+      // un try/catch vide SANS écriture d'API
+      'try { JSON.parse(x) } catch {}',
+      // une écriture avec un catch qui journalise
+      'try { await productsApi.create(a) } catch (e) { logger.warn(e) }',
+    ]) {
+      expect(sitesTryCatchVide(légitime).length, légitime).toBe(0)
     }
   })
 

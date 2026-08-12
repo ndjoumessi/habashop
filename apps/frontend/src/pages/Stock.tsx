@@ -101,10 +101,15 @@ export default function Stock() {
   const saveBackfill = async (entries: { sku: string; barcode: string }[], print: boolean) => {
     setBackfillSaving(true)
     const savedSkus: string[] = []
+    let echecs = 0
     for (const e of entries) {
       const prod = products.find(p => p.sku === e.sku)
       if (!prod?._id) continue
-      try { await productsApi.update(prod._id, { barcode: e.barcode }); savedSkus.push(e.sku) } catch {}
+      // ⚠️ PAS `saved()` ICI, et c'est un choix : il affiche un toast PAR échec —
+      // sur dix produits refusés, dix toasts empilés. On AGRÈGE et on le dit une
+      // fois. `saved` rapporte, la DÉCISION reste à l'appelant : ici, compter.
+      try { await productsApi.update(prod._id, { barcode: e.barcode }); savedSkus.push(e.sku) }
+      catch { echecs++ }
     }
     const saved = new Set(savedSkus)
     setProducts(prev => prev.map(p => {
@@ -113,7 +118,15 @@ export default function Stock() {
     }))
     setBackfillSaving(false)
     setShowBackfill(false)
-    toast.success(`${savedSkus.length} ${lang === 'en' ? 'barcodes saved' : lang === 'es' ? 'códigos guardados' : lang === 'it' ? 'codici salvati' : 'codes enregistrés'}`)
+    // ⚠️ « 5 codes enregistrés » sur 10 tentés se lit comme un succès complet. Un
+    // compte partiel MUET est la famille de la troncature d'export : le nombre est
+    // exact, et pourtant il trompe. Les échecs se disent, et ils ne se disent pas en vert.
+    const libelleOk = `${savedSkus.length} ${lang === 'en' ? 'barcodes saved' : lang === 'es' ? 'códigos guardados' : lang === 'it' ? 'codici salvati' : 'codes enregistrés'}`
+    if (echecs > 0) {
+      toast.error(`${libelleOk} — ${echecs} ${lang === 'en' ? 'failed, please retry' : lang === 'es' ? 'fallaron, reintente' : lang === 'it' ? 'non riusciti, riprovi' : 'en échec, à réessayer'}`)
+    } else {
+      toast.success(libelleOk)
+    }
     if (print && savedSkus.length) { setSelectedForLabel(savedSkus); setLabelModalFromSelection(true); setShowLabelModal(true) }
   }
 
@@ -227,7 +240,14 @@ export default function Stock() {
     }
     if (editingSku) {
       if (editingId) {
-        try { await productsApi.update(editingId, apiBody) } catch {}
+        // ⚠️ On REVIENT si le serveur refuse : ni état local muté, ni toast de succès,
+        // et la modale RESTE OUVERTE (le `setShowModal(false)` est en fin de fonction)
+        // pour que la saisie ne soit pas perdue. `saved` a déjà dit POURQUOI.
+        const ok = await saved(
+          productsApi.update(editingId, apiBody),
+          lang === 'en' ? 'the product' : lang === 'es' ? 'el producto' : lang === 'it' ? 'il prodotto' : 'le produit',
+        )
+        if (!ok) return
       }
       // Local state ProductItem est en XOF (cohérence DB) — on stocke les valeurs déhydratées
       setProducts(prev => prev.map(p =>
@@ -251,11 +271,14 @@ export default function Stock() {
     } else {
       let apiId: string | undefined
       let createdSku = form.sku
-      try {
-        const created = await productsApi.create(apiBody)
-        apiId = created.id
-        createdSku = created.sku || createdSku
-      } catch {}
+      // ⚠️ Un refus (code-barres dupliqué en 409, quota, validation) affichait
+      // « Produit ajouté ! » et poussait la ligne dans l'état local : le produit
+      // semblait exister et disparaissait au prochain rechargement.
+      const ok = await saved(
+        productsApi.create(apiBody).then(created => { apiId = created.id; createdSku = created.sku || createdSku }),
+        lang === 'en' ? 'the product' : lang === 'es' ? 'el producto' : lang === 'it' ? 'il prodotto' : 'le produit',
+      )
+      if (!ok) return
       /**
        * ⚠️ L'ENVOI DE LA PHOTO NE PEUT PAS AVOIR LIEU AVANT : la route est
        * `POST /api/products/:id/image` et l'identifiant n'existe qu'ici.

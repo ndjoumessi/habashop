@@ -210,10 +210,18 @@ export default function Expenses() {
       id: nextExpId(), date: nDate, label: nLabel.trim(), category: nCat,
       amount: ht, vat: nVat, mode: nMode, status: 'EN ATTENTE', recurrent: nRecurrent,
     }
-    try {
-      const created = await expensesApi.create({ date: new Date(nDate).toISOString(), label: nLabel.trim(), category: nCat, amountHT: ht, vat: nVat, amountTTC: nTTC, mode: nMode, recurrent: nRecurrent, notes: nNotes, status: 'EN ATTENTE' })
-      newExp._apiId = created.id
-    } catch {}
+    // ⚠️ Ce fichier DOCUMENTE la règle quinze lignes plus bas (« `saved(...)`, PAS
+    // `.catch(() => {})` ») et l'enfreignait ici sous l'autre forme : `try/catch {}`.
+    // Une dépense refusée s'affichait « enregistrée » et disparaissait au rechargement —
+    // sur un montant, c'est-à-dire sur de la comptabilité.
+    const ok = await saved(
+      expensesApi.create({ date: new Date(nDate).toISOString(), label: nLabel.trim(), category: nCat, amountHT: ht, vat: nVat, amountTTC: nTTC, mode: nMode, recurrent: nRecurrent, notes: nNotes, status: 'EN ATTENTE' })
+        .then(created => { newExp._apiId = created.id }),
+      tr('la dépense', 'the expense', 'el gasto', 'la spesa'),
+    )
+    // On NE ferme PAS le formulaire et on ne vide RIEN : la saisie reste là, prête
+    // à être renvoyée. `saved` a déjà affiché le message du serveur.
+    if (!ok) return
     setExpenses(prev => [newExp, ...prev])
     toast.success(tr('Dépense enregistrée','Expense saved','Gasto registrado','Spesa registrata'))
     announce(tr('Dépense enregistrée','Expense saved','Gasto registrado','Spesa registrata'))

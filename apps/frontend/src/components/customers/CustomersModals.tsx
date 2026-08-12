@@ -14,6 +14,7 @@ import { type Customer, type ClientType, type CustomerForm, type EditCustomerFor
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { announce } from '@/lib/announce'
 import { fmtDate } from '@/lib/formatDate'
+import { saved } from '@/lib/saved'
 
 interface CustomersModalsProps {
   viewCustomer: Customer | null; setViewCustomer: (c: any) => void
@@ -250,7 +251,15 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                     // `20260805233000_add_customer_notes`), le zod l'accepte ET le `data:` du
                     // handler PUT l'écrit. Les trois étaient nécessaires — la colonne seule, ou
                     // le zod seul, auraient laissé le champ être jeté exactement comme avant.
-                    try { await customersApi.update(editCustomer.id, { name: editCustForm.name, phone: editCustForm.phone, email: editCustForm.email, address: editCustForm.address, notes: editCustForm.notes, type: clientTypeToValue(editCustForm.type) }) } catch {}
+                    // ⚠️ Un refus serveur fermait la modale, mutait la liste et affichait
+                    // « mis à jour » : nom, téléphone, e-mail, adresse et notes semblaient
+                    // enregistrés et revenaient à leur ancienne valeur au prochain chargement.
+                    // On revient sans rien toucher — la saisie reste à l'écran.
+                    const ok = await saved(
+                      customersApi.update(editCustomer.id, { name: editCustForm.name, phone: editCustForm.phone, email: editCustForm.email, address: editCustForm.address, notes: editCustForm.notes, type: clientTypeToValue(editCustForm.type) }),
+                      i('le client', 'the customer', 'el cliente', 'il cliente'),
+                    )
+                    if (!ok) return
                     setCustomers(prev => prev.map(c =>
                       c.id === editCustomer.id ? { ...c, ...editCustForm } : c
                     ))
