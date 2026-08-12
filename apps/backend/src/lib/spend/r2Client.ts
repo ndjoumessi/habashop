@@ -46,13 +46,61 @@ type Config = {
  * objet mais pas fabriquer l'URL à ranger dans `Product.image`. Un stockage qui
  * écrit sans pouvoir rendre l'adresse est un stockage qui perd des données.
  */
+/**
+ * ⚠️ UNE BASE PUBLIQUE SANS SCHÉMA CASSE TOUT, EN SILENCE ET DANS LES DEUX SENS.
+ *
+ * MESURÉ le 2026-08-12 : `new URL('img.exemple.com')` JETTE. Or cette valeur sert à
+ * deux choses opposées, et une base non parsable les brise toutes les deux sans
+ * qu'aucune erreur ne remonte :
+ *
+ *  · à l'ÉCRITURE, `publicUrlFor` produit `img.exemple.com/tenants/…` — une adresse
+ *    RELATIVE une fois posée dans `Product.image`, donc résolue contre l'origine de
+ *    l'application : vignettes cassées partout ;
+ *  · au REMPLACEMENT, `keyFromPublicUrl` rend `null` faute de pouvoir comparer les
+ *    origines — donc plus AUCUN ancien objet n'est supprimé. Une fuite de stockage
+ *    facturée au Go·MOIS, que rien n'affiche.
+ *
+ * Le contrôle de non-vacuité ne suffisait pas : `img.exemple.com` est non vide, et
+ * passait donc pour « configuré ». C'est exactement la configuration à moitié posée
+ * que ce module prétend refuser — la refuser POUR DE BON coûte cette fonction.
+ *
+ * ⚠️ Le moment où ce garde sert est le changement de domaine (bascule de `r2.dev`
+ * vers un domaine propre) : c'est là qu'on retape la valeur, et c'est là qu'on
+ * oublie le `https://`.
+ */
+export function estBasePubliqueValide(raw: string): boolean {
+  const nette = raw.trim().replace(/\/+$/, '')
+  if (!nette) return false
+  try {
+    // `https` EXIGÉ, pas seulement « une URL » : un `http://` servirait les photos
+    // en clair depuis une page en HTTPS, que le navigateur bloquerait comme contenu
+    // mixte — un échec d'affichage silencieux de plus.
+    return new URL(nette).protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 function lireConfig(): Config | null {
   const accountId       = (process.env.R2_ACCOUNT_ID ?? '').trim()
   const accessKeyId     = (process.env.R2_ACCESS_KEY_ID ?? '').trim()
   const secretAccessKey = (process.env.R2_SECRET_ACCESS_KEY ?? '').trim()
   const bucket          = (process.env.R2_BUCKET ?? '').trim()
   const publicBaseUrl   = (process.env.R2_PUBLIC_BASE_URL ?? '').trim()
-  if (!accountId || !accessKeyId || !secretAccessKey || !bucket || !publicBaseUrl) return null
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) return null
+  if (!estBasePubliqueValide(publicBaseUrl)) {
+    // ⚠️ On le DIT. Rendre `null` sans rien journaliser ferait passer une faute de
+    // frappe pour une absence de configuration : le service répondrait 503 « non
+    // configuré » alors que les cinq variables SONT posées, et on chercherait la
+    // panne du mauvais côté pendant des heures.
+    if (publicBaseUrl) {
+      console.error(
+        '❌ R2_PUBLIC_BASE_URL invalide — une URL https complète est attendue ' +
+        '(ex. https://img.exemple.com). Stockage photo désactivé.',
+      )
+    }
+    return null
+  }
   return { accountId, accessKeyId, secretAccessKey, bucket, publicBaseUrl }
 }
 

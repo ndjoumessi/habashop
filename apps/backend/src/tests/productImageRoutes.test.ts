@@ -74,7 +74,7 @@ vi.mock('../middleware/demoTenant', () => ({
 
 import { productRoutes } from '../routes/products'
 import { productImageKey, publicUrlFor } from '../lib/productImageKey'
-import { putProductImage } from '../lib/spend/r2Client'
+import { putProductImage, estBasePubliqueValide, isR2Configured } from '../lib/spend/r2Client'
 
 const BASE = 'https://img.habashop.test'
 const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(256, 3)])
@@ -303,6 +303,41 @@ describe('⚠️ putProductImage — la garde au POINT DE DÉPENSE, isolée de l
 
     expect(r.ok).toBe(true)
     expect(envois).toHaveLength(1)
+  })
+})
+
+describe('⚠️ R2_PUBLIC_BASE_URL — le piège du schéma manquant', () => {
+  /**
+   * Le moment où ce garde sert est le CHANGEMENT DE DOMAINE : c'est là qu'on
+   * retape la valeur, et c'est là qu'on oublie le `https://`. Sans lui, une base
+   * non parsable passait pour « configurée » et cassait deux choses en silence —
+   * des URL relatives en base, et plus aucune suppression de l'ancien objet.
+   */
+  it('accepte une base https, avec ou sans barre finale', () => {
+    expect(estBasePubliqueValide('https://img.exemple.com')).toBe(true)
+    expect(estBasePubliqueValide('https://img.exemple.com/')).toBe(true)
+    expect(estBasePubliqueValide('https://pub-abc.r2.dev')).toBe(true)
+  })
+
+  it('⚠️ refuse tout ce qui ne peut pas former une URL absolue', () => {
+    for (const mauvaise of ['img.exemple.com', 'pub-abc.r2.dev', '', '   ', 'pas une url', '//img.exemple.com']) {
+      expect(estBasePubliqueValide(mauvaise)).toBe(false)
+    }
+  })
+
+  it('⚠️ refuse http — le contenu mixte serait bloqué par le navigateur', () => {
+    // Une photo en clair servie dans une page HTTPS ne s'affiche pas, sans erreur
+    // visible côté serveur : encore un échec silencieux.
+    expect(estBasePubliqueValide('http://img.exemple.com')).toBe(false)
+  })
+
+  it('⚠️ une base sans schéma rend le stockage INERTE, pas à moitié fonctionnel', () => {
+    // Contrôle de bout en bout : c'est `isR2Configured` qui décide, donc la route
+    // répondra 503 au lieu d'écrire des URL relatives en base.
+    configurer(true)
+    expect(isR2Configured()).toBe(true)          // témoin positif
+    process.env.R2_PUBLIC_BASE_URL = 'img.habashop.test'
+    expect(isR2Configured()).toBe(false)
   })
 })
 
