@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { productsApi, apiErrorMessage } from '@/services/api'
+import { useProductPhoto } from '@/hooks/useProductPhoto'
 import type { Product, ProductUpdate } from '@/types'
 import { useI18n, useFmt, useTheme, plural } from '@/stores/appStore'
 import { normalizeBarcode, isValidBarcode, barcodeMatches } from '@/lib/barcode'
@@ -129,6 +130,40 @@ export default function StockScreen() {
   })
 
   const openEdit = (p: Product) => { setEditP(p); setNewQty(p.stockQty ?? 0); setNewBarcode(p.barcode ?? '') }
+
+  // ── Photo produit ─────────────────────────────────────────────────────────
+  // ⚠️ Route SÉPARÉE d'`update` : la photo n'est PAS enregistrée par la mutation
+  // de stock. Elle part dès le choix du fichier, et l'écran se met à jour seul.
+  const photo = useProductPhoto()
+  const majPhoto = async (source: 'camera' | 'gallery') => {
+    if (!editP) return
+    const r = await photo.envoyer(editP.id, source)
+    // ⚠️ Les QUATRE issues sont distinguées. Une annulation ne dit RIEN : c'est une
+    // décision de l'utilisateur, pas une panne — l'alerter serait du bruit.
+    if (r.etat === 'annule') return
+    if (r.etat === 'permission') {
+      Alert.alert(
+        i('Autorisation refusée', 'Permission denied', 'Permiso denegado', 'Autorizzazione negata'),
+        r.source === 'camera'
+          ? i("Autorisez l'appareil photo dans les réglages du téléphone.", 'Allow camera access in your phone settings.', 'Permita la cámara en los ajustes del teléfono.', 'Consenta la fotocamera nelle impostazioni del telefono.')
+          : i('Autorisez l\'accès aux photos dans les réglages du téléphone.', 'Allow photo access in your phone settings.', 'Permita el acceso a las fotos en los ajustes.', "Consenta l'accesso alle foto nelle impostazioni."),
+      )
+      return
+    }
+    if (r.etat === 'echec') {
+      Alert.alert(i('Erreur', 'Error', 'Error', 'Errore'), r.message)
+      return
+    }
+    setEditP({ ...editP, image: r.url })
+    qc.invalidateQueries({ queryKey: ['products'] })
+  }
+  const retirerPhoto = async () => {
+    if (!editP) return
+    const r = await photo.retirer(editP.id)
+    if (r.etat === 'echec') { Alert.alert(i('Erreur', 'Error', 'Error', 'Errore'), r.message); return }
+    setEditP({ ...editP, image: null })
+    qc.invalidateQueries({ queryKey: ['products'] })
+  }
 
   // Code-barres : canonicalisation partagée (UPC-A→EAN-13) + validation EAN-13/EAN-8.
   const canonicalBarcode = normalizeBarcode(newBarcode)
@@ -291,6 +326,46 @@ export default function StockScreen() {
                   <Text style={s.prodName}>{editP.name?.trim()}</Text>
                   <Text style={s.prodCat}>{editP.category ?? '—'}</Text>
                 </View>
+              </View>
+
+              {/* ── PHOTO ── La vignette ci-dessus SERT d'aperçu : pas de second rendu.
+                   ⚠️ Deux boutons EN LIGNE plutôt qu'une feuille de choix : une seconde
+                   <Modal> par-dessus celle-ci ferait crasher Fabric en release sur
+                   Android d'entrée de gamme (`addViewAt`, cf. mobile/CLAUDE.md §8). */}
+              <View style={{ flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' }}>
+                <Pressable
+                  onPress={() => void majPhoto('camera')}
+                  disabled={photo.busy}
+                  accessibilityRole="button"
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 12,
+                           borderRadius: 10, borderWidth: 1, borderColor: C.border, opacity: photo.busy ? 0.5 : 1 }}>
+                  <Ionicons name="camera-outline" size={16} color={C.text} />
+                  <Text style={{ color: C.text, fontSize: 13 }}>
+                    {editP.image ? i('Reprendre', 'Retake', 'Repetir', 'Riprendi') : i('Photo', 'Photo', 'Foto', 'Foto')}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => void majPhoto('gallery')}
+                  disabled={photo.busy}
+                  accessibilityRole="button"
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 12,
+                           borderRadius: 10, borderWidth: 1, borderColor: C.border, opacity: photo.busy ? 0.5 : 1 }}>
+                  <Ionicons name="images-outline" size={16} color={C.text} />
+                  <Text style={{ color: C.text, fontSize: 13 }}>{i('Galerie', 'Gallery', 'Galería', 'Galleria')}</Text>
+                </Pressable>
+
+                {!!editP.image && (
+                  <Pressable
+                    onPress={() => void retirerPhoto()}
+                    disabled={photo.busy}
+                    accessibilityRole="button"
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 12,
+                             borderRadius: 10, borderWidth: 1, borderColor: C.border, opacity: photo.busy ? 0.5 : 1 }}>
+                    <Ionicons name="trash-outline" size={16} color={C.danger} />
+                    <Text style={{ color: C.danger, fontSize: 13 }}>{i('Retirer', 'Remove', 'Quitar', 'Rimuovi')}</Text>
+                  </Pressable>
+                )}
               </View>
 
               {/* Stats */}

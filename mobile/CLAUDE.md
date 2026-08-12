@@ -112,11 +112,11 @@ app/
 src/
   constants/theme.ts
   stores/             # authStore · appStore (useI18n/useFmt/useTheme + persist) · posStore
-  hooks/              # useNetworkStatus · useOfflineSync · useSupplierOcr
+  hooks/              # useNetworkStatus · useOfflineSync · useSupplierOcr · useProductPhoto
                       # useResponsive (PRÊT, pas branché — ≠ code mort)
   services/           # api · notifications · offlineQueue · saleSubmit · whatsappTicket
                       # printReceipt · invoicePdf · biometric · widgetNotification
-  lib/                # logger · barcode · customerQr · refund · idempotency · paymentSplit · loyalty · prefs
+  lib/                # logger · barcode · customerQr · refund · idempotency · paymentSplit · loyalty · prefs · productPhoto
   components/ui/ · pos/ · customers/ · suppliers/ · sales/
   types/index.ts
 ```
@@ -234,6 +234,20 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 - Flux : picker caméra/galerie → compression JPEG (`ImageManipulator`, qualité 0.7, ≤1920px) → POST multipart champ **`invoice`** (override `Content-Type: multipart/form-data`, timeout 60 s). Annulation picker = ni erreur ni loading.
 - Réponse : `{ supplierName, invoiceDate, items[{name,qty,unitPrice}], total, error? }`. PAS de HT/TVA/référence. Montants bruts → JAMAIS `fmt()`.
 - `OcrInvoiceSheet` on-demand (anti-Fabric), 4 états. Action = `Share.share` natif + Recommencer.
+
+---
+
+## Photo produit (`useProductPhoto.ts` + `lib/productPhoto.ts`)
+
+- Modale d'édition Stock → boutons **Photo / Galerie / Retirer** ; `ProductThumb` sert d'aperçu. Route **séparée** d'`update` : la photo part au choix du fichier, elle n'est PAS enregistrée par la mutation de stock.
+- ⚠️ **DEUX BOUTONS EN LIGNE, jamais une feuille de choix** — une seconde `<Modal>` par-dessus la modale d'édition fait crasher Fabric (§ Pièges 8). `Alert` reste sûr (dialogue natif) et le fichier en a déjà l'usage.
+- ⚠️ **512 px / qualité 0,82**, PAS les 1920/0,7 de l'OCR : c'est un réglage de lisibilité de texte, il rendrait chaque photo ~14× plus lourde et **R2 se facture au Go·MOIS**. Valeurs partagées avec le web par `docs/shared-fixtures/product-photo.json`, test jumeau des deux côtés.
+- ⚠️ **On borne le PLUS GRAND CÔTÉ**, pas la largeur comme l'OCR : une photo **portrait** prise au téléphone est le cas courant, et la borne en largeur ne la contraindrait pas. `actionRedimension` est **pure** (jest n'a pas de décodeur d'image) et n'agrandit jamais.
+- ⚠️ **QUATRE issues** : `ok` · `annule` · `permission` · `echec`. Une annulation ne dit RIEN, une permission refusée renvoie aux réglages du **téléphone**, un échec porte le message du **serveur** (415 format / 403 quota / 503 stockage absent).
+- ⚠️ `FormData` RN prend `{uri,name,type}`, **pas un `Blob`** (le web envoie des octets) → `as any` inévitable. Override `Content-Type: multipart/form-data`, l'`apiClient` étant JSON.
+- ⚠️ **Pas de création de produit sur mobile** → aucun cas « photo en attente » comme sur le web. Si une création apparaît, reprendre le différé du web ET son échec partiel.
+- ⚠️ **À ne pas confondre avec la PHOTO DE PROFIL** (URI locale AsyncStorage, 200×200, jamais envoyée) ni avec `Product.emoji`. Trois notions de « photo » cohabitent ; seule celle-ci part au serveur.
+- ✅ Portable par OTA : aucun module natif ajouté (`expo-image-picker`/`-manipulator` déjà là pour l'OCR). ⚠️ La preuve reste `eas fingerprint:compare`, pas une lecture de diff.
 
 ---
 

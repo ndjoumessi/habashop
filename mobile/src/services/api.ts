@@ -114,6 +114,31 @@ export const productsApi = {
   // Backend = PUT /api/products/:id (update partiel, renvoie le produit mis à jour)
   update: (id: string, data: ProductUpdate): Promise<Product> =>
     apiClient.put<Product>(`/api/products/${id}`, data).then(r => r.data),
+  /**
+   * PHOTO PRODUIT — route SÉPARÉE d'`update`, et elle ne passe PAS par lui.
+   *
+   * ⚠️ `FormData` de React Native prend un DESCRIPTEUR de fichier `{uri,name,type}`,
+   * pas un `Blob` : c'est la divergence de fond avec le jumeau web. Le `as any` est
+   * inévitable — le type DOM de `FormData.append` ne connaît que `Blob | string`,
+   * alors que le runtime RN attend cet objet. Même forme que `useSupplierOcr`.
+   *
+   * ⚠️ Override du `Content-Type` : l'`apiClient` est JSON par défaut, et laisser
+   * `application/json` sur un corps multipart fait échouer l'analyse côté serveur.
+   */
+  uploadImage: (id: string, uri: string): Promise<{ image: string }> => {
+    const fd = new FormData()
+    fd.append('image', { uri, name: 'photo.jpg', type: 'image/jpeg' } as any)
+    return apiClient
+      .post<{ image: string }>(`/api/products/${id}/image`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        // Réseau de boutique : un envoi de quelques dizaines de Ko peut prendre
+        // du temps sans être en panne pour autant.
+        timeout: 60000,
+      })
+      .then(r => r.data)
+  },
+  removeImage: (id: string): Promise<{ image: null }> =>
+    apiClient.delete<{ image: null }>(`/api/products/${id}/image`).then(r => r.data),
 }
 
 export const salesApi = {

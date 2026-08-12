@@ -1,0 +1,7 @@
+{
+  "_pourquoi": "TAILLE ET QUALITÉ D'UNE PHOTO DE PRODUIT AVANT ENVOI — valeur PARTAGÉE web ↔ mobile. Les deux plateformes redimensionnent CHEZ ELLES (le serveur n'a pas de sharp) avec des outils qui n'ont aucun code commun : canvas.toBlob côté web, expo-image-manipulator côté natif. Rien ne les empêche donc de diverger, et une divergence coûte au Go·MOIS puisque R2 se facture au stockage. Le précédent est là pour être copié par erreur : useSupplierOcr redimensionne à 1920 px pour l'OCR — reprendre ce chiffre pour une photo de produit la rendrait ~14× plus lourde sans rien apporter à l'écran.",
+  "_marge_assumee": "512 est une MARGE, pas un besoin mesuré. La plus grande vignette du produit fait 64 px côté web et 56 px côté mobile : 192 px suffiraient à un écran 3×, et 256 couvrirait déjà tout. On garde de la place pour une carte produit plus grande sans réenvoi, le renvoi étant la seule façon de récupérer des pixels perdus.",
+  "_qualite": "0,82 est le point où l'artefact JPEG cesse d'être visible. Volontairement plus haut que le 0,7 de l'OCR : là-bas seul le texte compte, ici c'est la photo elle-même qu'on regarde.",
+  "maxPx": 512,
+  "qualite": 0.82
+}

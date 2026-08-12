@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { dimensionsCibles, AVATAR_MAX_PX } from '@/lib/imageResize'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { dimensionsCibles, AVATAR_MAX_PX, PRODUIT_MAX_PX, AVATAR_QUALITE } from '@/lib/imageResize'
 
 /**
  * REDIMENSIONNEMENT D'AVATAR — ce qui est exerçable, et ce qui ne l'est pas.
@@ -67,5 +69,33 @@ describe('dimensionsCibles', () => {
     const avant = 2000 * 1500
     const { largeur, hauteur } = dimensionsCibles(2000, 1500)
     expect(avant / (largeur * hauteur)).toBeGreaterThan(50)
+  })
+})
+
+// ── Anti-dérive avec le mobile ───────────────────────────────────────────────
+describe('⚠️ photo de PRODUIT — valeurs partagées avec le mobile', () => {
+  /**
+   * Les deux plateformes redimensionnent CHEZ ELLES (le serveur n'a pas de
+   * `sharp`) avec des outils sans aucun code commun : `canvas.toBlob` ici,
+   * `expo-image-manipulator` là-bas. Rien d'autre que ce couple de tests
+   * n'empêche l'une de bouger seule — et une divergence se paie au Go·MOIS,
+   * puisque R2 facture le stockage.
+   *
+   * ⚠️ Le jumeau est `mobile/src/__tests__/productPhoto.test.ts`. Modifier la
+   * fixture sans toucher les deux côtés fait rougir celui qu'on a oublié.
+   */
+  const FIXTURE = JSON.parse(
+    readFileSync(join(process.cwd(), '../../docs/shared-fixtures/product-photo.json'), 'utf8'),
+  ) as { maxPx: number; qualite: number }
+
+  it('les constantes web suivent la fixture partagée', () => {
+    expect(PRODUIT_MAX_PX).toBe(FIXTURE.maxPx)
+    expect(AVATAR_QUALITE).toBe(FIXTURE.qualite)
+  })
+
+  it('⚠️ la photo de PRODUIT est plus grande que l’AVATAR — ce sont deux besoins', () => {
+    // Un avatar s'affiche entre 40 et 100 px ; une photo de produit peut demain
+    // remplir une carte de catalogue. Les aligner ferait perdre l'un des deux.
+    expect(PRODUIT_MAX_PX).toBeGreaterThan(AVATAR_MAX_PX)
   })
 })
