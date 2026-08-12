@@ -235,6 +235,13 @@ export default function ProductPhotoField({
         )}
       </div>
 
+      {/*
+        ⚠️ Le champ de fichier suit les boutons. Le laisser rendu sur une démo
+        n'était pas dangereux — plus rien ne le déclenche, `champRef.current?.click()`
+        vivant dans les boutons retirés — mais c'est un contrôle qu'AUCUN chemin
+        n'atteint. Trouvé par le test du cas création, pas à la relecture.
+      */}
+      {!estDemo && (
       <input
         ref={champRef}
         type="file"
@@ -243,6 +250,7 @@ export default function ProductPhotoField({
         style={{ display: 'none' }}
         aria-label={i('Choisir une photo de produit', 'Choose a product photo', 'Elegir una foto de producto', 'Scegli una foto prodotto')}
       />
+      )}
     </div>
   )
 }

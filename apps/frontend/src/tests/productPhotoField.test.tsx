@@ -186,6 +186,29 @@ describe('⚠️ boutique de DÉMONSTRATION — on ne propose pas un geste qu’
     expect(screen.getByText(/démonstration/i)).toBeTruthy()
   })
 
+  it('⚠️ EN CRÉATION aussi — le trou que la capture a révélé', async () => {
+    /**
+     * Le cas ci-dessus monte le champ en ÉDITION (`productId` renseigné). En
+     * CRÉATION, `productId` est `null` et le composant emprunte l'autre branche —
+     * celle du fichier mis EN ATTENTE. Rien ne prouvait que le garde démo s'y
+     * appliquait aussi : observé à l'écran le 2026-08-12, testé seulement après.
+     *
+     * ⚠️ Le geste doit être refusé ICI AUSSI, et pour une raison qui n'est pas
+     * évidente : la création d'un produit, elle, est AUTORISÉE sur une démo
+     * (`POST /api/products` n'a pas de `blockDemoTenant` — une démo doit rester
+     * utilisable). C'est la photo seule qui coûte du stockage récurrent. Sans ce
+     * test, on pourrait accepter un fichier en attente qui serait refusé à
+     * l'envoi, juste après un « Produit ajouté ! ».
+     */
+    useAppStore.setState({ tenant: { id: 'T1', name: 'Démo', plan: 'pro', currency: 'XOF', country: 'SN', vatRate: 18, isDemo: true } })
+    poser({ productId: null })
+
+    expect(screen.queryByText(/Ajouter une photo/i)).toBeNull()
+    expect(screen.getByText(/démonstration/i)).toBeTruthy()
+    // Et aucun champ de fichier à alimenter : le différé est inatteignable.
+    expect(screen.queryByLabelText(/Choisir une photo/i)).toBeNull()
+  })
+
   it('témoin POSITIF — hors démo, les boutons sont bien là', async () => {
     // Sans ce sens, un composant qui n'afficherait JAMAIS de bouton passerait le
     // cas ci-dessus.
