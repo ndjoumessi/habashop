@@ -89,12 +89,34 @@ eas update --branch preview --message "…"            # appareil de TEST (runti
 eas update --branch production --message "…"         # ⚠️ N'ATTEINT PERSONNE en l'état — canal non
                                                      # lié + seul build store en runtime 1.2.0 (#187/#188)
 ```
-**Télécharger l'APK :**
+**⚠️ Télécharger l'APK — MESURÉ LE 2026-08-12 : PLUS AUCUN ARTEFACT N'EXISTE.**
+Les **cinq** builds Android du compte (runtimes 1.3.1 → 1.4.3, du 01/06 au 13/06) rendent
+**HTTP 404** sur `applicationArchiveUrl` : les artefacts EAS ont expiré. La commande
+ci-dessous ne rapporte donc plus rien, quel que soit le build visé.
+
+⚠️ **CONSÉQUENCE OPÉRATIONNELLE, et elle est sérieuse** : l'installation de l'appareil de
+test (runtime **1.4.3**) est désormais **IRREMPLAÇABLE**. Il n'y a ni artefact à
+réinstaller, ni build natif 1.5.0 (quota EAS), ni fiche store publiée. Si cette
+installation disparaît — téléphone réinitialisé, application désinstallée — **toute
+validation sur appareil devient impossible** jusqu'à ce qu'un nouveau build soit produit.
+La liste « À valider device » ci-dessous a donc une fenêtre qui se referme.
+
+```bash
 ```bash
 URL=$(eas build:list --platform android --limit 1 --json --non-interactive \
   | python3 -c 'import sys,json; a=json.load(sys.stdin)[0]["artifacts"]; print(a.get("applicationArchiveUrl") or a.get("buildUrl") or "")')
-curl -fL -o HabaShop-Mobile.apk "$URL"
+# ⚠️ `-L` NE SUFFIT PAS : la chaîne de redirection EAS met l'URL suivante dans le CORPS
+# autant que dans l'en-tête. Et de toute façon, tous les artefacts existants sont en 404.
+curl -sL --max-redirs 10 -o HabaShop-Mobile.apk "$URL" -w '%{http_code}\n'
 ```
+
+**Outillage local — MESURÉ le 2026-08-12, la doc affirmait le contraire :**
+- **iOS : voie FERMÉE.** `xcode-select -p` → `/Library/Developer/CommandLineTools`, et
+  `xcrun simctl` répond « not a developer tool ». Aucun simulateur possible.
+- **Android : voie OUVERTE.** `adb` est présent (`/opt/homebrew/bin/adb`), le SDK est dans
+  `~/Library/Android/sdk`, une image `android-33` est installée et l'AVD **`cwtest`**
+  démarre (boot complet en ~25 s). `ANDROID_HOME` n'est pas exportée — la poser à
+  `$HOME/Library/Android/sdk` suffit. Il manque seulement un APK à y installer.
 
 ---
 
