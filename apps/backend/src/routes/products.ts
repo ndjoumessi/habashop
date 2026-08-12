@@ -8,6 +8,10 @@ import { authenticate } from '../middleware/authenticate'
 import { invalidateTenantCache } from '../lib/cache'
 import { validatePriceTiers, toPricingSet, samePricing, PRICING_FIELDS } from '../utils/pricing'
 import { isValidBarcode, normalizeBarcode, matchesScannedCode } from '../lib/barcode'
+import { blockDemoTenant } from '../middleware/demoTenant'
+import { costQuota } from '../middleware/costQuota'
+import { sniffImageType, productImageKey, keyFromPublicUrl, keyBelongsToTenant } from '../lib/productImageKey'
+import { putProductImage, deleteProductImage, isR2Configured, publicBaseUrl, STORAGE_NOT_CONFIGURED } from '../lib/spend/r2Client'
 
 // Valide un code-barres (EAN-13 + unicité par tenant) et renvoie sa forme
 // normalisée. `excludeId` : produit à ignorer dans le contrôle de doublon (PUT).
@@ -269,6 +273,116 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     const updated = await prisma.product.update({ where: { id, tenantId }, data: data as any })
     invalidateTenantCache(tenantId).catch(() => {})
     return updated
+  })
+
+  /**
+   * ─── PHOTO PRODUIT : ENVOI ─────────────────────────────────────────────────
+   *
+   * ⚠️ L'ORDRE DES GARDES EST LOAD-BEARING, et il se lit de haut en bas :
+   *   1. `blockDemoTenant` + `costQuota` en preHandler → refus AVANT de lire un
+   *      fichier de plusieurs Mo. Le mot de passe démo est PUBLIC ; un envoi y
+   *      coûte du stockage RÉCURRENT.
+   *   2. Le produit est cherché DANS CETTE BOUTIQUE → 404 uniforme pour un tiers,
+   *      jamais 403 (pas d'oracle d'existence — cf. W1 de l'audit).
+   *   3. Le stockage doit être configuré → 503 nommé, pas un 500.
+   *   4. Le type se lit dans les OCTETS.
+   *   5. Seulement ensuite on écrit, et donc on dépense.
+   *
+   * ⚠️ CE QUE CETTE ROUTE NE FAIT PAS, ET QU'IL FAUT SAVOIR : elle ne
+   * REDIMENSIONNE PAS. Il n'y a pas de `sharp` côté serveur (dépendance native,
+   * image Docker) et `lib/imageResize.ts` vit côté FRONT. Les dimensions sont donc
+   * la responsabilité de l'appelant, et le plafond ci-dessous ne borne que les
+   * OCTETS — un client qui enverrait une photo de 3 Mo en 4000 px la verrait
+   * servie telle quelle dans la grille de caisse. C'est une limite ASSUMÉE de ce
+   * lot, pas une propriété du système.
+   */
+  const IMAGE_MAX_OCTETS = 3 * 1024 * 1024
+
+  app.post('/api/products/:id/image', {
+    preHandler: [authenticate, blockDemoTenant, costQuota('storage')],
+    schema: { params: ID_PARAMS },
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const tenantId = getTenantId(request)
+
+    const produit = await prisma.product.findFirst({ where: { id, tenantId }, select: { id: true, image: true } })
+    if (!produit) return reply.code(404).send({ error: 'Produit introuvable.' })
+
+    if (!isR2Configured()) {
+      return reply.code(503).send({ error: 'Stockage des photos non configuré.', code: STORAGE_NOT_CONFIGURED })
+    }
+
+    const file = await request.file({ limits: { fileSize: IMAGE_MAX_OCTETS, files: 1 } })
+    if (!file) return reply.code(400).send({ error: 'Aucun fichier reçu.', code: 'NO_FILE' })
+    const buffer = await file.toBuffer()
+    // ⚠️ `truncated` plutôt que `buffer.length` : au-delà de la limite, multipart
+    // COUPE le flux et rend un buffer valide de la taille du plafond. Sans ce
+    // contrôle on enregistrerait sereinement une image tronquée — un fichier dont
+    // les octets d'en-tête sont corrects et qui ne s'affiche nulle part.
+    if (file.file.truncated) {
+      return reply.code(413).send({ error: 'Photo trop lourde (3 Mo maximum).', code: 'IMAGE_TOO_LARGE' })
+    }
+
+    const type = sniffImageType(buffer)
+    if (!type) {
+      return reply.code(415).send({ error: 'Format non accepté — JPEG, PNG ou WebP.', code: 'UNSUPPORTED_IMAGE' })
+    }
+
+    const key = productImageKey(tenantId, id, buffer, type.ext)
+    const ecrit = await putProductImage({ tenantId, key, body: buffer, contentType: type.mime })
+    if (!ecrit.ok) {
+      const http = ecrit.code === STORAGE_NOT_CONFIGURED ? 503 : ecrit.code === 'STORAGE_WRITE_FAILED' ? 502 : 403
+      return reply.code(http).send({ error: ecrit.error, code: ecrit.code })
+    }
+
+    await prisma.product.update({ where: { id, tenantId }, data: { image: ecrit.url } })
+
+    // ── L'ANCIEN objet, s'il était bien à NOUS ────────────────────────────────
+    // ⚠️ Trois conditions cumulatives avant de supprimer quoi que ce soit : l'URL
+    // doit être sous notre base, avoir la forme de nos clés, ET porter le préfixe
+    // de CE tenant. `Product.image` est une colonne texte libre — sans ces gardes,
+    // une valeur forgée ou héritée ferait supprimer l'objet d'autrui.
+    // Fail-open TRACÉ : un objet orphelin est du gaspillage, pas une perte.
+    const ancienne = keyFromPublicUrl(produit.image, publicBaseUrl() ?? '')
+    if (ancienne && ancienne !== key && keyBelongsToTenant(ancienne, tenantId)) {
+      void deleteProductImage(ancienne)
+    }
+
+    invalidateTenantCache(tenantId).catch(() => {})
+    await writeAudit('PRODUCT_IMAGE_SET', prisma.auditLog.create({
+      data: { tenantId, userId: request.user.userId, module: 'products', action: 'PRODUCT_IMAGE_SET', description: JSON.stringify({ id, key }) },
+    }))
+    return { image: ecrit.url }
+  })
+
+  /**
+   * ─── PHOTO PRODUIT : RETRAIT ───────────────────────────────────────────────
+   *
+   * ⚠️ PAS de `blockDemoTenant` ici, et c'est délibéré : supprimer REND de
+   * l'espace. Une garde de dépense qui empêche de ranger fait grossir la facture
+   * au lieu de la contenir — même raisonnement que dans `r2Client`.
+   *
+   * ⚠️ La colonne est effacée MÊME si l'objet n'est pas à nous (URL héritée,
+   * importée, forgée) : on retire alors la référence sans rien supprimer côté R2.
+   * Refuser laisserait le commerçant avec une photo qu'il ne peut pas enlever.
+   */
+  app.delete('/api/products/:id/image', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const tenantId = getTenantId(request)
+
+    const produit = await prisma.product.findFirst({ where: { id, tenantId }, select: { id: true, image: true } })
+    if (!produit) return reply.code(404).send({ error: 'Produit introuvable.' })
+    if (!produit.image) return { image: null }
+
+    const cle = keyFromPublicUrl(produit.image, publicBaseUrl() ?? '')
+    await prisma.product.update({ where: { id, tenantId }, data: { image: null } })
+    if (cle && keyBelongsToTenant(cle, tenantId)) void deleteProductImage(cle)
+
+    invalidateTenantCache(tenantId).catch(() => {})
+    await writeAudit('PRODUCT_IMAGE_CLEARED', prisma.auditLog.create({
+      data: { tenantId, userId: request.user.userId, module: 'products', action: 'PRODUCT_IMAGE_CLEARED', description: JSON.stringify({ id, key: cle }) },
+    }))
+    return { image: null }
   })
 
   app.delete('/api/products/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {

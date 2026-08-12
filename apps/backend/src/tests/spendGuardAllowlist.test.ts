@@ -25,6 +25,7 @@ const ALLOWLIST = [
   'lib/spend/anthropicClient.ts',
   'lib/spend/resendClient.ts',
   'lib/spend/smsClient.ts',
+  'lib/spend/r2Client.ts',
 ]
 
 const FORBIDDEN: { label: string; re: RegExp }[] = [
@@ -35,6 +36,18 @@ const FORBIDDEN: { label: string; re: RegExp }[] = [
   { label: "import du SDK Resend",    re: /(?:import\s+[\w{},\s*]*\s+from\s+['"]resend['"]|require\(\s*['"]resend['"]\s*\))/m },
   { label: "instanciation Resend",    re: /new\s+Resend\s*\(/ },
   { label: "import du SDK Africa's Talking", re: /(?:import\s+[\w{},\s*]*\s+from\s+['"]africastalking['"]|require\(\s*['"]africastalking['"]\s*\))/m },
+  /**
+   * ⚠️ R2 se paie au Go·MOIS, pas à l'appel — le seul poste de ce fichier dont le
+   * coût est RÉCURRENT. Un objet écrit hors du client gardé n'est pas seulement une
+   * dépense non comptée : c'est une dépense non comptée qui se reconduit tous les
+   * mois, et qu'aucun compteur journalier ne remonte.
+   *
+   * ⚠️ Le motif vise `@aws-sdk/client-s3` ET tout sous-module `@aws-sdk/*-s3*` :
+   * `@aws-sdk/s3-request-presigner` écrit une URL signée qui autorise un tiers à
+   * déposer un objet — c'est-à-dire à dépenser sans jamais passer par nous.
+   */
+  { label: "import d'un SDK S3/R2", re: /(?:import\s+[\w{},\s*]*\s+from\s+['"]@aws-sdk\/[\w-]*s3[\w-]*['"]|require\(\s*['"]@aws-sdk\/[\w-]*s3[\w-]*['"]\s*\))/m },
+  { label: "instanciation S3Client",  re: /new\s+S3Client\s*\(/ },
 ]
 
 /** `import type` ne tire aucun code à l'exécution → toléré (typage seul). */

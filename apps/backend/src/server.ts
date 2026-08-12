@@ -55,6 +55,7 @@ import { sendWeeklyReport } from './services/email'
 import { runMonthlyPayrollReports } from './services/payrollReport'
 import { payrollRoutes } from './routes/payroll'
 import { runTrialReminders, runDailyStockAlerts, runDemoPiiSweep } from './services/notificationCrons'
+import { isR2Configured } from './lib/spend/r2Client'
 
 // ─── Validation des variables d'environnement obligatoires ───
 const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET']
@@ -233,6 +234,13 @@ async function start() {
         redis:    { status: process.env.REDIS_URL ? 'configured' : 'not-configured' },
         whatsapp: { status: process.env.TWILIO_ACCOUNT_SID ? 'configured' : 'not-configured' },
         ai:       { status: process.env.ANTHROPIC_API_KEY ? 'configured' : 'not-configured' },
+        // ⚠️ `isR2Configured()` plutôt qu'une seule variable : le stockage exige
+        // CINQ valeurs, dont l'URL publique. Tester `R2_BUCKET` seul annoncerait
+        // « configured » sur une configuration à moitié posée, qui écrit sans
+        // savoir rendre l'adresse — un champ déclaré qui se fait passer pour une
+        // mesure. Ce reste une CONFIGURATION DÉCLARÉE, pas une sonde : rien ici
+        // n'a joint R2.
+        storage:  { status: isR2Configured() ? 'configured' : 'not-configured' },
       },
       memory: {
         used:  Math.round(mem.heapUsed / 1024 / 1024),

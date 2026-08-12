@@ -24,7 +24,7 @@ import { redis } from '../../redis'
 // coupé par le marketing. `whatsapp_marketing` = diffusions/campagnes, seau SÉPARÉ à
 // plafond bas. La clé `whatsapp` est INCHANGÉE → aucun compteur existant n'est remis
 // à zéro en cours de journée par ce split.
-export type SpendKind = 'ai' | 'ocr' | 'whatsapp' | 'whatsapp_marketing' | 'email' | 'sms'
+export type SpendKind = 'ai' | 'ocr' | 'whatsapp' | 'whatsapp_marketing' | 'email' | 'sms' | 'storage'
 
 export const DEMO_TENANT_FORBIDDEN = 'DEMO_TENANT_FORBIDDEN'
 export const TRIAL_EXPIRED         = 'TRIAL_EXPIRED'
@@ -62,9 +62,23 @@ const DEFAULTS: Record<SpendKind, { trial: number; active: number }> = {
   // marketing WhatsApp : un refus honnête vaut mieux qu'une facture surprise. À fixer via
   // QUOTA_TRIAL_SMS / QUOTA_ACTIVE_SMS (lus à l'appel, sans redéploiement).
   sms:      { trial: 20,  active: 200 },
+  /**
+   * ⚠️ LE SEUL POSTE DONT LE COÛT EST RÉCURRENT. Un WhatsApp ou un SMS se paie une
+   * fois ; un objet R2 se paie au Go·mois TANT QU'IL EXISTE. Un abus n'y produit pas
+   * un pic de facture, il produit une RENTE — et le compteur journalier ne dit rien
+   * du cumul, puisqu'il repart à zéro chaque nuit pendant que les octets restent.
+   *
+   * Les chiffres partent donc bas et sont volontairement généreux par rapport à
+   * l'usage réel : un commerçant photographie son catalogue une fois, puis retouche
+   * quelques fiches par jour. 30 envois quotidiens couvrent une mise en place à la
+   * main ; au-delà, c'est un import en masse, qui mérite qu'on en parle plutôt qu'il
+   * passe en silence. Ajustables par QUOTA_TRIAL_STORAGE / QUOTA_ACTIVE_STORAGE.
+   */
+  storage:  { trial: 30,  active: 300 },
 }
 const ENV_KEY: Record<SpendKind, string> = {
   ai: 'AI', ocr: 'OCR', whatsapp: 'WHATSAPP', whatsapp_marketing: 'WHATSAPP_MARKETING', email: 'EMAIL', sms: 'SMS',
+  storage: 'STORAGE',
 }
 
 /**
