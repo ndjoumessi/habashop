@@ -101,7 +101,7 @@ cd mobile && npm run verify:bundle                    # bundle Android LIVRÉ : 
 
 ⚠️ **Vercel exécute le `npm run build` du workspace front** (Root Directory `apps/frontend`), pas un `vite build` nu — **vérifié en prod le 2026-07-29** : `/sitemap.xml` et `/robots.txt`, produits par l'étape `gen-seo.mjs` ajoutée APRÈS `vite build`, sont bien servis en 200 avec l'URL substituée. Une étape ajoutée au script `build` tourne donc en production ; ne pas la déplacer dans un hook que Vercel n'appellerait pas.
 
-**Backend Railway** — service `habashop`, projet `grateful-happiness`. **Auto-deploy GitHub sur push `main`.** Après déploiement : `npm run smoke:version --workspace=apps/backend` (le `/health` DÉPLOYÉ doit renvoyer la version racine — cf. § Versionnage).
+**Backend Railway** — service `habashop`, projet **`habashop`** (⚠️ ce fichier a longtemps écrit `grateful-happiness` : ce projet **n'existe plus** dans le compte — vérifié par `railway list` le 2026-08-12, il a été renommé. Un nom de projet périmé envoie chercher là où il n'y a rien). **Auto-deploy GitHub sur push `main`.** Après déploiement : `npm run smoke:version --workspace=apps/backend` (le `/health` DÉPLOYÉ doit renvoyer la version racine — cf. § Versionnage).
 
 ### ⚠️ APRÈS UN MERGE : ne rien lancer. Vérifier, c'est tout.
 
