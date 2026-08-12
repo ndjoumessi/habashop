@@ -23,6 +23,7 @@ import IconButton from '@/components/ui/IconButton'
 import { type ProductItem, type StockForm, type CatForm, type LabelConfig, type Category, CATEGORIES_INIT, statusOf, stockCatLabel, stockCatDesc, isActivePromo } from '@/components/stock/stockShared'
 import { normalizeBarcode, isValidBarcode, isAcceptableBarcode, barcodeMatches } from '@/lib/barcode'
 import StockBackfill from '@/components/stock/StockBackfill'
+import { saved } from '@/lib/saved'
 
 export default function Stock() {
   const { stockLowThreshold, stockShowSKU, lang } = useConfig()
@@ -45,6 +46,19 @@ export default function Stock() {
   const [showScanner, setShowScanner] = useState(false)
   const [editingSku, setEditingSku] = useState<string | null>(null)
   const [editingId,  setEditingId]  = useState<string | null>(null)
+  /**
+   * ── PHOTO PRODUIT ──
+   * ⚠️ La photo COURANTE ne vit dans AUCUN état : elle se DÉRIVE de `products`.
+   * La stocker en parallèle créerait un second endroit où elle diverge, et il
+   * faudrait la poser à chaque ouverture de fiche — or `setEditingId` est appelé
+   * depuis TROIS endroits, dont deux dans `StockInventory`. Un état de plus, c'est
+   * un point d'appel de plus à oublier. Écrire dans `products` rafraîchit du même
+   * geste la vignette de la grille.
+   *
+   * Seul le fichier EN ATTENTE a besoin d'un état : en création le produit n'a pas
+   * encore d'identifiant, donc rien ne peut être envoyé.
+   */
+  const [photoEnAttente, setPhotoEnAttente] = useState<Blob | null>(null)
   const [modalTab, setModalTab] = useState<'general'|'prix'|'avance'>('general')
   const [form, setForm] = useState<StockForm>({
     sku: '', name: '', description: '', category: 'Céréales', unit: 'unité',
@@ -125,6 +139,8 @@ export default function Stock() {
     setModalTab('general')
     setEditingSku(null)
     setEditingId(null)
+    // Sinon la photo choisie pour un produit abandonné partirait sur le suivant.
+    setPhotoEnAttente(null)
   }
 
   useEffect(() => {
@@ -153,6 +169,7 @@ export default function Stock() {
           priceWholesale: p.wholesalePrice ?? 0,
           priceSemiWholesale: p.semiWholesalePrice ?? 0,
           priceTiers: Array.isArray(p.priceTiers) ? p.priceTiers : [],
+          photo: p.image ?? null,   // `image` côté API → `photo` côté domaine (cf. ProductItem)
           hasPromotion: p.hasPromotion ?? false,
           promotionPrice: p.promotionPrice ?? 0,
           promotionEnd: p.promotionEnd ? String(p.promotionEnd).split('T')[0] : '',
@@ -239,9 +256,27 @@ export default function Stock() {
         apiId = created.id
         createdSku = created.sku || createdSku
       } catch {}
+      /**
+       * ⚠️ L'ENVOI DE LA PHOTO NE PEUT PAS AVOIR LIEU AVANT : la route est
+       * `POST /api/products/:id/image` et l'identifiant n'existe qu'ici.
+       *
+       * ⚠️ ÉCHEC PARTIEL ASSUMÉ ET DIT. Le produit peut être créé et la photo
+       * refusée (format, quota, stockage non configuré). `saved()` affiche déjà le
+       * message DU SERVEUR ; le message de succès ci-dessous ne doit donc pas
+       * affirmer le contraire — sinon c'est le toast de succès sur un enregistrement
+       * qui n'a pas eu lieu, exactement le défaut que `saved()` existe pour fermer.
+       */
+      let photoUrl: string | null = null
+      if (apiId && photoEnAttente) {
+        await saved(
+          productsApi.uploadImage(apiId, photoEnAttente).then(r => { photoUrl = r.image }),
+          lang === 'en' ? 'the product photo' : lang === 'es' ? 'la foto del producto' : lang === 'it' ? 'la foto del prodotto' : 'la photo du produit',
+        )
+      }
       setProducts(prev => [...prev, {
         _id: apiId,
         sku: createdSku,
+        photo: photoUrl,
         name: form.image + ' ' + form.name,
         category: form.category,
         buy: dh.buyPrice, sell: dh.sellPrice,
@@ -256,7 +291,11 @@ export default function Stock() {
         promotionPrice: dh.promotionPrice ?? 0,
         promotionEnd: form.hasPromotion ? form.promotionEnd : '',
       }])
-      toast.success('Produit ajouté !')
+      toast.success(
+        photoEnAttente && !photoUrl
+          ? (lang === 'en' ? 'Product added — photo could not be uploaded.' : lang === 'es' ? 'Producto agregado — no se pudo enviar la foto.' : lang === 'it' ? 'Prodotto aggiunto — foto non inviata.' : "Produit ajouté — la photo n'a pas pu être envoyée.")
+          : 'Produit ajouté !',
+      )
       announce(lang === 'en' ? 'Product added' : lang === 'es' ? 'Producto agregado' : lang === 'it' ? 'Prodotto aggiunto' : 'Produit ajouté')
     }
     setShowModal(false)
@@ -536,6 +575,10 @@ export default function Stock() {
         showModal={showModal} setShowModal={setShowModal}
         resetForm={resetForm}
         editingSku={editingSku}
+        editingId={editingId}
+        photo={editingId ? (products.find(p => p._id === editingId)?.photo ?? null) : null}
+        setPhoto={url => setProducts(prev => prev.map(p => p._id === editingId ? { ...p, photo: url } : p))}
+        setPhotoEnAttente={setPhotoEnAttente}
         form={form} setForm={setForm}
         productEditMode={productEditMode} setProductEditMode={setProductEditMode}
         modalTab={modalTab} setModalTab={setModalTab}

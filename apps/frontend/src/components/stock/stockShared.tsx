@@ -76,6 +76,15 @@ export type ProductItem = {
   hasPromotion?: boolean
   promotionPrice?: number
   promotionEnd?: string
+  /**
+   * URL de la photo (stockage objet), ou `null`.
+   * ⚠️ NOMMÉE `photo` ET NON `image` — DÉLIBÉRÉMENT. `StockForm.image` est
+   * l'ÉMOJI du produit (envoyé en `emoji`, préfixé au nom) : deux champs
+   * homonymes de sens opposés dans les mêmes fichiers sont exactement ce qui
+   * produit un envoi d'émoji comme URL. Le type de frontière `ApiProduct` garde,
+   * lui, le nom serveur `image` — c'est le mapper qui traverse.
+   */
+  photo?: string | null
 }
 
 // État du formulaire produit (Stock.tsx `useState` + prop `form`/`setForm` de StockModals).

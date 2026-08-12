@@ -194,6 +194,36 @@ export const productsApi = {
   update:   (id: string, data: ProductWrite) => api.put<ApiProduct>(`/api/products/${id}`, data),
   // `DELETE` rend `{ success: true }` (soft delete) — pas le produit supprimé.
   delete:   (id: string) => api.delete<{ success: boolean }>(`/api/products/${id}`),
+  /**
+   * PHOTO PRODUIT — route SÉPARÉE de `update`, et ce n'est pas un détail.
+   *
+   * ⚠️ NE PAS confondre avec `StockForm.image`, qui est l'ÉMOJI du produit (il est
+   * envoyé en `emoji` et préfixé au nom). Deux champs homonymes, sens opposés :
+   * `Product.image` porte une URL de photo. Les fondre enverrait un émoji comme URL.
+   *
+   * `fetch` brut plutôt que `api.post` : le corps est un `FormData`, et poser un
+   * `Content-Type` à la main casserait la frontière multipart que le navigateur
+   * calcule lui-même. Même motif que `scanInvoice`.
+   */
+  uploadImage: async (id: string, fichier: Blob, nom = 'photo.jpg'): Promise<{ image: string }> => {
+    const token = getToken()
+    const fd = new FormData()
+    fd.append('image', fichier, nom)
+    const res = await fetch(`${BASE_URL}/api/products/${id}/image`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    })
+    if (!res.ok) {
+      // ⚠️ Le message du SERVEUR est préféré au nôtre : c'est lui qui sait si c'est
+      // un format refusé (415), un quota (403) ou un stockage absent (503). Un
+      // message générique ferait chercher au mauvais endroit.
+      const err = await res.json().catch(() => ({}))
+      throw new Error((err as { error?: string }).error ?? `Erreur ${res.status}`)
+    }
+    return res.json()
+  },
+  removeImage: (id: string) => api.delete<{ image: null }>(`/api/products/${id}/image`),
   lowStock: () => api.get<ApiProduct[]>('/api/products/low-stock'),
   /**
    * Résolution CIBLÉE d'un code scanné absent du cache local (Chantier B).

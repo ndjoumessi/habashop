@@ -64,10 +64,7 @@ export function dimensionsCibles(
  * ⚠️ Rejette si l'image est illisible plutôt que de rendre une chaîne vide : un
  * repli silencieux effacerait la photo existante au premier fichier corrompu.
  */
-export function resizeToDataUrl(
-  fichier: Blob,
-  maxPx: number = AVATAR_MAX_PX,
-): Promise<string> {
+function dessinerRedimensionne(fichier: Blob, maxPx: number): Promise<HTMLCanvasElement> {
   return new Promise((resoudre, rejeter) => {
     const url = URL.createObjectURL(fichier)
     const img = new Image()
@@ -84,9 +81,57 @@ export function resizeToDataUrl(
       ctx.fillStyle = '#fff'
       ctx.fillRect(0, 0, largeur, hauteur)
       ctx.drawImage(img, 0, 0, largeur, hauteur)
-      resoudre(canvas.toDataURL('image/jpeg', AVATAR_QUALITE))
+      resoudre(canvas)
     }
     img.onerror = () => { URL.revokeObjectURL(url); rejeter(new Error('Image illisible')) }
     img.src = url
   })
+}
+
+export async function resizeToDataUrl(
+  fichier: Blob,
+  maxPx: number = AVATAR_MAX_PX,
+): Promise<string> {
+  return (await dessinerRedimensionne(fichier, maxPx)).toDataURL('image/jpeg', AVATAR_QUALITE)
+}
+
+/**
+ * Côté maximal d'une PHOTO DE PRODUIT envoyée vers le stockage objet.
+ *
+ * ⚠️ CE NOMBRE EST UNE MARGE DÉLIBÉRÉE, PAS UN BESOIN MESURÉ — et il faut le dire,
+ * sinon quelqu'un le prendra pour une mesure. MESURÉ le 2026-08-12, la plus grande
+ * vignette de tout le produit fait **64 px** (carte du catalogue public ; 56 px
+ * côté mobile) : à 3× d'écran, 192 px suffiraient, et 256 couvrirait déjà tout.
+ *
+ * 512 est choisi pour laisser de la place à une carte produit plus grande sans
+ * réenvoi — le renvoi étant la seule façon de récupérer des pixels perdus. Le coût
+ * n'entre PAS dans l'arbitrage : ~60 Ko contre ~20 Ko, soit 36 Mo contre 12 Mo pour
+ * 600 produits, c'est-à-dire rien face aux 10 Go du palier gratuit R2. Prétendre le
+ * contraire serait un chiffre décoratif.
+ */
+export const PRODUIT_MAX_PX = 512
+
+/**
+ * Rend des OCTETS, pas une chaîne — le stockage objet reçoit du multipart, pas une
+ * data URI. La voie de dessin est COMMUNE avec `resizeToDataUrl` : deux fonctions
+ * de redimensionnement divergeraient (fond blanc, agrandissement, qualité), et
+ * c'est exactement le motif du jumeau non traité.
+ */
+export function resizeToBlob(
+  fichier: Blob,
+  maxPx: number = PRODUIT_MAX_PX,
+): Promise<Blob> {
+  return dessinerRedimensionne(fichier, maxPx).then(
+    canvas =>
+      new Promise<Blob>((resoudre, rejeter) => {
+        canvas.toBlob(
+          // ⚠️ `toBlob` rend `null` quand l'encodage échoue. Rejeter plutôt que de
+          // rendre un Blob vide : un envoi de 0 octet serait refusé par le serveur
+          // en 415 (aucune signature d'image), avec un message qui n'expliquerait rien.
+          b => (b ? resoudre(b) : rejeter(new Error('Encodage impossible'))),
+          'image/jpeg',
+          AVATAR_QUALITE,
+        )
+      }),
+  )
 }

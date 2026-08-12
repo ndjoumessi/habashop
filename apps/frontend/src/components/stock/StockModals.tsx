@@ -12,6 +12,7 @@ import { lookupProductByEan } from '@/lib/productLookup'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { normalizeBarcode, isValidBarcode, barcodeFormat, generateEAN13, quietZonePx } from '@/lib/barcode'
 import { confirm } from '@/lib/confirm'
+import ProductPhotoField from '@/components/stock/ProductPhotoField'
 import { DateField } from '@/components/ui/DatePicker'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
@@ -38,6 +39,15 @@ interface StockModalsProps {
   suppliers: { id: string; name: string }[]
   hideProductSelection?: boolean
   onOpenBackfill?: () => void
+  /**
+   * ── PHOTO PRODUIT ──
+   * ⚠️ SÉPARÉ de `form.image`, qui est l'ÉMOJI (envoyé en `emoji`, préfixé au nom).
+   * La photo a son propre endpoint : elle n'est pas enregistrée par `saveProduct`.
+   */
+  editingId: string | null
+  photo: string | null
+  setPhoto: (url: string | null) => void
+  setPhotoEnAttente: (blob: Blob | null) => void
 }
 
 // Vignette code-barres = UNE seule surface blanche « étiquette » (barres sombres
@@ -111,7 +121,7 @@ export function BarcodeVignette({ value, lang }: { value: string; lang: string }
   )
 }
 
-export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection, onOpenBackfill }: StockModalsProps) {
+export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection, onOpenBackfill, editingId, photo, setPhoto, setPhotoEnAttente }: StockModalsProps) {
   const [supSearch, setSupSearch] = useState('')
   const [supOpen, setSupOpen] = useState(false)
   // Pièges à focus des 3 modales (focus initial + Tab bouclé + restauration)
@@ -266,10 +276,22 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             {/* ── Onglet Général ── */}
             {modalTab === 'general' && (
               <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-                {/* ── IMAGE ── */}
+                {/* ── PHOTO (stockage objet) — distincte de l'émoji ci-dessous ── */}
+                {productEditMode && (
+                  <ProductPhotoField
+                    productId={editingId}
+                    image={photo}
+                    emoji={form.image}
+                    lang={lang}
+                    onImage={setPhoto}
+                    onEnAttente={setPhotoEnAttente}
+                  />
+                )}
+
+                {/* ── ÉMOJI (≠ photo : envoyé en `emoji`, préfixé au nom) ── */}
                 {productEditMode && (
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>IMAGE</label>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{i('ICÔNE (ÉMOJI)', 'ICON (EMOJI)', 'ICONO (EMOJI)', 'ICONA (EMOJI)')}</label>
                     <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:8 }}>
                       {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','🫧','📦'].map(em => (
                         <button key={em} type="button" aria-label={`${i("Choisir l'image", 'Choose image', 'Elegir imagen', 'Scegli immagine')} ${em}`} aria-pressed={form.image === em} onClick={() => setForm(f => ({...f, image:em}))} style={{
