@@ -5,6 +5,7 @@ import { resizeToBlob, PRODUIT_MAX_PX } from '@/lib/imageResize'
 import { productsApi } from '@/lib/api'
 import { saved } from '@/lib/saved'
 import { announce } from '@/lib/announce'
+import { useAppStore } from '@/stores/appStore'
 
 /**
  * LE CHAMP PHOTO D'UN PRODUIT — envoi, remplacement, retrait.
@@ -66,6 +67,9 @@ export default function ProductPhotoField({
   // FERMÉE de drapeaux de requête en vol (`loading|busy|saving|…`) pour exempter un
   // bouton désactivé. Élargir ce garde pour ma convenance de nommage serait le
   // desserrer — on prend le nom qu'il accepte.
+  // Fait GLOBAL, pas une prop : le threader depuis Stock.tsx ajouterait un point
+  // d'appel à oublier, pour une information que le store porte déjà.
+  const estDemo = useAppStore(s => s.tenant?.isDemo === true)
   const [busy, setBusy] = useState(false)
   const [apercuLocal, setApercuLocal] = useState<string | null>(null)
   const champRef = useRef<HTMLInputElement>(null)
@@ -160,6 +164,30 @@ export default function ProductPhotoField({
           style={{ background: 'var(--bg3)', border: '1.5px solid var(--border)' }}
         />
 
+        {/*
+          ⚠️ SUR UNE DÉMO, ON NE PROPOSE PAS UN GESTE QU'ON SAIT REFUSÉ. Observé le
+          2026-08-12 : le bouton était offert, le commerçant ouvrait le sélecteur,
+          choisissait un fichier, attendait — et récoltait un 403. Le refus serveur
+          est CORRECT (le mot de passe démo est public, le stockage se paie au
+          Go·mois) ; c'est de l'avoir laissé découvrir après coup qui ne l'était pas.
+
+          ⚠️ ET ON LE DIT. Retirer les boutons en silence ferait croire à une
+          fonctionnalité absente plutôt qu'indisponible ICI — la règle « l'absence se
+          dit ». Le libellé reste proche du message serveur pour que les deux
+          s'accordent si l'utilisateur voit les deux.
+
+          ⚠️ CE N'EST PAS LA SÉCURITÉ. `blockDemoTenant` reste seul juge : masquer un
+          bouton ne protège rien, exactement comme pour le raccourci de connexion démo.
+        */}
+        {estDemo ? (
+          <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text3)' }}>
+            {i('Indisponible sur une boutique de démonstration.',
+               'Unavailable on a demo shop.',
+               'No disponible en una tienda de demostración.',
+               'Non disponibile su un negozio dimostrativo.')}
+          </span>
+        ) : (
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
@@ -204,6 +232,7 @@ export default function ProductPhotoField({
                   'JPEG, PNG o WebP. Redimensionada automáticamente.', 'JPEG, PNG o WebP. Ridimensionata automaticamente.')}
           </span>
         </div>
+        )}
       </div>
 
       <input

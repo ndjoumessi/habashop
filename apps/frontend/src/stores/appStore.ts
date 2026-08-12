@@ -325,6 +325,17 @@ export interface Tenant {
   currency: string
   country: string
   vatRate: number
+  /**
+   * Boutique de DÉMONSTRATION. Déjà renvoyé par `GET /api/tenant` (la route rend la
+   * ligne entière) — il n'était simplement pas typé, donc pas lu.
+   *
+   * ⚠️ CE DRAPEAU N'EST PAS UNE SÉCURITÉ, et ne doit jamais le devenir. La protection
+   * est le refus SERVEUR (`blockDemoTenant` → 403 `DEMO_TENANT_FORBIDDEN`), qui reste
+   * seul juge : le mot de passe démo est PUBLIC, masquer un bouton ne protège RIEN.
+   * Il sert UNIQUEMENT à ne pas proposer un geste dont on sait qu'il sera refusé —
+   * la même distinction que pour le raccourci de connexion démo.
+   */
+  isDemo?: boolean
   address?: string | null
   phone?: string | null
   email?: string | null

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import ProductPhotoField from '@/components/stock/ProductPhotoField'
+import { useAppStore } from '@/stores/appStore'
 
 /**
  * LE CHAMP PHOTO — ce qui part vers le serveur, et ce qui n'en part pas.
@@ -56,6 +57,9 @@ function choisirUnFichier() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // ⚠️ Le VRAI store, jamais un mock — leçon d'`adminXof.behaviour` : simuler
+  // `@/stores/appStore` rendrait un vert qui ne prouve rien du câblage.
+  useAppStore.setState({ tenant: { id: 'T1', name: 'Boutique', plan: 'pro', currency: 'XOF', country: 'CM', vatRate: 19.25, isDemo: false } })
   resize.resizeToBlob.mockResolvedValue(OCTETS)
   // ⚠️ jsdom n'implémente pas `createObjectURL` — sans ça, l'aperçu local jette.
   globalThis.URL.createObjectURL = vi.fn(() => 'blob:apercu')
@@ -156,5 +160,39 @@ describe('⚠️ l’ÉMOJI n’est pas une photo — la collision de noms', () 
     poser({ productId: 'p1', image: 'https://img.test/a.jpg', emoji: '🌾' })
 
     expect(document.querySelector('img')?.getAttribute('src')).toBe('https://img.test/a.jpg')
+  })
+})
+
+describe('⚠️ boutique de DÉMONSTRATION — on ne propose pas un geste qu’on sait refusé', () => {
+  /**
+   * OBSERVÉ EN PRODUCTION le 2026-08-12 : le bouton était offert sur `demo-tenant-001`,
+   * le commerçant ouvrait le sélecteur, choisissait un fichier, attendait — puis
+   * récoltait « Action indisponible sur une boutique de démonstration ». Le refus
+   * serveur est CORRECT ; c'est de l'avoir laissé découvrir après le geste qui ne
+   * l'était pas.
+   *
+   * ⚠️ Ce test ne garde AUCUNE propriété de sécurité. `blockDemoTenant` reste seul
+   * juge côté serveur — masquer un bouton ne protège rien, le mot de passe démo est
+   * public. Ce qui est gardé ici est le CONFORT, et le fait que l'absence se DISE.
+   */
+  it('aucun bouton d’envoi, et la raison est DITE', async () => {
+    useAppStore.setState({ tenant: { id: 'T1', name: 'Démo', plan: 'pro', currency: 'XOF', country: 'SN', vatRate: 18, isDemo: true } })
+    poser({ productId: 'p1' })
+
+    expect(screen.queryByText(/Ajouter une photo/i), 'aucun geste proposé').toBeNull()
+    expect(screen.queryByText(/Remplacer/i)).toBeNull()
+    // ⚠️ Retirer les boutons EN SILENCE ferait croire à une fonctionnalité absente
+    // plutôt qu'indisponible ICI. L'absence se dit.
+    expect(screen.getByText(/démonstration/i)).toBeTruthy()
+  })
+
+  it('témoin POSITIF — hors démo, les boutons sont bien là', async () => {
+    // Sans ce sens, un composant qui n'afficherait JAMAIS de bouton passerait le
+    // cas ci-dessus.
+    useAppStore.setState({ tenant: { id: 'T1', name: 'Boutique', plan: 'pro', currency: 'XOF', country: 'CM', vatRate: 19.25, isDemo: false } })
+    poser({ productId: 'p1' })
+
+    expect(screen.getByText(/Ajouter une photo/i)).toBeTruthy()
+    expect(screen.queryByText(/démonstration/i)).toBeNull()
   })
 })
