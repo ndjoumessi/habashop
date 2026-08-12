@@ -300,6 +300,13 @@ export interface InvoiceOptions {
 // décliné en SVG statique pour le document imprimé.
 const INVOICE_LOGO_SVG = `<svg viewBox="0 0 100 100" width="42" height="42" role="img" aria-label="HabaShop"><rect width="100" height="100" rx="24" fill="#6C47FF"/><path d="M38 38 C38 24 62 24 62 38" fill="none" stroke="#F0A500" stroke-width="4.5" stroke-linecap="round"/><rect x="29" y="37" width="42" height="40" rx="5" fill="#fff"/><rect x="44" y="46" width="4.6" height="22" rx="1.4" fill="#6C47FF"/><rect x="52" y="46" width="4.6" height="22" rx="1.4" fill="#6C47FF"/><rect x="44" y="55" width="12.6" height="4.6" rx="1.4" fill="#6C47FF"/></svg>`
 
+/**
+ * ⚠️ AUCUNE PHOTO PRODUIT DANS CE DOCUMENT — décision du 2026-08-12, jumelle de
+ * celle du générateur backend. Le raisonnement complet (surface SSRF d'un fetch
+ * serveur, absence de repli en WinAnsi, nature comptable de la pièce) est écrit
+ * UNE SEULE FOIS, sur `InvoiceSale.items` dans `apps/backend/src/lib/invoicePdf.ts`.
+ * Les DEUX générateurs sont vivants : ce qui change ici change là-bas.
+ */
 export function generateInvoice(opts: InvoiceOptions) {
   const { type, lang, customer, items, discount, paymentMode, ref, status } = opts
   const state = useAppStore.getState()

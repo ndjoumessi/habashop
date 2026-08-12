@@ -23,6 +23,23 @@ import { useState } from 'react'
  * qu'on avait avant d'ajouter les photos. Même famille que « l'absence se dit »
  * (`ratingSummary` → `null`, jamais `0`).
  *
+ * ⚠️ TROIS ÉTATS, PAS DEUX — ET LE TROISIÈME EST LE CAS NORMAL. « photo OU émoji »
+ * oublie le CHARGEMENT : entre la pose de l'URL et la peinture de l'image, un
+ * `<img>` seul ne rend RIEN. Sur un réseau de boutique ouest-africaine cette
+ * fenêtre dure des secondes, et elle a duré ici jusqu'au 2026-08-12 — une grille
+ * de caisse VIDE, c'est-à-dire exactement ce que le repli d'erreur existe pour
+ * empêcher, à un `onError` près qui ne partira jamais puisque rien n'a échoué.
+ * L'émoji tient donc la place SOUS l'image jusqu'à `onLoad`. Corollaire gratuit :
+ * `loading="lazy"` ne déclenche rien hors écran, donc une grille défilante montre
+ * ses émojis au lieu de trous.
+ *
+ * ⚠️ L'ÉTAT EST CLÉ PAR L'URL, jamais un simple booléen. `casse`/`chargé` sont un
+ * état de COMPOSANT : dans une liste recyclée React réutilise l'instance et seul
+ * le `<img>` est remonté par sa `key`. Un booléen ferait donc hériter le produit
+ * suivant de l'échec du précédent — il n'afficherait plus jamais sa photo. (Ce
+ * fichier a AFFIRMÉ le contraire jusqu'au 2026-08-12 : la `key` remonte l'élément,
+ * elle ne réinitialise pas l'état. *Un commentaire jamais exécuté survit des mois.*)
+ *
  * ⚠️ DÉCORATIF, DONC MUET. `aria-hidden` + `alt=""` : les neuf surfaces nomment
  * déjà le produit en texte à côté. Une vignette qui s'annonce ferait lire le nom
  * deux fois par un lecteur d'écran.
@@ -54,10 +71,13 @@ export default function ProductThumb({
    */
   fallback?: React.ReactNode
 }) {
-  // ⚠️ L'échec de chargement est un ÉTAT, pas un style : il faut un re-rendu pour
-  // repasser à l'émoji. Réinitialisé par la `key` de l'URL — sans elle, un produit
-  // remplaçant un autre dans une liste virtualisée hériterait de son échec.
-  const [casse, setCasse] = useState(false)
+  // On mémorise l'URL CONCERNÉE, pas un booléen : voir l'en-tête. Une comparaison
+  // au rendu suffit — ni effet, ni synchronisation à écrire.
+  const [echouee, setEchouee] = useState<string | null>(null)
+  const [peinte, setPeinte] = useState<string | null>(null)
+  const casse = !!p.image && echouee === p.image
+  const chargee = !!p.image && peinte === p.image
+
   const commun: React.CSSProperties = {
     width: size,
     height: size,
@@ -69,18 +89,31 @@ export default function ProductThumb({
     lineHeight: 1,
     ...style,
   }
+  const secours = p.emoji || fallback || '📦'
 
   if (p.image && !casse) {
     return (
-      <div style={{ ...commun, overflow: 'hidden' }} aria-hidden="true">
+      <div style={{ ...commun, overflow: 'hidden', position: 'relative', fontSize }} aria-hidden="true">
+        {/* L'émoji tient la place TANT QUE l'image n'est pas peinte. Il disparaît
+            ensuite : une photo à fond transparent laisserait sinon voir l'émoji
+            au travers, ce qui est un défaut d'affichage et non un repli. */}
+        {!chargee && secours}
         <img
           key={p.image}
           src={p.image}
           alt=""
           loading="lazy"
           decoding="async"
-          onError={() => setCasse(true)}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          onLoad={() => setPeinte(p.image!)}
+          onError={() => setEchouee(p.image!)}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+          }}
         />
       </div>
     )
@@ -88,7 +121,7 @@ export default function ProductThumb({
 
   return (
     <div style={{ ...commun, fontSize }} aria-hidden="true">
-      {p.emoji || fallback || '📦'}
+      {secours}
     </div>
   )
 }

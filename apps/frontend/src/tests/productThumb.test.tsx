@@ -14,19 +14,61 @@ import ProductThumb from '@/components/ui/ProductThumb'
  * la photo sur neuf sites indépendants aurait garanti qu'un d'entre eux l'oublie.
  *
  * ⚠️ CE QUE CE FICHIER GARDE VRAIMENT, ce n'est pas « la photo s'affiche » — c'est
- * (a) qu'une URL CASSÉE revient à l'émoji, et (b) qu'aucune surface ne recrée un
- * rendu en ligne. Le premier est le comportement qu'aucune relecture ne voit ;
- * le second est ce qui a coûté cher deux fois.
+ * (a) qu'une URL CASSÉE revient à l'émoji, (b) qu'une vignette n'est JAMAIS vide
+ * pendant le chargement, et (c) qu'aucune surface ne recrée un rendu en ligne.
+ *
+ * ⚠️ CE FICHIER A FIGÉ UN DÉFAUT — c'est sa propre leçon. Deux assertions
+ * affirmaient « avant l'échec, l'émoji est absent » : elles décrivaient ce que le
+ * code FAISAIT (une boîte vide pendant tout le chargement) au lieu d'affirmer ce
+ * qu'il DOIT faire. Le jour où le comportement est devenu faux, elles l'ont
+ * protégé. Corrigées le 2026-08-12, avec l'invariant qui les remplace : *il
+ * n'existe aucun instant où la vignette ne montre rien.*
  */
 
 // ── (1) la DÉCISION rendue ───────────────────────────────────────────────────
 describe('ProductThumb — photo, émoji, et la photo qui casse', () => {
-  it('une photo présente REMPLACE l’émoji', async () => {
+  it('une photo CHARGÉE remplace l’émoji', async () => {
     await render(<ProductThumb p={{ image: 'https://exemple.test/riz.jpg', emoji: '🌾' }} />)
     const img = document.querySelector('img')
     expect(img, 'un <img> doit être rendu').not.toBeNull()
     expect(img?.getAttribute('src')).toBe('https://exemple.test/riz.jpg')
-    expect(screen.queryByText('🌾'), 'l’émoji ne doit pas doubler la photo').toBeNull()
+
+    // ⚠️ C'est APRÈS la peinture que l'émoji cède, pas avant : sans ce
+    // déclenchement, l'assertion « l'émoji est absent » figerait la boîte vide.
+    fireEvent.load(img!)
+    expect(screen.queryByText('🌾'), 'photo peinte : l’émoji ne doit plus doubler').toBeNull()
+  })
+
+  it('⚠️ PENDANT le chargement, la vignette n’est JAMAIS vide', async () => {
+    /**
+     * LE CAS NORMAL, PAS LE CAS DÉGRADÉ. Entre la pose de l'URL et la peinture,
+     * un `<img>` seul ne rend rien — et sur le réseau d'une boutique
+     * ouest-africaine cette fenêtre dure des secondes. Aucun `onError` ne part :
+     * rien n'a échoué. Le repli d'erreur ne pouvait donc pas couvrir ce cas, et
+     * la grille de caisse était vide, ce qui est PIRE que les émojis d'avant.
+     */
+    await render(<ProductThumb p={{ image: 'https://exemple.test/lent.jpg', emoji: '🌾' }} />)
+    expect(document.querySelector('img'), 'l’image est bien demandée').not.toBeNull()
+    expect(screen.getByText('🌾'), 'l’émoji doit tenir la place tant que rien n’est peint').toBeTruthy()
+  })
+
+  it('⚠️ un échec ne se TRANSMET PAS au produit suivant dans une ligne recyclée', async () => {
+    /**
+     * L'état vit dans le COMPOSANT ; une liste recyclée réutilise l'instance et
+     * seule la `key` de l'`<img>` remonte l'élément. Un booléen `casse` ferait donc
+     * hériter le produit suivant de l'échec du précédent — il n'afficherait plus
+     * jamais sa photo. Ce fichier a AFFIRMÉ le contraire en commentaire pendant
+     * une journée : d'où cet exercice, et non une relecture.
+     */
+    const { rerender } = await render(<ProductThumb p={{ image: 'https://exemple.test/a.jpg', emoji: '🅰️' }} />)
+    fireEvent.error(document.querySelector('img')!)
+    expect(document.querySelector('img'), 'A a échoué : plus d’image').toBeNull()
+
+    await rerender(<ProductThumb p={{ image: 'https://exemple.test/b.jpg', emoji: '🅱️' }} />)
+    const suivante = document.querySelector('img')
+    expect(suivante, 'B doit AVOIR SA CHANCE malgré l’échec de A').not.toBeNull()
+    expect(suivante?.getAttribute('src')).toBe('https://exemple.test/b.jpg')
+    expect(screen.getByText('🅱️'), 'et son émoji tient la place en attendant').toBeTruthy()
   })
 
   it('sans photo, l’émoji est rendu', async () => {
@@ -49,7 +91,9 @@ describe('ProductThumb — photo, émoji, et la photo qui casse', () => {
      */
     await render(<ProductThumb p={{ image: 'https://exemple.test/absent.jpg', emoji: '🌾' }} />)
     const img = document.querySelector('img')!
-    expect(screen.queryByText('🌾'), 'avant l’échec, l’émoji est absent').toBeNull()
+    // ⚠️ L'émoji est DÉJÀ là avant l'échec (il tient la place pendant le
+    // chargement). Cette ligne affirmait l'inverse et figeait la boîte vide.
+    expect(screen.getByText('🌾'), 'avant l’échec, l’émoji tient déjà la place').toBeTruthy()
 
     fireEvent.error(img)
 

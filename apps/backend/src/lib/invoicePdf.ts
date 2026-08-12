@@ -55,6 +55,26 @@ export interface InvoiceSale {
   id: string; total: number; paymentMode: string; discountAmount: number; createdAt: Date | string
   invoiceNumber: string
   cashAmount?: number | null; mobileMoneyAmount?: number | null; cardAmount?: number | null
+  /**
+   * ⚠️ LA LIGNE NE PORTE QUE LE NOM — PAS DE PHOTO, ET C'EST UNE DÉCISION, PAS UN
+   * OUBLI (2026-08-12). À ne pas « compléter » le jour où `Product.image` sera
+   * alimenté : élargir ce type est le premier geste de cette erreur.
+   *
+   * `Product.image` porte une URL vers un stockage objet. L'imprimer imposerait au
+   * SERVEUR d'aller CHERCHER cette URL à chaque génération de facture :
+   *   · c'est une requête sortante vers une adresse lue en BASE — surface SSRF, sur
+   *     une route authentifiée mais dont le contenu vient du commerçant ;
+   *   · c'est un aller-retour réseau PAR LIGNE sur une route qui doit rendre un PDF
+   *     tout de suite, avec un délai que rien ne borne ;
+   *   · et l'échec n'a pas de repli : l'émoji de secours du POS n'existe pas ici
+   *     (pdfkit est en WinAnsi — cf. `pdfSafeSpaces`, qui existe parce que même une
+   *     espace fine y manque).
+   *
+   * Le fond : une facture est une pièce comptable. La ligne s'identifie par un nom,
+   * une quantité et un prix ; une vignette n'y ajoute rien d'opposable. Le jumeau
+   * front (`utils/export.ts generateInvoice`) porte la MÊME décision — les deux
+   * générateurs sont vivants et se corrigent ensemble.
+   */
   items: { qty: number; unitPrice: number; total: number; product?: { name?: string | null } | null }[]
 }
 export interface InvoiceTenant {

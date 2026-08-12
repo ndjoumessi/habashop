@@ -18,7 +18,21 @@ export interface ThermalLabelOptions {
   lang: string
 }
 
-type ThermalProduct = { name: string; sku: string; price: number; barcode?: string; emoji?: string }
+/**
+ * ⚠️ AUCUN PICTOGRAMME — NI ÉMOJI, NI PHOTO. Décision du 2026-08-12, à ne pas
+ * « compléter » quand `Product.image` sera alimenté.
+ *
+ * L'étiquette fait 40×30 mm et sort d'une thermique **1 bit** : pas de niveaux de
+ * gris, une photo y devient un aplat tramé illisible. Surtout, elle n'a que deux
+ * lignes utiles et son travail est d'être SCANNÉE — chaque millimètre pris à la
+ * zone du code-barres ou au prix dégrade la seule chose qu'on lui demande.
+ *
+ * ⚠️ `emoji?: string` figurait ici sans être rendu NULLE PART (mesuré le
+ * 2026-08-12). Un champ déclaré et jamais lu fait croire à une capacité qui
+ * n'existe pas : retiré. Les appelants passent l'objet produit entier, la
+ * frappe structurelle l'accepte sans qu'on ait à le déclarer.
+ */
+type ThermalProduct = { name: string; sku: string; price: number; barcode?: string }
 
 // Rend un code-barres en PNG (data URL) via un canvas hors-écran. EAN-13/EAN-8
 // selon le code canonicalisé (UPC-A hérité → EAN-13). (b) : plus de CODE128-sur-SKU
