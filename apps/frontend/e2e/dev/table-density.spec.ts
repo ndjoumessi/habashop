@@ -226,9 +226,9 @@ test.describe('table dense — géométrie réelle', () => {
  */
 const BUDGET_COLONNES_FIXES = 880
 
-async function ouvrirStock(page: Page, w: number, h: number, extremes = false) {
+async function ouvrirStock(page: Page, w: number, h: number, extremes = false, n = 24) {
   await page.setViewportSize({ width: w, height: h })
-  await page.goto(`/__dev/table?vue=stock&n=24${extremes ? '&extremes=1' : ''}`)
+  await page.goto(`/__dev/table?vue=stock&n=${n}${extremes ? '&extremes=1' : ''}`)
   await verifierIdentite(page)
   await page.locator('.table-wrap.stock-table table tbody tr').first().waitFor({ timeout: 20_000 })
 }
@@ -303,6 +303,92 @@ test.describe('table du Stock (vue liste) — géométrie réelle', () => {
       // colonne Marge (73 px), donnant une cellule à trois lignes.
       const enroulees = await page.evaluate(detecterEnroulement, LIGNES_STOCK)
       expect(enroulees, `montants enroulés : ${JSON.stringify(enroulees.slice(0, 4))}`).toEqual([])
+    })
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     VUE GRILLE — les tuiles
+     ══════════════════════════════════════════════════════════════════════════
+     Deux défauts corrigés le 2026-08-12/13, tous deux trouvés sur une capture :
+       • les tuiles s'ÉTIRAIENT quand il en restait peu (`auto-fit` effondre les
+         colonnes vides) — deux cartes de 900 px portant un émoji de 38 px ;
+       • le NOM du produit ne disposait que de 43 px pour en réclamer 96 à 117,
+         donc six produits sur six tronqués au tiers.
+     Les deux sont invisibles en jsdom, et le second ne se voit QUE sur des noms de
+     longueur réaliste : c'est pourquoi le cas ci-dessous n'utilise pas le jeu extrême. */
+
+  const TUILES = '[role="listitem"]'
+  /**
+   * Une tuile est DESSINÉE autour de 200 px (`min` de la grille) ; les colonnes
+   * s'élargissent un peu pour remplir la rangée. 320 px est le seuil au-delà duquel
+   * elle n'est plus une tuile mais une bannière : sous `auto-fit`, deux articles dans
+   * un conteneur de 1 342 px en faisaient 666 chacune. Le budget discrimine donc
+   * largement — il ne mesure pas un pixel, il sépare deux régimes.
+   */
+  const BUDGET_TUILE = 320
+
+  async function ouvrirGrille(page: Page, w: number, h: number, n: number) {
+    await ouvrirStock(page, w, h, false, n)
+    await page.getByRole('button', { name: 'Vue grille' }).first().click()
+    await page.locator(TUILES).first().waitFor({ timeout: 20_000 })
+  }
+
+  test(`peu d'articles : les tuiles ne s'étirent pas (≤ ${BUDGET_TUILE} px)`, async ({ page }) => {
+    // ⚠️ DEUX articles — le défaut ne se voit QUE lorsqu'il en reste moins que de
+    // colonnes. Une grille pleine masque `auto-fit` : c'est ce qui l'avait laissé
+    // passer, et c'est la même leçon que le camembert calé sur 6 catégories.
+    await ouvrirGrille(page, 1440, 900, 2)
+
+    const tuiles = page.locator(TUILES)
+    expect(await tuiles.count(), 'la grille doit porter les 2 articles').toBe(2)
+
+    const l = await page.evaluate(sel => ({
+      largeurs: [...document.querySelectorAll(sel)].map(e => Math.round(e.getBoundingClientRect().width)),
+      conteneur: Math.round((document.querySelector(sel)!.parentElement as HTMLElement).getBoundingClientRect().width),
+    }), TUILES)
+
+    expect(Math.max(...l.largeurs), [
+      `Tuiles de ${l.largeurs.join(' et ')} px dans un conteneur de ${l.conteneur} px.`,
+      '',
+      'Au-delà du budget, les tuiles ABSORBENT la largeur laissée libre : c’est la',
+      'signature d’`auto-fit`, qui effondre les colonnes vides. `ResponsiveGrid` doit',
+      'recevoir `mode="fill"` sur une grille d’ARTICLES — jamais sur un formulaire, où',
+      'un champ DOIT remplir sa colonne.',
+    ].join('\n')).toBeLessThanOrEqual(BUDGET_TUILE)
+  })
+
+  for (const { nom, w, h } of [LARGEURS[0], LARGEURS[1]]) {
+    test(`${nom} : le nom du produit tient ENTIER dans la tuile`, async ({ page }) => {
+      // Noms de longueur RÉALISTE : c'est la seule échelle où la question a un sens.
+      // Sur un nom de 62 caractères le clamp à 2 lignes coupe — et c'est VOULU, il
+      // borne la hauteur pour que les tuiles de la grille restent alignées.
+      await ouvrirGrille(page, w, h, 24)
+      expect(await page.locator(TUILES).count(), 'la grille doit porter les 24 articles').toBe(24)
+
+      // ⚠️ ON MESURE LES DEUX AXES, et ce n'est pas de la prudence : la forme
+      // d'ORIGINE du défaut coupait à l'HORIZONTALE (`overflow:hidden` +
+      // `textOverflow:ellipsis` + `nowrap`), pas à la verticale. Un détecteur limité à
+      // la hauteur serait resté VERT sur le défaut exact qu'il prétend garder —
+      // vérifié en rejouant le sabotage. C'est l'angle mort « forme » : un verrou qui
+      // cherche ce que le défaut ne produit pas ne garde rien.
+      const noms = await page.evaluate(() =>
+        [...document.querySelectorAll('[data-testid="stock-tile-name"]')].map(e => ({
+          texte: (e.textContent ?? '').trim(),
+          hVisible: Math.round(e.clientHeight), hReel: Math.round(e.scrollHeight),
+          lVisible: Math.round(e.clientWidth), lReel: Math.round(e.scrollWidth),
+        })))
+      expect(noms.length, 'aucun nom lu — la poignée `stock-tile-name` a disparu').toBe(24)
+
+      const coupes = noms.filter(n => n.hReel > n.hVisible + 1 || n.lReel > n.lVisible + 1)
+      expect(coupes, [
+        `Noms coupés : ${JSON.stringify(coupes.slice(0, 3))}`,
+        '',
+        'Un nom de longueur ordinaire doit tenir entier dans la tuile. Le 2026-08-13 il',
+        'ne disposait que de 43 px — partagés avec la vignette, la case à cocher et le',
+        'badge de statut, ce dernier en `flexShrink:0` — pour en réclamer 96 à 117.',
+        'La correction lui a donné sa propre ligne : ne pas le remettre dans la rangée',
+        'des badges.',
+      ].join('\n')).toEqual([])
     })
   }
 

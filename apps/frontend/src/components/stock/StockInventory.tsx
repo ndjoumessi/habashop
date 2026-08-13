@@ -310,7 +310,11 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                     <span className={`badge ${st.cls}`} style={{ flexShrink:0 }}>{st.label}</span>
                   </div>
                   <div style={{ marginTop: -4 }}>
-                    <div style={{
+                    {/* ⚠️ `data-testid` — poignée du verrou de densité (`e2e/dev/table-density`).
+                        Le nom se repérait par sa propriété CSS `-webkit-line-clamp:2` : un
+                        verrou qui vise le RÉGLAGE qu'il mesure devient aveugle dès qu'on le
+                        change. La poignée est stable, le réglage reste libre. */}
+                    <div data-testid="stock-tile-name" style={{
                       fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:'var(--text)',
                       display:'-webkit-box', WebkitBoxOrient:'vertical', WebkitLineClamp:2,
                       overflow:'hidden', lineHeight:1.3,
