@@ -191,6 +191,50 @@ describe('⚠️ aucun rendu d’émoji produit HORS de ProductThumb', () => {
     expect(criees, 'ces formes ne sont pas des rendus — la règle ne doit pas les viser').toEqual([])
   })
 
+  it('⚠️ personne n’ÉTIRE la vignette — elle est CARRÉE par construction', () => {
+    /**
+     * OBSERVÉ À L'ÉCRAN le 2026-08-12, sur la grille POS filtrée à deux produits.
+     * `ProductThumb` pose `width` ET `height` à `size` ; écraser la SEULE largeur
+     * (`style={{ width: '100%' }}`) laisse la hauteur à 38 px pendant que la
+     * largeur suit la carte. `objectFit: cover` rogne alors une photo carrée en
+     * BANDEAU de quelques pixels — une tranche illisible.
+     *
+     * ⚠️ INVISIBLE TANT QU'AUCUN PRODUIT N'A DE PHOTO : un émoji est du TEXTE
+     * centré, il se moque de la largeur du conteneur. Le défaut a dormi depuis le
+     * câblage des 10 surfaces et c'est la première image réelle qui l'a montré.
+     * Aucun test de structure ne pouvait le voir — jsdom ne fait pas de mise en page.
+     * Ce verrou juge donc la FORME de l'appel, faute de pouvoir juger le rendu.
+     */
+    const fautifs: string[] = []
+    for (const f of fichiers(RACINE)) {
+      const src = readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+      // Un appel à ProductThumb dont le `style` porte une largeur : la vignette
+      // cesse d'être carrée, et l'image se fait rogner.
+      const re = /<ProductThumb[^>]*style=\{\{([^}]*)\}\}/g
+      let m: RegExpExecArray | null
+      while ((m = re.exec(src)) !== null) {
+        if (/\bwidth\s*:/.test(m[1]) || /\bheight\s*:/.test(m[1])) {
+          fautifs.push(`${f.slice(RACINE.length + 1)} :: ${m[0].replace(/\s+/g, ' ').slice(0, 80)}`)
+        }
+      }
+    }
+    expect(fautifs, 'ces appels déforment la vignette — la centrer, pas l’étirer').toEqual([])
+  })
+
+  it('⚠️ le détecteur de déformation voit bien la forme qui a été commise', () => {
+    // Sabotage COPIÉ de la ligne réelle d'avant correction, pas retapé de mémoire.
+    const avant = `<ProductThumb p={p} size={38} style={{ width: '100%' }} />`
+    const apres = `<ProductThumb p={p} size={38} style={{ margin: '0 auto' }} />`
+    const juge = (s: string) => {
+      const m = /<ProductThumb[^>]*style=\{\{([^}]*)\}\}/.exec(s)
+      return !!m && (/\bwidth\s*:/.test(m[1]) || /\bheight\s*:/.test(m[1]))
+    }
+    expect(juge(avant), 'la forme fautive doit être vue').toBe(true)
+    expect(juge(apres), 'la forme corrigée ne doit PAS être vue').toBe(false)
+    // Et un style légitime (fond, bordure) ne doit pas crier au loup.
+    expect(juge(`<ProductThumb p={p} size={64} style={{ background: 'var(--bg3)' }} />`)).toBe(false)
+  })
+
   it('la règle tient sur tout `src/`', () => {
     const tous = fichiers(RACINE)
     // ⚠️ COUVERTURE : un `fichiers()` cassé rendrait une liste vide, donc un vert

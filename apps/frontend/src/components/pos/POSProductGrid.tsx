@@ -212,8 +212,23 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
         }}>×{qty}</div>
       )}
 
-      {/* Zone visuelle produit (maquette : 38px, centrée) */}
-      <ProductThumb p={p} size={38} style={{ width: '100%' }} />
+      {/*
+        Zone visuelle produit (maquette : 38px, centrée).
+
+        ⚠️ NE PAS REMETTRE `width: '100%'` — OBSERVÉ À L'ÉCRAN le 2026-08-12. La
+        hauteur reste à 38 px pendant que la largeur suit la carte : sur un filtre
+        qui ne rend que deux produits, les cartes s'élargissent et une photo
+        CARRÉE se fait rogner par `objectFit: cover` en un BANDEAU de quelques
+        pixels — une tranche illisible au milieu de l'image.
+
+        Invisible tant qu'aucun produit n'avait de photo : un émoji est du TEXTE
+        centré, il se moque de la largeur du conteneur. C'est la première photo
+        réelle qui a révélé le défaut, pas la relecture.
+
+        La vignette est CARRÉE par construction (le composant pose `width` ET
+        `height` à `size`) — on la centre, on ne l'étire pas.
+      */}
+      <ProductThumb p={p} size={38} style={{ margin: '0 auto' }} />
 
       {/* Nom — gauche, 12px (maquette) */}
       <div style={{
