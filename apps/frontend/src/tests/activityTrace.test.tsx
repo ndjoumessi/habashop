@@ -54,6 +54,44 @@ describe('(a) le changement avant→après est RENDU', () => {
   })
 })
 
+describe('(c) les compteurs sont EXACTS, et nommés d’après ce qu’ils comptent', () => {
+  it('aucun KPI n’est plus dérivé des lignes chargées', () => {
+    // ⚠️ Ils portaient sur les ≤100 entrées reçues : « Alertes sécurité » ratait toute
+    // alerte plus ancienne que la 100ᵉ ligne. Un compteur d'alertes qui rate les
+    // alertes est PIRE que pas de compteur — on s'y fie.
+    for (const derive of ['activityLog.filter(l => l.severity', 'new Set(activityLog.map']) {
+      expect(ACTIVITY.includes(derive)).toBe(false)
+    }
+    expect(ACTIVITY).toContain('stats?.alertes')
+    expect(ACTIVITY).toContain('stats?.aujourdhui')
+    expect(ACTIVITY).toContain('stats?.modules')
+  })
+
+  it('⚠️ ZÉRO alerte n’est pas peint en ROUGE — l’œil croit la couleur avant le chiffre', () => {
+    const ligne = ACTIVITY.split('\n').find(l => l.includes('stats.alertes > 0')) ?? ''
+    expect(ligne, 'la couleur doit dépendre du compte').not.toBe('')
+    expect(ligne).toContain('var(--danger)')
+    expect(ligne).toContain('var(--text3)')
+  })
+
+  it('« Modules actifs » ne promet plus une activité que rien ne mesure', () => {
+    // Le chiffre compte les modules AYANT PRODUIT un événement — parfois il y a des
+    // mois. Le nom suit ce que le chiffre dit, dans les QUATRE langues.
+    const I18N = readFileSync(join(__dirname, '..', 'i18n', 'index.ts'), 'utf8')
+    for (const promesse of ['Modules actifs', 'Active modules', 'Módulos activos', 'Moduli attivi']) {
+      expect(I18N.includes(promesse)).toBe(false)
+    }
+    expect((I18N.match(/activity_modules:/g) ?? []).length).toBe(4)
+  })
+
+  it('le filtre de sévérité dit ce qu’il filtre', () => {
+    // « Toutes » ne disait pas toutes QUOI — trois filtres côte à côte, dont un sans
+    // objet nommé, y compris pour un lecteur d'écran.
+    expect(ACTIVITY).toContain("aria-label={i('Sévérité'")
+    expect(ACTIVITY).toContain('Toutes sévérités')
+  })
+})
+
 describe('(b) le total est celui du SERVEUR, et la troncature se dit', () => {
   it('l’écran ne dérive plus le total des lignes reçues', () => {
     // ⚠️ Règle de FORME : `activityLog.length` sous l'étiquette « total » est

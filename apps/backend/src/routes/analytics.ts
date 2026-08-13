@@ -280,8 +280,17 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
     // camembert calé sur six catégories : une démonstration sous le seuil ne démontre
     // rien, elle masque. Le client ne peut pas déduire le total de ce qu'on lui envoie ;
     // il faut donc le lui DIRE.
-    const [total, items] = await Promise.all([
+    // ⚠️ LES COMPTEURS SONT CALCULÉS EN BASE, PAS SUR LES LIGNES RENVOYÉES.
+    // L'écran les dérivait des ≤100 entrées chargées : « Alertes sécurité » ignorait
+    // donc toute alerte plus ancienne que la 100ᵉ ligne — un compteur d'alertes qui
+    // rate les alertes est pire que pas de compteur, on s'y fie. Même chose pour
+    // « Aujourd'hui » dès qu'une journée dépasse le plafond.
+    const debutJour = new Date(); debutJour.setHours(0, 0, 0, 0)
+    const [total, aujourdhui, alertes, modules, items] = await Promise.all([
       prisma.auditLog.count({ where: { tenantId } }),
+      prisma.auditLog.count({ where: { tenantId, createdAt: { gte: debutJour } } }),
+      prisma.auditLog.count({ where: { tenantId, severity: 'danger' } }),
+      prisma.auditLog.groupBy({ by: ['module'], where: { tenantId } }),
       prisma.auditLog.findMany({
         where: { tenantId },
         orderBy: { createdAt: 'desc' },
@@ -289,6 +298,13 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
         include: { user: { select: { name: true } } },
       }),
     ])
-    return { items, total, limite: PLAFOND_JOURNAL }
+    return {
+      items,
+      total,
+      limite: PLAFOND_JOURNAL,
+      // `modules` compte les modules AYANT PRODUIT un événement — pas des « modules
+      // actifs », ce que rien ici ne mesure. Le nom suit ce que le chiffre dit.
+      stats: { aujourdhui, alertes, modules: modules.length },
+    }
   })
 }

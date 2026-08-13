@@ -54,6 +54,13 @@ export interface ApiAuditLogPage {
   items: ApiAuditLog[]
   total: number
   limite: number
+  /**
+   * ⚠️ Compteurs calculés EN BASE. Dérivés des `items`, ils rataient tout ce qui vit
+   * au-delà du plafond : « alertes » ignorait une alerte plus ancienne que la 100ᵉ
+   * ligne. Un compteur d'alertes qui rate les alertes est pire que pas de compteur.
+   * `modules` = modules AYANT PRODUIT un événement, pas « modules actifs ».
+   */
+  stats: { aujourdhui: number; alertes: number; modules: number }
 }
 
 /**

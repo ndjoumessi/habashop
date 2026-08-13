@@ -205,6 +205,8 @@ export default function Activity() {
   const [totalServeur,   setTotalServeur]   = useState<number | null>(null)
   /** Le journal n'a pas pu être lu — DISTINCT de « aucun événement ». */
   const [echec,          setEchec]          = useState(false)
+  /** Compteurs calculés EN BASE — voir `ApiAuditLogPage`. `null` = pas encore connus. */
+  const [stats,          setStats]          = useState<{ aujourdhui: number; alertes: number; modules: number } | null>(null)
 
   useEffect(() => {
     auditApi.list()
@@ -213,6 +215,7 @@ export default function Activity() {
         // ⚠️ Le total vient du SERVEUR, jamais de `items.length` : la route plafonne.
         // `?? 0` serait un chiffre inventé — on garde `null`, et l'écran le DIT.
         setTotalServeur(typeof page?.total === 'number' ? page.total : null)
+        setStats(page?.stats ?? null)
       })
       // ⚠️ L'ERREUR NE S'AVALE PAS ICI NON PLUS. La route REMONTE volontairement son
       // échec (« un journal d'audit muet est pire qu'un journal indisponible, parce
@@ -236,9 +239,10 @@ export default function Activity() {
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1
   const paginated  = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
-  const todayCount    = activityLog.filter(l => l.date === TODAY_ISO).length
-  const dangerCount   = activityLog.filter(l => l.severity === 'danger').length
-  const activeModules = new Set(activityLog.map(l => l.module)).size
+  // ⚠️ PLUS AUCUN COMPTEUR DÉRIVÉ DES LIGNES CHARGÉES. Ils portaient sur les ≤100
+  // entrées reçues : « Alertes sécurité » ratait toute alerte plus ancienne que la
+  // 100ᵉ ligne, et « Aujourd'hui » se trompait dès qu'une journée dépassait le
+  // plafond. Ils viennent maintenant de la base. `null` tant qu'on ne sait pas.
   // ⚠️ Comparaison au total SERVEUR, jamais à une constante recopiée : le plafond vit
   // dans la route, et un 100 réécrit ici se périmerait au premier changement.
   const tronque       = totalServeur !== null && totalServeur > activityLog.length
@@ -318,9 +322,13 @@ export default function Activity() {
       <div className="kpi-grid">
         {[
           { label: t('activity_total'),    value: totalServeur ?? '…',  color:'var(--p2)'     },
-          { label: t('activity_today'),    value: todayCount,           color:'var(--acc2)'   },
-          { label: t('activity_security'), value: dangerCount,          color:'var(--danger)' },
-          { label: t('activity_modules'),  value: activeModules,        color:'var(--acc)'    },
+          { label: t('activity_today'),    value: stats?.aujourdhui ?? '…', color:'var(--acc2)' },
+          // ⚠️ ZÉRO ALERTE EST UNE BONNE NOUVELLE — la peindre en ROUGE la fait lire
+          // comme une alarme. La couleur ne s'allume que s'il y a quelque chose à
+          // signaler ; l'œil croit la couleur avant le chiffre.
+          { label: t('activity_security'), value: stats?.alertes ?? '…',
+            color: stats && stats.alertes > 0 ? 'var(--danger)' : 'var(--text3)' },
+          { label: t('activity_modules'),  value: stats?.modules ?? '…',    color:'var(--acc)'  },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-label">{k.label}</div>
@@ -345,9 +353,12 @@ export default function Activity() {
             <option value="">{t('activity_filter_module')}</option>
             {Object.keys(MODULE_CONFIG).map(m => <option key={m} value={m}>{moduleLabel(m, lang)}</option>)}
           </select>
+          {/* ⚠️ « Toutes » ne disait pas toutes QUOI — trois filtres côte à côte, dont
+              un sans objet nommé. Un lecteur d'écran l'annonçait de même. */}
           <select className="input" style={{ width:'auto', fontSize:'var(--fs-sm)' }}
+            aria-label={i('Sévérité', 'Severity', 'Severidad', 'Gravità')}
             value={severityFilter} onChange={e => { setSeverityFilter(e.target.value); resetPage() }}>
-            <option value="">{i('Toutes', 'All', 'Todas', 'Tutte')}</option>
+            <option value="">{i('Toutes sévérités', 'All severities', 'Todas las severidades', 'Tutte le gravità')}</option>
             <option value="success">{i('Succès', 'Success', 'Éxito', 'Successo')}</option>
             <option value="info">Info</option>
             <option value="warning">{i('Alerte', 'Warning', 'Alerta', 'Avviso')}</option>
@@ -400,13 +411,20 @@ export default function Activity() {
                 return (
                   <div key={log.id}
                     style={{
-                      display:'flex', alignItems:'flex-start', gap:14,
-                      padding:'14px 18px',
+                      // ⚠️ DENSITÉ — écran de COMPARAISON (on y cherche qui a fait quoi,
+                      // et quand), donc le vide y est de la place qu'on n'a pas donnée à
+                      // l'information. Passage de 14/18 à 9/14 px : ~10 px gagnés par
+                      // ligne, soit une entrée de plus par écran toutes les six.
+                      // ⚠️ Ce n'est PAS un écran de décision (cf. `select-shop`, où le
+                      // calme isole le choix) — la distinction a déjà été prise à
+                      // l'envers une fois.
+                      display:'flex', alignItems:'flex-start', gap:12,
+                      padding:'9px 14px',
                       background:'var(--card)',
                       border:'1px solid var(--border)',
                       borderLeft:`3px solid ${sev.color}`,
                       borderRadius:12,
-                      marginBottom:8,
+                      marginBottom:6,
                       transition:'transform .15s, box-shadow .15s',
                     }}
                     onMouseEnter={e => {

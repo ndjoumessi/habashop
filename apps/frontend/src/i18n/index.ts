@@ -380,7 +380,7 @@ const fr: TranslationMap = {
   activity_total: 'Total événements',
   activity_today: "Aujourd'hui",
   activity_security: 'Alertes sécurité',
-  activity_modules: 'Modules actifs',
+  activity_modules: 'Modules concernés',
   activity_timestamp: 'Horodatage',
   activity_module: 'Module',
   activity_action: 'Action',
@@ -842,7 +842,7 @@ const en: TranslationMap = {
   users_2fa_enabled: '2FA enabled', users_admins: 'Administrators',
 
   activity_total: 'Total events', activity_today: 'Today',
-  activity_security: 'Security alerts', activity_modules: 'Active modules',
+  activity_security: 'Security alerts', activity_modules: 'Modules involved',
   activity_timestamp: 'Timestamp', activity_module: 'Module',
   activity_action: 'Action', activity_user: 'User', activity_description: 'Description',
   activity_ip: 'IP', activity_severity: 'Severity',
@@ -1200,7 +1200,7 @@ const es: TranslationMap = {
   users_2fa_enabled: '2FA activado', users_admins: 'Administradores',
 
   activity_total: 'Total eventos', activity_today: 'Hoy',
-  activity_security: 'Alertas de seguridad', activity_modules: 'Módulos activos',
+  activity_security: 'Alertas de seguridad', activity_modules: 'Módulos afectados',
   activity_timestamp: 'Marca de tiempo', activity_module: 'Módulo',
   activity_action: 'Acción', activity_user: 'Usuario', activity_description: 'Descripción',
   activity_ip: 'IP', activity_severity: 'Gravedad',
@@ -1559,7 +1559,7 @@ const it: TranslationMap = {
   users_2fa_enabled: '2FA attivo', users_admins: 'Amministratori',
 
   activity_total: 'Totale eventi', activity_today: 'Oggi',
-  activity_security: 'Avvisi di sicurezza', activity_modules: 'Moduli attivi',
+  activity_security: 'Avvisi di sicurezza', activity_modules: 'Moduli coinvolti',
   activity_timestamp: 'Timestamp', activity_module: 'Modulo',
   activity_action: 'Azione', activity_user: 'Utente', activity_description: 'Descrizione',
   activity_ip: 'IP', activity_severity: 'Gravità',

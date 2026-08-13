@@ -9,7 +9,7 @@ import Fastify from 'fastify'
  */
 
 const { mockPrisma } = vi.hoisted(() => ({
-  mockPrisma: { auditLog: { findMany: vi.fn(), count: vi.fn() } },
+  mockPrisma: { auditLog: { findMany: vi.fn(), count: vi.fn(), groupBy: vi.fn() } },
 }))
 vi.mock('../db', () => ({ prisma: mockPrisma, basePrisma: mockPrisma }))
 vi.mock('../lib/cache', () => ({ getCached: vi.fn(async (_k: string, f: () => unknown) => f()), invalidateTenantCache: vi.fn() }))
@@ -36,6 +36,7 @@ describe('GET /api/audit-logs', () => {
   it('renvoie les entrées de la boutique en fonctionnement nominal', async () => {
     mockPrisma.auditLog.findMany.mockResolvedValue([{ id: 'a1', action: 'DELETE_PRODUCT' }])
     mockPrisma.auditLog.count.mockResolvedValue(1)
+    mockPrisma.auditLog.groupBy.mockResolvedValue([{ module: 'SETTINGS' }])
     const app = await build()
     const res = await app.inject({ method: 'GET', url: '/api/audit-logs' })
 
@@ -55,6 +56,7 @@ describe('GET /api/audit-logs', () => {
   it('le TOTAL vient du `count`, pas de la longueur des lignes', async () => {
     mockPrisma.auditLog.findMany.mockResolvedValue(Array.from({ length: 100 }, (_, k) => ({ id: `a${k}` })))
     mockPrisma.auditLog.count.mockResolvedValue(1342)
+    mockPrisma.auditLog.groupBy.mockResolvedValue([{ module: 'SETTINGS' }, { module: 'POS' }])
     const app = await build()
     const res = await app.inject({ method: 'GET', url: '/api/audit-logs' })
 
@@ -67,12 +69,41 @@ describe('GET /api/audit-logs', () => {
     expect(mockPrisma.auditLog.count).toHaveBeenCalledWith({ where: { tenantId: 'tenant-1' } })
   })
 
+  /**
+   * ⚠️ LES COMPTEURS SONT CALCULÉS EN BASE, pas sur les lignes renvoyées. L'écran les
+   * dérivait des ≤100 entrées reçues : « Alertes sécurité » ratait toute alerte plus
+   * ancienne que la 100ᵉ ligne. Un compteur d'alertes qui rate les alertes est PIRE
+   * que pas de compteur — on s'y fie.
+   * ⚠️ Le mock rend des comptes DIFFÉRENTS de la longueur des lignes : sinon le test
+   * passerait aussi bien sur une dérivation, et ne distinguerait rien.
+   */
+  it('les compteurs viennent de la BASE, et portent sur la bonne boutique', async () => {
+    mockPrisma.auditLog.findMany.mockResolvedValue([{ id: 'a1' }])
+    mockPrisma.auditLog.count
+      .mockResolvedValueOnce(1342)   // total
+      .mockResolvedValueOnce(7)      // aujourd'hui
+      .mockResolvedValueOnce(3)      // alertes
+    mockPrisma.auditLog.groupBy.mockResolvedValue([{ module: 'SETTINGS' }, { module: 'POS' }, { module: 'RH' }])
+    const app = await build()
+    const body = (await app.inject({ method: 'GET', url: '/api/audit-logs' })).json()
+
+    expect(body.items).toHaveLength(1)
+    expect(body.stats).toEqual({ aujourdhui: 7, alertes: 3, modules: 3 })
+    for (const appel of mockPrisma.auditLog.count.mock.calls) {
+      expect(appel[0].where.tenantId).toBe('tenant-1')
+    }
+    expect(mockPrisma.auditLog.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { tenantId: 'tenant-1' } }),
+    )
+  })
+
   // LE DÉFAUT CORRIGÉ : la route renvoyait [] sur erreur. Un journal d'audit qui
   // affiche « rien » AFFIRME qu'il ne s'est rien passé — le lecteur ne peut pas
   // distinguer « aucun événement » de « base injoignable ».
   it('REMONTE l’erreur au lieu de renvoyer une liste vide', async () => {
     mockPrisma.auditLog.findMany.mockRejectedValue(new Error('DB down'))
     mockPrisma.auditLog.count.mockResolvedValue(0)
+    mockPrisma.auditLog.groupBy.mockResolvedValue([])
     const app = await build()
     const res = await app.inject({ method: 'GET', url: '/api/audit-logs' })
 
