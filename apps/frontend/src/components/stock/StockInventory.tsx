@@ -380,7 +380,21 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                   </th>
                   <th scope="col">{t('col_product')}</th><th scope="col">{t('col_category')}</th>
                   <th scope="col" className="th-num">{t('col_buy_price')}</th><th scope="col" className="th-num">{t('col_sell_price')}</th><th scope="col" className="th-num">{i('Marge', 'Margin', 'Margen', 'Margine')}</th>
-                  <th scope="col">{t('col_stock')}</th><th scope="col" className="th-num">{t('col_threshold')}</th><th scope="col">{t('col_supplier')}</th>
+                  {/*
+                    ⚠️ PAS de colonne « Fournisseur » ICI — retirée le 2026-08-13, et c'est
+                    une décision MESURÉE, pas un allègement de goût. Sur les 37 produits des
+                    quatre boutiques de production, **UN SEUL** portait un `supplierId` ; la
+                    colonne affichait « — » partout ailleurs en occupant 118 px, soit le tiers
+                    des 80 px de débordement qui coupaient en deux le bouton Supprimer à
+                    1440 px — la plus large des largeurs testées.
+                    ⚠️ Elle RESTE dans l'export CSV et le PDF imprimé, délibérément : ces
+                    surfaces n'ont aucune contrainte de largeur, et un export de stock sans
+                    fournisseur perd ce qui sert à réapprovisionner. On retire une colonne
+                    d'ÉCRAN, on ne retire pas la donnée.
+                    Si le renseignement du fournisseur devient courant, la remettre impose de
+                    re-mesurer la largeur : à 10 colonnes la table tient, à 11 elle ne tenait pas.
+                  */}
+                  <th scope="col">{t('col_stock')}</th><th scope="col" className="th-num">{t('col_threshold')}</th>
                   <th scope="col">{t('col_status')}</th><th scope="col">{t('col_actions')}</th>
                 </tr>
               </thead>
@@ -426,7 +440,12 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(p.sell)}</td>
                       <td className="td-num" style={{ color: mgColor }}>
                         {mg.pct === null ? '—' : `${mg.pct}%`}
-                        {mg.pct !== null && <span style={{ display: 'block', fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(mg.profitXof)}</span>}
+                        {/* ⚠️ `nowrap` : sans lui « 2 000 FCFA » s'enroulait sur DEUX lignes
+                            dans une colonne de 73 px (mesuré en production le 2026-08-13),
+                            donnant une cellule à trois lignes et des rangées de hauteurs
+                            inégales. Le montant est une unité de lecture : il se coupe au
+                            milieu ou pas du tout. */}
+                        {mg.pct !== null && <span style={{ display: 'block', whiteSpace: 'nowrap', fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(mg.profitXof)}</span>}
                       </td>
                       <td>
                         <span style={{
@@ -439,15 +458,6 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                         }}>{p.stock}</span>
                       </td>
                       <td className="td-num" style={{ color: 'var(--text3)' }}>{p.threshold}</td>
-                      <td>
-                        {p.supplier ? (
-                          <span style={{
-                            display: 'inline-block', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                            padding: '3px 10px', borderRadius: 'var(--r-full)', fontSize: 'var(--fs-label)',
-                            background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)',
-                          }}>{p.supplier}</span>
-                        ) : <span style={{ color: 'var(--text4)' }}>—</span>}
-                      </td>
                       <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
                       <td>
                         <div className="flex gap-1.5">
