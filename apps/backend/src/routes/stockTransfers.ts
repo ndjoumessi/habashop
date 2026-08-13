@@ -5,6 +5,8 @@ import { invalidateTenantCache } from '../lib/cache'
 import { sendTransferConfirmed, sendTransferCancelled } from '../services/pushService'
 import { ID_PARAMS, TRANSFER_CREATE } from '../schemas/writesB'
 import { normalizeBarcode } from '../lib/barcode'
+import { writeAudit } from '../lib/writeAudit'
+import { descriptionAudit } from '../lib/auditDiff'
 
 const MANAGER_ROLES = ['MANAGER', 'ADMIN', 'SUPER_ADMIN']
 const isManagerPlus = (role: unknown) => typeof role === 'string' && MANAGER_ROLES.includes(role.toUpperCase())
@@ -71,6 +73,13 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
     if (!transfer) return reply.code(400).send({ error: 'Stock insuffisant', code: 'INSUFFICIENT_STOCK' })
 
     invalidateTenantCache(fromTenantId).catch(() => {})
+    // Le stock QUITTE cette boutique : c'est SON journal qui doit le porter.
+    await writeAudit('CREATE_STOCK_TRANSFER', prisma.auditLog.create({
+      data: {
+        tenantId: fromTenantId, userId, module: 'stock_transfers', action: 'CREATE_STOCK_TRANSFER',
+        description: descriptionAudit(product.name, { stockQty: { avant: product.stockQty, apres: product.stockQty - qty } }),
+      },
+    }))
     return reply.code(201).send(transfer)
   })
 
@@ -168,6 +177,21 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
     const destTenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } })
     void sendTransferConfirmed(transfer.fromTenantId, destTenant?.name ?? 'La boutique', src.name, transfer.quantity)
 
+    // ⚠️ AUDIT DANS LA BOUTIQUE QUI REÇOIT, ET SEULEMENT ELLE. L'extension Prisma
+    // REFUSE une écriture dont le `tenantId` diffère du contexte de la requête
+    // (`TenantScopeMismatchError`), et c'est une bonne chose : écrire dans le journal
+    // de la boutique source depuis une requête de la destination reviendrait à
+    // laisser un tenant écrire chez un autre.
+    // Conséquence ASSUMÉE : chaque boutique ne voit que SON mouvement de stock — la
+    // source a consigné le départ à la création, la destination consigne l'arrivée.
+    // Le transfert complet reste reconstituable par `StockTransfer`, qui porte les
+    // deux côtés ; le journal, lui, reste tenant-scopé.
+    await writeAudit('CONFIRM_STOCK_TRANSFER', prisma.auditLog.create({
+      data: {
+        tenantId, userId: request.user.userId, module: 'stock_transfers', action: 'CONFIRM_STOCK_TRANSFER',
+        description: descriptionAudit(src.name, { stockQty: { avant: null, apres: transfer.quantity } }),
+      },
+    }))
     return { id, status: 'completed' }
   })
 
@@ -203,6 +227,21 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
     void sendTransferCancelled(transfer.fromTenantId, byName, transfer.product.name)
     void sendTransferCancelled(transfer.toTenantId, byName, transfer.product.name)
 
+    // ⚠️ ÉCRIT DANS LA BOUTIQUE QUI ANNULE, qui peut être la SOURCE ou la DESTINATION
+    // — c'est le seul tenant où cette requête a le droit d'écrire. Quand c'est la
+    // destination qui annule, le stock revient à la source SANS que le journal de la
+    // source le porte : trou connu, borné par la même frontière tenant que ci-dessus.
+    // La description NOMME donc le rôle, sinon l'entrée serait ambiguë sur qui a fait
+    // quoi et sur quel stock a bougé.
+    await writeAudit('CANCEL_STOCK_TRANSFER', prisma.auditLog.create({
+      data: {
+        tenantId, userId: request.user.userId, module: 'stock_transfers', action: 'CANCEL_STOCK_TRANSFER',
+        description: descriptionAudit(transfer.product.name, {
+          role: { avant: null, apres: transfer.fromTenantId === tenantId ? 'source' : 'destination' },
+          quantity: { avant: transfer.quantity, apres: null },
+        }),
+      },
+    }))
     return { id, status: 'cancelled' }
   })
 }

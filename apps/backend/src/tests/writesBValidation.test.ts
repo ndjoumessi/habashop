@@ -5,7 +5,11 @@ import { validatorCompiler, hasZodFastifySchemaValidationErrors } from 'fastify-
 // Item 6, lot 4B : expenses (mass-assignment) + validation create employees/goals/subscriptions.
 const { db } = vi.hoisted(() => ({
   db: {
-    expense:  { create: vi.fn(), update: vi.fn() },
+    expense:  { create: vi.fn(), update: vi.fn(), findFirst: vi.fn(), delete: vi.fn() },
+    // ⚠️ Les routes de ce fichier écrivent désormais un audit (`writeAudit`) : sans ce
+    // mock, `prisma.auditLog.create` est `undefined` et lève AVANT que le fail-open ne
+    // puisse s'appliquer — l'argument de `writeAudit` est évalué à l'appel.
+    auditLog: { create: vi.fn() },
     employee: { create: vi.fn() },
     goal:     { create: vi.fn() },
     subscription: { create: vi.fn() },

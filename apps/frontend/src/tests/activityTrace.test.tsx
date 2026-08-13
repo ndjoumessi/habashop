@@ -46,6 +46,21 @@ describe('(a) le changement avant→après est RENDU', () => {
     expect(parseDescription('{cassé', 'X')).toBe('')                  // JSON invalide
   })
 
+  it('⚠️ le SUJET accompagne le changement — sinon on ne sait pas ce qui a changé', () => {
+    // `AuditLog` ne porte aucune colonne cible : « sellPrice 1000 → 1200 » ne désigne
+    // AUCUN produit. Les deux formes coexistaient sans se rencontrer — la forme
+    // « changements » gagnait et JETAIT le nom qui l'accompagnait.
+    const rendu = parseDescription(
+      JSON.stringify({ name: 'Riz local 5kg', sellPrice: { avant: 1000, apres: 1200 } }), 'UPDATE_PRODUCT')
+    expect(rendu).toBe('Riz local 5kg — sellPrice 1000 → 1200')
+
+    // Un changement SANS sujet reste rendu tel quel (c'est le cas de la locale tenant),
+    // et un sujet SANS changement garde la forme d'origine.
+    expect(parseDescription(JSON.stringify({ currency: { avant: 'XOF', apres: 'XAF' } }), 'X'))
+      .toBe('currency XOF → XAF')
+    expect(parseDescription(JSON.stringify({ name: 'Riz' }), 'X')).toBe('Riz')
+  })
+
   it('⚠️ un JSON quelconque n’est PAS déversé à l’écran', () => {
     // Déverser l'objet entier ferait entrer tout ce qu'un futur appelant y mettrait,
     // données personnelles comprises — l'inverse de la règle qui limite cet audit à des

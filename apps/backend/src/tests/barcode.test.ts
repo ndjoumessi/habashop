@@ -42,6 +42,10 @@ describe('barcode — helpers EAN-13', () => {
 const { db } = vi.hoisted(() => ({
   db: {
     product: { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn(), create: vi.fn(), update: vi.fn() },
+    // ⚠️ Les routes de ce fichier écrivent désormais un audit (`writeAudit`) : sans ce
+    // mock, `prisma.auditLog.create` est `undefined` et lève AVANT que le fail-open ne
+    // puisse s'appliquer — l'argument de `writeAudit` est évalué à l'appel.
+    auditLog: { create: vi.fn() },
   },
 }))
 vi.mock('../db', () => ({ prisma: db }))
@@ -109,6 +113,18 @@ describe('POST /api/products — validation barcode', () => {
   })
 })
 
+/**
+ * ⚠️ « AUCUN CONTRÔLE BARCODE » NE SE MESURE PLUS PAR « `findFirst` JAMAIS APPELÉ ».
+ * Depuis le 2026-08-14, `PUT /api/products/:id` relit le produit pour construire le
+ * diff d'audit — un `findFirst` légitime, qui n'a rien à voir avec l'unicité du
+ * code-barres. Le test nommait « contrôle barcode » et mesurait « une lecture
+ * quelconque » : le proxy a cessé d'être vrai avant la propriété qu'il désignait.
+ * On juge donc la REQUÊTE, discriminante par construction — le contrôle d'unicité
+ * cherche `where.barcode`, la relecture d'audit cherche `where.id` avec un `select`.
+ */
+const lecturesBarcode = () =>
+  db.product.findFirst.mock.calls.filter(c => 'barcode' in ((c[0] as { where?: Record<string, unknown> } | undefined)?.where ?? {}))
+
 describe('PUT /api/products/:id — validation barcode', () => {
   it('EAN-13 valide, unique (hors soi-même) → update, exclut son propre id', async () => {
     const app = await buildApp()
@@ -122,7 +138,7 @@ describe('PUT /api/products/:id — validation barcode', () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'PUT', url: '/api/products/p1', payload: { name: 'Renommé' } })
     expect(res.statusCode).toBe(200)
-    expect(db.product.findFirst).not.toHaveBeenCalled()
+    expect(lecturesBarcode()).toEqual([])
   })
 
   it('clé fausse → 400, pas d’update', async () => {
@@ -146,6 +162,6 @@ describe('PUT /api/products/:id — validation barcode', () => {
     const res = await app.inject({ method: 'PUT', url: '/api/products/p1', payload: { barcode: '' } })
     expect(res.statusCode).toBe(200)
     expect(db.product.update.mock.calls[0][0].data.barcode).toBe('')
-    expect(db.product.findFirst).not.toHaveBeenCalled()
+    expect(lecturesBarcode()).toEqual([])
   })
 })

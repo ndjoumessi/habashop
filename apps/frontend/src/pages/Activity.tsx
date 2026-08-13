@@ -4,7 +4,7 @@ import { useAppStore, t } from '@/stores/appStore'
 import {
   Search, Download, X,
   ShoppingCart, Package, PackageCheck, PackageX, Lock, UserCog, ClipboardList,
-  Users, UserPlus, UserMinus, UserX, Settings, Wallet, Heart, Target,
+  Users, UserPlus, UserMinus, UserX, Settings, Wallet, Heart, Target, Receipt, ArrowLeftRight,
   CheckCircle, Info, AlertTriangle, AlertOctagon,
   Shield, ToggleLeft, LogIn, LogOut, Truck, Trash2, Activity as ActivityIcon,
 } from 'lucide-react'
@@ -34,12 +34,18 @@ const MODULE_NORMALIZE: Record<string, string> = {
   orders: 'COMMANDES', customers: 'CLIENTS', products: 'STOCK', suppliers: 'COMMANDES',
   billing: 'PARAMÈTRES', employees: 'RH', auth: 'AUTH', tenant: 'PARAMÈTRES', sales: 'VENTES',
   payroll: 'PAIE', goals: 'OBJECTIFS', account_deletion: 'COMPTE', settings: 'PARAMÈTRES',
-  expenses: 'PARAMÈTRES',
+  // ⚠️ « Dépenses » n'est PAS « Paramètres » : c'est de l'argent qui sort. Ranger un
+  // montant supprimé sous la même étiquette qu'un changement de langue rendrait le
+  // filtre inutilisable là où il compte le plus.
+  expenses: 'DEPENSES',
+  // Le transfert bouge du STOCK, et c'est ce que le lecteur cherche.
+  stock_transfers: 'STOCK',
   // Codes backend en majuscules (audit logs créés directement avec ces noms)
   USERS: 'UTILISATEURS', PRODUCTS: 'STOCK', CUSTOMERS: 'CLIENTS', SUPPLIERS: 'COMMANDES',
   SALES: 'VENTES', EMPLOYEES: 'RH', TENANT: 'PARAMÈTRES', AUTH: 'AUTH',
   SETTINGS: 'PARAMÈTRES', PAYROLL: 'PAIE', GOALS: 'OBJECTIFS', BILLING: 'PARAMÈTRES',
-  ACCOUNT_DELETION: 'COMPTE', ORDERS: 'COMMANDES', EXPENSES: 'PARAMÈTRES',
+  ACCOUNT_DELETION: 'COMPTE', ORDERS: 'COMMANDES', EXPENSES: 'DEPENSES',
+  STOCK_TRANSFERS: 'STOCK',
 }
 
 /**
@@ -82,6 +88,12 @@ const ACTION_LABELS: Record<string, [string, string, string, string]> = {
   // par personne : le repli SNAKE_CASE→Title Case rendait donc « Password Change »,
   // en anglais, dans les quatre langues.
   PASSWORD_CHANGE:    ['Mot de passe modifié',   'Password changed',      'Contraseña cambiada',      'Password cambiata'],
+  CREATE_EXPENSE:     ['Dépense créée',          'Expense created',       'Gasto creado',             'Spesa creata'],
+  UPDATE_EXPENSE:     ['Dépense modifiée',       'Expense updated',       'Gasto actualizado',        'Spesa aggiornata'],
+  DELETE_EXPENSE:     ['Dépense supprimée',      'Expense deleted',       'Gasto eliminado',          'Spesa eliminata'],
+  CREATE_STOCK_TRANSFER:  ['Transfert de stock émis',   'Stock transfer sent',      'Traspaso de stock enviado',    'Trasferimento stock inviato'],
+  CONFIRM_STOCK_TRANSFER: ['Transfert de stock reçu',   'Stock transfer received',  'Traspaso de stock recibido',   'Trasferimento stock ricevuto'],
+  CANCEL_STOCK_TRANSFER:  ['Transfert de stock annulé', 'Stock transfer cancelled', 'Traspaso de stock cancelado',  'Trasferimento stock annullato'],
   RESTORE_PRODUCT:    ['Produit restauré',       'Product restored',      'Producto restaurado',      'Prodotto ripristinato'],
   RESTORE_SUPPLIER:   ['Fournisseur restauré',   'Supplier restored',     'Proveedor restaurado',     'Fornitore ripristinato'],
   REFUND_SALE:        ['Remboursement vente',    'Refund sale',           'Reembolso de venta',       'Rimborso vendita'],
@@ -108,6 +120,12 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   UPDATE_TENANT:      Settings,
   CHANGE_PASSWORD:    Lock,
   PASSWORD_CHANGE:    Lock,
+  CREATE_EXPENSE:     Receipt,
+  UPDATE_EXPENSE:     Receipt,
+  DELETE_EXPENSE:     Trash2,
+  CREATE_STOCK_TRANSFER:  ArrowLeftRight,
+  CONFIRM_STOCK_TRANSFER: PackageCheck,
+  CANCEL_STOCK_TRANSFER:  PackageX,
   RESTORE_PRODUCT:    Package,
   RESTORE_SUPPLIER:   Truck,
   REFUND_SALE:        ShoppingCart,
@@ -156,8 +174,18 @@ export function parseDescription(raw: unknown, action: string): string {
         const lisible = (x: unknown) => (x === null || x === undefined || x === '' ? '—' : String(x))
         return `${champ} ${lisible(avant)} → ${lisible(apres)}`
       })
-    if (changements.length) return changements.join(' · ')
-    // Forme 2 — une entité nommée : { name | email | ref | id }
+    // ⚠️ UN CHANGEMENT SANS SON SUJET NE DIT RIEN. « sellPrice 1000 → 1200 » ne
+    // désigne AUCUN produit : `AuditLog` ne porte pas de colonne cible, et en ajouter
+    // une imposerait une migration DDL sur la base de PRODUCTION pour un besoin que
+    // la description couvre. Les deux formes coexistaient sans se rencontrer — la
+    // forme 1 gagnait et JETAIT le nom qui l'accompagnait.
+    const sujet = typeof obj.name === 'string' ? obj.name
+                : typeof obj.ref === 'string' ? obj.ref : ''
+    if (changements.length) {
+      const detail = changements.join(' · ')
+      return sujet ? `${sujet} — ${detail}` : detail
+    }
+    // Forme 2 — une entité nommée seule : { name | email | ref | id }
     const v = obj.name || obj.email || obj.ref || obj.id || ''
     return typeof v === 'string' ? v : ''
   } catch {
@@ -186,6 +214,7 @@ const MODULE_CONFIG: Record<string, { color: string; bg: string; label: string; 
   CLIENTS:      { color:'#F472B6', bg:'rgba(244,114,182,.15)', label:'Clients',      Icon: Heart        },
   OBJECTIFS:    { color:'#FBBF24', bg:'rgba(251,191,36,.15)',   label:'Objectifs',    Icon: Target       },
   COMPTE:       { color:'#FB7185', bg:'rgba(251,113,133,.15)', label:'Compte',       Icon: UserX        },
+  DEPENSES:     { color:'#F87171', bg:'rgba(248,113,113,.15)', label:'Dépenses',     Icon: Receipt      },
 }
 
 /** Catégories d'écran connues — exporté pour que le verrou puisse confronter cette

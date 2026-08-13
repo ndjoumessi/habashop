@@ -3,7 +3,24 @@ import type { FastifyInstance } from 'fastify'
 import type { ProductBody } from '../types'
 import { prisma } from '../db'
 import { writeAudit } from '../lib/writeAudit'
+import { diffAudite, descriptionAudit } from '../lib/auditDiff'
 import { getTenantId } from '../lib/tenantId'
+
+/**
+ * CE QU'UN CHANGEMENT DE PRODUIT CONSIGNE — liste blanche, pas le corps.
+ *
+ * ⚠️ SONT DEHORS, ET C'EST DÉLIBÉRÉ : `description` et `notes` (texte libre saisi par
+ * le commerçant, donc susceptible de porter un nom de personne — l'audit s'en tient
+ * à des codes et des nombres) ; `emoji` et `image` (cosmétique, du bruit dans un
+ * journal plafonné à 100 lignes) ; `priceTiers` (un tableau d'objets, que le rendu
+ * `avant → après` ne sait pas montrer — les paliers restent couverts par
+ * `previousPricing`, qui est fait pour ça).
+ */
+const CHAMPS_AUDITES_PRODUIT = [
+  'name', 'category', 'buyPrice', 'sellPrice', 'wholesalePrice', 'semiWholesalePrice',
+  'stockQty', 'stockMin', 'taxRate', 'isActive', 'barcode', 'supplierId',
+  'hasPromotion', 'promotionPrice', 'promotionEnd', 'unit',
+] as const
 import { authenticate } from '../middleware/authenticate'
 import { invalidateTenantCache } from '../lib/cache'
 import { validatePriceTiers, toPricingSet, samePricing, PRICING_FIELDS } from '../utils/pricing'
@@ -208,6 +225,15 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
         }
       })
       invalidateTenantCache(tenantId).catch(() => {})
+      // ⚠️ APRÈS le `create`, jamais avant : un audit écrit d'avance affirmerait une
+      // création qui peut encore échouer. `writeAudit` est fail-open TRACÉ — une panne
+      // du journal ne doit pas faire échouer la création du produit.
+      await writeAudit('CREATE_PRODUCT', prisma.auditLog.create({
+        data: {
+          tenantId, userId: request.user.userId, module: 'products', action: 'CREATE_PRODUCT',
+          description: descriptionAudit(product.name, null),
+        },
+      }))
       return product
     } catch (err) {
       console.error('Create product error:', err)
@@ -249,10 +275,20 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     // Un PUT qui ne touche aucun champ de prix ne relit RIEN (cas majoritaire : stock, code-barres,
     // renommage) → pas de requête supplémentaire sur le chemin courant.
     const touchesPricing = PRICING_FIELDS.some(f => f in (data as Record<string, unknown>))
-    const before = touchesPricing
+    // ⚠️ LA MÊME LECTURE SERT AUX DEUX. L'instantané tarifaire et le diff d'audit ont
+    // besoin de l'état AVANT ; deux `findFirst` séparés feraient deux requêtes pour la
+    // même ligne, et surtout deux occasions de diverger sur ce qu'« avant » veut dire.
+    // Le `select` est donc l'UNION des deux besoins, et la garde l'union des deux
+    // déclencheurs : un `PUT` qui ne soumet aucun champ suivi ne relit toujours RIEN.
+    const touchesAudit = CHAMPS_AUDITES_PRODUIT.some(f => f in (data as Record<string, unknown>))
+    const before = touchesPricing || touchesAudit
       ? await prisma.product.findFirst({
           where: { id, tenantId },
-          select: { sellPrice: true, semiWholesalePrice: true, wholesalePrice: true, hasPromotion: true, promotionPrice: true, priceTiers: true },
+          select: {
+            sellPrice: true, semiWholesalePrice: true, wholesalePrice: true, hasPromotion: true, promotionPrice: true, priceTiers: true,
+            name: true, category: true, buyPrice: true, stockQty: true, stockMin: true,
+            taxRate: true, isActive: true, barcode: true, supplierId: true, promotionEnd: true, unit: true,
+          },
         })
       : null
     const prevSet = toPricingSet(before as Record<string, unknown> | null)
@@ -272,6 +308,20 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     }
     const updated = await prisma.product.update({ where: { id, tenantId }, data: data as any })
     invalidateTenantCache(tenantId).catch(() => {})
+    // ⚠️ ON COMPARE L'ÉTAT AVANT À L'ÉTAT APRÈS, PAS AU CORPS DE LA REQUÊTE. Les deux
+    // côtés sortent alors de Prisma, du même modèle : plus de « taxRate 18 → "18" »
+    // né d'une chaîne envoyée par le formulaire, et surtout on consigne ce qui a
+    // RÉELLEMENT été écrit — un champ soumis mais strippé par la liste blanche zod
+    // ne doit pas apparaître comme un changement (c'est le cas de `sku`).
+    const diff = before ? diffAudite(before as Record<string, unknown>, updated as unknown as Record<string, unknown>, CHAMPS_AUDITES_PRODUIT) : null
+    if (diff) {
+      await writeAudit('UPDATE_PRODUCT', prisma.auditLog.create({
+        data: {
+          tenantId, userId: request.user.userId, module: 'products', action: 'UPDATE_PRODUCT',
+          description: descriptionAudit(updated.name, diff),
+        },
+      }))
+    }
     return updated
   })
 

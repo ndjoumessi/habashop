@@ -6,7 +6,11 @@ import { validatorCompiler, hasZodFastifySchemaValidationErrors } from 'fastify-
 // mass-assignment (strip des clés hors liste blanche) + validation create.
 const { db } = vi.hoisted(() => ({
   db: {
-    product:  { update: vi.fn(), count: vi.fn().mockResolvedValue(0), create: vi.fn() },
+    product:  { update: vi.fn(), count: vi.fn().mockResolvedValue(0), create: vi.fn(), findFirst: vi.fn() },
+    // ⚠️ Les routes de ce fichier écrivent désormais un audit (`writeAudit`) : sans ce
+    // mock, `prisma.auditLog.create` est `undefined` et lève AVANT que le fail-open ne
+    // puisse s'appliquer — l'argument de `writeAudit` est évalué à l'appel.
+    auditLog: { create: vi.fn() },
     supplier: { create: vi.fn() },
     purchaseOrder: { create: vi.fn() },
   },

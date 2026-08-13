@@ -8,6 +8,10 @@ const { db, authMock } = vi.hoisted(() => ({
     userTenant: { findUnique: vi.fn() },
     product: { findFirst: vi.fn(), updateMany: vi.fn(), update: vi.fn(), create: vi.fn() },
     stockTransfer: { create: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
+    // ⚠️ Les routes de ce fichier écrivent désormais un audit (`writeAudit`) : sans ce
+    // mock, `prisma.auditLog.create` est `undefined` et lève AVANT que le fail-open ne
+    // puisse s'appliquer — l'argument de `writeAudit` est évalué à l'appel.
+    auditLog: { create: vi.fn() },
     tenant: { findUnique: vi.fn() },
     $transaction: vi.fn(),
   },
