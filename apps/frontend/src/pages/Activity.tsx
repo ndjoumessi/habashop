@@ -84,19 +84,44 @@ function actionLabel(action: string, lang: string): string {
 
 // Extrait une info utile (nom, email, id) du JSON stocké dans la description backend.
 // Évite d'afficher le code action en double (ex: "DELETE_USER" comme description).
-function parseDescription(raw: unknown, action: string): string {
+/**
+ * ⚠️ LE CHANGEMENT AVANT→APRÈS ÉTAIT STOCKÉ ET JETÉ. `PATCH /api/tenant` écrit
+ * `{ currency: { avant, apres }, vatRate: { avant, apres }, … }` — précisément pour
+ * qu'on puisse répondre à « qui a posé ce XAF sur un tenant sénégalais ». Cette
+ * fonction n'extrayait que `name | email | ref | id` : aucune de ces clés n'existe
+ * dans ce payload, elle rendait donc la chaîne VIDE. Résultat à l'écran : cinq
+ * « Tenant Locale Change » rigoureusement indistinguables.
+ * *Une trace qu'on ne peut pas consulter n'est pas une trace, c'est un stockage.*
+ *
+ * ⚠️ ON N'AFFICHE PAS N'IMPORTE QUEL JSON pour autant. Le rendu reste limité à deux
+ * formes CONNUES — les clés utiles, et le couple avant/après. Déverser l'objet entier
+ * ferait entrer dans l'écran tout ce qu'un futur appelant y mettrait, données
+ * personnelles comprises : c'est l'inverse de la règle qui a fait limiter cet audit à
+ * des codes et des nombres.
+ */
+export function parseDescription(raw: unknown, action: string): string {
   const s = typeof raw === 'string' ? raw : ''
   if (!s || s === action) return ''
-  if (s.startsWith('{')) {
-    try {
-      const obj = JSON.parse(s)
-      const v = obj.name || obj.email || obj.ref || obj.id || ''
-      return typeof v === 'string' ? v : ''
-    } catch {
-      return ''
-    }
+  if (!s.startsWith('{')) return s
+  try {
+    const obj = JSON.parse(s) as Record<string, unknown>
+    // Forme 1 — un changement de champs : { champ: { avant, apres }, … }
+    const changements = Object.entries(obj)
+      .filter(([, v]) => !!v && typeof v === 'object' && 'apres' in (v as object))
+      .map(([champ, v]) => {
+        const { avant, apres } = v as { avant?: unknown; apres?: unknown }
+        // ⚠️ « — » pour une valeur absente, jamais une chaîne vide : « devise  → XAF »
+        // se lirait comme un bogue d'affichage, quand c'est un champ qui n'existait pas.
+        const lisible = (x: unknown) => (x === null || x === undefined || x === '' ? '—' : String(x))
+        return `${champ} ${lisible(avant)} → ${lisible(apres)}`
+      })
+    if (changements.length) return changements.join(' · ')
+    // Forme 2 — une entité nommée : { name | email | ref | id }
+    const v = obj.name || obj.email || obj.ref || obj.id || ''
+    return typeof v === 'string' ? v : ''
+  } catch {
+    return ''
   }
-  return s
 }
 
 type Severity = 'success' | 'info' | 'warning' | 'danger'
@@ -176,11 +201,25 @@ export default function Activity() {
   const [dateFilter,     setDateFilter]     = useState('all')
   const [currentPage,    setCurrentPage]    = useState(1)
   const [loading,        setLoading]        = useState(true)
+  /** Compte RÉEL en base, envoyé par la route. `null` tant qu'on ne le sait pas. */
+  const [totalServeur,   setTotalServeur]   = useState<number | null>(null)
+  /** Le journal n'a pas pu être lu — DISTINCT de « aucun événement ». */
+  const [echec,          setEchec]          = useState(false)
 
   useEffect(() => {
     auditApi.list()
-      .then((data) => setActivityLog((data ?? []).map(mapAuditLog)))
-      .catch(() => {})
+      .then((page) => {
+        setActivityLog((page?.items ?? []).map(mapAuditLog))
+        // ⚠️ Le total vient du SERVEUR, jamais de `items.length` : la route plafonne.
+        // `?? 0` serait un chiffre inventé — on garde `null`, et l'écran le DIT.
+        setTotalServeur(typeof page?.total === 'number' ? page.total : null)
+      })
+      // ⚠️ L'ERREUR NE S'AVALE PAS ICI NON PLUS. La route REMONTE volontairement son
+      // échec (« un journal d'audit muet est pire qu'un journal indisponible, parce
+      // qu'on le croit ») — et l'écran le transformait en liste vide, donc en « il ne
+      // s'est rien passé ». Le garde serveur faisait son travail, l'affichage le
+      // défaisait.
+      .catch(() => setEchec(true))
       .finally(() => setLoading(false))
   }, [])
 
@@ -200,6 +239,9 @@ export default function Activity() {
   const todayCount    = activityLog.filter(l => l.date === TODAY_ISO).length
   const dangerCount   = activityLog.filter(l => l.severity === 'danger').length
   const activeModules = new Set(activityLog.map(l => l.module)).size
+  // ⚠️ Comparaison au total SERVEUR, jamais à une constante recopiée : le plafond vit
+  // dans la route, et un 100 réécrit ici se périmerait au premier changement.
+  const tronque       = totalServeur !== null && totalServeur > activityLog.length
   const hasFilters    = !!(search || moduleFilter || severityFilter || dateFilter !== 'all')
 
   const resetPage = () => setCurrentPage(1)
@@ -207,6 +249,30 @@ export default function Activity() {
   if (loading) return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
       <Skeleton height={56} count={5} />
+    </div>
+  )
+
+  /**
+   * ⚠️ ÉCHEC N'EST PAS VIDE. Un journal vide AFFIRME qu'il ne s'est rien passé — c'est
+   * précisément ce qu'on ne peut pas laisser dire quand la lecture a échoué. Le message
+   * nomme l'état et ne présente AUCUN chiffre : ni total, ni « 0 aujourd'hui », puisque
+   * aucun n'est connu.
+   */
+  if (echec) return (
+    <div className="panel" style={{ padding: 24, textAlign: 'center' }} role="status">
+      <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
+        {lang === 'en' ? 'Audit log unavailable' : lang === 'es' ? 'Registro no disponible'
+          : lang === 'it' ? 'Registro non disponibile' : "Journal d'audit indisponible"}
+      </div>
+      <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginTop: 6 }}>
+        {lang === 'en' ? 'This does NOT mean "no activity" - the log could not be read.'
+          : lang === 'es' ? 'NO significa "sin actividad" - no se pudo leer el registro.'
+          : lang === 'it' ? 'NON significa "nessuna attività" - il registro non è leggibile.'
+          : "Cela ne veut PAS dire « aucune activité » : le journal n'a pas pu être lu."}
+      </div>
+      <button className="btn btn-ghost btn-sm" style={{ marginTop: 14 }} onClick={() => window.location.reload()}>
+        {lang === 'en' ? 'Retry' : lang === 'es' ? 'Reintentar' : lang === 'it' ? 'Riprova' : 'Réessayer'}
+      </button>
     </div>
   )
 
@@ -220,7 +286,21 @@ export default function Activity() {
             {lang === 'fr' ? "Journal d'activité" : lang === 'en' ? 'Activity Log' : lang === 'es' ? 'Registro de actividad' : 'Registro attività'}
           </h1>
           <p className="page-subtitle">
-            {lang === 'fr' ? 'Traçabilité complète de toutes les actions' : lang === 'en' ? 'Complete audit trail' : lang === 'es' ? 'Trazabilidad completa' : 'Tracciabilità completa'}
+            {/* ⚠️ « Traçabilité COMPLÈTE de toutes les actions » a été retiré : c'était
+                FAUX de deux façons — la route plafonne à 100 lignes, et toutes les
+                actions n'écrivent pas d'audit (`PATCH /api/tenant` n'en écrivait aucun
+                jusqu'au 2026-08-08). Une promesse d'exhaustivité sur un journal d'audit
+                est pire qu'un silence : on cesse de chercher ailleurs. Même famille que
+                les « 150+ pays » retirés de la page de connexion. */}
+            {tronque
+              ? (lang === 'en' ? `${activityLog.length} most recent of ${totalServeur}`
+                : lang === 'es' ? `${activityLog.length} más recientes de ${totalServeur}`
+                : lang === 'it' ? `${activityLog.length} più recenti su ${totalServeur}`
+                : `${activityLog.length} plus récents sur ${totalServeur}`)
+              : (lang === 'en' ? 'Actions recorded by the audit trail'
+                : lang === 'es' ? 'Acciones registradas por la auditoría'
+                : lang === 'it' ? 'Azioni registrate dall’audit'
+                : "Actions enregistrées par le journal d'audit")}
           </p>
         </div>
         <button className="topbar-btn" onClick={() => {
@@ -237,7 +317,7 @@ export default function Activity() {
       {/* ── KPIs ── */}
       <div className="kpi-grid">
         {[
-          { label: t('activity_total'),    value: activityLog.length, color:'var(--p2)'     },
+          { label: t('activity_total'),    value: totalServeur ?? '…',  color:'var(--p2)'     },
           { label: t('activity_today'),    value: todayCount,           color:'var(--acc2)'   },
           { label: t('activity_security'), value: dangerCount,          color:'var(--danger)' },
           { label: t('activity_modules'),  value: activeModules,        color:'var(--acc)'    },

@@ -4,12 +4,12 @@ import type { ApiOrder, OrderWrite } from '@/components/orders/ordersShared'
 import type { ApiCustomer, ApiCustomerSearchHit, ApiCustomerSale, CustomerWrite } from '@/components/customers/customersShared'
 import type { ApiProduct, ProductWrite } from '@/components/stock/stockShared'
 import type {
-  ApiSecurityEvent, ApiAuditLog, ApiBillingStatus, ApiPendingPlanRequest, PlanRequestWrite,
+  ApiSecurityEvent, ApiBillingStatus, ApiPendingPlanRequest, PlanRequestWrite,
   ApiSale, ApiSaleWithItems, ApiReportSales, SaleWrite, ApiExpense, ExpenseWrite, ApiGoal, GoalWrite,
   ApiSubscription, ApiSubscriptionWithItems, SubscriptionWrite, ApiAiAnalysis, ApiAiChat,
   ApiAdminTenant, ApiAdminStats, ApiPlanRequest, AdminCreateTenantWrite, ApiAdminSecurityEvent,
   ApiPublicCatalog, ApiMe, ApiSessionUser, ApiTenant,
-  ApiTenantUser, ApiTicketZ, ApiLoyalty, ApiInvoiceOcr, WhatsAppBroadcastWrite,
+  ApiTenantUser, ApiTicketZ, ApiLoyalty, ApiInvoiceOcr, WhatsAppBroadcastWrite, ApiAuditLogPage,
 } from '@/lib/apiTypes'
 import type { ApiDashboardStats } from '@/components/dashboard/dashboardShared'
 import type {
@@ -667,7 +667,7 @@ export const attendanceApi = {
 }
 
 export const auditApi = {
-  list: () => api.get<ApiAuditLog[]>('/api/audit-logs'),
+  list: () => api.get<ApiAuditLogPage>('/api/audit-logs'),
 }
 
 export const sentryStatusApi = {

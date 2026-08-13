@@ -9,7 +9,7 @@ import Fastify from 'fastify'
  */
 
 const { mockPrisma } = vi.hoisted(() => ({
-  mockPrisma: { auditLog: { findMany: vi.fn() } },
+  mockPrisma: { auditLog: { findMany: vi.fn(), count: vi.fn() } },
 }))
 vi.mock('../db', () => ({ prisma: mockPrisma, basePrisma: mockPrisma }))
 vi.mock('../lib/cache', () => ({ getCached: vi.fn(async (_k: string, f: () => unknown) => f()), invalidateTenantCache: vi.fn() }))
@@ -35,14 +35,36 @@ beforeEach(() => vi.clearAllMocks())
 describe('GET /api/audit-logs', () => {
   it('renvoie les entrées de la boutique en fonctionnement nominal', async () => {
     mockPrisma.auditLog.findMany.mockResolvedValue([{ id: 'a1', action: 'DELETE_PRODUCT' }])
+    mockPrisma.auditLog.count.mockResolvedValue(1)
     const app = await build()
     const res = await app.inject({ method: 'GET', url: '/api/audit-logs' })
 
     expect(res.statusCode).toBe(200)
-    expect(res.json()).toHaveLength(1)
+    expect(res.json().items).toHaveLength(1)
     expect(mockPrisma.auditLog.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { tenantId: 'tenant-1' } }),
     )
+  })
+
+  /**
+   * ⚠️ LE COMPTE EST CELUI DE LA BASE, PAS CELUI DES LIGNES RENVOYÉES — c'est toute la
+   * raison d'être de l'enveloppe. L'écran affichait `items.length` sous l'étiquette
+   * « Total événements » : au-delà du plafond il aurait dit « 100 » pour toujours, et
+   * le tenant de démonstration (dix événements) ne l'aurait jamais montré.
+   */
+  it('le TOTAL vient du `count`, pas de la longueur des lignes', async () => {
+    mockPrisma.auditLog.findMany.mockResolvedValue(Array.from({ length: 100 }, (_, k) => ({ id: `a${k}` })))
+    mockPrisma.auditLog.count.mockResolvedValue(1342)
+    const app = await build()
+    const res = await app.inject({ method: 'GET', url: '/api/audit-logs' })
+
+    const body = res.json()
+    expect(body.items).toHaveLength(100)
+    expect(body.total).toBe(1342)          // ≠ 100 : la troncature est DISABLE côté écran
+    expect(body.limite).toBe(100)
+    // Le compte porte sur la MÊME boutique que les lignes — sinon on annoncerait le
+    // total d'un autre tenant, ce qu'aucune assertion de forme ne rattraperait.
+    expect(mockPrisma.auditLog.count).toHaveBeenCalledWith({ where: { tenantId: 'tenant-1' } })
   })
 
   // LE DÉFAUT CORRIGÉ : la route renvoyait [] sur erreur. Un journal d'audit qui
@@ -50,6 +72,7 @@ describe('GET /api/audit-logs', () => {
   // distinguer « aucun événement » de « base injoignable ».
   it('REMONTE l’erreur au lieu de renvoyer une liste vide', async () => {
     mockPrisma.auditLog.findMany.mockRejectedValue(new Error('DB down'))
+    mockPrisma.auditLog.count.mockResolvedValue(0)
     const app = await build()
     const res = await app.inject({ method: 'GET', url: '/api/audit-logs' })
 

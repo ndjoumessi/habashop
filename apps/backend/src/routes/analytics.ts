@@ -264,16 +264,31 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
     })
   })
 
+  /** Plafond de lignes du journal — la troncature est ANNONCÉE, jamais silencieuse. */
+  const PLAFOND_JOURNAL = 100
+
   app.get('/api/audit-logs', { preHandler: authenticate }, async (request) => {
     const tenantId = getTenantId(request)
     // ⚠️ L'erreur REMONTE volontairement (500 via le handler global). Renvoyer []
     // sur échec faisait AFFIRMER au journal qu'il ne s'était rien passé — un
     // journal d'audit muet est pire qu'un journal indisponible, parce qu'on le croit.
-    return prisma.auditLog.findMany({
-      where: { tenantId },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-      include: { user: { select: { name: true } } },
-    })
+    // ⚠️ LE COMPTE RÉEL VOYAGE AVEC LES LIGNES. Avant, la route rendait un tableau nu
+    // plafonné à 100 et l'écran affichait `longueur` sous l'étiquette « TOTAL
+    // ÉVÉNEMENTS », sous un sous-titre annonçant une traçabilité « complète ». Au 101ᵉ
+    // événement, le KPI aurait dit « 100 » POUR TOUJOURS — et personne ne l'aurait vu,
+    // parce que le tenant de démonstration en compte dix. C'est la répétition exacte du
+    // camembert calé sur six catégories : une démonstration sous le seuil ne démontre
+    // rien, elle masque. Le client ne peut pas déduire le total de ce qu'on lui envoie ;
+    // il faut donc le lui DIRE.
+    const [total, items] = await Promise.all([
+      prisma.auditLog.count({ where: { tenantId } }),
+      prisma.auditLog.findMany({
+        where: { tenantId },
+        orderBy: { createdAt: 'desc' },
+        take: PLAFOND_JOURNAL,
+        include: { user: { select: { name: true } } },
+      }),
+    ])
+    return { items, total, limite: PLAFOND_JOURNAL }
   })
 }

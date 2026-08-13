@@ -44,6 +44,19 @@ export interface ApiAdminSecurityEvent extends ApiSecurityEvent {
 }
 
 /**
+ * `GET /api/audit-logs` — enveloppe : les lignes, le compte RÉEL, et le plafond.
+ * ⚠️ `items.length` N'EST PAS le total : la route plafonne à `limite`. Afficher la
+ * longueur sous une étiquette « total » ferait dire « 100 » pour toujours au-delà du
+ * plafond — et le tenant de démonstration, avec ses dix événements, ne le montrerait
+ * jamais. Le total ne se déduit pas des lignes reçues ; il est envoyé exprès.
+ */
+export interface ApiAuditLogPage {
+  items: ApiAuditLog[]
+  total: number
+  limite: number
+}
+
+/**
  * `GET /api/audit-logs` — modèle `AuditLog` complet + `include` du NOM de l'utilisateur seul.
  * ⚠️ `user` peut être présent avec un seul champ : l'`include` est `{ user: { select: { name } } }`.
  */
