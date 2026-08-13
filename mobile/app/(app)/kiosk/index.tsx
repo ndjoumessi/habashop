@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
 import * as Haptics from 'expo-haptics'
 import { productsApi, apiErrorMessage } from '@/services/api'
-import { completerRangee, estCaseVide } from '@/lib/grille'
+import { completerRangee, estCaseVide, colonnesPourLargeur } from '@/lib/grille'
 import type { SalePayload } from '@/types'
 import { submitSaleResilient, type SaleSubmitResult } from '@/services/saleSubmit'
 import { newIdempotencyKey } from '@/lib/idempotency'
@@ -45,6 +45,14 @@ export default function KioskScreen() {
   const [showConfirm, setShowConfirm]   = useState(false)
   const [showCustomerPicker, setShowCustomerPicker] = useState(false)
   const [tapCount, setTapCount]         = useState(0)
+  /**
+   * ⚠️ Largeur MESURÉE de la colonne produits — pas celle de l'écran. La grille
+   * partage la largeur avec le panier ; en déduire les colonnes depuis
+   * `useWindowDimensions` donnerait 4 tuiles de 60 dp sur un téléphone, et un nom
+   * de produit coupé en plein mot (« Café s / olubl… », mesuré le 2026-08-13).
+   */
+  const [largeurGrille, setLargeurGrille] = useState(0)
+  const colonnes = colonnesPourLargeur(largeurGrille)
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const {
@@ -164,7 +172,7 @@ export default function KioskScreen() {
 
       <View style={s.layout}>
         {/* ── Colonne gauche : produits ── */}
-        <View style={s.productsCol}>
+        <View style={s.productsCol} onLayout={e => setLargeurGrille(e.nativeEvent.layout.width)}>
           <View style={s.searchBar}>
             <Text style={{ fontSize: 16 }}>🔍</Text>
             <TextInput
@@ -193,6 +201,10 @@ export default function KioskScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* ⚠️ La largeur est MESURÉE, pas déduite de l'écran : cette grille partage
+              la largeur avec la colonne panier, donc `useWindowDimensions` y donnerait
+              un nombre de colonnes trop grand — c'est exactement ce qui coupait les
+              noms en plein mot. */}
           {productsLoading ? (
             <View style={s.gridState}>
               <ActivityIndicator color={Colors.primary} size="large" />
@@ -202,12 +214,15 @@ export default function KioskScreen() {
           ) : (
           <FlatList
             removeClippedSubviews={false}
-            // ⚠️ Cases vides : même défaut que la caisse — `flex: 1` étire les
-            // tuiles d'une rangée incomplète sur toute la largeur. Le kiosque est
-            // en 4 colonnes, donc jusqu'à TROIS tuiles étirées.
-            data={completerRangee(filtered, 4)}
+            // ⚠️ Cases vides : sans elles, `flex: 1` étire les tuiles d'une rangée
+            // incomplète sur toute la largeur (mesuré le 2026-08-13).
+            data={completerRangee(filtered, colonnes)}
             keyExtractor={p => p.id}
-            numColumns={4}
+            // ⚠️ `key` change AVEC les colonnes : React Native REFUSE de changer
+            // `numColumns` à chaud (« Changing numColumns on the fly is not
+            // supported »). Sans cette clé, la rotation ferait planter l'écran.
+            key={`grille-${colonnes}`}
+            numColumns={colonnes}
             contentContainerStyle={s.grid}
             columnWrapperStyle={{ gap: Spacing.sm }}
             ItemSeparatorComponent={() => <View style={{ height: Spacing.sm }} />}

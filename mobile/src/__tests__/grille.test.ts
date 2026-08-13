@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
-import { completerRangee, estCaseVide } from '../lib/grille'
+import { completerRangee, estCaseVide, colonnesPourLargeur } from '../lib/grille'
 
 /**
  * VERROU — la dernière rangée d'une grille ne s'étire pas.
@@ -54,6 +54,37 @@ describe('completerRangee — la dernière rangée est complétée, jamais étir
   })
 })
 
+describe('colonnesPourLargeur — la contrainte, pas le libellé', () => {
+  it('dérive le nombre de colonnes de la largeur DISPONIBLE', () => {
+    // Le kiosque figeait 4 colonnes. Sa grille partage la largeur avec le panier :
+    // sur un téléphone elle vit dans ~250 dp, soit 60 dp par tuile — aucun libellé
+    // ne tient là-dedans, et « Café soluble 200g » sortait « Café s / olubl… ».
+    expect(colonnesPourLargeur(250)).toBe(2)   // téléphone, grille amputée du panier
+    expect(colonnesPourLargeur(538)).toBe(4)   // tablette
+    expect(colonnesPourLargeur(900)).toBe(6)   // grande tablette : plafonné
+  })
+
+  it('⚠️ ne rend JAMAIS 0 ni NaN — une `FlatList` y lève ou se vide en silence', () => {
+    // Avant la première mesure d'`onLayout`, la largeur vaut 0. Le pire des deux cas
+    // serait `NaN` : la liste se viderait sans erreur, donc sans signal.
+    for (const mauvais of [0, -10, NaN, Infinity]) {
+      expect(colonnesPourLargeur(mauvais)).toBe(2)
+    }
+  })
+
+  it('reste dans des bornes lisibles quelle que soit la largeur', () => {
+    for (const l of [1, 50, 131, 132, 5000]) {
+      const c = colonnesPourLargeur(l)
+      expect(c).toBeGreaterThanOrEqual(2)
+      expect(c).toBeLessThanOrEqual(6)
+    }
+    // La tuile obtenue n'est jamais plus étroite que le minimum demandé.
+    for (const l of [264, 400, 792]) {
+      expect(l / colonnesPourLargeur(l)).toBeGreaterThanOrEqual(132)
+    }
+  })
+})
+
 /* ══════════════════════════════════════════════════════════════════════════════
    LE CÂBLAGE — car la règle pure ne dit rien de qui l'appelle
    ══════════════════════════════════════════════════════════════════════════════ */
@@ -73,11 +104,14 @@ function fichiers(dir: string): string[] {
 describe('câblage — CHAQUE grille multi-colonnes complète sa dernière rangée', () => {
   const grilles = RACINES.flatMap(fichiers)
     .map(f => ({ f, src: readFileSync(f, 'utf8') }))
-    .filter(x => /numColumns=\{\d+\}/.test(x.src))
+    .filter(x => /numColumns=\{[^}]+\}/.test(x.src))   // ⚠️ toute EXPRESSION, pas un chiffre
 
   it('COUVERTURE — les grilles sont bien trouvées, dans `src/` ET `app/`', () => {
     // ⚠️ Sans ce compte, la suppression des deux grilles rendrait le verrou vert.
-    // Mesuré le 2026-08-13 : la caisse (3 colonnes) et le kiosque (4).
+    // Et il a servi le jour même : le détecteur cherchait `numColumns={<chiffre>}`,
+    // or le kiosque est passé à `numColumns={colonnes}` — la règle est devenue
+    // AVEUGLE au fichier qu'elle garde, et seule cette assertion l'a dit. Angle mort
+    // de FORME, dans le verrou, causé par la correction qu'il accompagnait.
     expect(grilles.length).toBeGreaterThanOrEqual(2)
     expect(grilles.some(g => g.f.includes('/app/'))).toBe(true)
   })
@@ -89,6 +123,31 @@ describe('câblage — CHAQUE grille multi-colonnes complète sa dernière rang�
     // Une grille dont `data` n'est pas complétée étire sa dernière rangée dès que
     // l'effectif n'est pas multiple du nombre de colonnes.
     expect(nues).toEqual([])
+  })
+
+  /**
+   * ⚠️ CE QUI PRÉCÈDE NE GARDE PAS LE *CHOIX* DU NOMBRE DE COLONNES — vérifié : un
+   * sabotage qui refige `numColumns={4}` dans le kiosque laisse tout au VERT. La
+   * règle générale ne peut pas trancher, car un nombre figé est LÉGITIME sur une
+   * grille pleine largeur (la caisse, 3 colonnes, mesurée à l'écran).
+   *
+   * La distinction n'est pas détectable statiquement : elle tient à ce que la grille
+   * partage ou non sa largeur avec autre chose. On NOMME donc les grilles à largeur
+   * PARTAGÉE, avec leur raison — liste écrite à la main, et dite comme telle.
+   */
+  const LARGEUR_PARTAGEE: Record<string, string> = {
+    'app/(app)/kiosk/index.tsx': 'partage la largeur avec la colonne panier (~30 %)',
+  }
+
+  it('une grille à largeur PARTAGÉE dérive ses colonnes, jamais un nombre figé', () => {
+    for (const [chemin, raison] of Object.entries(LARGEUR_PARTAGEE)) {
+      const g = grilles.find(x => x.f.endsWith(chemin))
+      // ⚠️ Le fichier doit exister : renommé ou déplacé, la règle deviendrait muette.
+      // (jest n'accepte qu'un argument dans `expect` — le message passe par l'erreur.)
+      if (!g) throw new Error(`${chemin} introuvable — la règle ne garde plus rien (${raison})`)
+      expect(/numColumns=\{\s*\d+\s*\}/.test(g.src)).toBe(false)
+      expect(/colonnesPourLargeur\(/.test(g.src)).toBe(true)
+    }
   })
 
   it('et chacune REND la case vide au lieu de la traiter comme un produit', () => {

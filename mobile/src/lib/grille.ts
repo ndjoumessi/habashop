@@ -46,3 +46,31 @@ export function completerRangee<T extends object>(items: T[], colonnes: number):
     ...Array.from({ length: manquantes }, (_, k) => ({ id: `__case_vide_${k}__`, vide: true as const })),
   ]
 }
+
+/**
+ * COMBIEN DE COLONNES POUR CETTE LARGEUR — dérivé, jamais figé.
+ *
+ * ─── LE DÉFAUT ───────────────────────────────────────────────────────────────
+ * Le kiosque figeait `numColumns={4}`. Mais sa grille ne prend pas tout l'écran :
+ * elle partage la largeur avec la colonne panier (30 %). Sur un téléphone en
+ * portrait, ces 4 colonnes vivent donc dans ~250 dp — 60 dp par tuile. OBSERVÉ le
+ * 2026-08-13 sur émulateur : « Café soluble 200g » rendu « Café s / olubl… »,
+ * coupé EN PLEIN MOT, et il n'y a pas de libellé assez court pour tenir dans 60 dp.
+ *
+ * ⚠️ C'est la règle du guide, appliquée telle quelle : *corriger la CONTRAINTE, pas
+ * la chaîne*. Raccourcir les noms de produits aurait déplacé le problème sur le
+ * commerçant, qui les saisit lui-même.
+ *
+ * ⚠️ LA LARGEUR DOIT ÊTRE CELLE DE LA GRILLE, PAS CELLE DE L'ÉCRAN. `useResponsive`
+ * dérive ses colonnes de `useWindowDimensions`, ce qui est juste pour une grille
+ * pleine largeur (la caisse) et FAUX ici — d'où une mesure par `onLayout` du
+ * conteneur réel. Un helper qui accepte une largeur quelconque reste utilisable par
+ * les deux.
+ */
+export function colonnesPourLargeur(largeur: number, miniTuile = 132, max = 6): number {
+  // ⚠️ Avant la première mesure, `onLayout` n'a pas encore répondu : on rend 2, pas
+  // 0 ni NaN. `numColumns={0}` fait lever la `FlatList`, et un `NaN` la vide en
+  // silence — le pire des deux étant le second.
+  if (!Number.isFinite(largeur) || largeur <= 0) return 2
+  return Math.max(2, Math.min(max, Math.floor(largeur / miniTuile)))
+}
