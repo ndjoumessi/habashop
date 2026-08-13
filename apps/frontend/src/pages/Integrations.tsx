@@ -333,6 +333,22 @@ export default function Integrations() {
   const [pingLatency, setPingLatency] = useState<Record<string, number>>({})
   const [payDunyaOpen, setPayDunyaOpen] = useState(false)
   const [txStats, setTxStats] = useState<{ mtn: ProviderStat; campay: ProviderStat; paydunya: ProviderStat } | null>(null)
+  /**
+   * ⚠️ SOMME DÉFENSIVE — `txStats` peut être TRUTHY sans porter les clés attendues,
+   * et `txStats.mtn.count` faisait alors planter l'écran ENTIER : page BLANCHE, pas
+   * dégradation. Trouvé par le balayage des écrans complets du 2026-08-13, sur une
+   * réponse de forme inattendue.
+   * La forme est aujourd'hui garantie par `computePaymentStats` côté serveur — mais
+   * une justesse qui dépend d'un invariant DISTANT et que rien n'enregistre disparaît
+   * au premier changement de contrat, sans qu'aucune suite ne rougisse.
+   * ⚠️ On rend « — », JAMAIS 0 ni une somme PARTIELLE : un total amputé d'un
+   * prestataire est un chiffre faux, et un chiffre faux se retient.
+   */
+  const txCount: number | null = (() => {
+    if (!txStats) return null
+    const n = [txStats.mtn, txStats.campay].map(p => p?.count)
+    return n.every(c => typeof c === 'number') ? (n as number[]).reduce((a, b) => a + b, 0) : null
+  })()
   const [paydunyaCfg, setPaydunyaCfg] = useState<{ configured: boolean; mode: 'test' | 'live'; methods: string[] } | null>(null)
   const [states, setStates] = useState<Record<MerchantIntegrationId, IntegrationState> | null>(null)
 
@@ -840,7 +856,7 @@ export default function Integrations() {
           { label:lang === 'en' ? 'Integrations' : lang === 'es' ? 'Integraciones' : lang === 'it' ? 'Integrazioni' : 'Intégrations', value:displayList.length, color:'var(--text)'  },
           { label:lang === 'en' ? 'Configured' : lang === 'es' ? 'Configuradas' : lang === 'it' ? 'Configurate' : 'Configurées', value: states === null ? '…' : totalConfigured, color:'var(--acc)'   },
           { label:lang === 'en' ? 'Reachable' : lang === 'es' ? 'Accesibles' : lang === 'it' ? 'Raggiungibili' : 'Joignables',   value:allChecked ? `${okCount}/${pingableList.length}` : '…', color:'var(--acc2)' },
-          { label:lang === 'en' ? 'Transactions today' : lang === 'es' ? 'Transacciones hoy' : lang === 'it' ? 'Transazioni oggi' : 'Transactions du jour', value: txStats ? (txStats.mtn.count + txStats.campay.count) : '—', color:'var(--p)' },
+          { label:lang === 'en' ? 'Transactions today' : lang === 'es' ? 'Transacciones hoy' : lang === 'it' ? 'Transazioni oggi' : 'Transactions du jour', value: txCount ?? '—', color:'var(--p)' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-label">{k.label}</div>

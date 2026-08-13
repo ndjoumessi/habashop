@@ -52,11 +52,11 @@ describe('filtre de chemin du workflow Densité', () => {
    * `page.goto('/app/…')` et on remonte à la page qui sert cette route dans `App.tsx`.
    * Une liste écrite à la main ici serait fausse au premier écran ajouté — et muette.
    */
-  const specs = ['e2e/dev/ecrans-density.spec.ts', 'e2e/dev/table-density.spec.ts']
+  const specs = ['e2e/dev/ecrans-density.spec.ts', 'e2e/dev/ecrans-tous.spec.ts', 'e2e/dev/table-density.spec.ts']
     .map(f => join(FRONT, f)).filter(existsSync)
 
   it('les specs de mesure existent et sont LUS', () => {
-    expect(specs.length, 'aucun spec de densité trouvé — le verrou ne garde rien').toBe(2)
+    expect(specs.length, 'aucun spec de densité trouvé — le verrou ne garde rien').toBe(3)
   })
 
   it('CHAQUE écran ouvert par les specs est servi par une page COUVERTE par le filtre', () => {
@@ -69,9 +69,17 @@ describe('filtre de chemin du workflow Densité', () => {
 
     const ouverts = new Set<string>()
     for (const f of specs) {
-      for (const m of readFileSync(f, 'utf8').matchAll(/ouvrirEcran\(page,\s*'\/app\/(\w+)'/g)) ouverts.add(m[1])
+      const src = readFileSync(f, 'utf8')
+      // Chemins LITTÉRAUX (`'/app/stock'`)…
+      for (const m of src.matchAll(/ouvrirEcran\(page,\s*'\/app\/(\w+)'/g)) ouverts.add(m[1])
+      // …ET la liste `ECRANS`, ouverte par GABARIT (`/app/${slug}`). ⚠️ Sans ce second
+      // motif, le verrou ne voyait QUE 2 écrans sur 22 et se déclarait vert : il
+      // affirmait couvrir « chaque écran ouvert par les specs » en n'en lisant que
+      // ceux écrits en toutes lettres. Angle mort de FORME, dans le verrou lui-même.
+      const bloc = /const ECRANS[^=]*=\s*\[([\s\S]*?)\n\]/.exec(src)?.[1] ?? ''
+      for (const m of bloc.matchAll(/slug:\s*'([\w-]+)'/g)) ouverts.add(m[1])
     }
-    expect(ouverts.size, 'aucun écran ouvert trouvé dans les specs').toBeGreaterThanOrEqual(2)
+    expect(ouverts.size, 'moins de 20 écrans lus — le scan ne garde presque rien').toBeGreaterThanOrEqual(20)
 
     const nus: string[] = []
     for (const slug of ouverts) {

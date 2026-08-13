@@ -101,6 +101,95 @@ export function seedEcran(page: Page) {
       if (url.includes('/api/tenant')) {
         return json({ id: 'boutique-a', name: 'Boutique A', currency: 'XOF', lang: 'fr', country: 'CM', vatRate: 19.25, requireCashier: false })
       }
+      // ── Jeux de données par DOMAINE ────────────────────────────────────
+      // ⚠️ Sans eux, chaque écran rendrait son état VIDE : il serait « complet » et
+      // ne mesurerait RIEN. C'est le faux vert le plus facile à obtenir ici, et
+      // l'assertion de couverture par écran est ce qui l'empêche.
+      if (url.includes('/api/customers')) {
+        return json(Array.from({ length: 12 }, (_, k) => ({
+          id: `c-${k + 1}`, name: `Cliente témoin ${k + 1}`, phone: `+2376${String(10000000 + k)}`,
+          email: null, address: 'Quartier témoin', points: k * 37, totalSpent: k * 12500,
+          visits: k + 1, createdAt: new Date(2026, 6, 1 + k).toISOString(), lastVisit: new Date(2026, 7, 1).toISOString(),
+        })))
+      }
+      if (url.includes('/api/suppliers')) {
+        return json(Array.from({ length: 8 }, (_, k) => ({
+          id: `f-${k + 1}`, name: `Fournisseur témoin ${k + 1}`, contact: 'Contact',
+          phone: `+2376${String(20000000 + k)}`, email: null, address: 'Zone témoin',
+          categories: 'Épicerie,Céréales', leadTime: 3 + k, rating: null, isActive: true,
+        })))
+      }
+      if (url.includes('/api/orders')) {
+        return json(Array.from({ length: 9 }, (_, k) => ({
+          id: `o-${k + 1}`, reference: `CMD-${1000 + k}`, supplierId: 'f-1',
+          supplier: { id: 'f-1', name: 'Fournisseur témoin 1', categories: 'Épicerie', leadTime: 3 },
+          status: ['pending', 'confirmed', 'received'][k % 3], total: (k + 1) * 45000,
+          items: [{ productId: 'p-1', productName: 'Produit témoin 001 800g', quantity: 4, unitPrice: 1200 }],
+          createdAt: new Date(2026, 7, 1 + k).toISOString(), expectedAt: null,
+        })))
+      }
+      if (url.includes('/api/employees')) {
+        return json(Array.from({ length: 7 }, (_, k) => ({
+          id: `e-${k + 1}`, name: `Employé témoin ${k + 1}`, role: 'Vendeur', type: 'CDI',
+          salary: 90000 + k * 5000, phone: `+2376${String(30000000 + k)}`, email: null,
+          hiredAt: new Date(2025, k, 1).toISOString(), isActive: true, perf: null,
+          startAt: new Date(2025, k, 1).toISOString(), endAt: null, photo: null,
+        })))
+      }
+      if (url.includes('/api/expenses')) {
+        return json(Array.from({ length: 10 }, (_, k) => ({
+          id: `d-${k + 1}`, label: `Dépense témoin ${k + 1}`, category: 'Loyer',
+          amount: (k + 1) * 15000, date: new Date(2026, 7, 1 + k).toISOString(),
+          supplier: null, notes: null, recurring: false,
+        })))
+      }
+      if (url.includes('/api/goals')) {
+        return json(Array.from({ length: 4 }, (_, k) => ({
+          id: `g-${k + 1}`, label: `Objectif témoin ${k + 1}`, target: 500000 * (k + 1),
+          current: 200000 * (k + 1), period: 'month', kind: 'revenue',
+          createdAt: new Date(2026, 7, 1).toISOString(),
+        })))
+      }
+      if (url.includes('/api/sales')) {
+        return json(Array.from({ length: 15 }, (_, k) => ({
+          id: `v-${k + 1}`, total: (k + 1) * 3200, payMode: ['cash', 'wave', 'card', 'orange', 'mtn'][k % 5],
+          items: [{ productId: 'p-1', productName: 'Produit témoin 001 800g', quantity: 2, unitPrice: 1200 }],
+          createdAt: new Date(2026, 7, 10, 8 + (k % 10)).toISOString(), status: 'completed',
+          customerId: null, discount: 0, priceDivergence: false,
+        })))
+      }
+      if (url.includes('/api/dashboard/stats')) {
+        return json({
+          todaySales: 148000, todayCount: 12, monthSales: 3200000, monthCount: 260,
+          lowStock: 3, totalProducts: n, totalCustomers: 12,
+          salesByDay: Array.from({ length: 7 }, (_, k) => ({ day: `J-${6 - k}`, total: 100000 + k * 12000 })),
+          topProducts: [{ name: 'Produit témoin 001 800g', qty: 42, total: 50400 }],
+        })
+      }
+      if (url.includes('/api/tenant/users')) {
+        return json(Array.from({ length: 5 }, (_, k) => ({
+          id: `u-${k + 1}`, name: `Utilisateur témoin ${k + 1}`, email: `u${k + 1}@habashop.test`,
+          role: ['ADMIN', 'MANAGER', 'CASHIER', 'ACCOUNTANT', 'HR'][k], isActive: true,
+          twoFA: false, lastLoginAt: null,
+        })))
+      }
+      if (url.includes('/api/audit-logs')) {
+        return json(Array.from({ length: 10 }, (_, k) => ({
+          id: `a-${k + 1}`, action: 'PRODUCT_UPDATE', entity: 'Product', entityId: 'p-1',
+          userId: 'u-1', userName: 'Témoin', createdAt: new Date(2026, 7, 10, 9 + k).toISOString(),
+          details: null,
+        })))
+      }
+      if (url.includes('/api/billing/status')) {
+        return json({ plan: 'business', status: 'active', trialEnds: null, quota: { ai: 0, ocr: 0 } })
+      }
+      if (url.includes('/api/payments/today-stats')) {
+        // ⚠️ Les TROIS clés : `Integrations` somme `txStats.mtn.count + …` sans garde
+        // de forme. Une réponse partielle y faisait crasher l'écran ENTIER — trouvé
+        // par ce balayage, et durci côté page dans la foulée.
+        const p = (c: number, a: number) => ({ count: c, amountXof: a })
+        return json({ mtn: p(3, 45000), campay: p(1, 12000), paydunya: p(0, 0) })
+      }
       if (url.includes('/api/health')) return json({ status: 'ok' })
       return json([])
     }) as typeof window.fetch

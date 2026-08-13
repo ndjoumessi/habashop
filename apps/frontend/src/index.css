@@ -299,17 +299,6 @@ textarea.input { resize:vertical; min-height:80px; line-height:1.6 }
 .stock-table tbody tr:hover, .data-table tbody tr:hover { background:var(--bg2) }
 .stock-table td, .data-table td { padding:12px 14px }
 .stock-table .td-num, .data-table .td-num { font-size:14px }
-/* ⚠️ UN MONTANT EST UNE UNITÉ DE LECTURE : il se coupe au milieu ou pas du tout.
-   Quand la table dépasse son conteneur, la mise en page automatique compresse les
-   colonnes jusqu'à leur contenu MINIMAL — soit, pour « 987 654 321 FCFA », le plus
-   long groupe de chiffres. Le montant passe alors à la ligne au milieu, et la rangée
-   double de hauteur. MESURÉ le 2026-08-13 sur le harnais de densité, à 1440 et 390 px.
-   ⚠️ Portée `.stock-table` SEULE, et c'est délibéré : `.data-table` (console Ops) a
-   sa propre mesure, déjà verte, dont la géométrie a été validée à trois largeurs. On
-   ne modifie pas ce qu'un autre verrou mesure sans le remesurer.
-   Cette règle est le JUMEAU du `nowrap` posé sur la sous-ligne de la cellule Marge :
-   le corriger d'un seul côté, c'était déplacer le défaut, pas le fermer. */
-.stock-table .td-num { white-space:nowrap }
 .stock-action { min-width:36px; min-height:36px; justify-content:center }
 /* Table Clients — colonnes resserrées (opt-in, n'affecte pas les autres data-table) */
 .customers-table th, .customers-table td { padding:8px 10px }
@@ -328,7 +317,13 @@ tbody tr:last-child { border-bottom:none }
 td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 .td-bold { font-weight:var(--fw-semibold); color:var(--text) }
 .td-mono,.cv { font-family:var(--mono); font-size:12px }
-.td-num { font-family:var(--mono); font-weight:var(--fw-regular); text-align:right }
+.td-num { font-family:var(--mono); font-weight:var(--fw-regular); text-align:right; white-space:nowrap }
+/* ⚠️ `nowrap` GLOBAL sur les cellules chiffrées — et il l'est devenu par MESURE, pas
+   par principe. La règle a d'abord été posée sur `.stock-table` seule, le 2026-08-13.
+   Le balayage des écrans complets, le jour même, a trouvé TROIS jumeaux : Commandes,
+   Paie et Dépenses coupaient « 45 000 FCFA » en deux lignes à 1280 px. Une correction
+   qui s'arrête au premier fichier trouvé est un déplacement, pas une correction.
+   Un montant est une unité de lecture : il se coupe au milieu ou pas du tout. */
 .th-num { text-align:right }  /* en-tête de colonne chiffrée : MIROIR de .td-num, sinon le th (text-align:left) part à gauche pendant que les nombres sont à droite → colonnes désalignées */
 .cv { color:var(--acc); font-weight:var(--fw-regular) }
 
