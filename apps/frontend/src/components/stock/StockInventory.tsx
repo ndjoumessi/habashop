@@ -280,22 +280,44 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       width: 18, height: 18, accentColor: 'var(--p)', cursor: 'pointer', zIndex: 1,
                     }}
                   />
+                  {/*
+                    ⚠️ LE NOM A SA PROPRE LIGNE — et c'est une correction, pas un goût.
+                    MESURÉ en production le 2026-08-13 : sur une carte de 206 px, le nom
+                    ne disposait que de **43 px** alors qu'il en fallait 96 à 117. Les six
+                    produits de démonstration étaient tronqués au tiers (« Café m… »,
+                    « Lait con… »). Le compte est implacable :
+                        206 − 32 (marges) − 28 (case à cocher) − 42 (vignette) − 10 (gap)
+                        − ~40 (badge de statut) = 43 px.
+                    Le badge, en `flexShrink:0`, ne cédait rien : tout le rétrécissement
+                    tombait sur le nom. Aucun réglage de police ne rattrape un facteur 2,5 —
+                    il fallait sortir le nom de cette rangée.
+
+                    Sur sa propre ligne il dispose de 174 px, donc les six tiennent ENTIERS.
+                    Le clamp à 2 lignes reste la sécurité pour un nom plus long : il borne
+                    la hauteur, donc les cartes de la grille restent alignées.
+                  */}
                   <div style={{ display:'flex', alignItems:'center', gap:10, paddingRight: 28 }}>
                     <div style={{ width:42, height:42, borderRadius:12, background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-2xl)', flexShrink:0 }}>
                       {p.name.match(/^\S+/)?.[0]}
                     </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                        {p.name.replace(/^\S+\s?/, '')}
-                      </div>
-                      {stockShowSKU && <div style={{ fontSize:'var(--fs-caption)', color:'var(--text4)', fontFamily:'var(--mono)' }}>{p.sku}</div>}
-                    </div>
+                    {/* Pousse les badges à droite, le nom n'est plus dans cette rangée. */}
+                    <div style={{ flex:1, minWidth:0 }} />
                     {isActivePromo(p) && (
                       <span style={{ flexShrink:0, display:'inline-flex', alignItems:'center', gap:3, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px', background:'var(--c-purple-bg)', color:'var(--p2)', border:'1px solid var(--border3)' }}>
                         <Sparkles size={10} /> PROMO
                       </span>
                     )}
                     <span className={`badge ${st.cls}`} style={{ flexShrink:0 }}>{st.label}</span>
+                  </div>
+                  <div style={{ marginTop: -4 }}>
+                    <div style={{
+                      fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color:'var(--text)',
+                      display:'-webkit-box', WebkitBoxOrient:'vertical', WebkitLineClamp:2,
+                      overflow:'hidden', lineHeight:1.3,
+                    } as React.CSSProperties}>
+                      {p.name.replace(/^\S+\s?/, '')}
+                    </div>
+                    {stockShowSKU && <div style={{ fontSize:'var(--fs-caption)', color:'var(--text4)', fontFamily:'var(--mono)' }}>{p.sku}</div>}
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
                     <div style={{ padding:'7px 9px', borderRadius:8, background:'var(--c-purple-bg2)', border:'1px solid rgba(108,71,255,.15)' }}>
