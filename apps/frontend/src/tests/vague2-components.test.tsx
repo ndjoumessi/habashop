@@ -21,6 +21,29 @@ describe('Vague 2 — composants unifiés', () => {
     expect(screen.getByText('B')).toBeTruthy()
   })
 
+  /**
+   * ⚠️ `auto-fit` ÉTIRE, `auto-fill` NON — et ça ne se voit qu'avec PEU d'éléments.
+   * OBSERVÉ le 2026-08-12 : la caisse filtrée sur deux produits rendait deux tuiles
+   * larges de 900 px avec un émoji de 38 px flottant dedans. Le commentaire de
+   * `POSProductGrid` annonçait « auto-fill » depuis l'origine ; `ResponsiveGrid`
+   * posait `auto-fit`. Le commentaire disait l'intention, le code faisait l'inverse.
+   *
+   * ⚠️ Ce test juge la RÈGLE CSS, pas le rendu : jsdom ne fait aucune mise en page,
+   * il ne peut pas mesurer une tuile. C'est la limite, et elle est assumée — c'est
+   * exactement pourquoi le défaut a été trouvé sur une capture et non par un test.
+   */
+  it('⚠️ ResponsiveGrid — `mode="fill"` n’étire pas, et le défaut reste `fit`', () => {
+    const { container: parDefaut } = render(<ResponsiveGrid min={112}><span>A</span></ResponsiveGrid>)
+    expect((parDefaut.firstChild as HTMLElement).style.gridTemplateColumns).toContain('auto-fit')
+
+    const { container: enFill } = render(<ResponsiveGrid min={112} mode="fill"><span>A</span></ResponsiveGrid>)
+    const regle = (enFill.firstChild as HTMLElement).style.gridTemplateColumns
+    expect(regle).toContain('auto-fill')
+    expect(regle, 'et surtout PAS auto-fit').not.toContain('auto-fit')
+    // La largeur mini est bien conservée dans les deux modes.
+    expect(regle).toContain('112px')
+  })
+
   it('IconButton : aria-label OBLIGATOIRE exposé + hit-area 44px + onClick', () => {
     const onClick = vi.fn()
     render(<IconButton label="Supprimer" icon={<svg data-testid="ic" />} danger onClick={onClick} />)

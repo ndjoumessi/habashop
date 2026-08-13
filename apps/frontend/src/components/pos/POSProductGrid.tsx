@@ -458,8 +458,17 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
             overflowY: 'auto',
             paddingTop: 8,
           }}>
-            {/* Spec item 11 : grille auto-fill minmax(112px, 1fr) */}
-            <ResponsiveGrid min={112} gap={10} style={{ paddingBottom: 8 }}>
+            {/*
+              Spec item 11 : grille auto-fill minmax(112px, 1fr).
+
+              ⚠️ `mode="fill"` N'EST PAS DÉCORATIF. Ce commentaire annonçait
+              « auto-fill » depuis l'origine, mais `ResponsiveGrid` posait `auto-fit` :
+              le commentaire disait l'INTENTION, le code faisait l'inverse. Résultat
+              observé le 2026-08-12 sur un filtre à deux produits — deux tuiles
+              étirées sur toute la largeur, l'émoji perdu dans le vide.
+              *Un commentaire jamais exécuté survit des mois.*
+            */}
+            <ResponsiveGrid min={112} gap={10} mode="fill" style={{ paddingBottom: 8 }}>
               {filtered.map(p => {
                 // ⚠️ Le badge PROMO doit refléter une promo EFFECTIVE (non expirée), pas le
                 // booléen brut : sinon une promo périmée affiche encore « PROMO » alors que le
