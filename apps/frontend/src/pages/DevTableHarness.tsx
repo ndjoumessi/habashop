@@ -196,7 +196,7 @@ function HarnaisPhoto() {
  */
 const RIEN = () => undefined
 
-function HarnaisStock({ n, extremes }: { n: number; extremes: boolean }) {
+function HarnaisStock({ n, extremes, largeur }: { n: number; extremes: boolean; largeur: number | null }) {
   const { stockShowSKU, lang } = useConfig()
   const fmt = useFormatAmount()
   const produits = useMemo(() => fauxProduits(n, extremes), [n, extremes])
@@ -215,7 +215,19 @@ function HarnaisStock({ n, extremes }: { n: number; extremes: boolean }) {
      * accusait un défaut qui n'existe pas dans le produit.
      * Un harnais qui omet un conteneur de l'application ne mesure pas l'application.
      */
-    <div className="page-content">
+    <div className="page-content" style={largeur ? {
+      /**
+       * ⚠️ LARGEUR DE CONTENU IMPOSÉE — `?largeur=918`.
+       * Ce harnais n'a PAS de barre latérale : à 1280 px son conteneur fait ~1182 px,
+       * la table (1058) y tient, et le régime CONTRAINT de l'application — celui où
+       * elle déborde — n'est jamais reproduit. La mesure se ferait donc sur un cas
+       * qui ne peut pas échouer.
+       * Le nombre passé n'est pas décoratif : c'est la largeur de contenu RÉELLE,
+       * relevée en production (1280 px de fenêtre → `.table-wrap` à 918 px). On
+       * reproduit la contrainte au lieu d'espérer qu'elle apparaisse.
+       */
+      width: largeur, maxWidth: largeur, overflowX: 'hidden',
+    } : undefined}>
       <StockInventory
         products={produits} fmt={fmt} lang={lang} stockShowSKU={stockShowSKU}
         navigate={RIEN}
@@ -246,6 +258,8 @@ export default function DevTableHarness() {
   const vue = demande === 'stock' ? 'stock' : demande === 'photo' ? 'photo'
     : demande === 'surfaces' ? 'surfaces' : 'ops'
   const extremes = params.get('extremes') === '1'
+  const largeurBrute = Number(params.get('largeur'))
+  const largeur = Number.isFinite(largeurBrute) && largeurBrute > 0 ? largeurBrute : null
   useEffect(() => {
     // La console Ops passe par le réseau ; la vue Stock reçoit ses produits en props.
     if (vue !== 'ops') { setPret(true); return }
@@ -259,7 +273,7 @@ export default function DevTableHarness() {
     // compare au jeton qu'il a injecté : un serveur tiers écoutant sur le même port rendrait
     // une page sans ce marqueur, et l'échec le DIT au lieu d'attendre un timeout de sélecteur.
     <div data-testid={HARNESS_MARKER} data-harness-nonce={import.meta.env.VITE_HARNESS_NONCE ?? ''}>
-      {vue === 'stock' ? <HarnaisStock n={n} extremes={extremes} />
+      {vue === 'stock' ? <HarnaisStock n={n} extremes={extremes} largeur={largeur} />
         : vue === 'photo' ? <HarnaisPhoto />
         : vue === 'surfaces' ? <DevSurfacesHarness />
         : <AdminDashboard />}
