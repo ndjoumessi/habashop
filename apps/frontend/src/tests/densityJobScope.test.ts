@@ -91,19 +91,36 @@ describe('filtre de chemin du workflow Densité', () => {
     ]) expect(couvert(f, pats), `« ${f} » doit déclencher la mesure`).toBe(true)
   })
 
-  it('les modules tirés par le SEUL hub `api.ts` sont EXCLUS — exclusion délibérée', () => {
-    // Sans cette exclusion, toute modification RH, POS ou stock lancerait un navigateur.
-    // ⚠️ Si un `*Shared` se met un jour à porter de la mise en page de la console, il faudra
-    // l'ajouter NOMMÉMENT : ce test fige l'exclusion pour qu'elle reste un CHOIX, pas un oubli.
+  /**
+   * ⚠️ EXCEPTION NOMMÉE, arrivée le 2026-08-13 — exactement le cas que le commentaire
+   * ci-dessous annonçait. `stockShared` porte `statusOf`, `stockCatLabel` et
+   * `productMargin` : les LIBELLÉS des pastilles et les nombres RENDUS dans la table du
+   * Stock, désormais mesurée. Changer « Bas » en « Stock bas » élargit une colonne.
+   * Il est donc couvert par le filtre, et cette liste rend l'exception RÉFUTABLE :
+   * y ajouter un module sans raison fait toujours passer le test, mais le diff le montre.
+   */
+  const SHARED_MESURES = ['apps/frontend/src/components/stock/stockShared.tsx']
+
+  it('les modules tirés par le SEUL hub `api.ts` sont EXCLUS — sauf exception NOMMÉE', () => {
+    // Sans cette exclusion, toute modification RH, POS ou clients lancerait un navigateur.
     const tiresParLeHub = [...fermetureApi].filter(f => f !== 'apps/frontend/src/lib/api.ts')
     expect(tiresParLeHub.length).toBeGreaterThanOrEqual(10)
-    const couverts = tiresParLeHub.filter(f => couvert(f, pats))
     // `hooks/**` et `components/ui/**` peuvent en recouper : on vérifie que les `*Shared`
-    // de domaine, eux, restent dehors.
+    // de domaine, eux, restent dehors — à l'exception de ceux qu'on MESURE.
     const sharedDeDomaine = tiresParLeHub.filter(f => /components\/(customers|hr|orders|pos|stock|suppliers|dashboard)\//.test(f))
     expect(sharedDeDomaine.length, 'aucun *Shared de domaine trouvé — le scan ne garde rien').toBeGreaterThanOrEqual(5)
-    expect(sharedDeDomaine.filter(f => couvert(f, pats)), 'un *Shared de domaine déclencherait la mesure').toEqual([])
-    void couverts
+
+    // ⚠️ CONTRÔLE DISCRIMINANT : l'exception doit être RÉELLE, pas décorative. Si
+    // `stockShared` sortait de la fermeture d'`api.ts`, l'exemption ne servirait plus à
+    // rien et devrait disparaître — un critère qui laisse passer son propre déclencheur
+    // est faux, pas prudent.
+    for (const f of SHARED_MESURES) {
+      expect(sharedDeDomaine, `« ${f} » n’est plus tiré par le hub : l’exception est morte`).toContain(f)
+      expect(couvert(f, pats), `« ${f} » est RENDU dans une table mesurée, il doit déclencher`).toBe(true)
+    }
+
+    const fuites = sharedDeDomaine.filter(f => couvert(f, pats) && !SHARED_MESURES.includes(f))
+    expect(fuites, 'un *Shared de domaine NON mesuré déclencherait la mesure pour rien').toEqual([])
   })
 
   it('le filtre ne ratisse pas TOUT le frontend', () => {

@@ -70,6 +70,31 @@ on:
       - 'apps/frontend/src/stores/authStore.ts'
       # ── ⚠️ LA FEUILLE — invisible du graphe d'imports, et c'est elle que le sabotage vise
       - 'apps/frontend/src/index.css'
+      # ── Table du STOCK (vue liste), mesurée depuis le 2026-08-13
+      #    Ajoutée après DEUX défauts de mise en page trouvés à l'œil sur une capture de
+      #    production : une table qui débordait de 80 px à 1440 px (bouton Supprimer coupé)
+      #    et un montant enroulé. Aucun des 1 390 tests unitaires ne pouvait les voir.
+      - 'apps/frontend/src/components/stock/StockInventory.tsx'
+      #    ⚠️ `stockShared` est tiré par le hub `lib/api.ts`, donc EXCLU du périmètre propre
+      #    par la règle générale — et il est pourtant nommé ICI, délibérément : il porte
+      #    `statusOf`, `stockCatLabel` et `productMargin`, c'est-à-dire les LIBELLÉS des
+      #    pastilles et les nombres RENDUS dans la table. Changer « Bas » en « Stock bas »
+      #    élargit une colonne. C'est l'exception que `densityJobScope.test.ts` annonçait :
+      #    « si un *Shared se met à porter de la mise en page, il faudra l'ajouter
+      #    NOMMÉMENT ». Les autres *Shared de domaine restent dehors, et le test le fige.
+      - 'apps/frontend/src/components/stock/stockShared.tsx'
+      #    Primitives et utilitaires entrés dans la fermeture PAR le harnais Stock —
+      #    signalés un par un par `densityJobScope.test.ts` au commit même, pas devinés.
+      - 'apps/frontend/src/components/ui/BarcodeScanner.tsx'
+      - 'apps/frontend/src/components/ui/FilterSelect.tsx'
+      - 'apps/frontend/src/components/ui/Pagination.tsx'
+      - 'apps/frontend/src/hooks/usePagination.ts'
+      - 'apps/frontend/src/lib/barcode.ts'
+      - 'apps/frontend/src/lib/csv.ts'
+      - 'apps/frontend/src/lib/html.ts'
+      - 'apps/frontend/src/lib/productCurrency.ts'
+      - 'apps/frontend/src/utils/export.ts'
+      - 'apps/frontend/src/utils/normCat.ts'
       # ── L'outillage de la mesure
       # ⚠️ Le DOSSIER, pas le fichier : `e2e/dev/` est exclu de la suite de production par
       #    structure (cf. `e2e/dev/README.md`), et tout harnais futur y tombera sans qu'on

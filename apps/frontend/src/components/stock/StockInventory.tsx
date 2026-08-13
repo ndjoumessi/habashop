@@ -440,12 +440,16 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(p.sell)}</td>
                       <td className="td-num" style={{ color: mgColor }}>
                         {mg.pct === null ? '—' : `${mg.pct}%`}
-                        {/* ⚠️ `nowrap` : sans lui « 2 000 FCFA » s'enroulait sur DEUX lignes
-                            dans une colonne de 73 px (mesuré en production le 2026-08-13),
-                            donnant une cellule à trois lignes et des rangées de hauteurs
-                            inégales. Le montant est une unité de lecture : il se coupe au
-                            milieu ou pas du tout. */}
-                        {mg.pct !== null && <span style={{ display: 'block', whiteSpace: 'nowrap', fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(mg.profitXof)}</span>}
+                        {/* ⚠️ Le `nowrap` de ce montant vit dans `.stock-table .td-num`
+                            (index.css), PAS ici — `white-space` s'hérite, et la règle CSS
+                            couvre les trois colonnes monétaires d'un coup. Il a d'abord été
+                            posé en ligne sur cette seule cellule : c'était le jumeau non
+                            traité, « Prix d'achat » et « Prix de vente » s'enroulaient
+                            toujours. La redondance a été retirée pour une raison précise —
+                            le verrou de densité ne pouvait PAS voir sa disparition (elle
+                            était masquée par la règle CSS), donc elle aurait pourri sans
+                            bruit. Une défense que rien ne mesure n'est pas une défense. */}
+                        {mg.pct !== null && <span style={{ display: 'block', fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(mg.profitXof)}</span>}
                       </td>
                       <td>
                         <span style={{
