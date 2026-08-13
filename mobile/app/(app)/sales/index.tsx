@@ -159,9 +159,9 @@ export default function SalesScreen() {
 
       {/* Stats */}
       <View style={s.statsRow}>
-        <View style={s.statBox}><Text style={[s.statVal, { color: C.accent }]}>{fmt(ca)}</Text><Text style={s.statLabel}>{i('CA total', 'Revenue', 'CA total', 'Ricavi')}</Text></View>
+        <View style={s.statBox}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.statVal, { color: C.accent }]}>{fmt(ca)}</Text><Text style={s.statLabel}>{i('CA total', 'Revenue', 'CA total', 'Ricavi')}</Text></View>
         <View style={s.statBox}><Text style={[s.statVal, { color: C.primary3 }]}>{String(tx)}</Text><Text style={s.statLabel}>{i('Ventes', 'Sales', 'Ventas', 'Vendite')}</Text></View>
-        <View style={s.statBox}><Text style={[s.statVal, { color: C.accent3 }]}>{fmt(avg)}</Text><Text style={s.statLabel}>{i('Panier moyen', 'Avg basket', 'Cesta media', 'Carrello medio')}</Text></View>
+        <View style={s.statBox}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.statVal, { color: C.accent3 }]}>{fmt(avg)}</Text><Text style={s.statLabel}>{i('Panier moyen', 'Avg basket', 'Cesta media', 'Carrello medio')}</Text></View>
       </View>
 
       {/* Liste */}
@@ -192,7 +192,7 @@ export default function SalesScreen() {
               <Text style={{ fontSize: 26 }}>{PAY_ICON[item.paymentMode] ?? '💳'}</Text>
               <View style={{ flex: 1 }}>
                 <View style={s.rowTotalLine}>
-                  <Text style={[s.rowTotal, refunded && s.totalRefunded]}>{fmt(item.total ?? 0)}</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.rowTotal, refunded && s.totalRefunded]}>{fmt(item.total ?? 0)}</Text>
                   {refunded && (
                     <View style={s.badge}>
                       <Text style={s.badgeTxt}>{i('Remboursé', 'Refunded', 'Reembolsado', 'Rimborsato')}</Text>
@@ -245,9 +245,9 @@ export default function SalesScreen() {
                     <ProductThumb p={it.product ?? {}} size={26} fontSize={20} />
                     <View style={{ flex: 1 }}>
                       <Text style={s.itemName} numberOfLines={1}>{it.product?.name ?? '—'}</Text>
-                      <Text style={s.itemSub}>{it.qty} × {fmt(it.unitPrice ?? 0)}</Text>
+                      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.itemSub}>{it.qty} × {fmt(it.unitPrice ?? 0)}</Text>
                     </View>
-                    <Text style={s.itemTotal}>{fmt(it.total ?? 0)}</Text>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.itemTotal}>{fmt(it.total ?? 0)}</Text>
                   </View>
                 ))}
               </View>
@@ -256,13 +256,13 @@ export default function SalesScreen() {
                 {(sel.discountAmount ?? 0) > 0 && (
                   <View style={s.recapRow}>
                     <Text style={s.recapLabel}>{i('Remise', 'Discount', 'Descuento', 'Sconto')}</Text>
-                    <Text style={[s.recapVal, { color: C.accent2 }]}>− {fmt(sel.discountAmount ?? 0)}</Text>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.recapVal, { color: C.accent2 }]}>− {fmt(sel.discountAmount ?? 0)}</Text>
                   </View>
                 )}
                 {(sel.loyaltyDiscount ?? 0) > 0 && (
                   <View style={s.recapRow}>
                     <Text style={s.recapLabel}>⭐ {i('Remise fidélité', 'Loyalty discount', 'Desc. fidelidad', 'Sconto fedeltà')}</Text>
-                    <Text style={[s.recapVal, { color: C.accent2 }]}>− {fmt(sel.loyaltyDiscount ?? 0)}</Text>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.recapVal, { color: C.accent2 }]}>− {fmt(sel.loyaltyDiscount ?? 0)}</Text>
                   </View>
                 )}
                 <View style={s.recapRow}>
@@ -271,7 +271,7 @@ export default function SalesScreen() {
                 </View>
                 <View style={[s.recapRow, s.recapTotal]}>
                   <Text style={s.recapTotalLabel}>Total</Text>
-                  <Text style={[s.recapTotalVal, isRefunded(sel) && s.totalRefunded]}>{fmt(sel.total ?? 0)}</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.recapTotalVal, isRefunded(sel) && s.totalRefunded]}>{fmt(sel.total ?? 0)}</Text>
                 </View>
               </View>
 

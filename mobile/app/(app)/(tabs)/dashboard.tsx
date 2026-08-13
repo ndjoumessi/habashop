@@ -327,7 +327,7 @@ export default function DashboardScreen() {
                   <Text style={s.topName} numberOfLines={1}>
                     {p.name}
                   </Text>
-                  <Text style={s.topCa}>{fmt(p.ca ?? 0)}</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.topCa}>{fmt(p.ca ?? 0)}</Text>
                 </View>
               ))}
             </View>

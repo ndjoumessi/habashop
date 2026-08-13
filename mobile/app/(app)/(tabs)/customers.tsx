@@ -52,7 +52,7 @@ function CustomerCard({ c, fmt, onPress, C }: { c: Customer; fmt: (n: number) =>
         </View>
         {!!c.phone && <Text style={s.phone} numberOfLines={1}>📞 {c.phone}</Text>}
         <View style={s.metaRow}>
-          <Text style={s.metaCa}>{fmt(c.totalRevenue ?? 0)}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.metaCa}>{fmt(c.totalRevenue ?? 0)}</Text>
           {(c.loyaltyPoints ?? 0) > 0 && <Text style={s.metaPts}>⭐ {c.loyaltyPoints} pts</Text>}
         </View>
       </View>
@@ -221,7 +221,7 @@ export default function CustomersScreen() {
               {/* KPIs */}
               <View style={s.kpis}>
                 <View style={s.kpi}>
-                  <Text style={[s.kpiVal, { color: C.accent }]}>{fmt(sel.totalRevenue ?? 0)}</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.kpiVal, { color: C.accent }]}>{fmt(sel.totalRevenue ?? 0)}</Text>
                   <Text style={s.kpiLabel}>{i('CA total', 'Revenue', 'CA total', 'Ricavi')}</Text>
                 </View>
                 <View style={s.kpi}>

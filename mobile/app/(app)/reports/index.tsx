@@ -254,7 +254,7 @@ export default function ReportsScreen() {
                     onLayout={e => setBubbleW(e.nativeEvent.layout.width)}
                     style={[s.bubble, { left: bubbleLeft, opacity: bubbleW > 0 ? 1 : 0 }]}
                   >
-                    <Text style={s.bubbleValue} numberOfLines={1}>{fmt(byDay[selected].value)}</Text>
+                    <Text style={s.bubbleValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{fmt(byDay[selected].value)}</Text>
                     <Text style={s.bubbleDay} numberOfLines={1}>{byDay[selected].label}</Text>
                   </View>
                 )}
@@ -276,7 +276,7 @@ export default function ReportsScreen() {
                         <View style={[s.progFill, { width: `${Math.max(4, ((p.ca ?? 0) / maxTop) * 100)}%` }]} />
                       </View>
                     </View>
-                    <Text style={s.topCa}>{fmt(p.ca ?? 0)}</Text>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.topCa}>{fmt(p.ca ?? 0)}</Text>
                   </View>
                 ))}
               </View>

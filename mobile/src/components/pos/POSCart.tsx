@@ -35,7 +35,7 @@ function CartRow({
       <ProductThumb p={item} size={32} fontSize={26} />
       <View style={{ flex: 1 }}>
         <Text style={s.cartName} numberOfLines={1}>{item.name?.trim()}</Text>
-        <Text style={s.cartLine}>{fmt(item.price)} × {item.quantity} = {fmt(item.price * item.quantity)}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.cartLine}>{fmt(item.price)} × {item.quantity} = {fmt(item.price * item.quantity)}</Text>
         {(item.hasPromotion && item.promotionPrice != null) ? (
           <Text style={s.cartTag}>{i('Promo', 'Promo', 'Promo', 'Promo')}</Text>
         ) : item.tierLabel ? (
@@ -251,12 +251,12 @@ export default function POSCart({
             {/* Récap montants */}
             <View style={s.recapRow}>
               <Text style={s.recapLabel}>{i('Sous-total', 'Subtotal', 'Subtotal', 'Subtotale')}</Text>
-              <Text style={s.recapVal}>{fmt(subtotal)}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.recapVal}>{fmt(subtotal)}</Text>
             </View>
             {discAmt > 0 && (
               <View style={s.recapRow}>
                 <Text style={s.recapLabel}>{i('Remise manuelle', 'Manual discount', 'Descuento manual', 'Sconto manuale')}</Text>
-                <Text style={[s.recapVal, { color: C.accent2 }]}>− {fmt(discAmt)}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.recapVal, { color: C.accent2 }]}>− {fmt(discAmt)}</Text>
               </View>
             )}
             {/* Remise fidélité = LIGNE réelle qui réduit le total (comme le web), plus
@@ -264,7 +264,7 @@ export default function POSCart({
             {loyaltyDiscount > 0 && (
               <View style={s.recapRow}>
                 <Text style={s.recapLabel}>{i('Remise fidélité', 'Loyalty discount', 'Descuento fidelidad', 'Sconto fedeltà')}{loyalty ? ` (${loyalty.pct}%)` : ''}</Text>
-                <Text style={[s.recapVal, { color: C.accent2 }]}>− {fmt(loyaltyDiscount)}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.recapVal, { color: C.accent2 }]}>− {fmt(loyaltyDiscount)}</Text>
               </View>
             )}
             {vat.rate > 0 && (
@@ -283,11 +283,11 @@ export default function POSCart({
                   <>
                     <View style={s.recapRow}>
                       <Text style={s.recapLabel}>{i('Total HT', 'Net (excl. tax)', 'Total sin IVA', 'Totale netto')}</Text>
-                      <Text style={s.recapVal}>{fmt(vat.ht)}</Text>
+                      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.recapVal}>{fmt(vat.ht)}</Text>
                     </View>
                     <View style={s.recapRow}>
                       <Text style={s.recapLabel}>{i('TVA', 'VAT', 'IVA', 'IVA')} {vat.rate}%</Text>
-                      <Text style={s.recapVal}>{fmt(vat.tva)}</Text>
+                      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.recapVal}>{fmt(vat.tva)}</Text>
                     </View>
                   </>
                 )}
@@ -295,7 +295,7 @@ export default function POSCart({
             )}
             <View style={[s.recapRow, s.recapTotal]}>
               <Text style={s.recapTotalLabel}>Total{vat.rate > 0 ? ' ' + i('TTC', 'incl. tax', 'con IVA', 'IVA incl.') : ''}</Text>
-              <Text style={s.recapTotalVal}>{fmt(netTotal)}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.recapTotalVal}>{fmt(netTotal)}</Text>
             </View>
 
             {/* (Le badge fidélité décoratif est remplacé par la ligne de récap « Remise
@@ -355,7 +355,7 @@ export default function POSCart({
                       <Text style={s.recapLabel}>{i('Monnaie', 'Change', 'Cambio', 'Resto')}</Text>
                       {/* Couleur neutre tant qu'aucun montant n'est saisi (même principe
                           que le message d'erreur) : pas de rouge sur une erreur non commise. */}
-                      <Text style={[s.changeVal, { color: cashGiven > 0 ? (change >= 0 ? C.accent2 : C.danger) : C.text3 }]}>
+                      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.changeVal, { color: cashGiven > 0 ? (change >= 0 ? C.accent2 : C.danger) : C.text3 }]}>
                         {fmt(Math.max(0, change))}
                       </Text>
                     </View>
@@ -410,7 +410,7 @@ export default function POSCart({
                 </View>
                 <View style={s.recapRow}>
                   <Text style={s.recapLabel}>{i('Reste (auto)', 'Remaining (auto)', 'Restante (auto)', 'Resto (auto)')}</Text>
-                  <Text style={s.recapVal}>{fmt(remainingXOF)}</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.recapVal}>{fmt(remainingXOF)}</Text>
                 </View>
 
                 {/* Idem : pas de message tant que rien n'est saisi (amt vide). */}

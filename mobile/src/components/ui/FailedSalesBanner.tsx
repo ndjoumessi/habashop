@@ -100,7 +100,7 @@ export default function FailedSalesBanner({ refreshKey }: { refreshKey?: number 
                 {list.map(e => (
                   <View key={e.id} style={s.row}>
                     <View style={{ flex: 1 }}>
-                      <Text style={s.amount}>{fmt(e.total)}</Text>
+                      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.amount}>{fmt(e.total)}</Text>
                       <Text style={s.reason} numberOfLines={2}>
                         {e.reason === 'repriced'
                           ? `${i('Enregistrée à', 'Recorded at', 'Registrada a', 'Registrata a')} ${fmt(e.serverTotal ?? 0)} — ${i('vérifiez la caisse', 'check the till', 'verifique la caja', 'controlla la cassa')}`

@@ -264,7 +264,7 @@ export default function SettingsScreen() {
           })}
           {currency !== 'XOF' && currency !== 'XAF' && (
             <View style={s.rateInfo}>
-              <Text style={s.rateText}>💱 {formatAmount(1000, 'XOF')} = {fmt(1000)}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.rateText}>💱 {formatAmount(1000, 'XOF')} = {fmt(1000)}</Text>
               <Text style={s.rateSubText}>
                 {i(
                   'Taux mis à jour toutes les 6h',

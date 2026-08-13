@@ -54,7 +54,7 @@ function ProductRow({
       <ProductThumb p={product} size={36} fontSize={28} />
       <View style={{ flex: 1 }}>
         <Text style={s.rowName} numberOfLines={1}>{product.name?.trim()}</Text>
-        <Text style={s.rowCat} numberOfLines={1}>{product.category ?? '—'} · {fmt(product.sellPrice ?? 0)}</Text>
+        <Text style={s.rowCat} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{product.category ?? '—'} · {fmt(product.sellPrice ?? 0)}</Text>
       </View>
       <View style={{ alignItems: 'flex-end', gap: 3 }}>
         <Text style={[s.rowQty, { color }]}>{product.stockQty ?? 0}</Text>
@@ -380,7 +380,7 @@ export default function StockScreen() {
                 </View>
                 <View style={s.editStat}>
                   <Text style={s.editStatLabel}>{i('Prix vente', 'Price', 'Precio', 'Prezzo')}</Text>
-                  <Text style={[s.editStatVal, { fontSize: FontSize.md, color: C.accent }]}>{fmt(editP.sellPrice ?? 0)}</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.editStatVal, { fontSize: FontSize.md, color: C.accent }]}>{fmt(editP.sellPrice ?? 0)}</Text>
                 </View>
               </View>
 

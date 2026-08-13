@@ -51,12 +51,12 @@ export default function POSConfirmModal({
           {vat.rate > 0 && (
             <View style={s.confirmRow}>
               <Text style={s.recapLabel}>{i('Dont TVA', 'Incl. VAT', 'IVA incl.', 'IVA incl.')} {vat.rate}%</Text>
-              <Text style={s.recapVal}>{fmt(vat.tva)}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.recapVal}>{fmt(vat.tva)}</Text>
             </View>
           )}
           <View style={[s.confirmRow, s.recapTotal]}>
             <Text style={s.recapTotalLabel}>Total{vat.rate > 0 ? ' ' + i('TTC', 'incl. tax', 'con IVA', 'IVA incl.') : ''}</Text>
-            <Text style={s.recapTotalVal}>{fmt(total)}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.recapTotalVal}>{fmt(total)}</Text>
           </View>
 
           <View style={s.confirmActions}>

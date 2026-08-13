@@ -234,7 +234,7 @@ export default function KioskScreen() {
                     </View>
                   )}
                   <Text style={s.productName} numberOfLines={2}>{p.name}</Text>
-                  <Text style={[s.productPrice, inCart > 0 && { color: Colors.primary3 }]}>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.productPrice, inCart > 0 && { color: Colors.primary3 }]}>
                     {fmt(p.sellPrice)}
                   </Text>
                 </TouchableOpacity>
@@ -268,7 +268,7 @@ export default function KioskScreen() {
                 <ProductThumb p={item} size={28} fontSize={20} />
                 <View style={{ flex: 1 }}>
                   <Text style={s.cartName} numberOfLines={1}>{item.name}</Text>
-                  <Text style={s.cartSubtotal}>{fmt(item.price * item.quantity)}</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.cartSubtotal}>{fmt(item.price * item.quantity)}</Text>
                 </View>
                 <View style={s.cartQtyRow}>
                   <TouchableOpacity
@@ -359,7 +359,7 @@ export default function KioskScreen() {
 
             <View style={s.totalRow}>
               <Text style={s.totalLabel}>Total</Text>
-              <Text style={s.totalAmount}>{fmt(pos.total())}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.totalAmount}>{fmt(pos.total())}</Text>
             </View>
 
             <TouchableOpacity
@@ -415,11 +415,11 @@ export default function KioskScreen() {
                       <>
                         <View style={s.confirmLine}>
                           <Text style={s.confirmLineLabel}>{i('Sous-total', 'Subtotal', 'Subtotal', 'Subtotale')}</Text>
-                          <Text style={s.confirmLineVal}>{fmt(pos.subtotal())}</Text>
+                          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.confirmLineVal}>{fmt(pos.subtotal())}</Text>
                         </View>
                         <View style={s.confirmLine}>
                           <Text style={s.confirmLineLabel}>{i('Remise', 'Discount', 'Descuento', 'Sconto')} ({pos.discount}%)</Text>
-                          <Text style={[s.confirmLineVal, { color: Colors.danger }]}>−{fmt(discAmt)}</Text>
+                          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.confirmLineVal, { color: Colors.danger }]}>−{fmt(discAmt)}</Text>
                         </View>
                       </>
                     )}
@@ -427,11 +427,11 @@ export default function KioskScreen() {
                       <>
                         <View style={s.confirmLine}>
                           <Text style={s.confirmLineLabel}>{i('Total HT', 'Net (excl. tax)', 'Total sin IVA', 'Totale netto')}</Text>
-                          <Text style={s.confirmLineVal}>{fmt(vat.ht)}</Text>
+                          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.confirmLineVal}>{fmt(vat.ht)}</Text>
                         </View>
                         <View style={s.confirmLine}>
                           <Text style={s.confirmLineLabel}>{i('TVA', 'VAT', 'IVA', 'IVA')} {vat.rate}%</Text>
-                          <Text style={s.confirmLineVal}>{fmt(vat.tva)}</Text>
+                          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.confirmLineVal}>{fmt(vat.tva)}</Text>
                         </View>
                       </>
                     )}
@@ -446,7 +446,7 @@ export default function KioskScreen() {
               })()}
             </View>
 
-            <Text style={s.confirmAmount}>{fmt(pos.total())}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.confirmAmount}>{fmt(pos.total())}</Text>
             <View style={s.confirmBtns}>
               <TouchableOpacity style={s.confirmCancel} onPress={() => setShowConfirm(false)}
                 accessibilityRole="button" accessibilityLabel={i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}>

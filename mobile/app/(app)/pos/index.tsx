@@ -462,7 +462,7 @@ export default function POSScreen() {
         <View style={[s.totalBar, { paddingBottom: insets.bottom + Spacing.sm }]}>
           <View style={{ flex: 1 }}>
             <Text style={s.totalBarLabel}>{totalQty} {plural(totalQty, i('article', 'item', 'artículo', 'articolo'), i('articles', 'items', 'artículos', 'articoli'))}</Text>
-            <Text style={s.totalBarAmt}>{fmt(totalAmt)}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.totalBarAmt}>{fmt(totalAmt)}</Text>
           </View>
           <AccessibleButton
             label={`${i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} →`}

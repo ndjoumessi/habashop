@@ -58,7 +58,7 @@ export default function RefundSheet({ sale, saving, onClose, onConfirm }: Refund
             <View style={s.recap}>
               <View style={s.recapRow}>
                 <Text style={s.recapRef}>{i('Vente', 'Sale', 'Venta', 'Vendita')} #{sale.id.slice(-6).toUpperCase()}</Text>
-                <Text style={s.recapTotal}>{fmt(sale.total ?? 0)}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={s.recapTotal}>{fmt(sale.total ?? 0)}</Text>
               </View>
               <Text style={s.recapNote}>
                 {i('Remboursement total — la vente est conservée mais exclue du chiffre d’affaires.',
