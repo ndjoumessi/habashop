@@ -627,9 +627,24 @@ const s = StyleSheet.create({
     backgroundColor: Colors.bg3, alignItems: 'center', justifyContent: 'center',
   },
   payBtnActive: { borderColor: Colors.primary, backgroundColor: 'rgba(108,71,255,0.12)' },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.xs },
-  totalLabel: { fontSize: FontSize.md, fontFamily: 'Geist_700Bold', color: Colors.text },
-  totalAmount: { fontSize: FontSize.xl, fontFamily: 'JetBrainsMono_700Bold', color: Colors.accent, letterSpacing: -0.5 },
+  /**
+   * ⚠️ `gap` + `flexShrink` — le total sortait « Total17 000  FCF », libellé COLLÉ au
+   * montant et montant COUPÉ au bord (mesuré le 2026-08-13 sur émulateur).
+   * Deux causes, une par symptôme :
+   *  · sans `gap`, `space-between` ne sépare plus rien dès que le montant occupe
+   *    tout l'espace restant — les deux textes se touchent ;
+   *  · sans `flexShrink: 1`, le montant n'a AUCUNE borne : il déborde la colonne et
+   *    se fait rogner. `adjustsFontSizeToFit` ne peut alors rien — il ne rétrécit la
+   *    police que dans une boîte BORNÉE. C'est pour ça que le trio, seul, ne suffisait
+   *    pas ici alors qu'il suffit ailleurs.
+   * ⚠️ Le LIBELLÉ, lui, ne rétrécit pas (`flexShrink: 0`) : c'est le montant qui doit
+   * céder, jamais le mot qui dit ce qu'on lit.
+   * Motif REPRIS de `confirmLine`/`confirmLineVal`, dix lignes plus bas — il était
+   * déjà juste dans ce fichier.
+   */
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.xs, gap: Spacing.md },
+  totalLabel: { fontSize: FontSize.md, fontFamily: 'Geist_700Bold', color: Colors.text, flexShrink: 0 },
+  totalAmount: { fontSize: FontSize.xl, fontFamily: 'JetBrainsMono_700Bold', color: Colors.accent, letterSpacing: -0.5, flexShrink: 1 },
   checkoutBtn: {
     backgroundColor: Colors.primary, borderRadius: BorderRadius.lg, height: 54,
     alignItems: 'center', justifyContent: 'center', ...Shadow.colored(Colors.primary),

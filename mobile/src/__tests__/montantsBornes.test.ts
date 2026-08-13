@@ -93,6 +93,38 @@ describe('montants natifs — ni enroulés, ni tronqués', () => {
     expect(tronquables).toEqual([])
   })
 
+  /**
+   * ⚠️ LE TRIO NE SUFFIT PAS DANS UNE RANGÉE NON BORNÉE — mesuré le 2026-08-13.
+   * Le total du kiosque portait `numberOfLines` + `adjustsFontSizeToFit` et sortait
+   * quand même « Total17 000  FCF » : libellé COLLÉ, montant COUPÉ. Deux causes :
+   *  · sans `gap`, `space-between` ne sépare plus rien dès que le montant occupe tout
+   *    l'espace restant ;
+   *  · sans `flexShrink`, le montant n'a AUCUNE borne — il déborde et se fait rogner,
+   *    et `adjustsFontSizeToFit` ne rétrécit que dans une boîte BORNÉE.
+   *
+   * ⚠️ Liste NOMMÉE, écrite à la main, et dite comme telle : « une rangée qui porte un
+   * libellé et un montant » n'est pas détectable par la forme. Chaque paire est ici
+   * avec sa raison, et la règle échoue si le style disparaît — donc si on la renomme
+   * sans y penser.
+   */
+  const PAIRES: { fichier: string; rangee: string; valeur: string }[] = [
+    { fichier: 'app/(app)/kiosk/index.tsx', rangee: 'totalRow',    valeur: 'totalAmount' },
+    { fichier: 'app/(app)/kiosk/index.tsx', rangee: 'confirmLine', valeur: 'confirmLineVal' },
+  ]
+
+  it('une rangée libellé/montant a un `gap`, et le montant peut RÉTRÉCIR', () => {
+    for (const { fichier, rangee, valeur } of PAIRES) {
+      const src = readFileSync(join(__dirname, '..', '..', fichier), 'utf8')
+      const styleDe = (nom: string) => {
+        const m = new RegExp(`\\b${nom}: \\{([^}]*)\\}`).exec(src)
+        if (!m) throw new Error(`style « ${nom} » introuvable dans ${fichier} — la règle ne garde plus rien`)
+        return m[1]
+      }
+      expect(/\bgap:/.test(styleDe(rangee))).toBe(true)
+      expect(/flexShrink:\s*1/.test(styleDe(valeur))).toBe(true)
+    }
+  })
+
   it('⚠️ le détecteur voit le site nu et IGNORE le site borné', () => {
     // Contrôle DISCRIMINANT : une règle qui ne trouve jamais rien est indistinguable
     // d'une règle satisfaite. Les deux sens sont exercés sur les formes réelles.
