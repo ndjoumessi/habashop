@@ -549,7 +549,12 @@ export default function Stock() {
             + {lang === 'en' ? 'New category' : lang === 'es' ? 'Nueva categoría' : lang === 'it' ? 'Nuova categoria' : 'Nouvelle catégorie'}
           </button>
         </div>
-        <ResponsiveGrid min={220}>
+        {/* ⚠️ `mode="fill"` — grille d'ARTICLES à effectif variable, dont la tuile a une
+          taille DESSINÉE. Sans lui, `auto-fit` effondre les colonnes vides et les
+          rares éléments restants absorbent toute la largeur (mesuré : s'étire en
+          dessous de 4 éléments sur un conteneur de 918 px). Ne PAS le mettre sur
+          un formulaire, où un champ DOIT remplir sa colonne. */}
+        <ResponsiveGrid min={220} mode="fill">
           {[...categories].sort((a, b) => b.productsCount - a.productsCount).map(cat => (
             <div key={cat.id} style={{
               background:'var(--bg3)', border:'1px solid var(--border)',

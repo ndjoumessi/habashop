@@ -179,8 +179,13 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
         )}
 
         {/* Vue grille — cartes clients (Bento premium) */}
+        {/* ⚠️ `mode="fill"` — grille d'ARTICLES à effectif variable, dont la tuile a une
+          taille DESSINÉE. Sans lui, `auto-fit` effondre les colonnes vides et les
+          rares éléments restants absorbent toute la largeur (mesuré : s'étire en
+          dessous de 3 éléments sur un conteneur de 918 px). Ne PAS le mettre sur
+          un formulaire, où un champ DOIT remplir sa colonne. */}
         {viewMode === 'grid' && (
-          <ResponsiveGrid min={250} gap={12}>
+          <ResponsiveGrid min={250} gap={12} mode="fill">
             {pg.paginated.map((c: import("@/components/customers/customersShared").Customer) => {
               const isSel = selectedId === c.id
               const initials = c.name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()

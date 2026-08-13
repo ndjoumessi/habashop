@@ -243,7 +243,17 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
             </div>
           </div>
         ) : stockView === 'grid' ? (
-          <ResponsiveGrid min={200} role="list" aria-label={i('Produits', 'Products', 'Productos', 'Prodotti')}>
+          /* ⚠️ `mode="fill"` — grille d'ARTICLES à effectif variable, dont la tuile a une
+             taille DESSINÉE. Sans lui, `auto-fit` effondre les colonnes vides et les rares
+             éléments restants absorbent toute la largeur : mesuré, ça s'étire en dessous de
+             4 éléments sur un conteneur de 918 px. Ne PAS le mettre sur un formulaire, où
+             un champ DOIT remplir sa colonne.
+             ⚠️ Commentaire JS et non JSX : ici on est DANS une expression ternaire, pas
+             parmi des enfants JSX — un commentaire de la forme accolade-étoile y est une
+             erreur de syntaxe. Et ne PAS écrire cette forme en toutes lettres dans un
+             commentaire de bloc : son étoile-slash le refermerait par anticipation, et la
+             suite deviendrait du code. Les blocs ne s'imbriquent pas. */
+          <ResponsiveGrid min={200} mode="fill" role="list" aria-label={i('Produits', 'Products', 'Productos', 'Prodotti')}>
             {pg.paginated.map((p: ProductItem) => {
               const st = statusOf(p.stock, p.threshold)
               const pct = Math.min(100, (p.stock / Math.max(p.threshold, 1)) * 100)
