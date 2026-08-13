@@ -64,6 +64,9 @@ export default function ProductThumb({
     // lui qui porte l'émoji pendant le chargement.
     return (
       <View
+        // Poignée de GÉOMÉTRIE — jumelle du `data-thumb` web, mêmes deux valeurs.
+        // Elle porte la BRANCHE rendue, qu'aucune lecture de style ne retrouverait.
+        testID="product-thumb-photo"
         style={[
           { width: size, height: size, borderRadius: radius, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
           style,
@@ -86,7 +89,7 @@ export default function ProductThumb({
   }
 
   return (
-    <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
+    <View testID="product-thumb-secours" style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
       {secours}
     </View>
   )
