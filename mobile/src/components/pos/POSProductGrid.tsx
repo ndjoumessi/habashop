@@ -1,5 +1,6 @@
 import { memo, useCallback, useMemo, useRef } from 'react'
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native'
+import { completerRangee, estCaseVide, type CaseVide } from '@/lib/grille'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import type { CartItem } from '@/stores/posStore'
 import type { Product } from '@/types'
@@ -99,7 +100,10 @@ export default function POSProductGrid({
   return (
     <FlatList
       removeClippedSubviews={false}
-      data={filtered}
+      // ⚠️ Cases vides sur la dernière rangée : sans elles, `flex: 1` fait ÉTIRER
+      // les tuiles restantes sur toute la largeur (mesuré le 2026-08-13 sur émulateur,
+      // « Tomate concentrée 800g » en bannière). Jumeau natif du défaut `auto-fit` web.
+      data={completerRangee(filtered, 3)}
       keyExtractor={(p) => p.id}
       numColumns={3}
       columnWrapperStyle={{ gap: Spacing.sm, paddingHorizontal: Spacing.lg }}
@@ -112,7 +116,8 @@ export default function POSProductGrid({
           <Text style={s.emptyTxt}>{i('Aucun produit dans cette catégorie.', 'No product in this category.', 'Ningún producto en esta categoría.', 'Nessun prodotto in questa categoria.')}</Text>
         </View>
       }
-      renderItem={({ item }: { item: Product }) => (
+      renderItem={({ item }: { item: Product | CaseVide }) => (
+        estCaseVide(item) ? <View style={{ flex: 1 }} /> : (
         <ProductCard
           product={item}
           qtyInCart={qtyByProductId.get(item.id) ?? 0}
@@ -120,7 +125,7 @@ export default function POSProductGrid({
           fmtParts={fmtParts}
           onAdd={handleAdd}
         />
-      )}
+      ))}
     />
   )
 }

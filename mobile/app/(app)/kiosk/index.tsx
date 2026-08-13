@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
 import * as Haptics from 'expo-haptics'
 import { productsApi, apiErrorMessage } from '@/services/api'
+import { completerRangee, estCaseVide } from '@/lib/grille'
 import type { SalePayload } from '@/types'
 import { submitSaleResilient, type SaleSubmitResult } from '@/services/saleSubmit'
 import { newIdempotencyKey } from '@/lib/idempotency'
@@ -201,13 +202,17 @@ export default function KioskScreen() {
           ) : (
           <FlatList
             removeClippedSubviews={false}
-            data={filtered}
+            // ⚠️ Cases vides : même défaut que la caisse — `flex: 1` étire les
+            // tuiles d'une rangée incomplète sur toute la largeur. Le kiosque est
+            // en 4 colonnes, donc jusqu'à TROIS tuiles étirées.
+            data={completerRangee(filtered, 4)}
             keyExtractor={p => p.id}
             numColumns={4}
             contentContainerStyle={s.grid}
             columnWrapperStyle={{ gap: Spacing.sm }}
             ItemSeparatorComponent={() => <View style={{ height: Spacing.sm }} />}
             renderItem={({ item: p }) => {
+              if (estCaseVide(p)) return <View style={{ flex: 1 }} />
               const inCart = pos.cart.find(c => c.productId === p.id)?.quantity ?? 0
               const isOut  = p.stockQty <= 0
               return (
