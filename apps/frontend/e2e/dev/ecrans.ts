@@ -174,11 +174,33 @@ export function seedEcran(page: Page) {
         })))
       }
       if (url.includes('/api/audit-logs')) {
-        return json(Array.from({ length: 10 }, (_, k) => ({
-          id: `a-${k + 1}`, action: 'PRODUCT_UPDATE', entity: 'Product', entityId: 'p-1',
-          userId: 'u-1', userName: 'Témoin', createdAt: new Date(2026, 7, 10, 9 + k).toISOString(),
-          details: null,
-        })))
+        // ⚠️ CETTE FIXTURE RENDAIT UN TABLEAU NU — l'ANCIEN contrat de la route, qui
+        // renvoie désormais `{ items, total, limite, stats }`. Le balayage restait
+        // VERT : l'écran affichait ses KPI et ses filtres sans une seule ligne, et le
+        // seuil de contenu était atteint quand même. Une fixture périmée décrit un
+        // monde qui n'existe plus, et elle le fait sans bruit.
+        //
+        // ⚠️ 100 lignes pour un total de 1342 : c'est LE cas que la production ne peut
+        // pas montrer — le tenant de démonstration compte dix événements, donc la
+        // troncature n'y apparaît jamais. C'est exactement la configuration qui avait
+        // masqué le défaut d'origine.
+        return json({
+          items: Array.from({ length: 100 }, (_, k) => ({
+            id: `al-${k + 1}`, tenantId: 'boutique-a', userId: 'u-1',
+            module: k % 3 === 0 ? 'SETTINGS' : k % 3 === 1 ? 'POS' : 'STOCK',
+            action: 'TENANT_LOCALE_CHANGE',
+            description: JSON.stringify({ currency: { avant: 'XOF', apres: 'XAF' } }),
+            severity: k % 25 === 0 ? 'danger' : 'info',
+            ip: '127.0.0.1',
+            createdAt: new Date(2026, 7, 12, 9, 0, k).toISOString(),
+            user: { name: 'Témoin' },
+          })),
+          total: 1342,
+          limite: 100,
+          // ⚠️ Compteurs VOLONTAIREMENT incohérents avec les 100 lignes envoyées :
+          // s'ils coïncidaient, une dérivation depuis les lignes passerait pour exacte.
+          stats: { aujourdhui: 37, alertes: 12, modules: 6 },
+        })
       }
       if (url.includes('/api/billing/status')) {
         return json({ plan: 'business', status: 'active', trialEnds: null, quota: { ai: 0, ocr: 0 } })

@@ -157,6 +157,50 @@ test.describe('écrans complets — géométrie réelle', () => {
 
   })
 
+  /**
+   * LA TRONCATURE DU JOURNAL — le cas que la PRODUCTION ne peut pas montrer.
+   * Le tenant de démonstration compte dix événements d'audit : l'écran n'y affiche
+   * donc JAMAIS la troncature, et c'est exactement ce qui avait laissé passer le
+   * défaut (« Total événements » = longueur des lignes reçues, sous un sous-titre
+   * annonçant une traçabilité « complète »). Ici le réseau amorcé rend 100 lignes
+   * pour un total de 1342 — la seule façon honnête de voir ce chemin rendu.
+   */
+  test('/app/activity — 100 lignes sur 1342 : la troncature est DITE, pas subie', async ({ page }) => {
+    await seedEcran(page)
+    await ouvrirEcran(page, '/app/activity', 1440, 950)
+    await page.locator('.kpi-card').first().waitFor({ timeout: 30_000 })
+    await page.waitForTimeout(800)
+
+    const m = await page.evaluate(() => ({
+      soustitre: document.querySelector('.page-subtitle')?.textContent?.trim() ?? '',
+      kpis: [...document.querySelectorAll('.kpi-card')].map(k => ({
+        label: k.querySelector('.kpi-label')?.textContent?.trim() ?? '',
+        valeur: k.querySelector('.kpi-value')?.textContent?.trim() ?? '',
+      })),
+      lignes: document.querySelectorAll('[style*="border-left"]').length,
+    }))
+
+    // COUVERTURE : sans lignes rendues, tout le reste serait vert et vide.
+    expect(m.lignes, 'le journal doit rendre des lignes').toBeGreaterThan(5)
+
+    // (1) La troncature est ANNONCEE, avec les deux nombres.
+    expect(m.soustitre).toContain('100')
+    expect(m.soustitre).toContain('1342')
+
+    // (2) Le total affiche est celui de la BASE, jamais la longueur des lignes.
+    const total = m.kpis.find(k => /Total/i.test(k.label))
+    expect(total?.valeur, `KPI total = ${total?.valeur}`).toBe('1342')
+
+    // (3) Les autres compteurs viennent de la base EUX AUSSI. La fixture les rend
+    //     incoherents avec les 100 lignes expres : 12 alertes alors que les lignes
+    //     envoyees en portent 4. Une derivation afficherait 4.
+    expect(m.kpis.find(k => /Alertes/i.test(k.label))?.valeur).toBe('12')
+    expect(m.kpis.find(k => /Modules/i.test(k.label))?.valeur).toBe('6')
+
+    // (4) La promesse d'exhaustivite a disparu de l'ecran.
+    expect(m.soustitre.toLowerCase()).not.toContain('complete')
+  })
+
   test('/app/pos — la caisse : page contenue, vignettes carrées', async ({ page }) => {
     await seedEcran(page)
     await ouvrirEcran(page, '/app/pos', 1280, 900)
