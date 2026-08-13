@@ -40,6 +40,13 @@ import { useState } from 'react'
  * fichier a AFFIRMÉ le contraire jusqu'au 2026-08-12 : la `key` remonte l'élément,
  * elle ne réinitialise pas l'état. *Un commentaire jamais exécuté survit des mois.*)
  *
+ * ⚠️ `data-thumb` — poignée des verrous de GÉOMÉTRIE (`e2e/dev/table-density`).
+ * Elle vaut « photo » ou « secours » selon la branche rendue, et c'est ce qui permet
+ * de mesurer les onze appels RÉELS sans que chaque surface ait à se faire repérer par
+ * une classe ou un style : les deux se changent légitimement, la poignée non. Elle
+ * porte aussi l'information « laquelle des deux branches a été rendue », qu'aucune
+ * mesure de rectangle ne pourrait retrouver.
+ *
  * ⚠️ DÉCORATIF, DONC MUET. `aria-hidden` + `alt=""` : les neuf surfaces nomment
  * déjà le produit en texte à côté. Une vignette qui s'annonce ferait lire le nom
  * deux fois par un lecteur d'écran.
@@ -93,7 +100,7 @@ export default function ProductThumb({
 
   if (p.image && !casse) {
     return (
-      <div style={{ ...commun, overflow: 'hidden', position: 'relative', fontSize }} aria-hidden="true">
+      <div data-thumb="photo" style={{ ...commun, overflow: 'hidden', position: 'relative', fontSize }} aria-hidden="true">
         {/* L'émoji tient la place TANT QUE l'image n'est pas peinte. Il disparaît
             ensuite : une photo à fond transparent laisserait sinon voir l'émoji
             au travers, ce qui est un défaut d'affichage et non un repli. */}
@@ -120,7 +127,7 @@ export default function ProductThumb({
   }
 
   return (
-    <div style={{ ...commun, fontSize }} aria-hidden="true">
+    <div data-thumb="secours" style={{ ...commun, fontSize }} aria-hidden="true">
       {secours}
     </div>
   )

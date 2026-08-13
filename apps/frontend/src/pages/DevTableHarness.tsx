@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import AdminDashboard from '@/pages/AdminDashboard'
 import StockInventory from '@/components/stock/StockInventory'
 import ProductThumb from '@/components/ui/ProductThumb'
+import DevSurfacesHarness from '@/pages/DevSurfacesHarness'
 import { type ProductItem } from '@/components/stock/stockShared'
 import { usePagination } from '@/hooks/usePagination'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
@@ -242,7 +243,8 @@ export default function DevTableHarness() {
   const brut = Number(params.get('n') ?? 50)
   const n = Number.isFinite(brut) && brut > 0 ? brut : 50
   const demande = params.get('vue')
-  const vue = demande === 'stock' ? 'stock' : demande === 'photo' ? 'photo' : 'ops'
+  const vue = demande === 'stock' ? 'stock' : demande === 'photo' ? 'photo'
+    : demande === 'surfaces' ? 'surfaces' : 'ops'
   const extremes = params.get('extremes') === '1'
   useEffect(() => {
     // La console Ops passe par le réseau ; la vue Stock reçoit ses produits en props.
@@ -259,6 +261,7 @@ export default function DevTableHarness() {
     <div data-testid={HARNESS_MARKER} data-harness-nonce={import.meta.env.VITE_HARNESS_NONCE ?? ''}>
       {vue === 'stock' ? <HarnaisStock n={n} extremes={extremes} />
         : vue === 'photo' ? <HarnaisPhoto />
+        : vue === 'surfaces' ? <DevSurfacesHarness />
         : <AdminDashboard />}
     </div>
   )

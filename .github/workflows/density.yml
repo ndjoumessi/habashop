@@ -100,6 +100,32 @@ on:
       - 'apps/frontend/src/lib/productCurrency.ts'
       - 'apps/frontend/src/utils/export.ts'
       - 'apps/frontend/src/utils/normCat.ts'
+      # ── Les 7 SURFACES qui appellent la vignette, mesurées depuis le 2026-08-13
+      #    Le harnais `?vue=surfaces` monte ces composants de PRODUCTION et mesure les
+      #    onze vignettes là où elles vivent. Le défaut du 2026-08-12 était chez un
+      #    APPELANT, pas dans le composant : une vignette carrée en isolation peut être
+      #    étirée par celui qui l'appelle. Ces chemins déclenchent donc la mesure — ils
+      #    sont RÉELLEMENT couverts, ce n'est pas un élargissement de confort.
+      #    ⚠️ Le périmètre propre passe de 32 à 50 fichiers, soit 50 sur les 240
+      #    atteignables depuis `App.tsx`. C'est assumé et borné : chacun est mesuré.
+      - 'apps/frontend/src/components/orders/NewOrderModal.tsx'
+      - 'apps/frontend/src/components/pos/POSProductGrid.tsx'
+      - 'apps/frontend/src/components/stock/ProductPhotoField.tsx'
+      - 'apps/frontend/src/components/stock/StockTransfers.tsx'
+      - 'apps/frontend/src/components/subscriptions/SubscriptionModal.tsx'
+      - 'apps/frontend/src/components/subscriptions/subscriptionShared.ts'
+      - 'apps/frontend/src/pages/DevSurfacesHarness.tsx'
+      - 'apps/frontend/src/pages/PublicCatalog.tsx'
+      - 'apps/frontend/src/pages/Subscriptions.tsx'
+      #    Utilitaires entrés dans la fermeture PAR ces surfaces — listés par
+      #    `densityJobScope.test.ts`, jamais devinés.
+      - 'apps/frontend/src/components/ui/DatePicker.tsx'
+      - 'apps/frontend/src/lib/announce.ts'
+      - 'apps/frontend/src/lib/appUrl.ts'
+      - 'apps/frontend/src/lib/dateRange.ts'
+      - 'apps/frontend/src/lib/formatDate.ts'
+      - 'apps/frontend/src/lib/imageResize.ts'
+      - 'apps/frontend/src/lib/saved.ts'
       # ── L'outillage de la mesure
       # ⚠️ Le DOSSIER, pas le fichier : `e2e/dev/` est exclu de la suite de production par
       #    structure (cf. `e2e/dev/README.md`), et tout harnais futur y tombera sans qu'on

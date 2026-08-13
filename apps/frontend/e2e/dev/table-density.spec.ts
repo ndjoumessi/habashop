@@ -465,6 +465,94 @@ test.describe('table du Stock (vue liste) — géométrie réelle', () => {
     expect(v.filter(x => x.variante === 'emoji' && x.image).length, 'une variante sans photo ne doit rendre aucun <img>').toBe(0)
   })
 
+  /**
+   * LES SURFACES RÉELLES — les onze appels, mesurés là où ils vivent.
+   *
+   * Le cas précédent mesure `ProductThumb` SEUL. Or le défaut du 2026-08-12 était chez
+   * un APPELANT (`style={{ width: '100%' }}` dans la grille POS), pas dans le composant :
+   * une vignette parfaitement carrée en isolation peut être étirée par celui qui l'appelle.
+   * Deux règles de source couvrent les deux formes CONNUES ; ceci couvre le RÉSULTAT,
+   * quelle que soit la forme.
+   *
+   * ⚠️ COUVERTURE PAR SURFACE, et c'est la parade au piège du harnais : ses props sont
+   * fabriquées et castées, donc un composant dont les props changent continuerait à
+   * compiler en ne rendant plus RIEN. Un compte global suffirait à masquer ça — une
+   * surface muette serait compensée par les autres. On exige donc au moins une vignette
+   * DANS CHAQUE surface, nommément.
+   */
+  const SURFACES_ATTENDUES = [
+    'pos-grid', 'new-order-modal', 'subscription-modal', 'product-photo-field',
+    'stock-transfers', 'subscriptions-page', 'public-catalog',
+  ]
+
+  test('les 7 surfaces réelles : aucune vignette déformée', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    // ⚠️ Un segment après `/table` — c'est lui que la `<Routes>` imbriquée du harnais
+    // donne comme `slug` à `PublicCatalog`. Sans lui la surface rend « introuvable »,
+    // donc aucune vignette : mesuré, et attrapé par le compte PAR SURFACE.
+    await page.goto('/__dev/table/temoin?vue=surfaces')
+    await verifierIdentite(page)
+    await page.locator('[data-surface] [data-thumb]').first().waitFor({ timeout: 20_000 })
+    // Les surfaces qui chargent leurs données rendent en deux temps.
+    await page.waitForTimeout(1200)
+
+    const v = await page.evaluate(() => {
+      const out: { surface: string; branche: string; w: number; h: number; dedansW: number; dedansH: number; img: [number, number] | null }[] = []
+      for (const s of [...document.querySelectorAll('[data-surface]')]) {
+        for (const t of [...s.querySelectorAll('[data-thumb]')]) {
+          const r = t.getBoundingClientRect()
+          const i = t.querySelector('img')?.getBoundingClientRect()
+          out.push({
+            surface: s.getAttribute('data-surface')!,
+            branche: t.getAttribute('data-thumb')!,
+            w: Math.round(r.width), h: Math.round(r.height),
+            // ⚠️ La boîte de PADDING, pas la boîte de bordure. `inset:0` cale l'image
+            // sur la première : un appelant qui pose `border:1px` (la modale
+            // d'abonnement le fait) rend légitimement une image de 30 dans une boîte
+            // de 32. Comparer les deux faisait rougir sur un rendu SAIN — trouvé par
+            // ce harnais, invisible sur le composant mesuré en isolation.
+            dedansW: t.clientWidth, dedansH: t.clientHeight,
+            img: i ? [Math.round(i.width), Math.round(i.height)] : null,
+          })
+        }
+      }
+      return out
+    })
+
+    // (1) CHAQUE surface a rendu au moins une vignette — sinon on ne mesure rien d'elle.
+    const muettes = SURFACES_ATTENDUES.filter(s => !v.some(x => x.surface === s))
+    expect(muettes, [
+      `Ces surfaces n’ont rendu AUCUNE vignette : ${muettes.join(', ')}`,
+      'Soit le composant ne rend plus de `ProductThumb`, soit les props fabriquées par le',
+      'harnais ne lui suffisent plus. Dans les deux cas la surface n’est PAS mesurée, et',
+      'un compte global l’aurait masquée derrière les autres.',
+    ].join('\n')).toEqual([])
+
+    // (2) LES DEUX BRANCHES sont exercées — le repli émoji est celui qui masquait le
+    //     défaut (du texte centré se moque de la largeur de sa boîte).
+    expect(v.some(x => x.branche === 'photo'), 'aucune vignette avec PHOTO n’a été rendue').toBe(true)
+    expect(v.some(x => x.branche === 'secours'), 'aucune vignette de REPLI n’a été rendue').toBe(true)
+
+    // (3) CARRÉES, partout. C'est le défaut, mesuré sur le résultat et non sur la forme.
+    const deformees = v.filter(x => Math.abs(x.w - x.h) > 1)
+    expect(deformees, [
+      `Vignettes déformées : ${JSON.stringify(deformees.slice(0, 4))}`,
+      'Une vignette rectangulaire signifie que son appelant lui impose une dimension.',
+      'Le 2026-08-12 la grille POS posait `style={{ width: "100%" }}` : la largeur suivait',
+      'la carte, la hauteur restait à 38 px, et `objectFit:cover` rognait la photo en',
+      'bandeau. Corriger l’APPEL — centrer, jamais étirer.',
+    ].join('\n')).toEqual([])
+
+    // (4) Aucune vignette ÉCRASÉE à zéro : un parent qui replie sa boîte la rend
+    //     invisible sans la déformer — carré 0×0 passerait le test précédent.
+    const nulles = v.filter(x => x.w < 8 || x.h < 8)
+    expect(nulles, `vignettes de taille nulle : ${JSON.stringify(nulles.slice(0, 3))}`).toEqual([])
+
+    // (5) Quand une photo est rendue, elle remplit sa boîte.
+    const malRemplies = v.filter(x => x.img && (Math.abs(x.img[0] - x.dedansW) > 1 || Math.abs(x.img[1] - x.dedansH) > 1))
+    expect(malRemplies, `l’image ne couvre pas sa boîte : ${JSON.stringify(malRemplies.slice(0, 3))}`).toEqual([])
+  })
+
   test('la géométrie du Stock, mesurée et rendue', async ({ page }) => {
     const mesures: string[] = []
     for (const extremes of [false, true]) {

@@ -59,12 +59,20 @@ console.log(`[verify-demo-flag] OK — build PROD : « ${NEEDLE} » absent des $
    ⚠️ Ce harnais est plus grave qu'un raccourci de connexion s'il fuit : il n'expose aucun
    secret, mais il rend un écran d'administration plateforme à n'importe qui.
    ⚠️ Il n'est JAMAIS attendu, même en build démo — contrairement à `demo1234`. */
-const MARQUEUR_HARNAIS = '__habashop_dev_table_harness__'
-const fuites = files.filter(f => readFileSync(f, 'utf8').includes(MARQUEUR_HARNAIS))
-if (fuites.length > 0) {
-  console.error(`[verify-demo-flag] ❌ FUITE — le harnais de mesure « ${MARQUEUR_HARNAIS} » est dans le bundle livré :`)
-  for (const h of fuites) console.error(`   ${h}`)
-  console.error('   Le `import()` doit rester DANS la branche `import.meta.env.DEV ? … : null`.')
-  process.exit(1)
+/* ⚠️ DEUX marqueurs depuis le 2026-08-13 : le harnais des SURFACES monte sept composants
+   de production (caisse, catalogue public, abonnements…) avec un `fetch` stubbé et un store
+   amorcé. Il est tiré par le premier, donc protégé par la même branche `DEV` — mais
+   « protégé par le même mécanisme » est un RAISONNEMENT, et ce fichier existe précisément
+   parce qu'un raisonnement correct sur la source avait laissé passer un artefact fautif.
+   On vérifie les deux sur le `dist/` livré. */
+const MARQUEURS_HARNAIS = ['__habashop_dev_table_harness__', '__habashop_dev_surfaces_harness__']
+for (const marqueur of MARQUEURS_HARNAIS) {
+  const fuites = files.filter(f => readFileSync(f, 'utf8').includes(marqueur))
+  if (fuites.length > 0) {
+    console.error(`[verify-demo-flag] ❌ FUITE — le harnais de mesure « ${marqueur} » est dans le bundle livré :`)
+    for (const h of fuites) console.error(`   ${h}`)
+    console.error('   Le `import()` doit rester DANS la branche `import.meta.env.DEV ? … : null`.')
+    process.exit(1)
+  }
 }
-console.log(`[verify-demo-flag] OK — harnais de mesure absent des ${files.length} fichiers livrés.`)
+console.log(`[verify-demo-flag] OK — les ${MARQUEURS_HARNAIS.length} harnais de mesure sont absents des ${files.length} fichiers livrés.`)

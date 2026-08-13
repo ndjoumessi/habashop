@@ -161,6 +161,13 @@ export default function App() {
       {/* ⚠️ Hors de `ProtectedRoute`/`PlatformAdminOnly` PAR CONSTRUCTION : cette route
           n'existe qu'en développement. La garde P0 de `/admin` reste INTACTE — on ne
           desserre pas un garde pour se donner un instrument de mesure. */}
+      {/* ⚠️ `/*` — le harnais des SURFACES monte `PublicCatalog`, qui lit son `slug`
+          par `useParams`. Une `<Routes>` imbriquée matche le chemin RESTANT : sans ce
+          segment libre, elle n'a rien à matcher et la surface reste muette (mesuré).
+          Un `<Router>` imbriqué, lui, LÈVE. Route DÉV uniquement — `DevTableHarness`
+          est `null` en production, et son absence du bundle est vérifiée sur le
+          `dist/` livré par `verify:demo-flag`. */}
+      {DevTableHarness && <Route path="/__dev/table/*" element={<DevTableHarness />} />}
       {DevTableHarness && <Route path="/__dev/table" element={<DevTableHarness />} />}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
