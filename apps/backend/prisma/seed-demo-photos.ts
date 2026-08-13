@@ -44,22 +44,32 @@ function teinte(categorie: string): number {
   return h
 }
 
-/** La carte, en HTML — Chromium sait rendre les émojis, aucune police à embarquer. */
+/**
+ * La carte, en HTML — Chromium sait rendre les émojis, aucune police à embarquer.
+ *
+ * ⚠️ FOND CLAIR, ET C'EST UNE DÉCISION, pas un goût. Le premier jet était un dégradé
+ * sombre très saturé : il jurait avec le THÈME CLAIR de l'application, et il se lisait
+ * comme une icône d'application plutôt que comme un produit. Un fond neutre lumineux
+ * avec une ombre portée au sol imite la convention d'une prise de vue en studio — ce
+ * à quoi ressemblera le catalogue le jour où de vraies photos remplaceront celles-ci.
+ * La teinte de catégorie reste, mais DISCRÈTE : elle situe, elle ne crie pas.
+ */
 function carte(emoji: string, categorie: string): string {
   const t = teinte(categorie)
   return `<!doctype html><html><body style="margin:0">
   <div style="width:512px;height:512px;position:relative;overflow:hidden;
-              display:flex;align-items:center;justify-content:center;
-              background:
-                radial-gradient(circle at 32% 24%, hsl(${t} 62% 46%) 0%, hsl(${(t + 28) % 360} 58% 26%) 62%, hsl(${(t + 44) % 360} 60% 17%) 100%);">
-    <!-- Voile diagonal : casse l'aplat, donne une matière sans imiter une photo. -->
+              background:radial-gradient(circle at 50% 36%,
+                hsl(${t} 38% 98%) 0%, hsl(${t} 30% 94%) 52%, hsl(${(t + 16) % 360} 28% 87%) 100%);">
+    <!-- Ombre au sol : elle POSE l'objet. Sans elle il flotte, et l'œil lit une icône. -->
+    <div style="position:absolute;left:50%;top:63%;transform:translateX(-50%);
+                width:268px;height:52px;border-radius:50%;
+                background:radial-gradient(ellipse at center, rgba(30,20,10,.20) 0%, rgba(30,20,10,.07) 52%, rgba(0,0,0,0) 72%)"></div>
+    <!-- Halo haut : simule une source de lumière unique, comme en studio. -->
     <div style="position:absolute;inset:0;
-                background:linear-gradient(118deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,0) 42%, rgba(0,0,0,.22) 100%)"></div>
-    <!-- Vignettage : concentre l'œil au centre, où vit l'émoji. -->
-    <div style="position:absolute;inset:0;
-                background:radial-gradient(circle at 50% 48%, rgba(0,0,0,0) 44%, rgba(0,0,0,.34) 100%)"></div>
-    <div style="position:relative;font-size:268px;line-height:1;
-                filter:drop-shadow(0 14px 26px rgba(0,0,0,.42))">${emoji}</div>
+                background:radial-gradient(ellipse at 50% 8%, rgba(255,255,255,.75) 0%, rgba(255,255,255,0) 58%)"></div>
+    <div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-56%);
+                text-align:center;font-size:250px;line-height:1;
+                filter:drop-shadow(0 10px 14px rgba(40,25,10,.22))">${emoji}</div>
   </div></body></html>`
 }
 
