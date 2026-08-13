@@ -1,134 +1,122 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import { fichiersAtteignables } from '../../scripts/classAudit.mjs'
 
 /**
- * VERROU — le filtre de chemin du workflow « Densité » couvre bien le périmètre RÉEL.
+ * VERROU — le filtre de chemin du workflow « Densité » couvre bien ce qui est MESURÉ.
  *
- * ─── LE PROBLÈME, ET POURQUOI IL N'A PAS DE SOLUTION PROPRE ──────────────────
- * `paths:` dans un workflow GitHub est une liste STATIQUE : elle ne peut pas être calculée
- * au déclenchement. C'est donc un **périmètre écrit à la main** — la classe de défaut qui a
- * coûté `signup/` (verrou qui listait ses fichiers et oubliait un dossier) puis `\b8000\b`
- * (motif qui ne pouvait pas exister). Il sera faux le jour où quelqu'un déplacera un fichier.
+ * ─── CE VERROU A CHANGÉ D'OBJET LE 2026-08-13, ET IL FAUT LE DIRE ────────────
+ * Il réconciliait une liste de 50 chemins écrite à la main avec la fermeture d'imports
+ * du harnais. Cette liste n'existe plus : depuis que la mesure ouvre des ÉCRANS
+ * COMPLETS (`/app/stock`, `/app/pos`), le périmètre réel est de 224 fichiers sur les
+ * 240 joignables depuis `App.tsx` — mesuré — et le filtre est devenu
+ * `apps/frontend/src/**`. Réconcilier une liste avec un graphe n'avait plus d'objet.
  *
- * On ne peut pas le dériver. On peut le RÉCONCILIER : ce test recalcule le graphe d'imports
- * et rougit si un fichier du périmètre propre de la console cesse d'être couvert par le YAML.
- * Le filtre reste écrit à la main ; il n'est plus écrit à l'aveugle.
- *
- * ─── POURQUOI PAS « TOUTE LA FERMETURE » — MESURÉ, dans les DEUX SENS ────────
- *   1. LE GRAPHE SUR-INCLUT. La fermeture de `DevTableHarness` compte 36 fichiers, dont 15
- *      ne viennent QUE de `lib/api.ts`, un hub de types qui importe `hrShared`, `posShared`,
- *      `stockShared`… Les inclure ferait tourner la mesure à chaque changement RH ou POS.
- *   2. LE GRAPHE SOUS-INCLUT. `src/index.css` n'est dans AUCUNE fermeture — la feuille est
- *      chargée par `main.tsx`. Or c'est là que vit `.table-wrap { overflow-x }`, dont le
- *      retrait fait rougir 3 cas sur 4. Le dérivé raterait le fichier le plus important.
- *
- * Le périmètre gardé est donc `fermeture(harnais) ∖ fermeture(api.ts)`, **plus la feuille**.
+ * ⚠️ UN VERROU DONT L'OBJET DISPARAÎT NE SE GARDE PAS « AU CAS OÙ » : il se réécrit
+ * ou il se supprime. Gardé tel quel, il serait devenu trivialement vert — il aurait
+ * vérifié que `src/**` couvre des fichiers de `src/`, ce qui est vrai par construction.
+ * Ce qu'il garde maintenant est plus étroit mais RÉEL :
+ *   1. les points d'ENTRÉE des deux mesures sont bien déclenchés ;
+ *   2. la feuille de style l'est aussi — invisible de tout graphe d'imports ;
+ *   3. le filtre EXCLUT toujours ce qui n'est pas mesuré (backend, mobile, docs) ;
+ *   4. les fichiers de mesure eux-mêmes se déclenchent.
  */
 
 const FRONT = resolve(__dirname, '..', '..')
 const RACINE = resolve(FRONT, '..', '..')
 const WORKFLOW = join(RACINE, '.github', 'workflows', 'density.yml')
 
-/** Motifs `paths:` du workflow — lus, jamais recopiés ici (sinon ils se périment en silence). */
+/** Motifs `paths:` du workflow — LUS, jamais recopiés ici (sinon ils se périment). */
 function motifs(): string[] {
   const src = readFileSync(WORKFLOW, 'utf8')
   const bloc = /paths:\s*&perimetre\n([\s\S]*?)\n {2}pull_request:/.exec(src)?.[1] ?? ''
   return [...bloc.matchAll(/^\s*-\s*'([^']+)'/gm)].map(m => m[1])
 }
 
-/** `dir/**` = préfixe ; sinon égalité stricte. Les motifs employés ici n'en demandent pas plus. */
+/** `dir/**` = préfixe ; sinon égalité stricte. */
 function couvert(chemin: string, pats: string[]): boolean {
   return pats.some(p => (p.endsWith('/**') ? chemin.startsWith(p.slice(0, -2)) : chemin === p))
 }
 
-/** Chemins RELATIFS À LA RACINE du dépôt — c'est l'unité de `paths:`. */
-function depuisRacine(entree: string): Set<string> {
-  return new Set(
-    fichiersAtteignables(join(FRONT, 'src'), join(FRONT, entree))
-      .map(f => relative(RACINE, resolve(f))),
-  )
-}
-
 describe('filtre de chemin du workflow Densité', () => {
   const pats = motifs()
-  const fermetureHarnais = depuisRacine('src/pages/DevTableHarness.tsx')
-  const fermetureApi = depuisRacine('src/lib/api.ts')
-  const perimetrePropre = [...fermetureHarnais].filter(f => !fermetureApi.has(f)).sort()
 
-  it('COUVERTURE — le workflow et le graphe sont bien LUS', () => {
+  it('COUVERTURE — le workflow est bien LU', () => {
     // Angle mort n°1 : un regex qui ne matche rien rendrait toutes les assertions vides.
-    expect(pats.length, 'aucun motif extrait du YAML').toBeGreaterThanOrEqual(10)
-    expect(fermetureHarnais.size, 'graphe du harnais vide').toBeGreaterThanOrEqual(30)
-    expect(fermetureApi.size, 'graphe d’api.ts vide').toBeGreaterThanOrEqual(10)
-    expect(perimetrePropre.length, 'périmètre propre vide').toBeGreaterThanOrEqual(15)
+    expect(pats.length, 'aucun motif extrait du YAML').toBeGreaterThanOrEqual(4)
   })
 
-  it('CHAQUE fichier du périmètre propre est couvert par le filtre', () => {
-    // C'est la réconciliation : le YAML est écrit à la main, ce test le confronte au graphe.
-    const nus = perimetrePropre.filter(f => !couvert(f, pats))
+  /**
+   * ⚠️ Les points d'entrée sont DÉRIVÉS des specs, jamais recopiés : on lit les
+   * `page.goto('/app/…')` et on remonte à la page qui sert cette route dans `App.tsx`.
+   * Une liste écrite à la main ici serait fausse au premier écran ajouté — et muette.
+   */
+  const specs = ['e2e/dev/ecrans-density.spec.ts', 'e2e/dev/table-density.spec.ts']
+    .map(f => join(FRONT, f)).filter(existsSync)
+
+  it('les specs de mesure existent et sont LUS', () => {
+    expect(specs.length, 'aucun spec de densité trouvé — le verrou ne garde rien').toBe(2)
+  })
+
+  it('CHAQUE écran ouvert par les specs est servi par une page COUVERTE par le filtre', () => {
+    const app = readFileSync(join(FRONT, 'src', 'App.tsx'), 'utf8')
+    const routes = new Map<string, string>()
+    for (const m of app.matchAll(/path="([^"]+)"[^>]*element=\{[^}]*?<(\w+)\s*\/?>/g)) routes.set(m[1], m[2])
+    // `RoleRoute` enveloppe la page : on récupère le composant INTÉRIEUR.
+    for (const m of app.matchAll(/path="([^"]+)"\s+element=\{<RoleRoute[^>]*>\s*<(\w+)\s*\/>/g)) routes.set(m[1], m[2])
+    expect(routes.size, 'aucune route lue dans App.tsx — le scan ne garde rien').toBeGreaterThanOrEqual(10)
+
+    const ouverts = new Set<string>()
+    for (const f of specs) {
+      for (const m of readFileSync(f, 'utf8').matchAll(/ouvrirEcran\(page,\s*'\/app\/(\w+)'/g)) ouverts.add(m[1])
+    }
+    expect(ouverts.size, 'aucun écran ouvert trouvé dans les specs').toBeGreaterThanOrEqual(2)
+
+    const nus: string[] = []
+    for (const slug of ouverts) {
+      const composant = routes.get(slug)
+      expect(composant, `la route /app/${slug} n’existe pas dans App.tsx`).toBeTruthy()
+      const chemin = `apps/frontend/src/pages/${composant}.tsx`
+      if (!couvert(chemin, pats)) nus.push(chemin)
+    }
     expect(nus, [
-      'Ces fichiers sont dans le périmètre RÉEL de la console mais AUCUN motif',
-      `de \`${relative(RACINE, WORKFLOW)}\` ne les couvre — la mesure de densité ne`,
-      'tournerait pas si on les modifiait. Ajouter le chemin, ou dire pourquoi on l’exclut.',
+      'Ces écrans sont MESURÉS mais le filtre ne les déclenche pas :',
+      ...nus, 'La mesure ne tournerait pas si on les modifiait.',
     ].join('\n')).toEqual([])
   })
 
   it('⚠️ la FEUILLE est couverte — elle n’est dans aucun graphe d’imports', () => {
-    // Le fichier que le sabotage vise (`overflow-x` de `.table-wrap`) et que la dérivation
-    // rate : c'est la moitié « sous-inclut » de la mesure, figée ici.
-    expect(fermetureHarnais.has('apps/frontend/src/index.css'), 'le CSS ne devrait PAS être dans le graphe').toBe(false)
-    expect(couvert('apps/frontend/src/index.css', pats), 'la feuille doit être dans le filtre').toBe(true)
+    // Le fichier que les sabotages visent (`overflow-x` de `.table-wrap`, le `nowrap`
+    // des cellules monétaires) et que toute dérivation par imports raterait.
+    const feuille = 'apps/frontend/src/index.css'
+    expect(fichiersAtteignables(join(FRONT, 'src'), join(FRONT, 'src/App.tsx'))
+      .map(f => relative(RACINE, resolve(f))).includes(feuille),
+      'le CSS ne devrait PAS être dans le graphe').toBe(false)
+    expect(couvert(feuille, pats), 'la feuille doit être dans le filtre').toBe(true)
   })
 
   it('l’outillage de la mesure se déclenche lui-même', () => {
     for (const f of [
       'apps/frontend/e2e/dev/table-density.spec.ts',
+      'apps/frontend/e2e/dev/ecrans-density.spec.ts',
+      'apps/frontend/e2e/dev/ecrans.ts',
       'apps/frontend/playwright.density.config.ts',
       'apps/frontend/src/pages/DevTableHarness.tsx',
+      'apps/frontend/src/pages/DevSurfacesHarness.tsx',
       '.github/workflows/density.yml',
     ]) expect(couvert(f, pats), `« ${f} » doit déclencher la mesure`).toBe(true)
   })
 
-  /**
-   * ⚠️ EXCEPTION NOMMÉE, arrivée le 2026-08-13 — exactement le cas que le commentaire
-   * ci-dessous annonçait. `stockShared` porte `statusOf`, `stockCatLabel` et
-   * `productMargin` : les LIBELLÉS des pastilles et les nombres RENDUS dans la table du
-   * Stock, désormais mesurée. Changer « Bas » en « Stock bas » élargit une colonne.
-   * Il est donc couvert par le filtre, et cette liste rend l'exception RÉFUTABLE :
-   * y ajouter un module sans raison fait toujours passer le test, mais le diff le montre.
-   */
-  const SHARED_MESURES = ['apps/frontend/src/components/stock/stockShared.tsx']
-
-  it('les modules tirés par le SEUL hub `api.ts` sont EXCLUS — sauf exception NOMMÉE', () => {
-    // Sans cette exclusion, toute modification RH, POS ou clients lancerait un navigateur.
-    const tiresParLeHub = [...fermetureApi].filter(f => f !== 'apps/frontend/src/lib/api.ts')
-    expect(tiresParLeHub.length).toBeGreaterThanOrEqual(10)
-    // `hooks/**` et `components/ui/**` peuvent en recouper : on vérifie que les `*Shared`
-    // de domaine, eux, restent dehors — à l'exception de ceux qu'on MESURE.
-    const sharedDeDomaine = tiresParLeHub.filter(f => /components\/(customers|hr|orders|pos|stock|suppliers|dashboard)\//.test(f))
-    expect(sharedDeDomaine.length, 'aucun *Shared de domaine trouvé — le scan ne garde rien').toBeGreaterThanOrEqual(5)
-
-    // ⚠️ CONTRÔLE DISCRIMINANT : l'exception doit être RÉELLE, pas décorative. Si
-    // `stockShared` sortait de la fermeture d'`api.ts`, l'exemption ne servirait plus à
-    // rien et devrait disparaître — un critère qui laisse passer son propre déclencheur
-    // est faux, pas prudent.
-    for (const f of SHARED_MESURES) {
-      expect(sharedDeDomaine, `« ${f} » n’est plus tiré par le hub : l’exception est morte`).toContain(f)
-      expect(couvert(f, pats), `« ${f} » est RENDU dans une table mesurée, il doit déclencher`).toBe(true)
-    }
-
-    const fuites = sharedDeDomaine.filter(f => couvert(f, pats) && !SHARED_MESURES.includes(f))
-    expect(fuites, 'un *Shared de domaine NON mesuré déclencherait la mesure pour rien').toEqual([])
-  })
-
-  it('le filtre ne ratisse pas TOUT le frontend', () => {
-    // Un filtre qui matche tout n'est pas un filtre : il rend le workflow séparé inutile.
+  it('le filtre ne ratisse pas TOUT le dépôt — c’est ce qui justifie le workflow séparé', () => {
+    // Un filtre qui matche tout n'est pas un filtre : le fichier séparé n'aurait plus
+    // d'objet. Dans ce monorepo, l'essentiel des commits touche ces chemins-là.
     for (const f of [
-      'apps/frontend/src/pages/POS.tsx',
-      'apps/frontend/src/pages/HR.tsx',
       'apps/backend/src/routes/sales.ts',
+      'apps/backend/prisma/schema.prisma',
+      'mobile/src/lib/api.ts',
+      'apps/frontend/index.html',
+      'apps/frontend/public/robots.txt',
       'CLAUDE.md',
       'docs/modules.md',
     ]) expect(couvert(f, pats), `« ${f} » ne doit PAS déclencher la mesure`).toBe(false)

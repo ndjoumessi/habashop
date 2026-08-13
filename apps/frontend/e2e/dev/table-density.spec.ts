@@ -553,93 +553,13 @@ test.describe('table du Stock (vue liste) — géométrie réelle', () => {
     expect(malRemplies, `l’image ne couvre pas sa boîte : ${JSON.stringify(malRemplies.slice(0, 3))}`).toEqual([])
   })
 
-  /* ══════════════════════════════════════════════════════════════════════════
-     1280 px — LE RÉGIME CONTRAINT
-     ══════════════════════════════════════════════════════════════════════════
-     MESURÉ en production : à 1440 px la table tient (1058 dans 1078), à 1280 elle
-     ne tient PAS (1058 dans 918). Et 1280 est une largeur d'écran très courante.
-
-     ⚠️ ON NE PEUT PAS EXIGER QU'ELLE TIENNE, et le dire est plus honnête que de
-     poser un seuil qu'on relèverait au premier rouge : 1058 px de contenu n'entrent
-     pas dans 918 px. Y arriver demanderait de retirer une colonne de plus — une
-     décision produit, pas un réglage. Ce qui EST exigible, c'est que le débordement
-     reste une soupape et non une casse : la page ne défile pas, le conteneur oui, et
-     — ce qui compte pour le caissier — les ACTIONS restent ATTEIGNABLES en défilant.
-     Le défaut du 2026-08-13 n'était pas « ça défile », c'était « Supprimer est coupé
-     et rien ne dit qu'il y a autre chose à droite ».
-
-     ⚠️ La largeur est IMPOSÉE au harnais (918 px), parce qu'il n'a pas de barre
-     latérale : sans ça son conteneur ferait 1182 px à 1280, la table y tiendrait, et
-     on mesurerait un cas qui ne peut pas échouer.                                   */
-
-  const CONTENU_A_1280 = 918
-
-  test(`1280 px (contenu ${CONTENU_A_1280} px) : le débordement reste une soupape, pas une casse`, async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 })
-    await page.goto(`/__dev/table?vue=stock&n=24&largeur=${CONTENU_A_1280}`)
-    await verifierIdentite(page)
-    await page.locator(LIGNES_STOCK).first().waitFor({ timeout: 20_000 })
-
-    expect(await page.locator(LIGNES_STOCK).count(), 'la table doit porter les 24 lignes').toBe(24)
-
-    const m = await page.locator('.table-wrap.stock-table').first().evaluate(el => ({
-      naturelle: el.scrollWidth, conteneur: el.clientWidth, overflowX: getComputedStyle(el).overflowX,
-    }))
-    // ⚠️ CONTRÔLE DISCRIMINANT : si la table TENAIT ici, ce cas ne mesurerait rien —
-    // il faut d'abord prouver qu'on est bien dans le régime contraint.
-    expect(m.naturelle, `la table devrait déborder de ${CONTENU_A_1280} px — sinon ce cas ne mesure pas ce qu'il annonce`)
-      .toBeGreaterThan(m.conteneur)
-
-    // (1) La PAGE ne défile pas : le débordement est absorbé par le conteneur.
-    const doc = await page.evaluate(() => ({
-      scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth,
-    }))
-    expect(doc.scroll, `la PAGE défile horizontalement (${doc.scroll} > ${doc.client})`)
-      .toBeLessThanOrEqual(doc.client + 1)
-
-    // (2) Le conteneur PEUT défiler — sans quoi la fin de la table est inatteignable.
-    expect(['auto', 'scroll'], `.table-wrap doit défiler (overflowX = ${m.overflowX})`).toContain(m.overflowX)
-
-    // (3) ⚠️ LES ACTIONS SONT ATTEIGNABLES. C'est la seule garantie qui compte pour le
-    //     caissier, et aucune des deux précédentes ne la donne : un conteneur peut
-    //     défiler tout en laissant la dernière colonne hors de portée si quelque chose
-    //     la déborde. On défile jusqu'au bout et on vérifie que le dernier bouton de
-    //     la première ligne est ENTIÈREMENT dans le cadre.
-    const atteignable = await page.evaluate(sel => {
-      const wrap = document.querySelector('.table-wrap.stock-table') as HTMLElement
-      const tr = document.querySelector(sel) as HTMLElement
-      const boutons = [...tr.querySelectorAll('button')]
-      const dernier = boutons[boutons.length - 1]
-      if (!dernier) return null
-      const depassement = () => {
-        const b = dernier.getBoundingClientRect(), c = wrap.getBoundingClientRect()
-        return Math.round(b.right - c.right)
-      }
-      wrap.scrollLeft = 0
-      const avant = depassement()
-      wrap.scrollLeft = wrap.scrollWidth
-      return {
-        titre: dernier.getAttribute('title') ?? dernier.getAttribute('aria-label') ?? '?',
-        avant, apres: depassement(),
-      }
-    }, LIGNES_STOCK)
-
-    expect(atteignable, 'aucun bouton d’action lu — la ligne n’en porte plus ?').not.toBeNull()
-    // ⚠️ AUTO-DISCRIMINANTE : sans cette ligne, l'assertion suivante serait verte dans un
-    // monde où le bouton est visible d'emblée — c'est-à-dire là où elle ne mesure RIEN.
-    // On exige d'abord que le bouton soit BIEN hors du cadre avant défilement, puis
-    // qu'il y entre après. Le sabotage S6 s'arrête à l'assertion précédente et ne
-    // pouvait donc pas exercer celle-ci : elle porte sa propre contre-preuve.
-    expect(atteignable!.avant, 'le bouton est déjà visible sans défiler — ce cas ne mesure pas l’atteignabilité')
-      .toBeGreaterThan(0)
-    expect(atteignable!.apres, [
-      `Après défilement complet, « ${atteignable?.titre} » dépasse encore de ${atteignable?.apres} px`,
-      `(il dépassait de ${atteignable?.avant} px avant défilement).`,
-      'Le bouton est INATTEIGNABLE : le caissier ne peut pas l’atteindre, même en',
-      'défilant. C’est la forme grave du défaut du 2026-08-13 — là il était coupé,',
-      'ici il serait hors de portée.',
-    ].join('\n')).toBeLessThanOrEqual(1)
-  })
+  /* ⚠️ LE CAS « 1280 px » A DÉMÉNAGÉ — `e2e/dev/ecrans-density.spec.ts`.
+     Il vivait ici avec un `?largeur=918` imposé au harnais, faute de barre latérale :
+     sans ça son conteneur faisait 1182 px et la table TENAIT, donc le cas mesurait une
+     situation qui ne peut pas échouer. L'écran complet donne la contrainte RÉELLE —
+     mesuré, `.table-wrap` à 918 px, la valeur de production. Garder les deux, c'était
+     garder un jumeau moins fidèle qui aurait fini par diverger : celui-ci est parti,
+     pas dupliqué. */
 
   test('la géométrie du Stock, mesurée et rendue', async ({ page }) => {
     const mesures: string[] = []

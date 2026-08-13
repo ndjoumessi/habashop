@@ -1,135 +1,56 @@
 name: Densité — table dense
 
 # ─── POURQUOI UN WORKFLOW SÉPARÉ ──────────────────────────────────────────────
-# Cette mesure démarre `vite dev` et pilote un navigateur : elle n'a d'intérêt que si la
-# géométrie de la table dense a pu changer. `paths:` est natif sur un WORKFLOW, pas sur un
-# job — un fichier séparé donne donc un vrai filtrage : sur un commit hors périmètre, aucun
-# run n'est même créé. C'est ce qui rend la seconde direction (« un commit de documentation
-# ne le déclenche pas ») prouvable par GitHub lui-même, et pas seulement par nous.
+# Cette mesure démarre `vite dev` et pilote un navigateur. `paths:` est natif sur un
+# WORKFLOW, pas sur un job — un fichier séparé donne donc un vrai filtrage : sur un
+# commit hors périmètre, aucun run n'est même créé. C'est ce qui rend la seconde
+# direction (« un commit de backend ou de documentation ne le déclenche pas »)
+# prouvable par GitHub lui-même, et pas seulement par nous.
 #
-# ⚠️ CE FILTRE EST ÉCRIT À LA MAIN, ET ASSUMÉ — il ne PEUT PAS être dérivé. Deux raisons,
-# toutes deux MESURÉES le 2026-08-06, et elles vont en SENS INVERSE :
+# ─── CE QUI EST MESURÉ, ET DEPUIS QUAND ───────────────────────────────────────
+#   • la table dense de la console Ops           (harnais `/__dev/table`)
+#   • la table du Stock, liste et grille          (2026-08-13)
+#   • la vignette produit, seule puis dans ses 7 surfaces appelantes
+#   • les ÉCRANS COMPLETS `/app/stock` et `/app/pos` — vraie barre latérale, vrai
+#     `.page-content`, vraies routes (2026-08-13)
 #
-#   1. LE GRAPHE SUR-INCLUT. La fermeture transitive de `DevTableHarness` compte 36 fichiers,
-#      dont 15 ne viennent QUE de `lib/api.ts` — un hub de types qui importe `hrShared`,
-#      `posShared`, `stockShared`… Les inclure ferait tourner cette mesure à chaque
-#      changement RH ou POS, sans le moindre rapport avec la mise en page.
-#   2. LE GRAPHE SOUS-INCLUT. `src/index.css` n'apparaît dans AUCUNE fermeture d'import : la
-#      feuille est chargée par `main.tsx`. Or c'est là que vit `.table-wrap { overflow-x }`,
-#      dont le retrait fait rougir 3 cas sur 4. Un filtre purement dérivé raterait le fichier
-#      le PLUS important — dans le sens dangereux.
+# ⚠️ LE FILTRE ÉTAIT UNE LISTE DE 50 CHEMINS ; IL N'EN EST PLUS UNE, et c'est le
+# dernier point qui a changé qui l'impose. Tant qu'on ne montait que des composants,
+# la fermeture d'imports du harnais bornait honnêtement le périmètre et
+# `densityJobScope.test.ts` réconciliait la liste avec le graphe. Un écran complet, lui,
+# atteint 224 des 240 fichiers joignables depuis `App.tsx` — MESURÉ. Garder 50 chemins
+# aurait revendiqué une précision disparue et raté 174 fichiers EN SILENCE : la classe
+# de défaut exacte que cette liste servait à éviter.
 #
-# ⚠️ CE QU'IL NE COUVRE PAS, dit plutôt que masqué :
-#   • les 15 modules `*Shared` tirés par le hub `api.ts` — exclusion DÉLIBÉRÉE ;
-#   • `lib/api.ts` lui-même : il change la donnée, pas la géométrie ;
-#   • un fichier DÉPLACÉ hors des chemins listés. C'est la classe de défaut qui a coûté
-#     `signup/` puis `\b8000\b`. La parade n'est pas dans ce YAML : elle est dans
-#     `densityJobScope.test.ts`, qui recalcule le graphe et ROUGIT si un fichier du périmètre
-#     PROPRE de la console cesse d'être couvert ici.
+# ⚠️ CE QUI N'EST TOUJOURS PAS COUVERT, dit plutôt que masqué :
+#   • `apps/frontend/index.html` et `public/**` — hors `src/`, jamais mesurés ici ;
+#   • le rendu MOBILE (`mobile/`), qui a son propre moteur et aucune mesure de ce type ;
+#   • les écrans autres que Stock et POS : ils sont ATTEIGNABLES par le même amorçage
+#     (`e2e/dev/ecrans.ts`, ~5 lignes chacun) mais ne sont PAS mesurés aujourd'hui.
+#     Le filtre les déclenche pourtant : il est plus large que la mesure, jamais plus
+#     étroit. C'est le bon sens de l'erreur.
 
 on:
   push:
     branches: [main]
     paths: &perimetre
-      # ── Écrans de la console plateforme
-      - 'apps/frontend/src/pages/AdminDashboard.tsx'
-      - 'apps/frontend/src/pages/Integrations.tsx'
-      # ── Le harnais de mesure lui-même
-      - 'apps/frontend/src/pages/DevTableHarness.tsx'
-      # ── Données rendues DANS le formulaire de la console (2026-08-08)
-      #    Le formulaire de création de tenant expose désormais un `select` de pays :
-      #    ces libellés sont du texte RENDU, donc de la géométrie. Ils sont entrés dans la
-      #    fermeture d'imports, et le verrou `densityJobScope` l'a signalé au commit même.
-      - 'apps/frontend/src/utils/countryList.ts'
-      - 'apps/frontend/src/utils/countryCurrency.ts'
-      # ── Composants propres à la console
-      - 'apps/frontend/src/components/admin/**'
-      - 'apps/frontend/src/components/integrations/**'
-      # ── Primitives d'interface RÉELLEMENT dans le périmètre — NOMMÉES, pas globées.
-      #    ⚠️ `components/ui/**` a été essayé et MESURÉ trop large : sur 31 fichiers du
-      #    dossier, 7 seulement sont dans la fermeture. Le chantier RH du 2026-08-06
-      #    (`c6f1dc81`) déclenchait la mesure parce qu'il touchait `ValidatedInput`, qui n'y
-      #    est pas. Un filtre qui se déclenche à tort use la patience aussi sûrement qu'un
-      #    filtre qui rate — et il finit désarmé.
-      #    ⚠️ Contrepartie ASSUMÉE : une NOUVELLE primitive utilisée par la console ne serait
-      #    pas couverte. C'est `densityJobScope.test.ts` qui l'attrape — il recalcule la
-      #    fermeture et rougit sur tout fichier du périmètre absent d'ici.
-      - 'apps/frontend/src/components/ui/AppButton.tsx'
-      - 'apps/frontend/src/components/ui/ConfirmModal.tsx'
-      - 'apps/frontend/src/components/ui/EmptyState.tsx'
-      - 'apps/frontend/src/components/ui/IconButton.tsx'
-      - 'apps/frontend/src/components/ui/LogoMark.tsx'
-      - 'apps/frontend/src/components/ui/ResponsiveGrid.tsx'
-      - 'apps/frontend/src/components/ui/skeleton.tsx'
-      - 'apps/frontend/src/hooks/useI18n.ts'
-      - 'apps/frontend/src/hooks/useModalFocus.ts'
-      - 'apps/frontend/src/lib/confirm.tsx'
-      - 'apps/frontend/src/lib/paymentMethods.ts'
-      - 'apps/frontend/src/lib/plans.ts'
-      - 'apps/frontend/src/lib/utils.ts'
-      - 'apps/frontend/src/stores/authStore.ts'
-      # ── ⚠️ LA FEUILLE — invisible du graphe d'imports, et c'est elle que le sabotage vise
-      - 'apps/frontend/src/index.css'
-      # ── Table du STOCK (vue liste), mesurée depuis le 2026-08-13
-      #    Ajoutée après DEUX défauts de mise en page trouvés à l'œil sur une capture de
-      #    production : une table qui débordait de 80 px à 1440 px (bouton Supprimer coupé)
-      #    et un montant enroulé. Aucun des 1 390 tests unitaires ne pouvait les voir.
-      - 'apps/frontend/src/components/stock/StockInventory.tsx'
-      #    ⚠️ `stockShared` est tiré par le hub `lib/api.ts`, donc EXCLU du périmètre propre
-      #    par la règle générale — et il est pourtant nommé ICI, délibérément : il porte
-      #    `statusOf`, `stockCatLabel` et `productMargin`, c'est-à-dire les LIBELLÉS des
-      #    pastilles et les nombres RENDUS dans la table. Changer « Bas » en « Stock bas »
-      #    élargit une colonne. C'est l'exception que `densityJobScope.test.ts` annonçait :
-      #    « si un *Shared se met à porter de la mise en page, il faudra l'ajouter
-      #    NOMMÉMENT ». Les autres *Shared de domaine restent dehors, et le test le fige.
-      - 'apps/frontend/src/components/stock/stockShared.tsx'
-      #    Primitives et utilitaires entrés dans la fermeture PAR le harnais Stock —
-      #    signalés un par un par `densityJobScope.test.ts` au commit même, pas devinés.
-      #    ⚠️ La VIGNETTE — mesurée depuis le 2026-08-13. Elle avait été livrée étirée
-      #    en bandeau, et le défaut avait dormi depuis le câblage des dix surfaces :
-      #    un émoji est du texte centré, il se moque de la largeur de sa boîte. Seule
-      #    une VRAIE image le révèle, donc seule une mesure de rendu le garde.
-      - 'apps/frontend/src/components/ui/ProductThumb.tsx'
-      - 'apps/frontend/src/components/ui/BarcodeScanner.tsx'
-      - 'apps/frontend/src/components/ui/FilterSelect.tsx'
-      - 'apps/frontend/src/components/ui/Pagination.tsx'
-      - 'apps/frontend/src/hooks/usePagination.ts'
-      - 'apps/frontend/src/lib/barcode.ts'
-      - 'apps/frontend/src/lib/csv.ts'
-      - 'apps/frontend/src/lib/html.ts'
-      - 'apps/frontend/src/lib/productCurrency.ts'
-      - 'apps/frontend/src/utils/export.ts'
-      - 'apps/frontend/src/utils/normCat.ts'
-      # ── Les 7 SURFACES qui appellent la vignette, mesurées depuis le 2026-08-13
-      #    Le harnais `?vue=surfaces` monte ces composants de PRODUCTION et mesure les
-      #    onze vignettes là où elles vivent. Le défaut du 2026-08-12 était chez un
-      #    APPELANT, pas dans le composant : une vignette carrée en isolation peut être
-      #    étirée par celui qui l'appelle. Ces chemins déclenchent donc la mesure — ils
-      #    sont RÉELLEMENT couverts, ce n'est pas un élargissement de confort.
-      #    ⚠️ Le périmètre propre passe de 32 à 50 fichiers, soit 50 sur les 240
-      #    atteignables depuis `App.tsx`. C'est assumé et borné : chacun est mesuré.
-      - 'apps/frontend/src/components/orders/NewOrderModal.tsx'
-      - 'apps/frontend/src/components/pos/POSProductGrid.tsx'
-      - 'apps/frontend/src/components/stock/ProductPhotoField.tsx'
-      - 'apps/frontend/src/components/stock/StockTransfers.tsx'
-      - 'apps/frontend/src/components/subscriptions/SubscriptionModal.tsx'
-      - 'apps/frontend/src/components/subscriptions/subscriptionShared.ts'
-      - 'apps/frontend/src/pages/DevSurfacesHarness.tsx'
-      - 'apps/frontend/src/pages/PublicCatalog.tsx'
-      - 'apps/frontend/src/pages/Subscriptions.tsx'
-      #    Utilitaires entrés dans la fermeture PAR ces surfaces — listés par
-      #    `densityJobScope.test.ts`, jamais devinés.
-      - 'apps/frontend/src/components/ui/DatePicker.tsx'
-      - 'apps/frontend/src/lib/announce.ts'
-      - 'apps/frontend/src/lib/appUrl.ts'
-      - 'apps/frontend/src/lib/dateRange.ts'
-      - 'apps/frontend/src/lib/formatDate.ts'
-      - 'apps/frontend/src/lib/imageResize.ts'
-      - 'apps/frontend/src/lib/saved.ts'
-      # ── L'outillage de la mesure
-      # ⚠️ Le DOSSIER, pas le fichier : `e2e/dev/` est exclu de la suite de production par
-      #    structure (cf. `e2e/dev/README.md`), et tout harnais futur y tombera sans qu'on
-      #    ait à retoucher ce filtre.
+      # ⚠️ LE FILTRE A ÉTÉ ÉLARGI LE 2026-08-13, ET C'EST UNE CORRECTION D'HONNÊTETÉ.
+      # Il listait 50 fichiers, réconciliés avec la fermeture d'imports du harnais par
+      # `densityJobScope.test.ts`. Depuis que la mesure ouvre des ÉCRANS COMPLETS
+      # (`e2e/dev/ecrans-density.spec.ts` : `/app/stock`, `/app/pos`), le périmètre
+      # RÉELLEMENT mesuré est de 224 fichiers sur les 240 atteignables depuis
+      # `App.tsx` — MESURÉ, pas estimé. Une liste de 50 aurait donc revendiqué une
+      # précision qu'elle n'a plus, et raté 174 fichiers en silence : exactement la
+      # classe de défaut que ce filtre avait été écrit pour éviter.
+      #
+      # ⚠️ CE N'EST PAS « PLUS DE FILTRE ». Dans un monorepo, l'essentiel des commits
+      # touche `apps/backend`, `mobile/`, `docs/` ou `prisma/` : aucun de ceux-là ne
+      # démarre de navigateur. La seconde direction reste donc prouvable par GitHub
+      # lui-même — c'était la raison d'être du fichier séparé, et elle tient toujours.
+      - 'apps/frontend/src/**'
+      # L'outillage de la mesure. ⚠️ Le DOSSIER, pas les fichiers : `e2e/dev/` est
+      # exclu de la suite de production par structure (cf. `e2e/dev/README.md`), et
+      # tout harnais futur y tombera sans qu'on ait à retoucher ce filtre.
       - 'apps/frontend/e2e/dev/**'
       - 'apps/frontend/playwright.density.config.ts'
       - 'apps/frontend/playwright.config.ts'
