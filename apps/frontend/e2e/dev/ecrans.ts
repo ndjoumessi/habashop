@@ -197,10 +197,27 @@ export function seedEcran(page: Page) {
           })),
           total: 1342,
           limite: 100,
+          // ⚠️ LA LISTE des modules, pas leur compte — la route l'envoie depuis le
+          // 2026-08-14, et l'écran en dérive À LA FOIS ses options de filtre et son
+          // KPI « Modules concernés ».
+          // ⚠️ Volontairement PLUS LARGE que ce que les 100 lignes portent, et avec
+          // deux codes (`orders`, `suppliers`) qui tombent sur la MÊME catégorie
+          // d'écran : une dérivation depuis les lignes reçues, ou un comptage des
+          // codes stockés sans dédoublonnage, rendrait un nombre différent.
+          modulesPresents: ['SETTINGS', 'POS', 'STOCK', 'orders', 'suppliers', 'payroll'],
           // ⚠️ Compteurs VOLONTAIREMENT incohérents avec les 100 lignes envoyées :
           // s'ils coïncidaient, une dérivation depuis les lignes passerait pour exacte.
-          stats: { aujourdhui: 37, alertes: 12, modules: 6 },
+          stats: { aujourdhui: 37, alertes: 12 },
         })
+      }
+      // ⚠️ Le panneau « Sécurité de mon compte » interroge une AUTRE route (échelle
+      // utilisateur, hors boutique). Sans cette réponse il rendrait son état d'ÉCHEC,
+      // et le balayage de densité mesurerait une géométrie que la production n'a pas.
+      if (url.includes('/api/account/security-activity')) {
+        return json([
+          { id: 'sec-1', action: 'PASSWORD_CHANGE', description: 'Mot de passe modifié',
+            ip: '127.0.0.1', severity: 'info', createdAt: new Date(2026, 7, 11, 8, 30).toISOString() },
+        ])
       }
       if (url.includes('/api/billing/status')) {
         return json({ plan: 'business', status: 'active', trialEnds: null, quota: { ai: 0, ocr: 0 } })

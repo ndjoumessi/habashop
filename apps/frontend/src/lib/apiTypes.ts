@@ -55,12 +55,25 @@ export interface ApiAuditLogPage {
   total: number
   limite: number
   /**
+   * Codes de module AYANT PRODUIT un événement — la LISTE, pas le compte, et calculée
+   * sur toute la table (`groupBy`), pas sur les `items` plafonnés.
+   *
+   * ⚠️ On n'envoyait que `modules.length`. L'écran, lui, tirait ses options de filtre
+   * d'un `Record` FIGÉ : neuf catégories promises, dont trois qu'aucun code serveur
+   * n'écrit, et quatre codes réellement écrits sans entrée. Un filtre qui propose ce
+   * que la donnée ne porte pas est la famille « champ déclaré qui se fait passer pour
+   * une mesure ». Les options ET le compteur en dérivent maintenant tous les deux.
+   *
+   * ⚠️ Codes STOCKÉS, bruts (`SETTINGS`, `payroll`, `products`…). La traduction en
+   * catégories d'écran vit côté client, en un seul endroit (`normalizeModule`).
+   */
+  modulesPresents: string[]
+  /**
    * ⚠️ Compteurs calculés EN BASE. Dérivés des `items`, ils rataient tout ce qui vit
    * au-delà du plafond : « alertes » ignorait une alerte plus ancienne que la 100ᵉ
    * ligne. Un compteur d'alertes qui rate les alertes est pire que pas de compteur.
-   * `modules` = modules AYANT PRODUIT un événement, pas « modules actifs ».
    */
-  stats: { aujourdhui: number; alertes: number; modules: number }
+  stats: { aujourdhui: number; alertes: number }
 }
 
 /**

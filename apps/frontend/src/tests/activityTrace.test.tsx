@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { parseDescription } from '@/pages/Activity'
+import { parseDescription, normalizeModule, CATEGORIES_MODULE } from '@/pages/Activity'
 
 /**
  * VERROU — le journal d'audit MONTRE ce qu'il a enregistré, et ne promet rien de faux.
@@ -64,7 +64,12 @@ describe('(c) les compteurs sont EXACTS, et nommés d’après ce qu’ils compt
     }
     expect(ACTIVITY).toContain('stats?.alertes')
     expect(ACTIVITY).toContain('stats?.aujourdhui')
-    expect(ACTIVITY).toContain('stats?.modules')
+    // ⚠️ « Modules concernés » ne vient plus du serveur : il compte les OPTIONS
+    // réellement proposées juste à côté. Le serveur comptait les codes STOCKÉS, donc
+    // `orders` + `suppliers` faisaient « 2 modules » en face d'UNE seule option
+    // « Commandes » — deux nombres muets qui se contredisent sur le même écran.
+    expect(ACTIVITY).toContain('optionsModules?.length')
+    expect(ACTIVITY.includes('stats?.modules')).toBe(false)
   })
 
   it('⚠️ ZÉRO alerte n’est pas peint en ROUGE — l’œil croit la couleur avant le chiffre', () => {
@@ -128,9 +133,165 @@ describe('(b) le total est celui du SERVEUR, et la troncature se dit', () => {
     expect(ACTIVITY).toContain('if (echec) return')
   })
 
+  it('le filtre de module est DÉRIVÉ des données, jamais d’un catalogue figé', () => {
+    // ⚠️ Il listait `Object.keys(MODULE_CONFIG)` : neuf catégories écrites à la main,
+    // dont trois qui ne pouvaient RIEN rendre. Une option morte est pire qu'une option
+    // absente — son résultat vide se lit « il ne s'est rien passé ».
+    expect(ACTIVITY.includes('Object.keys(MODULE_CONFIG).map')).toBe(false)
+    expect(ACTIVITY).toContain('(optionsModules ?? []).map')
+    expect(ACTIVITY).toContain('modulesPresents.map(normalizeModule)')
+    // Dédoublonnage APRÈS normalisation, sinon deux codes d'une même catégorie
+    // produiraient deux options identiques.
+    expect(/new Set\(modulesPresents\.map\(normalizeModule\)\)/.test(ACTIVITY)).toBe(true)
+  })
+
   it('le plafond n’est PAS recopié dans l’écran — il vit dans la route', () => {
     // Un « 100 » réécrit ici se périmerait au premier changement côté serveur, et la
     // divergence serait muette. La troncature se déduit de la comparaison au total.
     expect(/tronque\s*=\s*totalServeur !== null && totalServeur > activityLog\.length/.test(ACTIVITY)).toBe(true)
   })
 })
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   (d) LE FILTRE NE PROMET QUE CE QUE LA DONNÉE PORTE
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * ⚠️ PÉRIMÈTRE DÉRIVÉ DU SERVEUR, jamais recopié ici. Une liste de modules écrite à
+ * la main dans ce test se périmerait au premier module ajouté côté backend — et en
+ * SILENCE, puisque le seul symptôme visible est un filtre qui ne rend rien.
+ *
+ * ⚠️ Lecture à l'EXÉCUTION (`readFileSync`), jamais un `import` : c'est la convention
+ * des fixtures partagées de ce dépôt. Ici elle n'est pas dictée par le contexte
+ * Docker (ce test tourne côté front) mais elle évite d'attirer `apps/backend` dans le
+ * graphe de compilation du front, ce que `tsc` refuserait.
+ */
+const BACKEND_SRC = join(__dirname, '..', '..', '..', 'backend', 'src')
+
+function fichiersTs(dir: string): string[] {
+  const out: string[] = []
+  for (const e of readdirSync(dir)) {
+    const p = join(dir, e)
+    if (statSync(p).isDirectory()) { if (e !== 'tests' && e !== 'node_modules') out.push(...fichiersTs(p)) }
+    else if (e.endsWith('.ts') && !e.includes('.test.')) out.push(p)
+  }
+  return out
+}
+
+const FICHIERS_BACKEND = fichiersTs(BACKEND_SRC)
+
+const MODULES_ECRITS: string[] = (() => {
+  const vus = new Set<string>()
+  for (const f of FICHIERS_BACKEND) {
+    for (const m of readFileSync(f, 'utf8').matchAll(/\bmodule:\s*['"]([^'"]+)['"]/g)) vus.add(m[1])
+  }
+  return [...vus].sort()
+})()
+
+describe('(d) chaque module écrit par le SERVEUR a une catégorie à l’écran', () => {
+  it('COUVERTURE — le balayage lit vraiment le backend, et lit les bons fichiers', () => {
+    // ⚠️ Sans ce contrôle, un `readdirSync` sur un chemin déplacé rendrait une liste
+    // VIDE, et la règle suivante passerait au vert en ne gardant rien : c'est l'angle
+    // mort de PROFONDEUR, celui qui ne se signale jamais tout seul.
+    expect(MODULES_ECRITS.length).toBeGreaterThanOrEqual(10)
+
+    // TÉMOIN POSITIF, dans la même invocation : `SETTINGS` est écrit par
+    // `routes/tenant.ts` et `routes/expenseBudgets.ts`. S'il manque, le motif de
+    // recherche est faux — pas le code.
+    expect(MODULES_ECRITS).toContain('SETTINGS')
+    expect(MODULES_ECRITS).toContain('payroll')
+
+    // DISCRIMINANT — on lit bien le BACKEND, pas un répertoire qui lui ressemble.
+    // Le périmètre s'assert par un fichier qu'on sait y vivre, jamais par l'ABSENCE
+    // d'une valeur : un `not.toContain('STOCK')` aurait paru plus fin, mais rien
+    // n'interdit au serveur d'écrire un jour `module: 'STOCK'` — le verrou serait
+    // alors devenu un frein à un changement légitime, exactement comme le test qui
+    // exigeait « Sénégal » en dur. On épingle le PÉRIMÈTRE, pas le contenu.
+    expect(FICHIERS_BACKEND.some(f => f.endsWith(join('routes', 'analytics.ts')))).toBe(true)
+    expect(FICHIERS_BACKEND.some(f => f.endsWith(join('routes', 'tenant.ts')))).toBe(true)
+  })
+
+  it('aucun module écrit n’est ORPHELIN de catégorie', () => {
+    // ⚠️ LE DÉFAUT MESURÉ le 2026-08-14. `SETTINGS`, `payroll`, `GOALS` et
+    // `account_deletion` n'avaient aucune entrée : la clé retombait sur elle-même,
+    // l'option de filtre valait `PARAMÈTRES`, et l'égalité stricte n'arrivait jamais.
+    // Filtrer « Paramètres » rendait ZÉRO ligne sur un journal composé à 80 % de
+    // `SETTINGS` — et le badge affichait le code brut à l'écran.
+    const orphelins = MODULES_ECRITS.filter(code => !CATEGORIES_MODULE.includes(normalizeModule(code)))
+    expect(orphelins).toEqual([])
+  })
+
+  it('la normalisation est INSENSIBLE à la casse choisie côté serveur', () => {
+    // Le backend écrit indifféremment `products` et `USERS` — deux conventions dans
+    // la même table. Une correspondance qui n'en couvre qu'une laisse l'autre orpheline.
+    expect(normalizeModule('SETTINGS')).toBe(normalizeModule('settings'))
+    expect(normalizeModule('payroll')).toBe(normalizeModule('PAYROLL'))
+    expect(normalizeModule('orders')).toBe(normalizeModule('suppliers'))   // même catégorie
+  })
+
+  it('⚠️ un module INCONNU reste VISIBLE, il ne se fond pas dans « Paramètres »', () => {
+    // Le ranger d'office sous une catégorie existante le rendrait introuvable : on
+    // filtrerait « Paramètres » et on tomberait sur des lignes qui n'en sont pas.
+    // Une valeur inconnue est neutre et visible — jamais assimilée.
+    expect(normalizeModule('un_module_futur')).toBe('UN_MODULE_FUTUR')
+    // Seule une ABSENCE de module retombe sur un repli, faute de mieux à afficher.
+    expect(normalizeModule('')).toBe('PARAMÈTRES')
+    expect(normalizeModule(null)).toBe('PARAMÈTRES')
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   (e) LA SÉCURITÉ DU COMPTE EST RENDUE — elle était écrite, lisible, et invisible
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+describe('(e) le panneau « Sécurité de mon compte »', () => {
+  it('appelle la route du COMPTE — la surface n’est plus morte', () => {
+    // ⚠️ `GET /api/account/security-activity` existait côté serveur ET
+    // `accountApi.securityActivity` côté client : AUCUN écran ne l'appelait. Un
+    // changement de mot de passe était donc écrit, lisible par API, et affiché nulle
+    // part — pendant que le filtre proposait « Auth », qui ne pouvait rien rendre
+    // puisque la route du journal ne lit que `auditLog`.
+    expect(ACTIVITY).toContain('accountApi.securityActivity()')
+  })
+
+  it('⚠️ N’EST PAS fondu dans le journal de la boutique', () => {
+    // `UserAuditLog` n'a pas de `tenantId` (le schéma l'interdit) et la route ne rend
+    // que les événements de l'appelant : fusionné, l'écran deviendrait DIFFÉRENT selon
+    // qui le regarde, et le CSV exporté ne serait celui de personne.
+    expect(ACTIVITY.includes('setActivityLog(secuEvents')).toBe(false)
+    expect(/secuEvents\s*\.\s*concat|\.\.\.secuEvents/.test(ACTIVITY)).toBe(false)
+    // Le titre porte l'ÉCHELLE : sans lui, un admin croirait voir la sécurité de
+    // toute la boutique.
+    expect(ACTIVITY).toContain('Sécurité de mon compte')
+  })
+
+  it('⚠️ TROIS états — un échec de lecture ne se rend pas comme « aucun événement »', () => {
+    // Sur un panneau de sécurité, une liste vide qui veut dire « on n'a pas pu lire »
+    // affirme qu'il ne s'est rien passé sur le compte. Même règle que le journal.
+    expect(ACTIVITY).toContain('setSecuEchec(true)')
+    expect(ACTIVITY).toContain('secuEchec ?')
+    expect(ACTIVITY).toContain('secuEvents === null')
+    expect(ACTIVITY).toContain('secuEvents.length === 0')
+  })
+
+  it('l’action du serveur est LIBELLÉE, dans les quatre langues', () => {
+    // ⚠️ Le serveur écrit `PASSWORD_CHANGE` ; le front ne connaissait que
+    // `CHANGE_PASSWORD` — les deux mots dans l'autre ordre, jamais écrits par
+    // personne. Le repli rendait « Password Change », en anglais, quelle que soit la
+    // langue de l'écran.
+    expect(ACTIVITY).toContain('PASSWORD_CHANGE:')
+    for (const l of ['fr', 'en', 'es', 'it']) {
+      expect(actionLabelDepuisSource('PASSWORD_CHANGE', l)).not.toMatch(/^Password Change$/)
+    }
+  })
+})
+
+/** Lit le libellé tel qu'écrit dans le source — `actionLabel` n'est pas exporté, et
+ *  l'exporter pour un test élargirait la surface publique du module pour rien. */
+function actionLabelDepuisSource(action: string, lang: string): string {
+  const ligne = ACTIVITY.split('\n').find(l => l.trimStart().startsWith(`${action}:`) && l.includes('['))
+  if (!ligne) throw new Error(`${action} absent d'ACTION_LABELS — le libellé retomberait sur le repli anglais`)
+  const quatre = [...ligne.matchAll(/'([^']*)'/g)].map(m => m[1])
+  if (quatre.length !== 4) throw new Error(`${action} n'a pas ses 4 langues (${quatre.length})`)
+  return quatre[lang === 'en' ? 1 : lang === 'es' ? 2 : lang === 'it' ? 3 : 0]
+}

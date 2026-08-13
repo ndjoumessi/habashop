@@ -178,6 +178,13 @@ test.describe('écrans complets — géométrie réelle', () => {
         valeur: k.querySelector('.kpi-value')?.textContent?.trim() ?? '',
       })),
       lignes: document.querySelectorAll('[style*="border-left"]').length,
+      // Les options RÉELLEMENT proposées, hors « Tous les modules » (valeur vide).
+      optionsModules: [...document.querySelectorAll('select')]
+        .flatMap(s => [...s.options])
+        .filter(o => o.value && !['success', 'info', 'warning', 'danger', 'all', 'today'].includes(o.value))
+        .map(o => o.textContent?.trim() ?? ''),
+      panneauSecurite: [...document.querySelectorAll('h2')]
+        .some(h => /Sécurité de mon compte/i.test(h.textContent ?? '')),
     }))
 
     // COUVERTURE : sans lignes rendues, tout le reste serait vert et vide.
@@ -195,10 +202,41 @@ test.describe('écrans complets — géométrie réelle', () => {
     //     incoherents avec les 100 lignes expres : 12 alertes alors que les lignes
     //     envoyees en portent 4. Une derivation afficherait 4.
     expect(m.kpis.find(k => /Alertes/i.test(k.label))?.valeur).toBe('12')
-    expect(m.kpis.find(k => /Modules/i.test(k.label))?.valeur).toBe('6')
+
+    // (3 bis) MODULES : 5, pas 6 — et l'ecart EST la demonstration.
+    //     La fixture envoie SIX codes stockes, dont `orders` et `suppliers` qui
+    //     tombent tous deux sur la meme categorie d'ecran (« Commandes »). Le KPI
+    //     compte les OPTIONS reellement proposees dans le filtre juste a cote, donc
+    //     cinq. Ce test attendait « 6 » : il figeait le comptage SERVEUR des codes
+    //     bruts, celui qui faisait afficher un nombre sans rapport avec la liste
+    //     deroulante d'a cote — deux nombres muets qui se contredisent.
+    expect(m.kpis.find(k => /Modules/i.test(k.label))?.valeur).toBe('5')
 
     // (4) La promesse d'exhaustivite a disparu de l'ecran.
     expect(m.soustitre.toLowerCase()).not.toContain('complete')
+
+    // (5) L'INVARIANT, sur le DOM rendu : le KPI « Modules » vaut exactement le
+    //     nombre d'options du filtre. Ils venaient de deux sources — un compte
+    //     serveur et un `Record` fige — et rien ne les obligeait a parler du meme
+    //     ensemble. Ici on ne verifie plus deux nombres separement : on verifie
+    //     qu'ils sont LE MEME.
+    expect(m.optionsModules.length).toBe(5)
+    expect(String(m.optionsModules.length))
+      .toBe(m.kpis.find(k => /Modules/i.test(k.label))?.valeur)
+
+    // (6) Aucune option MORTE. Le filtre proposait « Auth » (autre table, jamais
+    //     lue ici) et « RH » (aucun audit ecrit cote employes) : deux options qui ne
+    //     pouvaient rien rendre, dont le resultat vide se lit « il ne s'est rien
+    //     passe ». Elles ne peuvent plus apparaitre, car la liste vient des donnees.
+    expect(m.optionsModules).not.toContain('Auth')
+    expect(m.optionsModules).not.toContain('RH')
+    // Et la categorie qui compose le journal EST proposee — c'est elle qui manquait :
+    // filtrer « Parametres » rendait zero ligne sur un journal fait de `SETTINGS`.
+    expect(m.optionsModules).toContain('Paramètres')
+
+    // (7) La securite du COMPTE est rendue — elle etait ecrite, lisible par API, et
+    //     affichee nulle part. Panneau distinct : echelle utilisateur, hors boutique.
+    expect(m.panneauSecurite, 'le panneau de securite du compte doit etre rendu').toBe(true)
   })
 
   test('/app/pos — la caisse : page contenue, vignettes carrées', async ({ page }) => {

@@ -302,9 +302,23 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       items,
       total,
       limite: PLAFOND_JOURNAL,
-      // `modules` compte les modules AYANT PRODUIT un événement — pas des « modules
-      // actifs », ce que rien ici ne mesure. Le nom suit ce que le chiffre dit.
-      stats: { aujourdhui, alertes, modules: modules.length },
+      // ⚠️ LA LISTE, PAS LE COMPTE. On envoyait `modules.length` — un nombre que le
+      // client ne pouvait ni expliquer ni recouper. Résultat mesuré le 2026-08-14 :
+      // l'écran proposait NEUF modules figés dans un `Record` (« Auth », « RH »,
+      // « Stock »…) dont trois ne peuvent structurellement rien rendre, pendant que
+      // les valeurs RÉELLEMENT écrites ici — `SETTINGS`, `payroll`, `GOALS`,
+      // `account_deletion` — n'avaient aucune entrée. Filtrer « Paramètres » rendait
+      // ZÉRO ligne sur un journal composé à 80 % de `SETTINGS`.
+      //
+      // Le client dérive donc SES options ET son compteur de cette liste : deux
+      // nombres tirés de la même source ne peuvent plus se contredire. C'est la
+      // règle du reliquat de `categoryBreakdown` appliquée ici — le client ne peut
+      // pas deviner ce qu'on ne lui envoie pas.
+      //
+      // ⚠️ Ce sont les codes STOCKÉS, bruts. Leur traduction en catégories d'écran
+      // est une affaire d'affichage et reste côté client, en un seul endroit.
+      modulesPresents: modules.map(m => m.module),
+      stats: { aujourdhui, alertes },
     }
   })
 }

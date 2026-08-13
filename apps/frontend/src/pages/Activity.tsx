@@ -4,21 +4,56 @@ import { useAppStore, t } from '@/stores/appStore'
 import {
   Search, Download, X,
   ShoppingCart, Package, PackageCheck, PackageX, Lock, UserCog, ClipboardList,
-  Users, UserPlus, UserMinus, UserX, Settings, Wallet, Heart,
+  Users, UserPlus, UserMinus, UserX, Settings, Wallet, Heart, Target,
   CheckCircle, Info, AlertTriangle, AlertOctagon,
   Shield, ToggleLeft, LogIn, LogOut, Truck, Trash2, Activity as ActivityIcon,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV } from '@/utils/export'
-import { auditApi } from '@/lib/api'
+import { auditApi, accountApi } from '@/lib/api'
+import type { ApiSecurityEvent } from '@/lib/apiTypes'
 import type { LucideIcon } from 'lucide-react'
 
+/**
+ * CODE STOCKÉ → CATÉGORIE D'ÉCRAN.
+ *
+ * ⚠️ QUATRE codes réellement écrits par le serveur manquaient ici — `SETTINGS`,
+ * `payroll`, `GOALS`, `account_deletion` — et la conséquence n'était pas cosmétique :
+ * la clé non traduite retombait sur elle-même, donc `log.module` valait `'SETTINGS'`
+ * pendant que l'option de filtre valait `'PARAMÈTRES'`. La comparaison `===` échouait,
+ * et **filtrer « Paramètres » rendait ZÉRO ligne sur un journal composé à 80 % de
+ * `SETTINGS`** (mesuré le 2026-08-14 sur `demo-tenant-001` : 7 des 8 lignes visibles).
+ * Le badge, lui, affichait le code brut à l'écran.
+ *
+ * ⚠️ La liste se vérifie CONTRE LE SERVEUR, pas de mémoire : `activityTrace.test.ts`
+ * balaie `apps/backend/src` et échoue si un `module: '…'` écrit là-bas n'a pas de
+ * catégorie ici. Écrite à la main, elle se périmerait au premier module ajouté — et
+ * en silence, puisque le seul symptôme est un filtre qui ne rend rien.
+ */
 const MODULE_NORMALIZE: Record<string, string> = {
   orders: 'COMMANDES', customers: 'CLIENTS', products: 'STOCK', suppliers: 'COMMANDES',
   billing: 'PARAMÈTRES', employees: 'RH', auth: 'AUTH', tenant: 'PARAMÈTRES', sales: 'VENTES',
+  payroll: 'PAIE', goals: 'OBJECTIFS', account_deletion: 'COMPTE', settings: 'PARAMÈTRES',
+  expenses: 'PARAMÈTRES',
   // Codes backend en majuscules (audit logs créés directement avec ces noms)
   USERS: 'UTILISATEURS', PRODUCTS: 'STOCK', CUSTOMERS: 'CLIENTS', SUPPLIERS: 'COMMANDES',
   SALES: 'VENTES', EMPLOYEES: 'RH', TENANT: 'PARAMÈTRES', AUTH: 'AUTH',
+  SETTINGS: 'PARAMÈTRES', PAYROLL: 'PAIE', GOALS: 'OBJECTIFS', BILLING: 'PARAMÈTRES',
+  ACCOUNT_DELETION: 'COMPTE', ORDERS: 'COMMANDES', EXPENSES: 'PARAMÈTRES',
+}
+
+/**
+ * SOURCE UNIQUE de la clé de catégorie — utilisée par les lignes ET par les options
+ * de filtre. Les deux la dérivaient séparément ; c'est exactement ainsi qu'une ligne
+ * `SETTINGS` et une option `PARAMÈTRES` ont pu coexister sans jamais se rencontrer.
+ *
+ * ⚠️ Un code INCONNU reste VISIBLE sous sa forme brute plutôt que d'être rangé
+ * d'office dans « Paramètres » : un module qu'on n'a pas prévu doit se voir, pas se
+ * fondre dans une catégorie qui le rendrait introuvable.
+ */
+export function normalizeModule(raw: unknown): string {
+  const s = typeof raw === 'string' ? raw : ''
+  return (MODULE_NORMALIZE[s] ?? (s || 'PARAMÈTRES')).toUpperCase()
 }
 
 // Labels lisibles d'actions techniques en 4 langues
@@ -42,6 +77,11 @@ const ACTION_LABELS: Record<string, [string, string, string, string]> = {
   LOGOUT:             ['Déconnexion',            'Logout',                'Cierre de sesión',         'Disconnessione'],
   UPDATE_TENANT:      ['Boutique mise à jour',   'Shop updated',          'Tienda actualizada',      'Negozio aggiornato'],
   CHANGE_PASSWORD:    ['Mot de passe changé',    'Password changed',      'Contraseña cambiada',      'Password cambiata'],
+  // ⚠️ L'action RÉELLEMENT écrite par `routes/auth.ts` est `PASSWORD_CHANGE` — les
+  // deux mots dans l'autre ordre. `CHANGE_PASSWORD` ci-dessus n'a jamais été écrit
+  // par personne : le repli SNAKE_CASE→Title Case rendait donc « Password Change »,
+  // en anglais, dans les quatre langues.
+  PASSWORD_CHANGE:    ['Mot de passe modifié',   'Password changed',      'Contraseña cambiada',      'Password cambiata'],
   RESTORE_PRODUCT:    ['Produit restauré',       'Product restored',      'Producto restaurado',      'Prodotto ripristinato'],
   RESTORE_SUPPLIER:   ['Fournisseur restauré',   'Supplier restored',     'Proveedor restaurado',     'Fornitore ripristinato'],
   REFUND_SALE:        ['Remboursement vente',    'Refund sale',           'Reembolso de venta',       'Rimborso vendita'],
@@ -67,6 +107,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   LOGOUT:             LogOut,
   UPDATE_TENANT:      Settings,
   CHANGE_PASSWORD:    Lock,
+  PASSWORD_CHANGE:    Lock,
   RESTORE_PRODUCT:    Package,
   RESTORE_SUPPLIER:   Truck,
   REFUND_SALE:        ShoppingCart,
@@ -143,13 +184,21 @@ const MODULE_CONFIG: Record<string, { color: string; bg: string; label: string; 
   PARAMÈTRES:   { color:'#94A3B8', bg:'rgba(148,163,184,.15)', label:'Paramètres',   Icon: Settings     },
   PAIE:         { color:'#34D399', bg:'rgba(16,185,129,.15)',   label:'Paie',         Icon: Wallet       },
   CLIENTS:      { color:'#F472B6', bg:'rgba(244,114,182,.15)', label:'Clients',      Icon: Heart        },
+  OBJECTIFS:    { color:'#FBBF24', bg:'rgba(251,191,36,.15)',   label:'Objectifs',    Icon: Target       },
+  COMPTE:       { color:'#FB7185', bg:'rgba(251,113,133,.15)', label:'Compte',       Icon: UserX        },
 }
+
+/** Catégories d'écran connues — exporté pour que le verrou puisse confronter cette
+ *  liste aux modules RÉELLEMENT écrits par le serveur, sans importer les icônes. */
+export const CATEGORIES_MODULE: readonly string[] = Object.keys(MODULE_CONFIG)
 
 /** Libellé de catégorie localisé. VENTES traduit (fr/en/es/it) ; les autres gardent
    leur label (codes/abréviations type RH/Auth/Stock, ou déjà clairs). Utilisé par le
    badge ET le filtre → cohérence, et plus aucun « SALES »/clé brute affichée. */
 function moduleLabel(key: string, lang: string): string {
-  if (key === 'VENTES') return lang === 'en' ? 'Sales' : lang === 'es' ? 'Ventas' : lang === 'it' ? 'Vendite' : 'Ventes'
+  if (key === 'VENTES')    return lang === 'en' ? 'Sales'   : lang === 'es' ? 'Ventas'    : lang === 'it' ? 'Vendite'  : 'Ventes'
+  if (key === 'OBJECTIFS') return lang === 'en' ? 'Goals'   : lang === 'es' ? 'Objetivos' : lang === 'it' ? 'Obiettivi' : 'Objectifs'
+  if (key === 'COMPTE')    return lang === 'en' ? 'Account' : lang === 'es' ? 'Cuenta'    : lang === 'it' ? 'Account'  : 'Compte'
   return MODULE_CONFIG[key]?.label ?? key
 }
 
@@ -161,8 +210,10 @@ const SEVERITY_CONFIG: Record<Severity, { color: string; bg: string; Icon: Lucid
 }
 
 function mapAuditLog(l: any, idx: number): ActivityEntry {
-  const rawModule = l.module ?? ''
-  const mod = (MODULE_NORMALIZE[rawModule] ?? String(rawModule || 'PARAMÈTRES')).toUpperCase()
+  // ⚠️ LA MÊME fonction que les options de filtre. Deux dérivations séparées de la
+  // même clé, c'est le défaut qu'on ferme : la ligne disait `SETTINGS`, l'option
+  // disait `PARAMÈTRES`, et l'égalité n'arrivait jamais.
+  const mod = normalizeModule(l.module)
   const cfg = MODULE_CONFIG[mod] ?? MODULE_CONFIG['PARAMÈTRES']
   const name = l.user?.name ?? 'Système'
   const d = new Date(l.createdAt)
@@ -206,7 +257,14 @@ export default function Activity() {
   /** Le journal n'a pas pu être lu — DISTINCT de « aucun événement ». */
   const [echec,          setEchec]          = useState(false)
   /** Compteurs calculés EN BASE — voir `ApiAuditLogPage`. `null` = pas encore connus. */
-  const [stats,          setStats]          = useState<{ aujourdhui: number; alertes: number; modules: number } | null>(null)
+  const [stats,          setStats]          = useState<{ aujourdhui: number; alertes: number } | null>(null)
+  /**
+   * Codes de module PRÉSENTS en base, envoyés par la route. `null` = pas encore connus.
+   * ⚠️ Ni les options du filtre ni le KPI ne se dérivent des lignes chargées : la route
+   * plafonne, donc un module dont le dernier événement est au-delà du plafond
+   * disparaîtrait du filtre — et le module deviendrait littéralement infiltrable.
+   */
+  const [modulesPresents, setModulesPresents] = useState<string[] | null>(null)
 
   useEffect(() => {
     auditApi.list()
@@ -216,6 +274,7 @@ export default function Activity() {
         // `?? 0` serait un chiffre inventé — on garde `null`, et l'écran le DIT.
         setTotalServeur(typeof page?.total === 'number' ? page.total : null)
         setStats(page?.stats ?? null)
+        setModulesPresents(Array.isArray(page?.modulesPresents) ? page.modulesPresents : null)
       })
       // ⚠️ L'ERREUR NE S'AVALE PAS ICI NON PLUS. La route REMONTE volontairement son
       // échec (« un journal d'audit muet est pire qu'un journal indisponible, parce
@@ -225,6 +284,59 @@ export default function Activity() {
       .catch(() => setEchec(true))
       .finally(() => setLoading(false))
   }, [])
+
+  /**
+   * ── (b) LA SÉCURITÉ DU COMPTE VIT DANS UNE AUTRE TABLE ───────────────────────
+   *
+   * `UserAuditLog` est d'échelle UTILISATEUR : le schéma interdit explicitement de
+   * lui donner un `tenantId` (« un changement de mot de passe n'appartient à aucune
+   * boutique »), et il n'a pas de FK vers `User` pour qu'un audit de sécurité
+   * SURVIVE à la suppression du compte qu'il audite. Ce journal-ci, lui, est
+   * tenant-scopé. Les deux ne peuvent donc pas fusionner.
+   *
+   * ⚠️ Le résultat, mesuré le 2026-08-14 : le filtre proposait « Auth » et ne
+   * pouvait RIEN rendre, jamais — la route ne lit que `auditLog`. Pire, la seule
+   * surface qui expose ces événements à leur propriétaire
+   * (`GET /api/account/security-activity`, strictement `where: { userId }`) était
+   * déjà écrite côté serveur ET côté client (`accountApi.securityActivity`), et
+   * AUCUN écran ne l'appelait. Une surface morte : l'événement était écrit, lisible,
+   * et invisible.
+   *
+   * ⚠️ PANNEAU SÉPARÉ, JAMAIS FUSIONNÉ DANS LA LISTE. Fondues dans le journal de la
+   * boutique, ces lignes rendraient l'écran DIFFÉRENT selon qui le regarde — deux
+   * administrateurs verraient deux journaux, et le CSV exporté ne serait celui de
+   * personne. Le panneau dit son échelle dans son titre.
+   */
+  const [secuEvents, setSecuEvents] = useState<ApiSecurityEvent[] | null>(null)
+  /** ⚠️ DISTINCT de « aucun événement » — même règle que le journal principal. */
+  const [secuEchec,  setSecuEchec]  = useState(false)
+
+  useEffect(() => {
+    accountApi.securityActivity()
+      .then(ev => setSecuEvents(Array.isArray(ev) ? ev : []))
+      .catch(() => setSecuEchec(true))
+  }, [])
+
+  /**
+   * OPTIONS DU FILTRE — dérivées de ce que la base porte VRAIMENT.
+   *
+   * ⚠️ Elles venaient de `Object.keys(MODULE_CONFIG)` : neuf catégories figées, dont
+   * « Auth » (autre table), « RH » (aucun `writeAudit` côté employés) et « Stock »
+   * (seules les suppressions de produit écrivent) — trois options qui ne pouvaient
+   * rien rendre, à côté de quatre codes écrits qu'aucune option n'atteignait. Un
+   * filtre qui promet ce que la donnée ne porte pas est la famille « champ déclaré
+   * qui se fait passer pour une mesure » : on s'y fie, et un résultat vide se lit
+   * « il ne s'est rien passé » au lieu de « cette option est morte ».
+   *
+   * ⚠️ Dédupliqué APRÈS normalisation : `orders` et `suppliers` tombent tous deux sur
+   * « Commandes ». Compter les codes STOCKÉS afficherait 2 au KPI pour 1 seule
+   * option — deux nombres muets qui se contredisent sur le même écran.
+   */
+  const optionsModules = useMemo(() => {
+    if (!modulesPresents) return null
+    const cles = [...new Set(modulesPresents.map(normalizeModule))]
+    return cles.sort((a, b) => moduleLabel(a, lang).localeCompare(moduleLabel(b, lang)))
+  }, [modulesPresents, lang])
 
   const filtered = useMemo(() => activityLog.filter(log => {
     const q = search.toLowerCase()
@@ -328,7 +440,11 @@ export default function Activity() {
           // signaler ; l'œil croit la couleur avant le chiffre.
           { label: t('activity_security'), value: stats?.alertes ?? '…',
             color: stats && stats.alertes > 0 ? 'var(--danger)' : 'var(--text3)' },
-          { label: t('activity_modules'),  value: stats?.modules ?? '…',    color:'var(--acc)'  },
+          // ⚠️ MÊME SOURCE que les options du filtre — le nombre affiché ici est
+          // exactement le nombre d'options proposées à côté. Il venait du serveur
+          // (`modules.length`, codes STOCKÉS) alors que les options venaient d'un
+          // `Record` figé : rien ne garantissait qu'ils parlent du même ensemble.
+          { label: t('activity_modules'),  value: optionsModules?.length ?? '…', color:'var(--acc)' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-label">{k.label}</div>
@@ -351,7 +467,7 @@ export default function Activity() {
           <select className="input" style={{ width:'auto', fontSize:'var(--fs-sm)' }}
             value={moduleFilter} onChange={e => { setModuleFilter(e.target.value); resetPage() }}>
             <option value="">{t('activity_filter_module')}</option>
-            {Object.keys(MODULE_CONFIG).map(m => <option key={m} value={m}>{moduleLabel(m, lang)}</option>)}
+            {(optionsModules ?? []).map(m => <option key={m} value={m}>{moduleLabel(m, lang)}</option>)}
           </select>
           {/* ⚠️ « Toutes » ne disait pas toutes QUOI — trois filtres côte à côte, dont
               un sans objet nommé. Un lecteur d'écran l'annonçait de même. */}
@@ -528,6 +644,89 @@ export default function Activity() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* ── Sécurité de MON compte — échelle utilisateur, hors boutique ──────────
+          ⚠️ Panneau SÉPARÉ par nécessité, pas par goût : `UserAuditLog` n'a pas de
+          `tenantId` (le schéma l'interdit) et ne peut donc pas entrer dans un journal
+          tenant-scopé. Fusionner les deux listes rendrait aussi l'écran DIFFÉRENT
+          selon le lecteur, puisque la route ne rend que SES propres événements.
+          Le titre porte l'échelle : sans lui, un admin croirait voir la sécurité de
+          toute la boutique. */}
+      <div className="panel" style={{ padding: '16px 20px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+          <Shield size={15} color="var(--p2)" />
+          <h2 style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-semibold)', color:'var(--text)', margin:0 }}>
+            {i('Sécurité de mon compte', 'My account security', 'Seguridad de mi cuenta', 'Sicurezza del mio account')}
+          </h2>
+        </div>
+        <p style={{ fontSize:'var(--fs-label)', color:'var(--text3)', margin:'0 0 12px' }}>
+          {i("Événements liés à votre compte, pas à la boutique — ils n'apparaissent pas dans le journal ci-dessus, et vous seul les voyez.",
+             'Events tied to your account, not the shop - they are absent from the log above, and only you can see them.',
+             'Eventos de su cuenta, no de la tienda: no aparecen en el registro anterior y solo usted los ve.',
+             'Eventi legati al tuo account, non al negozio: assenti dal registro qui sopra, e visibili solo a te.')}
+        </p>
+
+        {/* ⚠️ TROIS états, jamais deux. « Rien à afficher » ne doit pas absorber
+            « on n'a pas pu lire » : sur un panneau de SÉCURITÉ, une liste vide qui
+            veut dire « échec » affirme qu'il ne s'est rien passé sur le compte. */}
+        {secuEchec ? (
+          <div role="status" style={{ fontSize:'var(--fs-label)', color:'var(--text2)' }}>
+            {i("Activité de sécurité indisponible — cela ne veut pas dire « aucun événement ».",
+               'Security activity unavailable - this does not mean "no events".',
+               'Actividad de seguridad no disponible: no significa «sin eventos».',
+               'Attività di sicurezza non disponibile: non significa «nessun evento».')}
+          </div>
+        ) : secuEvents === null ? (
+          <Skeleton height={38} count={2} />
+        ) : secuEvents.length === 0 ? (
+          <div style={{ fontSize:'var(--fs-label)', color:'var(--text3)' }}>
+            {i('Aucun changement de mot de passe enregistré sur ce compte.',
+               'No password change recorded on this account.',
+               'Ningún cambio de contraseña registrado en esta cuenta.',
+               'Nessuna modifica della password registrata su questo account.')}
+          </div>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            {secuEvents.map(ev => {
+              const localeStr = lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+              const dt        = new Date(ev.createdAt)
+              const valide    = !isNaN(dt.getTime())
+              const sev       = SEVERITY_CONFIG[ev.severity as Severity] ?? SEVERITY_CONFIG.info
+              const EvIcon    = ACTION_ICONS[ev.action] ?? Shield
+              return (
+                <div key={ev.id} style={{
+                  display:'flex', alignItems:'center', gap:12,
+                  padding:'9px 14px', background:'var(--card)',
+                  border:'1px solid var(--border)', borderLeft:`3px solid ${sev.color}`,
+                  borderRadius:12,
+                }}>
+                  <EvIcon size={15} color={sev.color} style={{ flexShrink:0 }} />
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:'var(--fs-body)', color:'var(--text)' }}>
+                      {actionLabel(ev.action, lang)}
+                    </div>
+                    {/* ⚠️ On rend l'IP, PAS `ev.description` : le seul écrivain de cette
+                        table y met un littéral FRANÇAIS (« Mot de passe modifié »), qui
+                        redirait l'action et injecterait du français dans un écran
+                        anglais. L'IP, elle, est l'information propre à l'événement.
+                        Si une action future y porte un détail réel, c'est là qu'il ira. */}
+                    {ev.ip && (
+                      <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', fontFamily:'var(--mono)' }}>
+                        {ev.ip}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', flexShrink:0, textAlign:'right' }}>
+                    {valide
+                      ? `${dt.toLocaleDateString(localeStr, { day:'numeric', month:'short' })} · ${dt.toLocaleTimeString(localeStr, { hour:'2-digit', minute:'2-digit' })}`
+                      : '—'}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

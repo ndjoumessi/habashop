@@ -88,12 +88,47 @@ describe('GET /api/audit-logs', () => {
     const body = (await app.inject({ method: 'GET', url: '/api/audit-logs' })).json()
 
     expect(body.items).toHaveLength(1)
-    expect(body.stats).toEqual({ aujourdhui: 7, alertes: 3, modules: 3 })
+    expect(body.stats).toEqual({ aujourdhui: 7, alertes: 3 })
     for (const appel of mockPrisma.auditLog.count.mock.calls) {
       expect(appel[0].where.tenantId).toBe('tenant-1')
     }
     expect(mockPrisma.auditLog.groupBy).toHaveBeenCalledWith(
       expect.objectContaining({ where: { tenantId: 'tenant-1' } }),
+    )
+  })
+
+  /**
+   * ⚠️ LA LISTE DES MODULES, PAS LEUR NOMBRE. On n'envoyait que `modules.length` —
+   * un chiffre que le client ne pouvait ni expliquer ni recouper, et qu'il affichait
+   * à côté d'un filtre dont les options venaient d'un `Record` FIGÉ. Mesuré le
+   * 2026-08-14 : neuf options promises, trois structurellement mortes (« Auth » vit
+   * dans une autre table, « RH » n'écrit aucun audit), et quatre codes réellement
+   * écrits ici sans option correspondante — dont `SETTINGS`, qui composait 80 % du
+   * journal. Le client ne peut pas deviner ce qu'on ne lui envoie pas.
+   *
+   * ⚠️ Les codes voyagent BRUTS, tels que stockés. Les traduire ici mettrait une
+   * décision d'affichage dans la route, et un second endroit où la table de
+   * correspondance pourrait diverger.
+   */
+  it('envoie la LISTE des modules présents, pas seulement leur compte', async () => {
+    mockPrisma.auditLog.findMany.mockResolvedValue([{ id: 'a1' }])
+    mockPrisma.auditLog.count.mockResolvedValue(9)
+    // Deux codes qui tombent sur la MÊME catégorie d'écran (« Commandes ») : c'est
+    // précisément ce que le compte serveur ne pouvait pas dire, et ce qui faisait
+    // afficher « 3 modules » à côté de 2 options. Le client dédoublonne, lui.
+    mockPrisma.auditLog.groupBy.mockResolvedValue([
+      { module: 'SETTINGS' }, { module: 'orders' }, { module: 'suppliers' },
+    ])
+    const app = await build()
+    const body = (await app.inject({ method: 'GET', url: '/api/audit-logs' })).json()
+
+    expect(body.modulesPresents).toEqual(['SETTINGS', 'orders', 'suppliers'])
+    // ⚠️ La liste vient du `groupBy` (toute la table), JAMAIS des lignes plafonnées :
+    // un module dont le dernier événement est au-delà du plafond doit rester filtrable.
+    expect(body.items).toHaveLength(1)
+    expect(body.modulesPresents.length).toBeGreaterThan(body.items.length)
+    expect(mockPrisma.auditLog.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({ by: ['module'], where: { tenantId: 'tenant-1' } }),
     )
   })
 
