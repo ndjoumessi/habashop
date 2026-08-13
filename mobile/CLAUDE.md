@@ -116,7 +116,23 @@ curl -sL --max-redirs 10 -o HabaShop-Mobile.apk "$URL" -w '%{http_code}\n'
 - **Android : voie OUVERTE.** `adb` est présent (`/opt/homebrew/bin/adb`), le SDK est dans
   `~/Library/Android/sdk`, une image `android-33` est installée et l'AVD **`cwtest`**
   démarre (boot complet en ~25 s). `ANDROID_HOME` n'est pas exportée — la poser à
-  `$HOME/Library/Android/sdk` suffit. Il manque seulement un APK à y installer.
+  `$HOME/Library/Android/sdk` suffit.
+- ⚠️ **UN APK EST DÉJÀ INSTALLÉ SUR `cwtest`** (`com.habashop.app`, versionName 1.5.0,
+  versionCode 4, posé le 2026-07-29) — la phrase « il manque seulement un APK » était
+  fausse. Mais il **n'embarque PAS le dev-launcher** (`expo.modules.devlauncher` : 0
+  occurrence) : c'est un build RELEASE, il ne parle donc **pas à Metro**. Ouvrir le lien
+  `exp+habashop-mobile://expo-development-client/?url=…` le lance, il rend son bundle
+  EMBARQUÉ, et rien ne le dit.
+  ⚠️ MESURÉ le 2026-08-13, et le piège a failli coûter cher : Metro servait bien le code
+  courant (vérifié en décompilant le bundle), l'écran affichait l'ANCIEN comportement, et
+  j'allais conclure « la correction ne marche pas sur Android ». C'est un **marqueur
+  visible** posé dans le texte qui a tranché : il n'apparaissait pas. *Un bundle servi
+  n'est pas un bundle exécuté.*
+- ✅ **Pour exécuter le code COURANT sur l'émulateur : `npx expo start --clear --go`**
+  puis `adb shell am start -a android.intent.action.VIEW -d "exp://<IP>:8081"`. Expo Go
+  s'installe tout seul au premier lancement (~2 min) et charge TOUJOURS depuis Metro.
+  Route directe possible : `exp://<IP>:8081/--/kiosk`. C'est ainsi qu'ont été mesurés
+  les trois défauts de mise en page du 2026-08-13 — aucun n'était visible en jest.
 
 ---
 
@@ -299,5 +315,6 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 - **Livré par OTA (canal preview, runtime 1.4.3)** : fix multi-boutiques (auto-sélection boutique), **mode sombre NKONI** (fond bleu-noir `#0A0C14`, cartes `#121724`, or `#FFB020`, `border3` glow violet ; `src/constants/theme.ts` `Colors`+`DarkColors`), **thèmes réduits à 3** (Sombre/Clair/Système, #19) + grille 3 colonnes (#20) — et **l'envoi de photo produit** (2026-08-12). ⚠️ **AUCUN identifiant de groupe n'est écrit ici, délibérément** : il se périme à CHAQUE OTA, et celui qui y figurait était **deux générations en retard** — mesuré le 2026-08-12. La commande, elle, ne se périme pas : `eas channel:view preview` rend le groupe servi, sa date et son message. Police = **Outfit** (Geist attend le build natif, #13).
 - **En attente du build natif 1.5.0** (quota EAS) : **logo Sac+H** (icône/splash) + **police Geist**.
 - **Validé device (2026-05-27, APK — build EAS `382fe2ec-bacf-4e76-906b-33cdc6162c05`) :** scanner EAN13 ✅, thème clair ✅, kiosque+PIN ✅, encaissement→API ✅, biométrie ✅, suppression compte (scénario ADMIN seul→cascade tenant) ✅.
+- **Validé device (2026-08-13, OTA canal preview, runtime 1.4.3) :** lignes de panier non enroulées ✅, kiosque — noms de produits entiers et total non tronqué ✅. *(Mesuré d'abord sur émulateur via Expo Go, puis confirmé par Nelson sur l'appareil.)*
 - **À valider device :** offline+resync (cache à froid + abandon 3 retries), push (3 types + tap nav), ticket WhatsApp, widget (dev build), TalkBack, carte QR, OCR MANAGER+.
 - **Différé :** Play Store (AAB v1.2.0 prêt — build EAS ci-dessus, captures à faire) ; layouts tablette (iPad) ; build iOS réel ; Wave/Orange prod.
