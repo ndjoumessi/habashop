@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import AdminDashboard from '@/pages/AdminDashboard'
 import StockInventory from '@/components/stock/StockInventory'
+import ProductThumb from '@/components/ui/ProductThumb'
 import { type ProductItem } from '@/components/stock/stockShared'
 import { usePagination } from '@/hooks/usePagination'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
@@ -142,6 +143,51 @@ function fauxProduits(n: number, extremes: boolean): ProductItem[] {
 }
 
 /**
+ * ─── VUE « PHOTO » — la vignette produit ─────────────────────────────────────
+ * `productThumb.test.tsx` garde la FORME des appels et le dit lui-même : « faute de
+ * pouvoir juger le rendu ». C'est ce rendu qu'on mesure ici — la vignette avait été
+ * livrée ÉTIRÉE EN BANDEAU le 2026-08-12, une tranche de photo illisible, et le
+ * défaut avait dormi depuis le câblage des dix surfaces : **un émoji est du texte
+ * centré, il se moque de la largeur du conteneur**. Seule une VRAIE image le montre.
+ *
+ * ⚠️ Chaque vignette est posée dans un conteneur DÉLIBÉRÉMENT LARGE. C'est le
+ * contexte où le défaut apparaît : une vignette qui ne tient plus sa propre largeur
+ * s'étale jusqu'au bord. Dans une boîte serrée, une vignette cassée paraît saine.
+ *
+ * ⚠️ L'image est une `data:` URI — aucun réseau, aucun stockage objet, donc aucune
+ * dépendance à R2 ni à une URL qui pourrait mourir. Elle est 3:1 avec trois bandes
+ * de couleurs : ce n'est pas décoratif, c'est ce qui rend le rognage OBSERVABLE.
+ */
+const PHOTO_3_BANDES =
+  'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">'
+    + '<rect x="0" y="0" width="100" height="100" fill="#e11d48"/>'
+    + '<rect x="100" y="0" width="100" height="100" fill="#0ea5e9"/>'
+    + '<rect x="200" y="0" width="100" height="100" fill="#22c55e"/></svg>')
+
+/** Les tailles RÉELLEMENT passées par les surfaces, de la puce d'abonnement au catalogue. */
+const TAILLES_VIGNETTE = [14, 22, 24, 26, 32, 38, 64]
+
+function HarnaisPhoto() {
+  return (
+    <div className="page-content">
+      {[{ cle: 'photo', p: { image: PHOTO_3_BANDES, emoji: '🌾' } },
+        { cle: 'emoji', p: { emoji: '🌾' } }].map(({ cle, p }) => (
+        <div key={cle} data-variante={cle}>
+          {TAILLES_VIGNETTE.map(size => (
+            // Conteneur large : c'est là que l'étirement se voit.
+            <div key={size} data-taille={size} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: 8 }}>
+              <ProductThumb p={p} size={size} />
+              <span>{cle} · {size} px</span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/**
  * Rien de ceci n'est appelé par la mesure : la géométrie ne dépend pas des rappels.
  * ⚠️ `() => undefined` et non `() => {}` : le corps vide déclenche `no-empty-function`,
  * et les deux lints de ce dépôt sont des CLIQUETS — un avertissement de plus casse la CI.
@@ -195,7 +241,8 @@ export default function DevTableHarness() {
   const params = new URLSearchParams(window.location.search)
   const brut = Number(params.get('n') ?? 50)
   const n = Number.isFinite(brut) && brut > 0 ? brut : 50
-  const vue = params.get('vue') === 'stock' ? 'stock' : 'ops'
+  const demande = params.get('vue')
+  const vue = demande === 'stock' ? 'stock' : demande === 'photo' ? 'photo' : 'ops'
   const extremes = params.get('extremes') === '1'
   useEffect(() => {
     // La console Ops passe par le réseau ; la vue Stock reçoit ses produits en props.
@@ -210,7 +257,9 @@ export default function DevTableHarness() {
     // compare au jeton qu'il a injecté : un serveur tiers écoutant sur le même port rendrait
     // une page sans ce marqueur, et l'échec le DIT au lieu d'attendre un timeout de sélecteur.
     <div data-testid={HARNESS_MARKER} data-harness-nonce={import.meta.env.VITE_HARNESS_NONCE ?? ''}>
-      {vue === 'stock' ? <HarnaisStock n={n} extremes={extremes} /> : <AdminDashboard />}
+      {vue === 'stock' ? <HarnaisStock n={n} extremes={extremes} />
+        : vue === 'photo' ? <HarnaisPhoto />
+        : <AdminDashboard />}
     </div>
   )
 }

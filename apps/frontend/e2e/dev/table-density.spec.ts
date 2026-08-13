@@ -392,6 +392,79 @@ test.describe('table du Stock (vue liste) — géométrie réelle', () => {
     })
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     LA VIGNETTE PRODUIT — géométrie RENDUE
+     ══════════════════════════════════════════════════════════════════════════
+     `productThumb.test.tsx` garde la FORME des appels et écrit lui-même sa limite :
+     « Ce verrou juge donc la FORME de l'appel, faute de pouvoir juger le rendu. »
+     C'est ce rendu qu'on mesure ici — et le défaut du 2026-08-12 est exactement de
+     ceux qu'une règle de source rate par un autre chemin : la vignette était livrée
+     ÉTIRÉE EN BANDEAU, une tranche de photo illisible.
+
+     ⚠️ IL AVAIT DORMI DEPUIS LE CÂBLAGE DES DIX SURFACES, parce qu'un émoji est du
+     TEXTE CENTRÉ : il se moque de la largeur de sa boîte. Une vignette peut donc être
+     complètement cassée et paraître saine tant qu'aucun produit n'a de photo. D'où
+     l'image RÉELLE ci-dessous — une `data:` URI, sans réseau ni stockage objet.      */
+
+  test('la vignette est CARRÉE et la photo la remplit, à toutes les tailles', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/__dev/table?vue=photo')
+    await verifierIdentite(page)
+    await page.locator('[data-variante="photo"] img').first().waitFor({ timeout: 20_000 })
+
+    const v = await page.evaluate(() => {
+      const out: { variante: string; taille: number; boite: [number, number]; image: [number, number] | null; objectFit: string | null }[] = []
+      for (const bloc of [...document.querySelectorAll('[data-variante]')]) {
+        for (const ligne of [...bloc.querySelectorAll('[data-taille]')]) {
+          // La vignette est le PREMIER enfant de la ligne — repérée par sa position,
+          // jamais par une classe ni un style : les deux se changent légitimement.
+          const boite = ligne.firstElementChild as HTMLElement
+          const r = boite.getBoundingClientRect()
+          const img = boite.querySelector('img')
+          const ri = img?.getBoundingClientRect()
+          out.push({
+            variante: bloc.getAttribute('data-variante')!,
+            taille: Number(ligne.getAttribute('data-taille')),
+            boite: [Math.round(r.width), Math.round(r.height)],
+            image: ri ? [Math.round(ri.width), Math.round(ri.height)] : null,
+            objectFit: img ? getComputedStyle(img).objectFit : null,
+          })
+        }
+      }
+      return out
+    })
+
+    // ⚠️ COUVERTURE : 2 variantes × 7 tailles. Sans ce compte, un sélecteur cassé
+    // rendrait une liste vide et TOUTES les assertions suivantes seraient vertes.
+    expect(v.length, 'aucune vignette lue — le harnais ou le sélecteur a changé').toBe(14)
+    expect(v.filter(x => x.variante === 'photo' && x.image).length, 'aucune image rendue').toBe(7)
+
+    // (1) CARRÉE — le défaut exact : la largeur suivait le conteneur, la hauteur non.
+    const bancales = v.filter(x => Math.abs(x.boite[0] - x.boite[1]) > 1 || x.boite[0] !== x.taille)
+    expect(bancales, [
+      `Vignettes non carrées : ${JSON.stringify(bancales.slice(0, 3))}`,
+      'La boîte doit faire exactement `size` × `size`. Le 2026-08-12 la largeur suivait',
+      'la carte pendant que la hauteur restait à 38 px : `objectFit:cover` rognait alors',
+      'la photo en un bandeau de quelques pixels.',
+    ].join('\n')).toEqual([])
+
+    // (2) L'IMAGE REMPLIT SA BOÎTE — `inset:0` + 100 % ; sinon la photo est posée à sa
+    //     taille naturelle et déborde ou laisse un vide.
+    const malRemplies = v.filter(x => x.image && (x.image[0] !== x.boite[0] || x.image[1] !== x.boite[1]))
+    expect(malRemplies, `l’image ne couvre pas sa boîte : ${JSON.stringify(malRemplies.slice(0, 3))}`).toEqual([])
+
+    // (3) ⚠️ `object-fit: cover` — lu en style CALCULÉ, donc ce que le moteur applique
+    //     vraiment, pas ce que la source écrit. LIMITE ASSUMÉE : cela prouve la règle,
+    //     pas les pixels. Une preuve pixel exigerait de décoder une capture ; l'image à
+    //     trois bandes est là pour ça le jour où on la voudra. Sans `cover`, une photo
+    //     3:1 dans une boîte carrée est ÉCRASÉE — invisible à toute mesure de rectangle.
+    const mauvaisFit = v.filter(x => x.objectFit !== null && x.objectFit !== 'cover')
+    expect(mauvaisFit, `object-fit doit rester « cover » : ${JSON.stringify(mauvaisFit.slice(0, 3))}`).toEqual([])
+
+    // (4) La variante ÉMOJI est carrée elle aussi — c'est elle qui masquait le défaut.
+    expect(v.filter(x => x.variante === 'emoji' && x.image).length, 'une variante sans photo ne doit rendre aucun <img>').toBe(0)
+  })
+
   test('la géométrie du Stock, mesurée et rendue', async ({ page }) => {
     const mesures: string[] = []
     for (const extremes of [false, true]) {

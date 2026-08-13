@@ -85,6 +85,11 @@ on:
       - 'apps/frontend/src/components/stock/stockShared.tsx'
       #    Primitives et utilitaires entrés dans la fermeture PAR le harnais Stock —
       #    signalés un par un par `densityJobScope.test.ts` au commit même, pas devinés.
+      #    ⚠️ La VIGNETTE — mesurée depuis le 2026-08-13. Elle avait été livrée étirée
+      #    en bandeau, et le défaut avait dormi depuis le câblage des dix surfaces :
+      #    un émoji est du texte centré, il se moque de la largeur de sa boîte. Seule
+      #    une VRAIE image le révèle, donc seule une mesure de rendu le garde.
+      - 'apps/frontend/src/components/ui/ProductThumb.tsx'
       - 'apps/frontend/src/components/ui/BarcodeScanner.tsx'
       - 'apps/frontend/src/components/ui/FilterSelect.tsx'
       - 'apps/frontend/src/components/ui/Pagination.tsx'

@@ -235,6 +235,41 @@ describe('⚠️ aucun rendu d’émoji produit HORS de ProductThumb', () => {
     expect(juge(`<ProductThumb p={p} size={64} style={{ background: 'var(--bg3)' }} />`)).toBe(false)
   })
 
+  it('⚠️ ni par `size` — une taille RELATIVE déforme aussi, par un autre chemin', () => {
+    /**
+     * TROU TROUVÉ le 2026-08-13 en couvrant la vignette dans la mesure de densité.
+     * La règle ci-dessus n'inspecte que `style={{ … }}` — or `size` est typée
+     * `number | string`, donc `size="100%"` passe au travers et produit le MÊME
+     * défaut : la boîte cesse d'avoir une taille propre et suit son conteneur.
+     * *Corriger un chemin ne ferme pas la classe tant que les autres sont ouverts.*
+     *
+     * ⚠️ Une chaîne reste légitime en ABSOLU (`size="42px"`, `size="2rem"`) : c'est
+     * une taille propre. On ne vise que le RELATIF — `%`, `em`, `vw`, `vh` — qui
+     * délègue la taille à autre chose. La règle juge la FORME, pas le type.
+     */
+    const relative = (v: string) => /^\s*['"`]?\s*[\d.]+\s*(%|em|vw|vh|vmin|vmax)\s*['"`]?\s*$/.test(v)
+    const fautifs: string[] = []
+    for (const f of fichiers(RACINE)) {
+      const src = readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+      const re = /<ProductThumb[^>]*?\ssize=(\{[^}]*\}|"[^"]*")/g
+      let m: RegExpExecArray | null
+      while ((m = re.exec(src)) !== null) {
+        const brut = m[1].startsWith('{') ? m[1].slice(1, -1) : m[1]
+        if (relative(brut)) fautifs.push(`${f.slice(RACINE.length + 1)} :: ${m[0].replace(/\s+/g, ' ').slice(0, 80)}`)
+      }
+    }
+    expect(fautifs, 'une taille relative fait suivre la vignette à son conteneur').toEqual([])
+
+    // ⚠️ CONTRÔLE DISCRIMINANT — la règle doit voir le fautif ET ignorer le sain,
+    // sinon elle est soit aveugle, soit un frein. Les deux sens sont exercés.
+    expect(relative("'100%'"), 'un pourcentage doit être vu').toBe(true)
+    expect(relative('"50vw"'), 'une unité de fenêtre doit être vue').toBe(true)
+    expect(relative('2.5em'), 'une unité relative doit être vue').toBe(true)
+    expect(relative('38'), 'un nombre est une taille propre').toBe(false)
+    expect(relative("'42px'"), 'une chaîne ABSOLUE reste légitime').toBe(false)
+    expect(relative('taillePar défaut'), 'une variable n’est pas jugeable ici').toBe(false)
+  })
+
   it('la règle tient sur tout `src/`', () => {
     const tous = fichiers(RACINE)
     // ⚠️ COUVERTURE : un `fichiers()` cassé rendrait une liste vide, donc un vert
