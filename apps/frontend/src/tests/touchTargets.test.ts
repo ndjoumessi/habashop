@@ -152,7 +152,10 @@ describe('cibles tactiles — la famille entière, pas la forme qu’on regardai
     // `dp-nav-btn` (flèches du calendrier) et `att-seg-btn` (segments de présence) sont des
     // contrôles DENSES à l'intérieur d'un panneau, hors du périmètre de ce lot — exemptés
     // NOMMÉMENT, un par un, jamais par motif.
-    .filter(c => !['.dp-nav-btn', '.att-seg-btn', '.tab-btn'].includes(c))
+    // ⚠️ `.tab-btn` a QUITTÉ cette liste : la règle a été supprimée (0 rendu, TabBar stylait
+    // tout en ligne). Une exemption dont on n'a plus besoin est un trou — elle laisserait
+    // rentrer une future classe qui reprendrait ce nom.
+    .filter(c => !['.dp-nav-btn', '.att-seg-btn'].includes(c))
 
   it('COUVERTURE — le scan trouve bien les classes de bouton', () => {
     // Sans ce cas, un `matchAll` cassé rendrait une liste vide et TOUTES les assertions

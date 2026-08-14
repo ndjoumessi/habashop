@@ -212,21 +212,40 @@ export function loyaltyNextThreshold(points: number, bronze: number = LOYALTY_BR
   return points < bronze ? bronze : points < silver ? silver : null
 }
 
-export const TYPE_CFG: Record<ClientType, { cls: string; color: string; bg: string }> = {
-  Grossiste:   { cls: 'badge-violet', color: '#7C6FF0', bg: 'rgba(124,111,240,.15)' },
-  'Semi-gros': { cls: 'badge-blue',   color: '#F59E0B', bg: 'rgba(245,158,11,.15)'  },
-  Fidèle:      { cls: 'badge-green',  color: '#10B981', bg: 'rgba(16,185,129,.15)'  },
-  Détail:      { cls: 'badge-gray',   color: '#3B82F6', bg: 'rgba(59,130,246,.15)'  },
-}
+/**
+ * COULEUR DE PALIER — `#hex` LITTÉRAL, jamais un `var(--…)`, et le compilateur l'impose.
+ *
+ * ⚠️ Ce type n'est pas une coquetterie : `TYPE_CFG_MAP.color` valait `'var(--p)'` et partait
+ * dans DEUX chemins où un var() est MORT. Mesuré dans un vrai moteur le 2026-08-15 :
+ *   · `stop-color="var(--p)"` dans le SVG data-URI de `createMarkerIcon` → pixel rendu
+ *     rgba(0,0,0,249), NOIR. Le SVG chargé comme image est un document ISOLÉ : `--p` n'y est
+ *     pas défini. Témoin avec `#6C47FF` → rgba(108,71,255). Tous les marqueurs de la carte
+ *     Clients étaient donc noirs, quel que soit le palier — le code couleur ne codait rien.
+ *   · `` `${cfg.color}44` `` → `border` calculée `0px none`, et `linear-gradient(…,var(--p)99)`
+ *     → `none`. C'est le défaut déjà documenté (§ « var(--) + alpha concaténée = MORT »).
+ *
+ * ⚠️ `noVarInConcatenatedColor.test.ts` ne pouvait PAS l'attraper : il ne suit que les objets
+ * littéraux parcourus par `.map` dans le MÊME fichier, et il écrit sa limite noir sur blanc —
+ * « un objet importé d'un autre module passe AU TRAVERS ». La limite était connue et déclarée
+ * sans conséquence ; c'est exactement par là que le défaut est passé. On ne l'élargit pas
+ * (suivi d'alias inter-fichiers : coût élevé, faux positifs) — on rend l'erreur INEXPRIMABLE.
+ */
+export type CouleurTier = `#${string}`
 
-export const BENTO_CFG: Record<ClientType, {
-  grad: string; glow: string; soft: string
-  color: string; border: string; icon: JSX.Element; label: string
-}> = {
-  Grossiste:   { grad: 'linear-gradient(135deg,#6C47FF22,#6C47FF08)', glow: 'rgba(108,71,255,.35)', soft: 'rgba(108,71,255,.1)',  color: 'var(--p3)', border: 'rgba(108,71,255,.28)', icon: <Building2 size={12} />, label: 'Grossiste'   },
-  'Semi-gros': { grad: 'linear-gradient(135deg,#FFB80022,#FFB80008)', glow: 'rgba(255,184,0,.35)',  soft: 'rgba(255,184,0,.1)',   color: 'var(--warn)', border: 'rgba(255,184,0,.28)',  icon: <ShoppingBag size={12} />, label: 'Semi-gros' },
-  Fidèle:      { grad: 'linear-gradient(135deg,#00D08422,#00D08408)', glow: 'rgba(0,208,132,.35)',  soft: 'rgba(0,208,132,.1)',   color: 'var(--acc2)', border: 'rgba(0,208,132,.28)',  icon: <Star size={12} />,        label: 'Fidèle'    },
-  Détail:      { grad: 'linear-gradient(135deg,#00B8FF22,#00B8FF08)', glow: 'rgba(0,184,255,.35)',  soft: 'rgba(0,184,255,.1)',   color: 'var(--acc3)', border: 'rgba(0,184,255,.28)',  icon: <ShoppingCart size={12} />, label: 'Détail'   },
+/**
+ * SOURCE UNIQUE de la couleur d'un palier client.
+ *
+ * ⚠️ `cls` DOIT désigner la même famille que `color`. Ils ont divergé sur DEUX paliers sur
+ * quatre — `Semi-gros` portait `badge-blue` avec une couleur AMBRE, `Détail` portait
+ * `badge-gray` avec une couleur BLEUE. Conséquence visible : sur la page Clients, la pastille
+ * de la liste et le chiffre des statistiques, l'un au-dessus de l'autre, peignaient le même
+ * palier de deux couleurs différentes. Le verrou `tierColorCoherence.test.ts` fige l'accord.
+ */
+export const TYPE_CFG: Record<ClientType, { cls: string; color: CouleurTier; bg: string }> = {
+  Grossiste:   { cls: 'badge-violet', color: '#7C6FF0', bg: 'rgba(124,111,240,.15)' },
+  'Semi-gros': { cls: 'badge-amber',  color: '#F59E0B', bg: 'rgba(245,158,11,.15)'  },
+  Fidèle:      { cls: 'badge-green',  color: '#10B981', bg: 'rgba(16,185,129,.15)'  },
+  Détail:      { cls: 'badge-blue',   color: '#3B82F6', bg: 'rgba(59,130,246,.15)'  },
 }
 
 export const SENEGAL_CITIES = [
@@ -346,11 +365,23 @@ export interface GeoCustomer {
   pos:      { lat: number; lng: number }
 }
 
-export const TYPE_CFG_MAP: Record<string, { color: string; soft: string; icon: JSX.Element; label: string }> = {
-  Grossiste:   { color: 'var(--p)', soft: 'rgba(108,71,255,.15)', icon: <Building2 size={10} />, label: 'Grossiste'   },
-  'Semi-gros': { color: 'var(--acc)', soft: 'rgba(255,149,0,.15)',  icon: <ShoppingBag size={10} />, label: 'Semi-gros'   },
-  Fidèle:      { color: 'var(--acc2)', soft: 'rgba(0,208,132,.15)',  icon: <Star size={10} />, label: 'Fidèle'      },
-  Détail:      { color: 'var(--acc3)', soft: 'var(--c-blue-bg)',  icon: <ShoppingCart size={10} />, label: 'Détail'      },
+/**
+ * Palette de la CARTE — dérivée de `TYPE_CFG`, jamais réécrite.
+ *
+ * ⚠️ Elle portait `'var(--p)'` / `'var(--acc)'` / `'var(--acc2)'` / `'var(--acc3)'`, tous morts
+ * ici (cf. `CouleurTier`) : marqueurs noirs, bordures et dégradés de sélection absents.
+ * ⚠️ `color` est maintenant LU dans `TYPE_CFG` — pas recopié. Une troisième table de couleurs
+ * pour un domaine à quatre valeurs est le motif du jumeau non traité : on garde une seule
+ * source, et cette table n'ajoute que ce qui lui est propre (icône, fond translucide, libellé).
+ * ⚠️ `soft` est en `rgba()` LITTÉRAL pour les quatre — `Détail` avait `'var(--c-blue-bg)'`,
+ * qui fonctionne aujourd'hui (usage direct) mais mourrait le jour où quelqu'un écrirait
+ * `` `${cfg.soft}44` ``. Une table homogène retire le piège au lieu de le laisser dormir.
+ */
+export const TYPE_CFG_MAP: Record<string, { color: CouleurTier; soft: string; icon: JSX.Element; label: string }> = {
+  Grossiste:   { color: TYPE_CFG.Grossiste.color,   soft: 'rgba(124,111,240,.15)', icon: <Building2 size={10} />,    label: 'Grossiste' },
+  'Semi-gros': { color: TYPE_CFG['Semi-gros'].color, soft: 'rgba(245,158,11,.15)', icon: <ShoppingBag size={10} />,  label: 'Semi-gros' },
+  Fidèle:      { color: TYPE_CFG.Fidèle.color,      soft: 'rgba(16,185,129,.15)',  icon: <Star size={10} />,         label: 'Fidèle'    },
+  Détail:      { color: TYPE_CFG.Détail.color,      soft: 'rgba(59,130,246,.15)',  icon: <ShoppingCart size={10} />, label: 'Détail'    },
 }
 export const TYPE_LABELS: Record<string, Record<string, string>> = {
   Grossiste:   { fr: 'Grossiste',  en: 'Wholesaler',     es: 'Mayorista',  it: 'Grossista' },
@@ -412,7 +443,13 @@ export const MAP_BG = (theme: string) => (isThemeLight(theme) ? '#F4F5FF' : '#0A
 // Sélectionne le style Google Maps selon le thème actif.
 export const getMapStyle = (theme: string) => (isThemeLight(theme) ? LIGHT_STYLE : DARK_STYLE)
 
-export function createMarkerIcon(google: any, color: string, size: number, text: string) {
+/**
+ * ⚠️ `color: CouleurTier`, PAS `string`. Le SVG produit ici est chargé comme IMAGE via une
+ * data-URI : c'est un document isolé, sans accès aux variables CSS de la page. Un `var(--p)`
+ * y rend du NOIR (mesuré : pixel rgba(0,0,0,249) contre rgba(108,71,255,249) avec un hex).
+ * Le type rend l'erreur inexprimable au lieu de la laisser à un scanneur qui peut la rater.
+ */
+export function createMarkerIcon(google: any, color: CouleurTier, size: number, text: string) {
   const s = size
   const svg = `<svg width="${s}" height="${s + 10}" xmlns="http://www.w3.org/2000/svg">
     <defs>
