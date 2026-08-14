@@ -20,7 +20,8 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "verify:deploy": "node scripts/verify-deploy-landed.mjs"
+    "verify:deploy": "node scripts/verify-deploy-landed.mjs",
+    "verify:date-refusal": "node scripts/verify-date-refusal.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",

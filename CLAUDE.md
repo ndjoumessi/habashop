@@ -89,6 +89,7 @@ npm run verify:demo-flag  --workspace=apps/frontend   # demo1234 absent du dist/
 npm run verify:seo-urls   --workspace=apps/frontend   # dist/ livré : aucun %VITE_*% non substitué (canonical cassé = désindexation)
 npm run verify:classes    --workspace=apps/frontend   # dist/ livré (JS compris) : aucune classe atteignable absente — tailwind n'émet RIEN
 npm run smoke:version     --workspace=apps/backend    # /health DÉPLOYÉ == version source (après CHAQUE déploiement back)
+npm run verify:date-refusal --workspace=apps/backend   # API DÉPLOYÉE : une date invalide fait 400 et n'écrit RIEN — ⚠️ MANUEL (exige VERIFY_EMAIL/PASSWORD, jamais en CI)
 npm run test:integration  --workspace=apps/backend    # vitest.integration.config.ts — LECTURE SEULE contre la prod (CI sur main)
 cd mobile && npm run verify:bundle                    # bundle Android LIVRÉ : aucun EXPO_PUBLIC_* survivant, API joignable (CI)
 ```
