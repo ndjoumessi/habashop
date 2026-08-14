@@ -1,13 +1,25 @@
-// VÉRIFICATION POST-DÉPLOIEMENT : une date invalide est refusée par l'API DÉPLOYÉE,
-// en 400, et n'écrit RIEN.
+// L'API DÉPLOYÉE refuse une date invalide en 400, et n'écrit RIEN.
 //
-// ─── POURQUOI CE SCRIPT EXISTE ────────────────────────────────────────────────
-// `dateSchemas.test.ts` prouve la RÈGLE et son câblage, avec un Prisma simulé. Il ne
-// peut rien dire du chemin réellement déployé : le défaut d'origine — `date:
-// '2026-08-14'` accepté par zod puis REFUSÉ par Prisma, donc **500 au lieu de 400** —
-// n'était visible qu'en exerçant la vraie route contre la vraie base. C'est la même
-// famille que `smoke-deployed-version` : un test unitaire ne voit pas une régression
-// d'ENVIRONNEMENT.
+// ─── QUAND LE LANCER — ET SURTOUT QUAND NE PAS ────────────────────────────────
+// ⚠️ PAS après chaque déploiement. Cette consigne a existé une heure, le 2026-08-14,
+// avant d'être resserrée : elle ne payait pas. Une régression de CODE est déjà prise
+// AVANT le déploiement par `dateSchemas.test.ts`, qui monte les vraies routes avec le
+// vrai compilateur zod et tourne à chaque push — sabotage vérifié, 6 rouges au retour
+// de `z.any()`. Doubler ce garde par dix requêtes contre une boutique réelle à chaque
+// mise en ligne, c'est du coût sans rendement ; et une consigne qu'on applique sans
+// raison finit par ne plus être appliquée du tout.
+//
+// À LANCER quand la SOURCE peut rester juste pendant que l'EXÉCUTION change :
+//   · montée de `zod`, `fastify`, ou `fastify-type-provider-zod` ;
+//   · changement du `Dockerfile` ou de l'image de base ;
+//   · doute ponctuel sur ce que la production fait vraiment (son usage d'origine :
+//     prouver, le compte avant/après à l'appui, que le correctif était bien vivant).
+//
+// ⚠️ CE N'EST PAS un `verify:sw-routes` ni un `verify:classes`. Ceux-là inspectent un
+// ARTEFACT transformé, où la source juste et le livré nul coexistent couramment. Ici
+// il n'y a AUCUNE transformation entre la source et l'exécution : un schéma zod est du
+// TypeScript compilé en JS, et le lockfile est commité. C'est ce qui rend le rendement
+// faible — le dire évite qu'on le range par erreur parmi les gardes d'artefact.
 //
 // ─── CE QU'IL N'ÉCRIT PAS, ET COMMENT C'EST GARANTI ───────────────────────────
 // ⚠️ Toutes les valeurs sondées sont des valeurs que le schéma REFUSE. Une date VALIDE
