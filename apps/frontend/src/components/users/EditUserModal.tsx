@@ -98,9 +98,11 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
                 {i("L'utilisateur peut se connecter", 'The user can sign in', 'El usuario puede iniciar sesión', "L'utente può accedere")}
               </div>
             </div>
-            <div role="switch" aria-checked={editForm.active} aria-label={i('Compte actif', 'Active account', 'Cuenta activa', 'Account attivo')}
+            <button type="button" role="switch" aria-checked={editForm.active} aria-label={i('Compte actif', 'Active account', 'Cuenta activa', 'Account attivo')}
+              className="switch-hit"
+              onClick={e => { e.stopPropagation(); setEditForm(f => ({ ...f, active: !f.active })) }}
               style={{
-                width:44, height:24, borderRadius:99,
+                padding:0, width:44, height:24, borderRadius:99,
                 background: editForm.active ? 'var(--p)' : 'var(--bg)',
                 border:'2px solid var(--border)',
                 position:'relative', cursor:'pointer', flexShrink:0,
@@ -112,7 +114,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
                 background: editForm.active ? '#fff' : 'var(--text3)',
                 transition:'left .2s',
               }} />
-            </div>
+            </button>
           </div>
 
           <div
@@ -130,9 +132,11 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
                 {i('Sécurité renforcée à la connexion', 'Stronger sign-in security', 'Seguridad reforzada al iniciar sesión', 'Sicurezza rafforzata al login')}
               </div>
             </div>
-            <div role="switch" aria-checked={editForm.twoFA} aria-label="2FA"
+            <button type="button" role="switch" aria-checked={editForm.twoFA} aria-label="2FA"
+              className="switch-hit"
+              onClick={e => { e.stopPropagation(); setEditForm(f => ({ ...f, twoFA: !f.twoFA })) }}
               style={{
-                width:44, height:24, borderRadius:99,
+                padding:0, width:44, height:24, borderRadius:99,
                 background: editForm.twoFA ? 'var(--p)' : 'var(--bg)',
                 border:'2px solid var(--border)',
                 position:'relative', cursor:'pointer', flexShrink:0,
@@ -144,7 +148,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
                 background: editForm.twoFA ? '#fff' : 'var(--text3)',
                 transition:'left .2s',
               }} />
-            </div>
+            </button>
           </div>
 
           {/* Preview modules accessibles */}

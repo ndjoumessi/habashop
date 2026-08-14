@@ -262,7 +262,9 @@ export default function Notifications() {
                     const isOn = prefs[key]
                     return (
                       <td key={canal} style={{ textAlign:'center', padding:'14px 9px' }}>
-                        <button onClick={() => setPrefs(p => ({ ...p, [key]: !p[key] }))} style={{
+                        <button className="switch-hit" type="button" role="switch" aria-checked={isOn}
+                          aria-label={`${row.label} — ${canal}`}
+                          onClick={() => setPrefs(p => ({ ...p, [key]: !p[key] }))} style={{
                           width:48, height:26, borderRadius:99,
                           background: isOn ? 'var(--p2)' : 'var(--bg4)',
                           border:'none', cursor:'pointer',

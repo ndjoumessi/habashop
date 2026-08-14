@@ -235,6 +235,84 @@ function fichiersTsx(dir: string, acc: string[] = []): string[] {
   return acc
 }
 
+/**
+ * Balises portant `role="switch"`. ⚠️ On part du rôle et on REMONTE au `<` qui ouvre SA
+ * balise. Une regex qui ratisse en avant depuis `<button|div|span` attribuait le rôle à un
+ * conteneur situé neuf lignes plus haut — `POSModals` était déclaré fautif alors que son
+ * bouton porte bien `minHeight:44`. Un scanneur qui se trompe de propriétaire accuse le
+ * mauvais fichier, et on corrige le mauvais endroit.
+ */
+function balisesSwitch(txt: string): { bal: string; ligne: number }[] {
+  const out: { bal: string; ligne: number }[] = []
+  for (const m of txt.matchAll(/role="switch"/g)) {
+    let i = m.index!
+    while (i > 0 && !(txt[i] === '<' && /[A-Za-z]/.test(txt[i + 1] ?? ''))) i--
+    let d = 0, fin = i
+    for (let k = i; k < txt.length; k++) {
+      if (txt[k] === '{') d++
+      else if (txt[k] === '}') d--
+      else if (txt[k] === '>' && d === 0 && txt[k - 1] !== '=') { fin = k; break }
+    }
+    out.push({ bal: txt.slice(i, fin + 1), ligne: txt.slice(0, i).split('\n').length })
+  }
+  return out
+}
+
+describe('interrupteurs — la zone de frappe atteint 44px sans grossir le dessin', () => {
+  it('`.switch-hit::before` prend sa hauteur du token, pas d’un nombre recopié', () => {
+    const r = REGLES.find(x => x.sel.split(',').some(t => t.trim() === '.switch-hit::before'))
+    expect(r, '.switch-hit::before absente de la feuille').toBeDefined()
+    expect(r!.corps).toMatch(/height:\s*var\(--touch-min\)/)
+    // ⚠️ Hauteur ABSOLUE, jamais un `inset` négatif : les pistes font 24 OU 26 px selon les
+    // écrans, et un `inset:-9px` aurait rendu 42 sur les unes et 44 sur les autres — un
+    // correctif juste par endroits est un correctif qu'on croit posé.
+    expect(r!.corps).not.toMatch(/inset:\s*-/)
+  })
+
+  it('⚠️ tout `role="switch"` porte la classe OU déclare déjà 44px', () => {
+    // Périmètre DÉRIVÉ du rôle ARIA, pas d'une liste : sept interrupteurs existaient, tous
+    // stylés en ligne, aucun n'utilisant la règle `.toggle` que l'audit visait — elle était
+    // MORTE. Un huitième écrit demain entre dans le périmètre sans qu'on y pense.
+    // L'exemption est le motif de POSModals : bouton enveloppe `minHeight:44` + piste dedans.
+    // C'était déjà le BON motif, présent avant ce lot ; on ne le double pas.
+    const fautifs: string[] = []
+    for (const f of fichiersTsx(SRC)) {
+      const txt = readFileSync(f, 'utf8')
+      for (const { bal, ligne } of balisesSwitch(txt)) {
+        if (/switch-hit/.test(bal)) continue
+        if (/minHeight:\s*(4[4-9]|[5-9]\d)/.test(bal)) continue
+        fautifs.push(`${f.replace(SRC, 'src')}:${ligne}`)
+      }
+    }
+    expect(fautifs).toEqual([])
+  })
+
+  it('COUVERTURE + DISCRIMINANT — le scan voit bien des interrupteurs', () => {
+    // Sans ce cas, une regex cassée rendrait « 0 fautif » sur zéro élément lu.
+    let vus = 0, avecClasse = 0, avecHauteur = 0
+    for (const f of fichiersTsx(SRC)) {
+      const txt = readFileSync(f, 'utf8')
+      for (const { bal } of balisesSwitch(txt)) {
+        vus++
+        if (/switch-hit/.test(bal)) avecClasse++
+        if (/minHeight:\s*(4[4-9]|[5-9]\d)/.test(bal)) avecHauteur++
+      }
+    }
+    expect(vus).toBeGreaterThanOrEqual(6)
+    // Les DEUX voies sont réellement empruntées — sinon l'exemption serait morte ou la règle
+    // ne garderait rien.
+    expect(avecClasse).toBeGreaterThanOrEqual(5)
+    expect(avecHauteur).toBeGreaterThanOrEqual(1)
+  })
+
+  it('les règles MORTES `.toggle` / `.toggle-dot` ne reviennent pas', () => {
+    // 0 point d'appel, 0 fichier JS livré ne les citait. Le vrai interrupteur vivait
+    // ailleurs, en sept exemplaires : corriger la règle morte n'aurait rien changé à l'écran.
+    expect(/\.toggle[\s,.:{]/.test(CSS_INDEX)).toBe(false)
+    expect(/\.toggle-dot/.test(CSS_INDEX)).toBe(false)
+  })
+})
+
 describe('plancher typographique — 11px, la valeur que l’échelle DÉCLARE', () => {
   const FICHIERS = fichiersTsx(SRC)
 

@@ -547,8 +547,24 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 .tabs-scroll::-webkit-scrollbar { display:none }
 
 /* ── Toggle switch ── */
-.toggle { width:44px; height:24px; border-radius:99px; border:none; cursor:pointer; position:relative; transition:background .2s; flex-shrink:0 }
-.toggle-dot { position:absolute; top:2px; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .2s; box-shadow:0 2px 4px rgba(0,0,0,.2) }
+/* ── Interrupteurs ────────────────────────────────────────────────────────────────────
+   ⚠️ `.toggle` / `.toggle-dot` ONT ÉTÉ SUPPRIMÉES ICI : 0 point d'appel, 0 fichier JS livré
+   ne les citait (témoin `.modal-box` : 14). L'audit visait cette règle morte pendant que le
+   VRAI interrupteur vivait ailleurs — en SEPT exemplaires stylés en ligne, hauteur 24 ou 26.
+
+   `.switch-hit` porte la zone de frappe à 44px SANS toucher au dessin : la hauteur est posée
+   sur le pseudo-élément, pas sur la piste. Ce que iOS HIG et WCAG 2.5.8 mesurent est la
+   région qui accepte le pointeur, et un pseudo-élément du contrôle en fait partie.
+   ⚠️ La hauteur est ABSOLUE (44), pas un décalage : les pistes font 24 OU 26 selon les
+   écrans, et un `inset:-9px` aurait rendu 42 sur les unes et 44 sur les autres — un correctif
+   juste par endroits est un correctif qu'on croit posé.
+   ⚠️ `POSModals` n'en a PAS besoin : son bouton enveloppe déclare déjà `minHeight:44` avec la
+   piste en dedans. C'est le bon motif, il était déjà là — on ne le double pas. */
+.switch-hit { position:relative }
+.switch-hit::before {
+  content:''; position:absolute; left:0; right:0;
+  top:50%; transform:translateY(-50%); height:var(--touch-min);
+}
 
 /* ── Glass / Surface ── */
 .glass { background:rgba(255,255,255,.04); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.08) }

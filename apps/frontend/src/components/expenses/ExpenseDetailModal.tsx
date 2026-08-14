@@ -102,7 +102,7 @@ export default function ExpenseDetailModal(props: Props) {
                 </div>
               ) : (
                 <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', paddingBottom:2 }}>
-                  <button type="button" role="switch" aria-checked={editExpForm.recurrent}
+                  <button className="switch-hit" type="button" role="switch" aria-checked={editExpForm.recurrent}
                     aria-label={lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}
                     onClick={() => setEditExpForm(f => ({...f, recurrent:!f.recurrent}))}
                     style={{ width:44, height:24, borderRadius:'var(--r-full)', background: editExpForm.recurrent ? 'var(--p2)' : 'var(--bg5)', border:'1px solid var(--border)', cursor:'pointer', position:'relative', transition:'background .2s', flexShrink:0, boxSizing:'border-box' }}>

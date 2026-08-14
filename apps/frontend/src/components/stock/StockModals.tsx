@@ -622,7 +622,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{i('Produit en promotion', 'Product on promotion', 'Producto en promoción', 'Prodotto in promozione')}</div>
                     <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{i('Affiche un badge PROMO au POS', 'Shows a PROMO badge at POS', 'Muestra una insignia PROMO en POS', 'Mostra un badge PROMO al POS')}</div>
                   </div>
-                  <button role="switch" aria-checked={form.hasPromotion}
+                  <button className="switch-hit" role="switch" aria-checked={form.hasPromotion}
                     aria-label={i('Produit en promotion', 'Product on promotion', 'Producto en promoción', 'Prodotto in promozione')}
                     onClick={() => setForm(f => ({...f, hasPromotion:!f.hasPromotion}))} style={{
                     width:48, height:26, borderRadius:99, position:'relative',
@@ -660,7 +660,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                       <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{tog.label}</div>
                       <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{tog.sub}</div>
                     </div>
-                    <button role="switch" aria-checked={!!form[tog.key]} aria-label={tog.label}
+                    <button className="switch-hit" role="switch" aria-checked={!!form[tog.key]} aria-label={tog.label}
                       onClick={() => productEditMode && setForm(f => ({...f, [tog.key]:!f[tog.key]}))} style={{
                       width:48, height:26, borderRadius:99, position:'relative',
                       background: form[tog.key] ? 'var(--p2)' : 'var(--bg4)', border:'none', cursor: productEditMode ? 'pointer' : 'default',

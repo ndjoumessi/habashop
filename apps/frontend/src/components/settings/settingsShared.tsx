@@ -14,7 +14,7 @@ export const panel: React.CSSProperties = {
 export function Switch({ on, onClick, color, disabled, label, describedBy }: { on: boolean; onClick: () => void; color: string; disabled?: boolean; label?: string; describedBy?: string }) {
   // stopPropagation : la card parente (ToggleCard) est cliquable — sans ça, un clic sur le switch togglerait deux fois.
   return (
-    <button type="button" disabled={disabled} onClick={e => { e.stopPropagation(); onClick() }} role="switch" aria-checked={on} aria-label={label} aria-describedby={describedBy} style={{
+    <button type="button" disabled={disabled} onClick={e => { e.stopPropagation(); onClick() }} className="switch-hit" role="switch" aria-checked={on} aria-label={label} aria-describedby={describedBy} style={{
       /* Pattern POSModals : piste OFF = var(--bg5) + bordure var(--border) (visible en Soleil), ON = couleur sémantique, knob #fff */
       width: 48, height: 26, borderRadius: 'var(--r-full)', flexShrink: 0, boxSizing: 'border-box',
       background: on ? color : 'var(--bg5)', border: '1px solid var(--border)',
