@@ -585,12 +585,15 @@ export default function Marketing() {
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             width: '100%', padding: '13px',
+            // ⚠️ Même correction que le bouton du catalogue public : aplat de marque +
+            // encre sombre (8,69:1). C'était le dégradé #25D366→#128C7E avec du BLANC,
+            // en échec AA sur toute sa longueur (1,98:1 → 4,14:1).
             background: sending || !selected.size || !message.trim()
               ? 'var(--bg4)'
-              : 'linear-gradient(135deg, #25D366, #128C7E)',
+              : 'var(--brand-whatsapp)',
             border: 'none', borderRadius: 12,
             fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)',
-            color: sending || !selected.size || !message.trim() ? 'var(--text3)' : '#fff',
+            color: sending || !selected.size || !message.trim() ? 'var(--text3)' : 'var(--brand-whatsapp-ink)',
             cursor: sending || !selected.size || !message.trim() ? 'not-allowed' : 'pointer',
             fontFamily: 'inherit',
             boxShadow: !sending && selected.size && message.trim() ? '0 6px 20px rgba(37,211,102,.35)' : 'none',

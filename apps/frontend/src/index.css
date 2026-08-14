@@ -23,6 +23,17 @@
   --brand-wave:      #1B9AF5;
   --brand-om:        #FF6600;
   --brand-whatsapp:  #25D366;
+  /* ⚠️ Encre à poser SUR --brand-whatsapp. Le bouton « Commander via WhatsApp » portait du
+     BLANC sur un dégradé #25D366→#128C7E : 1,98:1 au départ, 4,14:1 à l'arrivée — en échec
+     partout. Et ce dégradé n'est réparable par AUCUNE couleur de texte : il s'étale trop en
+     luminance, le blanc échoue au clair et un texte sombre échoue au foncé (min 4,17:1).
+     C'est le DÉGRADÉ qui était le défaut, pas l'encre. On garde donc la couleur de marque
+     EXACTE en aplat — #25D366, la teinte que le commerçant reconnaît — et on écrit dessus
+     en sombre : 8,69:1. Le vert WhatsApp sur texte sombre appartient au langage de la
+     marque (leurs propres bulles de message sont du texte sombre sur vert clair).
+     ⚠️ L'alternative écartée : le teal foncé officiel #075E54 avec du blanc (7,67:1) —
+     conforme aussi, mais il éteint un bouton de CONVERSION sur une page publique. */
+  --brand-whatsapp-ink: #0A1F14;
   --brand-mtn:       #FFCC00;
 }
 
@@ -127,7 +138,16 @@
   /* backward compat */
   --sh-glow: 0 0 0 3px rgba(108,71,255,.18);
   --sh-acc: 0 6px 24px rgba(0,208,132,.35);
-  --grad-success: linear-gradient(135deg,#22C77A,#17A866);
+  /* ⚠️ SURFACE verte portant du TEXTE BLANC — assombrie le 2026-08-15.
+     Elle valait #22C77A→#17A866 : le blanc y mesurait 2,21:1 au départ et 3,07:1 à
+     l'arrivée, en échec AA sur TOUTE sa longueur (le seuil est 4,5:1 — le 3:1 « grand
+     texte » exige ≥18,66px gras ou ≥24px, et le libellé fait 13px). Désormais 5,38:1 au
+     point le plus clair.
+     ⚠️ NE PAS confondre avec `--acc2` (#22C77A), qui reste INCHANGÉ : celui-là est une
+     couleur de PREMIER PLAN (texte vert, pastilles, points d'état) où il mesure 6,83:1 sur
+     une carte. Le token qui manquait n'était pas un vert, c'était un vert de SURFACE.
+     Les assombrir tous les deux aurait cassé une soixantaine d'indicateurs corrects. */
+  --grad-success: linear-gradient(135deg,#0E7A4B,#065F46);
   --grad-acc: linear-gradient(135deg,#FFB020,#E8940D);
   --grad-danger: linear-gradient(135deg,#FF5C72,#E23A54);
   --t-fast: all .12s cubic-bezier(.4,0,.2,1);

@@ -812,7 +812,7 @@ export default function AdminDashboard() {
                     </div>
                     <div style={{ display: 'flex', gap: 7, flexShrink: 0 }}>
                       <button onClick={() => handleApprove(req.id)} aria-label={`${i('Approuver', 'Approve', 'Aprobar', 'Approva')} ${req.tenant?.name ?? req.id}`}
-                        style={{ padding: '8px 16px', borderRadius: 9, background: 'linear-gradient(135deg,var(--acc2),#00875A)', border: 'none', color: '#fff', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, minHeight: 36 }}>
+                        style={{ padding: '8px 16px', borderRadius: 9, background: 'var(--grad-success)', border: 'none', color: '#fff', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, minHeight: 36 }}>
                         <Check size={13} /> {i('Approuver', 'Approve', 'Aprobar', 'Approva')}
                       </button>
                       <button onClick={() => handleReject(req.id)} aria-label={`${i('Rejeter', 'Reject', 'Rechazar', 'Rifiuta')} ${req.tenant?.name ?? req.id}`}

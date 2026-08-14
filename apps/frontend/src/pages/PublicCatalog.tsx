@@ -356,8 +356,11 @@ export default function PublicCatalog() {
             onClick={orderViaWhatsApp}
             style={{
               padding:'12px 20px', borderRadius:10,
-              background: 'linear-gradient(135deg, #25D366, #128C7E)',
-              border:'none', color: '#fff',
+              // ⚠️ APLAT de marque + encre sombre — 8,69:1. C'était un dégradé
+              // #25D366→#128C7E avec du BLANC : 1,98:1 au départ, 4,14:1 à l'arrivée.
+              // Ce dégradé n'était réparable par aucune couleur de texte (cf. index.css).
+              background: 'var(--brand-whatsapp)',
+              border:'none', color: 'var(--brand-whatsapp-ink)',
               fontSize:'var(--fs-body)', fontWeight:800, cursor: 'pointer',
               fontFamily:'inherit', display:'flex', alignItems:'center', gap:8,
               boxShadow: '0 4px 14px rgba(37,211,102,.4)',

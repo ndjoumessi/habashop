@@ -92,7 +92,7 @@ export default function OrderDetailModal({ order, onClose, changeStatus, printOr
           )}
           {order.status === 'EN TRANSIT' && (
             <button className="btn btn-primary flex-1 justify-center"
-              style={{ background: 'linear-gradient(135deg,var(--acc2),#059669)', display:'flex', alignItems:'center', gap:6 }}
+              style={{ background: 'var(--grad-success)', display:'flex', alignItems:'center', gap:6 }}
               onClick={() => changeStatus(order.id, 'REÇUE')}>
               <Inbox size={14}/> {i('Confirmer la réception', 'Confirm receipt', 'Confirmar recepción', 'Conferma ricezione')}
             </button>
