@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
 import { salesApi } from '@/lib/api'
-import { CATS, catLabel, payModeLabel, showStrikePrice, type PosProduct, type CartItem } from '@/components/pos/posShared'
+import { CATS, catLabel, payModeLabel, showStrikePrice, niveauStock, type PosProduct, type CartItem } from '@/components/pos/posShared'
 import { isPromotionActive } from '@/lib/pricing'
 import ProductThumb from '@/components/ui/ProductThumb'
 
@@ -129,8 +129,11 @@ interface ProductTileProps {
 
 const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suffix, baseAmount, showStrike, isPromoRetail, posShowStockOnTile, ruptureLabel, onAdd }: ProductTileProps) {
   const inCart     = qty !== undefined
-  const isLowStock = p.stock < 20
-  const isOut      = p.stock <= 0
+  // ⚠️ LE SEUIL VIENT DU PRODUIT, plus d'un littéral. Règle unique `niveauStock`,
+  // alignée sur `statusOf` de l'écran Stock — cf. son commentaire pour le pourquoi.
+  const niveau     = niveauStock(p.stock, p.stockMin)
+  const isLowStock = niveau === 'bas'
+  const isOut      = niveau === 'rupture'
   // Rupture bloquante UNIQUEMENT si le stock est affiché (sinon le commerçant gère à la main).
   const blocked    = posShowStockOnTile && isOut
   // Spec item 11 : stock bas = bordure --warn + point ambre — n'empêche PAS la vente.
@@ -230,9 +233,16 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
       */}
       <ProductThumb p={p} size={38} style={{ margin: '0 auto' }} />
 
-      {/* Nom — gauche, 12px (maquette) */}
+      {/*
+        Nom — gauche. ⚠️ 13 px, PLUS GRAND QUE LE PRIX, et c'est l'inverse de ce qui était
+        livré. MESURÉ le 2026-08-14 : le nom était à `--fs-label` (12 px) pendant que le
+        prix occupait `--fs-sm` (13 px) dans `--acc` (#FFB020), la couleur la plus saturée
+        de la palette. Le contraste n'était en cause nulle part (15,4 pour le nom, 9,8 pour
+        le prix — tout passe AA) : c'était une affaire de HIÉRARCHIE, l'identité du produit
+        passant derrière son montant sur une grille où l'on cherche d'abord QUOI ajouter.
+      */}
       <div style={{
-        fontSize: 'var(--fs-label)',
+        fontSize: 'var(--fs-sm)',
         fontWeight: 'var(--fw-semibold)',
         color: 'var(--text)',
         lineHeight: 1.3,
@@ -251,12 +261,12 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
           </span>
         )}
         <span style={{
-          fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)',
+          fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)',
           color: isPromoRetail ? 'var(--danger)' : 'var(--acc)',
           fontFamily: 'var(--mono)',
         }}>{amount}</span>{' '}
         <span style={{
-          fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)',
+          fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)',
           color: isPromoRetail ? 'var(--danger)' : 'var(--acc)',
         }}>{suffix}</span>
       </div>

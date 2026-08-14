@@ -67,8 +67,41 @@ export const PRODUCTS = [
 // Formulaire de remise manuelle (feuille d'encaissement POS).
 export type DiscountForm = { type: 'percent' | 'amount'; value: number; reason: string }
 
+/**
+ * NIVEAU DE STOCK — règle UNIQUE, alignée sur celle de l'écran Stock (`statusOf`).
+ *
+ * ⚠️ LE POS COMPARAIT À UN LITTÉRAL : `p.stock < 20`, identique pour TOUS les produits,
+ * alors que `Product.stockMin` existe (défaut 5), est éditable dans Stock sous la colonne
+ * « Seuil », et sert déjà de critère à TROIS autres endroits — `statusOf` (écran Stock),
+ * le compteur de `server.ts`, et `reports.ts` qui note explicitement « MÊME critère que le
+ * bandeau Stock ». Le POS était le seul à diverger, et il n'avait même pas le champ : il
+ * n'était pas transporté par `toPosProduct`.
+ *
+ * ⚠️ Le défaut se trompait DANS LES DEUX SENS, et il ne pilote pas qu'une pastille : le
+ * même prédicat allume l'anneau ambre de la tuile, donc ce que le caissier REMARQUE.
+ * Mesuré le 2026-08-14 sur les 13 produits de `demo-tenant-001` : les deux règles
+ * s'accordent AUJOURD'HUI (seuils de 10 à 30, assez proches de 20). Le défaut est donc
+ * réel mais LATENT — « Farine blé » a un seuil de 30, si bien qu'entre 20 et 30 unités le
+ * POS annoncerait « ok » là où le commerçant a demandé une alerte. Un défaut latent se
+ * mesure au CHEMIN, pas au contenu de la table du jour.
+ *
+ * ⚠️ SEULE DIVERGENCE ASSUMÉE avec `statusOf` : la rupture est `<= 0` ici, `=== 0` là-bas.
+ * Un stock négatif (désynchronisation) est une rupture, pas un « stock bas ».
+ */
+export type NiveauStock = 'rupture' | 'bas' | 'ok'
+export function niveauStock(stock: number, seuil: number): NiveauStock {
+  if (stock <= 0) return 'rupture'
+  if (stock <= seuil) return 'bas'
+  return 'ok'
+}
+
 export type PosProduct = typeof PRODUCTS[0] & {
   id: number | string
+  /**
+   * Seuil d'alerte VOULU par le commerçant (`Product.stockMin`). Obligatoire : le rendre
+   * optionnel rouvrirait la porte au littéral, puisque rien n'obligerait à le fournir.
+   */
+  stockMin: number
   /**
    * URL de la photo produit, ou absente. ⚠️ Une URL, JAMAIS des données : cette liste
    * est relue à chaque ouverture de caisse ET persistée hors ligne côté mobile.
@@ -106,6 +139,12 @@ export function toPosProduct(p: Record<string, any>): PosProduct {
     // pas qu'un `0` ou un `false` venu d'une API malformée devienne une URL.
     image: p.image ?? null,
     stock: p.stockQty ?? 0,
+    // ⚠️ ABSENCE ⇒ 0, JAMAIS un seuil inventé. `0` signifie « ne jamais alerter » — le
+    // même sens que côté commerçant. Fabriquer un repli (5, la valeur du schéma) ferait
+    // crier des tuiles sur un seuil que personne n'a choisi. Mesuré : `GET /api/products`
+    // renvoie la ligne COMPLÈTE (aucun `select`), donc `stockMin` est toujours là et
+    // cette branche est un garde, pas une politique.
+    stockMin: Number.isFinite(Number(p.stockMin)) ? Number(p.stockMin) : 0,
     promotion: p.hasPromotion ?? false,
     promotionPrice: p.promotionPrice ?? 0,
     promotionEnd: p.promotionEnd?.split('T')[0] ?? '',
