@@ -22,6 +22,12 @@ const { db } = vi.hoisted(() => ({
     expense:  { create: vi.fn(), update: vi.fn(), delete: vi.fn(), findFirst: vi.fn() },
     employee: { create: vi.fn(), update: vi.fn(), findFirst: vi.fn(), findMany: vi.fn() },
     auditLog: { create: vi.fn() },
+    customer: { findFirst: vi.fn() },
+    subscription: { create: vi.fn(), update: vi.fn(), findFirst: vi.fn(), findMany: vi.fn() },
+    subscriptionItem: { deleteMany: vi.fn(), createMany: vi.fn() },
+    // ⚠️ Le PUT passe par une transaction : sans ce mock, le callback n'est jamais
+    // appelé et le test serait vert sans avoir rien exercé.
+    $transaction: vi.fn(),
   },
 }))
 vi.mock('../db', () => ({ prisma: db, basePrisma: db }))
@@ -36,6 +42,7 @@ vi.mock('../middleware/authenticate', () => ({
 import { errorHandler } from '../lib/errorHandler'
 import { expenseRoutes } from '../routes/expenses'
 import { employeeRoutes } from '../routes/employees'
+import { subscriptionRoutes } from '../routes/subscriptions'
 
 async function build(routes: unknown) {
   const app = Fastify()
@@ -57,6 +64,11 @@ beforeEach(() => {
   db.expense.create.mockResolvedValue({ id: 'e1', label: 'Loyer août', amountTTC: 119250 })
   db.auditLog.create.mockResolvedValue({ id: 'a1' })
   db.employee.create.mockResolvedValue({ id: 'emp1' })
+  db.customer.findFirst.mockResolvedValue({ id: 'c1' })
+  db.subscription.create.mockResolvedValue({ id: 's1' })
+  db.subscription.findFirst.mockResolvedValue({ id: 's1' })
+  // La transaction EXÉCUTE son callback avec le client mocké — sinon rien ne s'exerce.
+  db.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => fn(db))
 })
 
 describe('DÉPENSES — la date atteint Prisma sous une forme qu’il accepte', () => {
@@ -185,6 +197,77 @@ describe('EMPLOYÉS — resserré aussi, sans casser ce qui marche', () => {
     expect(res.statusCode).toBe(200)
     const d = (db.employee.create.mock.calls[0]?.[0] as { data: { endAt: unknown } })?.data.endAt
     expect((d as Date).toISOString()).toBe('2027-01-31T00:00:00.000Z')
+  })
+})
+
+describe('ABONNEMENTS — `startDate`, le jumeau que la méta-règle ne suffisait pas à garder', () => {
+  /**
+   * ⚠️ POURQUOI CE BLOC EXISTE. `startDate` portait `z.coerce.date().nullish()` : la
+   * forme qui laisse passer un NOMBRE et l'enregistre en 1970. Il a été aligné en même
+   * temps que les dépenses, mais couvert par la SEULE méta-règle — qui prouve la
+   * source, jamais l'application. Le handler fait `startDate: startDate ?? null`, donc
+   * ce qui atteint Prisma dépend entièrement du schéma : exactement la configuration
+   * où un test de comportement est le seul à pouvoir rougir.
+   */
+  const SUB = { customerId: 'c1', name: 'Panier hebdo', dayOfWeek: 3, items: [{ productId: 'p1', quantity: 2 }] }
+  /** Ce que Prisma a REÇU comme `startDate`. */
+  const vueParPrisma = () => (db.subscription.create.mock.calls[0]?.[0] as { data: { startDate: unknown } })?.data.startDate
+
+  it('une date SEULE est acceptée et CONVERTIE', async () => {
+    const app = await build(subscriptionRoutes)
+    const res = await app.inject({ method: 'POST', url: '/api/subscriptions', payload: { ...SUB, startDate: '2026-08-14' } })
+
+    // 201 : la route d'abonnement rend « Created », là où les dépenses rendent 200.
+    expect(res.statusCode, res.body).toBe(201)
+    // ⚠️ L'assertion porte sur le TYPE reçu par Prisma : une chaîne validée mais non
+    // convertie ferait le même 500 que les dépenses, sous un test vert.
+    expect(vueParPrisma()).toBeInstanceOf(Date)
+    expect((vueParPrisma() as Date).toISOString()).toBe('2026-08-14T00:00:00.000Z')
+  })
+
+  it('⚠️ un NOMBRE est refusé — il s’enregistrait en 1970', async () => {
+    const app = await build(subscriptionRoutes)
+    for (const mauvaise of [42.5, 0, 1786665073366, true]) {
+      vi.clearAllMocks()
+      db.customer.findFirst.mockResolvedValue({ id: 'c1' })
+      const res = await app.inject({ method: 'POST', url: '/api/subscriptions', payload: { ...SUB, startDate: mauvaise } })
+      expect(res.statusCode, `startDate=${JSON.stringify(mauvaise)} → ${res.statusCode}`).toBe(400)
+      expect(db.subscription.create).not.toHaveBeenCalled()
+    }
+  })
+
+  it('⚠️ ABSENTE ou VIDE reste acceptée — « pas de date de début » est le comportement historique', async () => {
+    // Colonne `DateTime?`. Refuser `null` casserait la création d'un abonnement sans
+    // première livraison datée, qui fonctionne depuis toujours.
+    const app = await build(subscriptionRoutes)
+    for (const vide of [null, '', undefined]) {
+      vi.clearAllMocks()
+      db.customer.findFirst.mockResolvedValue({ id: 'c1' })
+      db.subscription.create.mockResolvedValue({ id: 's1' })
+      const charge: Record<string, unknown> = { ...SUB }
+      if (vide !== undefined) charge.startDate = vide
+      const res = await app.inject({ method: 'POST', url: '/api/subscriptions', payload: charge })
+      expect(res.statusCode, `startDate=${JSON.stringify(vide)}`).toBe(201)
+      // ⚠️ `null`, jamais 1970 : c'est tout l'objet de la correction.
+      expect(vueParPrisma()).toBeNull()
+    }
+  })
+
+  it('la MODIFICATION suit la même règle — et la transaction est bien exercée', async () => {
+    const app = await build(subscriptionRoutes)
+    expect((await app.inject({ method: 'PUT', url: '/api/subscriptions/s1', payload: { startDate: 42.5 } })).statusCode).toBe(400)
+
+    vi.clearAllMocks()
+    db.subscription.findFirst.mockResolvedValue({ id: 's1' })
+    db.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => fn(db))
+    const ok = await app.inject({ method: 'PUT', url: '/api/subscriptions/s1', payload: { startDate: '2026-09-01' } })
+    expect(ok.statusCode, ok.body).toBe(200)
+    // ⚠️ COUVERTURE : sans cette assertion, un `$transaction` qui n'appellerait pas son
+    // callback rendrait le test vert sans avoir rien exercé du tout.
+    expect(db.subscription.update).toHaveBeenCalled()
+    const maj = (db.subscription.update.mock.calls[0]?.[0] as { data: { startDate: unknown } }).data.startDate
+    expect(maj).toBeInstanceOf(Date)
+    expect((maj as Date).toISOString()).toBe('2026-09-01T00:00:00.000Z')
   })
 })
 
