@@ -251,13 +251,6 @@ html,body,#root {
   color:var(--text3); flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
 }
 .btn-icon:hover { background:rgba(255,255,255,.08); color:var(--text) }
-/* backward compat */
-.btn-success {
-  background:var(--grad-success); color:#fff; border:none;
-  border-radius:var(--r-md); padding:7px 14px; font-size:var(--fs-sm); font-weight:var(--fw-semibold);
-  display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;
-  min-height:var(--touch-min);
-}
 .danger-btn {
   display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:9px 18px;
   background:rgba(255,59,92,.1); border:1px solid rgba(255,59,92,.25);

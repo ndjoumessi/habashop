@@ -181,7 +181,7 @@ describe('cibles tactiles — la famille entière, pas la forme qu’on regardai
   })
 
   it('les boutons TEXTE atteignent 44 — c’est eux qui manquaient', () => {
-    for (const c of ['.btn', '.btn-primary', '.btn-ghost', '.btn-danger', '.btn-success']) {
+    for (const c of ['.btn', '.btn-primary', '.btn-ghost', '.btn-danger']) {
       expect({ c, h: minHeight(c) }).toEqual({ c, h: 44 })
     }
   })
