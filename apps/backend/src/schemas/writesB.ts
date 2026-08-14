@@ -33,28 +33,57 @@ export const ID_PARAMS = z.object({ id: z.string().min(1) })
 */
 
 /**
- * Colonne NOT NULL, aucun repli côté handler : une valeur VIDE est un refus PROPRE.
+ * CE QU'EST UNE DATE SUR LE FIL : une CHAÎNE non vide, ou un `Date`. Rien d'autre.
  *
- * ⚠️ `null` DOIT ÊTRE ÉCARTÉ AVANT LA COERCITION. `new Date(null)` vaut **epoch 0** —
- * une date parfaitement valide, au 1er janvier 1970. Sans ce filtre, `date: null` sur
- * une colonne NOT NULL n'échouerait pas : il enregistrerait 1970, en silence. Même
- * famille que `Number(null) === 0` qui avait fait naître des notes de zéro sur une
- * échelle de 1 à 5. `NaN` donne `Invalid Date`, que zod refuse — donc un 400.
+ * ⚠️ TOUT CE QUI N'EST PAS UNE CHAÎNE EST ÉCARTÉ AVANT LA COERCITION, parce que
+ * `new Date(x)` réussit sur bien plus de choses qu'on ne croit et rend alors une date
+ * ABSURDE plutôt qu'une erreur :
+ *   · `new Date(null)`  → epoch 0        → 1er janvier 1970
+ *   · `new Date(42.5)`  → epoch 42,5 ms  → 1er janvier 1970
+ *   · `new Date(true)`  → epoch 1 ms     → 1er janvier 1970
+ * Sans ce filtre, `date: null` sur une colonne NOT NULL n'échouait pas : il
+ * enregistrait 1970 EN SILENCE. Même famille que `Number(null) === 0`, qui avait fait
+ * naître des notes de zéro sur une échelle de 1 à 5.
+ *
+ * ⚠️ LE NOMBRE EST REFUSÉ SUR DÉCISION DE PRODUIT (Nelson, 2026-08-14). Il aurait été
+ * défendable de le lire comme un horodatage epoch — c'est le contrat de JavaScript —
+ * mais aucun appelant n'en envoie, et le revers était réel : un MONTANT arrivé par
+ * erreur dans le champ `date` se serait enregistré en 1970 au lieu d'être refusé. Sur
+ * de la comptabilité, une valeur absurde acceptée coûte plus qu'un appel refusé.
+ *
+ * `NaN` donne `Invalid Date`, que zod refuse — donc un 400, jamais un 500.
  */
-const DATE_REQUISE = z.preprocess(v => (v === null || v === '' ? NaN : v), z.coerce.date().optional())
+function dateBrute(v: unknown): unknown {
+  if (typeof v === 'string' && v.trim() !== '') return v
+  if (v instanceof Date) return v
+  return NaN
+}
+
+/** Colonne NOT NULL, aucun repli côté handler : toute valeur vide est un refus PROPRE. */
+const DATE_REQUISE = z.preprocess(
+  v => (v === undefined ? undefined : dateBrute(v)),
+  z.coerce.date().optional(),
+)
 
 /** Colonne NOT NULL, mais le handler a un repli (`hiredAt ? … : new Date()`).
  *  ⚠️ `''` et `null` doivent rester ACCEPTÉS et devenir une ABSENCE : sinon une
  *  embauche sans date saisie — qui retombe aujourd'hui sur la date du jour —
  *  deviendrait un 400. On resserre contre le n'importe-quoi, jamais contre un chemin
- *  qui marche. Sans ce filtre, `null` s'enregistrerait en 1970 au lieu d'aujourd'hui. */
-const DATE_AVEC_REPLI = z.preprocess(v => (v === '' || v === null ? undefined : v), z.coerce.date().optional())
+ *  qui marche. Un NOMBRE, lui, est refusé : ce n'est pas une absence, c'est une
+ *  valeur fausse, et la faire passer pour « non renseigné » la masquerait. */
+const DATE_AVEC_REPLI = z.preprocess(
+  v => (v === undefined || v === null || v === '' ? undefined : dateBrute(v)),
+  z.coerce.date().optional(),
+)
 
 /** Colonne NULLABLE : vider le champ est une INTENTION (un CDD requalifié en CDI n'a
  *  plus d'échéance), donc `''` et `null` valent tous deux « efface ».
  *  ⚠️ Ici aussi `null` doit court-circuiter la coercition : sans ça, effacer une
  *  échéance la fixerait au 1er janvier 1970 au lieu de la retirer. */
-const DATE_EFFACABLE = z.preprocess(v => (v === '' || v === null ? null : v), z.coerce.date().nullish())
+const DATE_EFFACABLE = z.preprocess(
+  v => (v === undefined ? undefined : v === null || v === '' ? null : dateBrute(v)),
+  z.coerce.date().nullish(),
+)
 
 // ── Employees ── (handler mappe explicitement → passthrough, non vulnérable) ──
 const EMPLOYEE_FIELDS = {
@@ -136,14 +165,17 @@ export const SUB_CREATE = z.object({
   name:       z.string().min(1),
   dayOfWeek:  z.coerce.number(),
   // Première livraison. Absente/null = pas de date de début (comportement historique).
-  startDate:  z.coerce.date().nullish(),
+  // ⚠️ MÊME RÈGLE QUE LES AUTRES DATES — colonne `DateTime?`, donc effaçable.
+  // `z.coerce.date().nullish()` laissait passer un NOMBRE, qui devenait 1970 :
+  // corriger les dépenses sans corriger celle-ci aurait déplacé le défaut, pas fermé.
+  startDate:  DATE_EFFACABLE,
   note:       z.string().nullish(),
   items:      z.array(SUB_ITEM).min(1),
 }).passthrough()
 export const SUB_UPDATE = z.object({
   name:      z.string().optional(),
   dayOfWeek: z.coerce.number().optional(),
-  startDate: z.coerce.date().nullish(),
+  startDate: DATE_EFFACABLE,
   status:    z.string().optional(),
   note:      z.string().nullish(),
   items:     z.array(SUB_ITEM).optional(),

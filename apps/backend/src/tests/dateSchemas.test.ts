@@ -94,21 +94,35 @@ describe('DÉPENSES — la date atteint Prisma sous une forme qu’il accepte', 
     }
   })
 
-  it('⚠️ LIMITE ASSUMÉE — un NOMBRE est lu comme un horodatage epoch, pas refusé', async () => {
-    // `z.coerce.date()` fait `new Date(42.5)` → 1970-01-01T00:00:00.042Z, une date
-    // parfaitement valide. C'est le contrat standard de JavaScript, et un client qui
-    // envoie des millisecondes epoch est légitime.
-    //
-    // ⚠️ LE REVERS EST RÉEL : un montant arrivé par erreur dans le champ `date`
-    // s'enregistrerait en 1970 au lieu d'être refusé. On l'ÉCRIT plutôt que de le
-    // masquer — et on ne resserre pas de soi-même : aucun appelant n'envoie de nombre
-    // (le front fait `new Date(x).toISOString()`), et inventer un seuil de plausibilité
-    // serait une règle de plus, avec ses propres angles morts. Si ce cas doit devenir
-    // un refus, c'est une décision de produit, pas un effet de bord d'un correctif.
+  it('⚠️ TOUT CE QUI N’EST PAS UNE CHAÎNE est refusé — décision de produit', async () => {
+    // `new Date(x)` réussit sur bien plus de choses qu'on ne croit, et rend alors une
+    // date ABSURDE plutôt qu'une erreur : 42.5, `true` et `null` donnent tous le
+    // 1er janvier 1970. Il aurait été défendable de lire un nombre comme un horodatage
+    // epoch — c'est le contrat de JavaScript — mais un MONTANT arrivé par erreur dans
+    // le champ `date` se serait alors enregistré en 1970 au lieu d'être refusé. Sur de
+    // la comptabilité, une valeur absurde acceptée coûte plus qu'un appel refusé.
     const app = await build(expenseRoutes)
-    const res = await app.inject({ method: 'POST', url: '/api/expenses', payload: { ...BASE, date: 42.5 } })
-    expect(res.statusCode).toBe(200)
-    expect((dateVueParPrisma() as Date).toISOString()).toBe('1970-01-01T00:00:00.042Z')
+    for (const mauvaise of [42.5, 0, 1786665073366, true, [], { j: 14 }]) {
+      vi.clearAllMocks()
+      const res = await app.inject({ method: 'POST', url: '/api/expenses', payload: { ...BASE, date: mauvaise } })
+      expect(res.statusCode, `date=${JSON.stringify(mauvaise)} → ${res.statusCode}`).toBe(400)
+      expect(db.expense.create).not.toHaveBeenCalled()
+    }
+  })
+
+  it('DISCRIMINANT — le refus vient du TYPE, pas d’un rejet devenu aveugle', async () => {
+    // ⚠️ Sans ce cas, une règle qui refuserait TOUT passerait le test ci-dessus en
+    // ne gardant plus rien. Les deux formes de chaîne que le produit envoie
+    // réellement doivent continuer de passer.
+    const app = await build(expenseRoutes)
+    for (const bonne of ['2026-08-14', '2026-08-14T09:30:00.000Z']) {
+      vi.clearAllMocks()
+      db.expense.create.mockResolvedValue({ id: 'e1', label: 'x', amountTTC: 1 })
+      db.auditLog.create.mockResolvedValue({ id: 'a1' })
+      const res = await app.inject({ method: 'POST', url: '/api/expenses', payload: { ...BASE, date: bonne } })
+      expect(res.statusCode, `date=${bonne}`).toBe(200)
+      expect(dateVueParPrisma()).toBeInstanceOf(Date)
+    }
   })
 
   it('la MODIFICATION suit la même règle — les deux routes partagent le champ', async () => {
@@ -133,7 +147,20 @@ describe('EMPLOYÉS — resserré aussi, sans casser ce qui marche', () => {
 
   it('mais une date de n’importe quoi devient un 400 — `new Date(x)` rendait `Invalid Date`', async () => {
     const app = await build(employeeRoutes)
-    const res = await app.inject({ method: 'POST', url: '/api/employees', payload: { name: 'Awa', hiredAt: 'hier matin' } })
+    for (const mauvaise of ['hier matin', 42.5, true]) {
+      vi.clearAllMocks()
+      const res = await app.inject({ method: 'POST', url: '/api/employees', payload: { name: 'Awa', hiredAt: mauvaise } })
+      expect(res.statusCode, `hiredAt=${JSON.stringify(mauvaise)}`).toBe(400)
+      expect(db.employee.create).not.toHaveBeenCalled()
+    }
+  })
+
+  it('⚠️ un NOMBRE dans `endAt` n’est PAS pris pour un effacement', async () => {
+    // Le faire retomber sur `null` masquerait une valeur fausse sous une intention
+    // (« l'utilisateur a vidé le champ ») — l'échéance disparaîtrait sans que personne
+    // ne l'ait demandé. Une valeur qu'on ne sait pas lire se refuse, elle ne s'efface pas.
+    const app = await build(employeeRoutes)
+    const res = await app.inject({ method: 'POST', url: '/api/employees', payload: { name: 'Awa', endAt: 0 } })
     expect(res.statusCode).toBe(400)
     expect(db.employee.create).not.toHaveBeenCalled()
   })
@@ -161,17 +188,33 @@ describe('EMPLOYÉS — resserré aussi, sans casser ce qui marche', () => {
   })
 })
 
-describe('plus aucun champ date en `z.any()`', () => {
-  it('la règle est DÉRIVÉE du fichier de schémas, pas d’une liste écrite à la main', async () => {
-    // ⚠️ Une liste de champs recopiée ici se périmerait au premier ajout, en silence :
-    // le seul symptôme d'un `z.any()` sur une date est un 500 chez l'appelant.
+describe('TOUT champ date passe par l’une des trois formes NOMMÉES', () => {
+  it('règle DÉRIVÉE du fichier de schémas, jamais d’une liste écrite à la main', async () => {
+    // ⚠️ Une liste de champs recopiée ici se périmerait au premier ajout, EN SILENCE :
+    // le seul symptôme d'une date mal validée est un 500, ou pire une date de 1970
+    // enregistrée sans bruit. La règle se dérive donc des déclarations elles-mêmes.
+    //
+    // ⚠️ ELLE INTERDIT AUSSI `z.coerce.date()` NU, pas seulement `z.any()`. C'est par là
+    // que le jumeau serait revenu : `startDate` (abonnements) portait exactement cette
+    // forme, laissait passer un nombre, et l'aurait enregistré en 1970. Corriger les
+    // dépenses sans corriger celui-là aurait déplacé le défaut au lieu de le fermer.
     const { readFileSync } = await import('node:fs')
     const { join } = await import('node:path')
     const src = readFileSync(join(__dirname, '..', 'schemas', 'writesB.ts'), 'utf8')
-    const lignes = src.split('\n').filter(l => /^\s*\w*[Dd]ate\w*\s*:/.test(l) || /^\s*(hiredAt|endAt)\s*:/.test(l))
+
+    const FORMES = ['DATE_REQUISE', 'DATE_AVEC_REPLI', 'DATE_EFFACABLE']
+    const champs = src.split('\n')
+      .filter(l => /^\s*(\w*[Dd]ate\w*|hiredAt|endAt)\s*:/.test(l))
+      .filter(l => !l.includes('const '))   // les déclarations des formes elles-mêmes
+
     // COUVERTURE : sans ce compte, un motif de recherche cassé rendrait zéro ligne et
     // la règle serait vraie sur du vide.
-    expect(lignes.length).toBeGreaterThanOrEqual(3)
-    expect(lignes.filter(l => l.includes('z.any()'))).toEqual([])
+    expect(champs.length).toBeGreaterThanOrEqual(5)
+    // TÉMOIN POSITIF, dans la même invocation : les champs connus sont bien vus.
+    expect(champs.some(l => /^\s*date\s*:/.test(l))).toBe(true)
+    expect(champs.some(l => /^\s*startDate\s*:/.test(l))).toBe(true)
+
+    const horsRegle = champs.filter(l => !FORMES.some(f => l.includes(f))).map(l => l.trim())
+    expect(horsRegle).toEqual([])
   })
 })
