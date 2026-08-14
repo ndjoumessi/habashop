@@ -435,7 +435,14 @@ interface AppStore extends AppConfig {
   // une caisse qui serait sinon « toujours ouverte » par dérivation. Reset par openCashier().
   cashierForcedClosed: boolean
   openCashier: (fund: number) => void
+  /** Geste EXPLICITE du commerçant (bouton « Fermer la caisse »). Pose `cashierForcedClosed`. */
   closeCashier: () => void
+  /**
+   * Remise à zéro de la SESSION de caisse, sans fermer la caisse.
+   * ⚠️ À utiliser par l'authentification (connexion, changement de boutique, déconnexion) —
+   * PAS `closeCashier`, qui signifie « le commerçant a fermé » et n'est pas ce qui se passe.
+   */
+  resetCashierSession: () => void
   addCashierSale: (amount: number) => void
   // Panier POS persisté (survit nav + refresh)
   cart: CartItem[]
@@ -548,6 +555,33 @@ export const useAppStore = create<AppStore>()(
         cashierSessionCA:   0,
         cashierForcedClosed: true, // fermeture effective même quand requireCashier=false
       }),
+      /**
+       * ⚠️ DEUX ÉTATS ÉTAIENT CONFONDUS, et une seule action les écrivait tous deux :
+       * « aucune session héritée d'une connexion précédente » et « le commerçant a
+       * FERMÉ sa caisse ». `authStore` appelait `closeCashier()` à la connexion, au
+       * changement de boutique et à la déconnexion — donc posait `cashierForcedClosed`,
+       * qui est précisément ce que `useCashierIsOpen` lit quand `requireCashier=false`.
+       *
+       * Résultat MESURÉ le 2026-08-14 sur `demo-tenant-001` (requireCashier=false) :
+       * navigateur neuf, juste après connexion, `cashierForcedClosed = true` — la caisse
+       * démarrait FERMÉE, l'exact contraire de ce que ce mode promet trois lignes plus
+       * bas (« ouverte par défaut, fermable via cashierForcedClosed »). Le commerçant
+       * devait rouvrir à CHAQUE connexion, sur le réglage censé lui épargner la cérémonie.
+       *
+       * Cette action vide donc la session SANS toucher à la décision du commerçant —
+       * qu'elle remet à `false` : une fermeture explicite n'est pas héritée d'une session
+       * à l'autre (décision de Nelson, 2026-08-14 : la caisse redémarre OUVERTE).
+       * ⚠️ Sans effet quand `requireCashier=true` : là, c'est `cashierOpen` qui gouverne
+       * et `cashierForcedClosed` n'est jamais lu.
+       */
+      resetCashierSession: () => set({
+        cashierOpen:        false,
+        cashierOpenedAt:    null,
+        cashierOpeningFund: 0,
+        cashierSessionTx:   0,
+        cashierSessionCA:   0,
+        cashierForcedClosed: false,
+      }),
 
       addCashierSale: (amount) => set(state => ({
         cashierSessionTx: state.cashierSessionTx + 1,
@@ -624,7 +658,11 @@ export const useAppStore = create<AppStore>()(
         // (cashierOpen/Fund/Tx/CA — réinitialisés à chaque connexion) ni le panier `cart`
         // (état de session, vidé à l'ouverture de caisse — jamais hérité d'un refresh/connexion).
         // NB : `cashierForcedClosed` EST persisté (dans ...rest) → un refresh conserve l'état
-        // ouvert/fermé de la caisse ; closeCashier (login/logout/fermeture) le passe à true.
+        // ouvert/fermé de la caisse. ⚠️ SEUL le geste explicite du commerçant le passe à
+        // `true` (`closeCashier`). L'authentification, elle, appelle `resetCashierSession`,
+        // qui le remet à `false` : ce commentaire disait « closeCashier (login/logout/
+        // fermeture) », et c'était EXACTEMENT le défaut — la caisse démarrait fermée sur
+        // un mode qui la promet ouverte.
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { currencyRates, fetchExchangeRates, cashierOpen, cashierOpenedAt, cashierOpeningFund, cashierSessionTx, cashierSessionCA, cart, ...rest } = state
         return rest

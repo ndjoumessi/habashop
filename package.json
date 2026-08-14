@@ -1,6 +1,6 @@
 {
   "name": "habashop",
-  "version": "2.22.29",
+  "version": "2.22.30",
   "private": true,
   "description": "HabaShop — Logiciel de gestion commerciale SaaS pour l'Afrique francophone",
   "workspaces": [

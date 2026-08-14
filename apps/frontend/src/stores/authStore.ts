@@ -112,7 +112,7 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem('habashop_token', token)
           // 1 boutique → tenant fourni ; >1 → tenant null (sélecteur affiché avant l'entrée).
           useAppStore.getState().setTenant(tenant ?? null)
-          useAppStore.getState().closeCashier() // pas de session caisse héritée d'une connexion précédente
+          useAppStore.getState().resetCashierSession() // pas de session caisse héritée — mais la caisse n'est pas « fermée » pour autant
           useAppStore.getState().clearCart()    // panier vide à chaque nouvelle session
           set({
             user, token, isAuthenticated: true, isLoading: false,
@@ -160,7 +160,7 @@ export const useAuthStore = create<AuthState>()(
         const { token, tenant, role } = await authApi.switchTenant(tenantId)
         localStorage.setItem('habashop_token', token)
         useAppStore.getState().setTenant(tenant ?? null)
-        useAppStore.getState().closeCashier() // session caisse propre à chaque boutique
+        useAppStore.getState().resetCashierSession() // session caisse propre à chaque boutique
         useAppStore.getState().clearCart()
         set((state) => ({
           token,
@@ -172,7 +172,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         localStorage.removeItem('habashop_token')
         useAppStore.getState().clearTenant()
-        useAppStore.getState().closeCashier()
+        useAppStore.getState().resetCashierSession()
         useAppStore.getState().clearCart() // panier vide — pas hérité d'une session précédente
         set({ user: null, token: null, isAuthenticated: false, tenants: [], activeTenantId: null })
       },
