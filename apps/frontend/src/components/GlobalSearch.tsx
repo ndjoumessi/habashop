@@ -35,7 +35,7 @@ function ItemIcon({ color, bg, children }: { color: string; bg: string; children
   )
 }
 
-const ENTER_HINT: React.CSSProperties = { marginLeft: 'auto', fontSize: 10, color: 'var(--text3)', fontFamily: 'var(--mono)' }
+const ENTER_HINT: React.CSSProperties = { marginLeft: 'auto', fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)' }
 
 const ORDER_STATUS: Record<string, { fr: string; en: string; es: string; it: string }> = {
   DRAFT:     { fr: 'Brouillon', en: 'Draft',     es: 'Borrador',  it: 'Bozza' },
@@ -347,7 +347,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
               { key: 'Esc',label: i('fermer',   'close',    'cerrar',  'chiudi') },
             ].map(({ key, label }) => (
               <span key={key} style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <kbd style={{ padding: '1px 5px', border: '1px solid var(--border)', borderRadius: 4, fontSize: 10, background: 'var(--bg3)', fontFamily: 'var(--mono)', color: 'var(--text2)' }}>{key}</kbd>
+                <kbd style={{ padding: '1px 5px', border: '1px solid var(--border)', borderRadius: 4, fontSize: 'var(--fs-caption)', background: 'var(--bg3)', fontFamily: 'var(--mono)', color: 'var(--text2)' }}>{key}</kbd>
                 {label}
               </span>
             ))}

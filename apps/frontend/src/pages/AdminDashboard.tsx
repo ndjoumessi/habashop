@@ -283,7 +283,7 @@ export default function AdminDashboard() {
         <button type="button"
           onClick={() => { if (actif) setSortDir(d => (d === 'asc' ? 'desc' : 'asc')); else { setSortKey(k); setSortDir('desc') } }}
           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: actif ? 'var(--text)' : 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 4, width: num ? '100%' : 'auto', justifyContent: num ? 'flex-end' : 'flex-start' }}>
-          {label}<span aria-hidden="true" style={{ opacity: actif ? 1 : 0, fontSize: 10 }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
+          {label}<span aria-hidden="true" style={{ opacity: actif ? 1 : 0, fontSize: 'var(--fs-caption)' }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
         </button>
       </th>
     )
@@ -637,7 +637,7 @@ export default function AdminDashboard() {
                       <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{tenant.name}</div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
                         {reasons.map(r => (
-                          <span key={r.kind} style={{ fontSize: 10, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', borderRadius: 99, padding: '2px 8px', background: mix(r.color, 12), color: r.color, border: `1px solid ${mix(r.color, 25)}` }}>{r.label}</span>
+                          <span key={r.kind} style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', borderRadius: 99, padding: '2px 8px', background: mix(r.color, 12), color: r.color, border: `1px solid ${mix(r.color, 25)}` }}>{r.label}</span>
                         ))}
                       </div>
                     </div>

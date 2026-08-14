@@ -104,7 +104,7 @@ export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd,
                         }}/>
                       ))}
                     </div>
-                    <span style={{ fontSize: 10.5, color: strength > 0 ? strengthColors[strength] : D.text3, fontWeight: 700 }}>
+                    <span style={{ fontSize: 'var(--fs-caption)', color: strength > 0 ? strengthColors[strength] : D.text3, fontWeight: 700 }}>
                       {strengthLabel}
                     </span>
                   </div>
@@ -134,7 +134,7 @@ export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd,
                   </button>
                 </div>
                 {form.confirmPwd.length > 0 && (
-                  <div style={{ fontSize: 10.5, marginTop: 5, fontWeight: 700, color: form.password === form.confirmPwd ? D.acc : D.danger, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ fontSize: 'var(--fs-caption)', marginTop: 5, fontWeight: 700, color: form.password === form.confirmPwd ? D.acc : D.danger, display: 'flex', alignItems: 'center', gap: 5 }}>
                     {form.password === form.confirmPwd
                       ? <><Check size={11} strokeWidth={3}/>{tx.pwd_match}</>
                       : <><AlertCircle size={11}/>{tx.pwd_nomatch}</>}

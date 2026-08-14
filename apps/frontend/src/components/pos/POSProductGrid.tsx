@@ -203,7 +203,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
           background:'var(--c-red-bg)', color:'var(--danger)',
           border:'1px solid var(--c-red-border)',
           borderRadius:'var(--r-full)', padding:'1px 7px',
-          fontSize:9.5, fontWeight:'var(--fw-bold)', letterSpacing:'.5px',
+          fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', letterSpacing:'.5px',
         }}>PROMO</div>
       )}
       {/* Point ambre stock bas (spec item 11) — remplacé par le badge quantité une fois au panier */}
@@ -287,7 +287,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
           le BLOC, qui est l'unité d'alignement réelle. */}
       <div style={{ marginTop: 'auto', paddingTop: 3 }}>
         {showStrike && (
-          <span style={{ fontSize: 10, color: 'var(--text3)', textDecoration: 'line-through', fontFamily: 'var(--mono)', marginRight: 5 }}>
+          <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', textDecoration: 'line-through', fontFamily: 'var(--mono)', marginRight: 5 }}>
             {baseAmount}
           </span>
         )}
@@ -646,14 +646,14 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                             <div style={{ fontSize:'var(--fs-sm)', fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:2, display:'flex', alignItems:'center', gap:5, flexWrap:'wrap' }}>
                               <CreditCard size={13} /> {lang === 'fr' ? 'Vente' : lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : 'Vendita'} #{String(sale.id).slice(-6).toUpperCase()}
                               {refunded && (
-                                <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px', background:'var(--c-red-bg)', color:'var(--danger)', border:'1px solid var(--c-red-border)' }}>
+                                <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px', background:'var(--c-red-bg)', color:'var(--danger)', border:'1px solid var(--c-red-border)' }}>
                                   <RotateCcw size={10} /> {lang === 'en' ? 'Refunded' : lang === 'es' ? 'Reembolsada' : lang === 'it' ? 'Rimborsata' : 'Remboursé'}
                                 </span>
                               )}
                               {/* Badge écart — TROIS traitements : à regarder (ambre) · tarif
                                   précédent (bleu, fait établi par le serveur) · honoré hors-ligne (gris). */}
                               {divRows.length > 0 && (
-                                <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px',
+                                <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px',
                                   background: gapBg, color: gapFg, border:`1px solid ${gapBd}` }}>
                                   {gap === 'previous' ? <History size={10} /> : <Tag size={10} />}
                                   {gap === 'honored'
@@ -675,7 +675,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                           <div style={{ textAlign:'right' }}>
                             <div style={{ fontSize:'var(--fs-title)', fontWeight:'var(--fw-semibold)', color: refunded ? 'var(--text4)' : 'var(--p2)', fontFamily:'var(--mono)', textDecoration: refunded ? 'line-through' : 'none' }}>{fmt(sale.total)}</div>
                             {(sale.loyaltyDiscount ?? 0) > 0 && (
-                              <div style={{ fontSize:10, color:'var(--acc2)', fontFamily:'var(--mono)' }}>⭐ −{fmt(sale.loyaltyDiscount)}</div>
+                              <div style={{ fontSize:'var(--fs-caption)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>⭐ −{fmt(sale.loyaltyDiscount)}</div>
                             )}
                             <span style={{
                               fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', borderRadius:20, padding:'2px 8px',
@@ -710,7 +710,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                             background: gap === 'offline' ? 'var(--bg4)' : gapBg,
                             border:`1px solid ${gapBd}` }}>
                             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8, marginBottom:5, flexWrap:'wrap' }}>
-                              <span style={{ fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', color: gapFg }}>
+                              <span style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', color: gapFg }}>
                                 {gap === 'look'
                                   ? (lang === 'en' ? 'Price corrected (online)' : lang === 'es' ? 'Precio corregido (en línea)' : lang === 'it' ? 'Prezzo corretto (online)' : 'Prix corrigé (en ligne)')
                                   : gap === 'honored'
@@ -736,14 +736,14 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                                 {/* Qualification SERVEUR de cette ligne — un fait daté, pas un verdict.
                                     Son absence ne dit rien de plus qu'« inexpliqué » (cf. profondeur 1). */}
                                 {r.staleAt && (
-                                  <div style={{ fontSize:10, color:'var(--info)', display:'flex', alignItems:'center', gap:4, marginTop:1 }}>
+                                  <div style={{ fontSize:'var(--fs-caption)', color:'var(--info)', display:'flex', alignItems:'center', gap:4, marginTop:1 }}>
                                     <History size={10} style={{ flexShrink:0 }} />
                                     {lang === 'en' ? 'was the catalog price until' : lang === 'es' ? 'era la tarifa del catálogo hasta el' : lang === 'it' ? 'era la tariffa a catalogo fino al' : 'était le tarif catalogue jusqu’au'} {staleUntilLabel(r.staleAt, lang)}
                                   </div>
                                 )}
                               </div>
                             ))}
-                            <div style={{ fontSize:10, color:'var(--text3)', marginTop:5 }}>
+                            <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', marginTop:5 }}>
                               {lang === 'en' ? 'Cashier' : lang === 'es' ? 'Cajero' : lang === 'it' ? 'Cassiere' : 'Caissier'} : {sale.cashier?.name ?? '—'}
                             </div>
                           </div>

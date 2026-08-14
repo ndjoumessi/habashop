@@ -40,7 +40,7 @@ function SLabel({ icon, label, required, badge, muted }: {
       {required && <span aria-hidden style={{ color: 'var(--p2)', fontSize: 'var(--fs-sm)', lineHeight: 1 }}>*</span>}
       {badge !== undefined && badge > 0 && (
         <span style={{
-          fontSize: 10, fontWeight: 'var(--fw-semibold)',
+          fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)',
           padding: '1px 6px', borderRadius: 'var(--r-full, 99px)',
           background: 'var(--p2)', color: '#fff',
         }}>{badge}</span>

@@ -314,7 +314,7 @@ export default function LoginPage() {
                 { label: 'PayDunya', on: false },
               ].map(p => (
                 <span key={p.label} style={{
-                  fontSize: 10.5, fontWeight: 600, padding: '5px 9px', borderRadius: 8, whiteSpace: 'nowrap',
+                  fontSize: 'var(--fs-caption)', fontWeight: 600, padding: '5px 9px', borderRadius: 8, whiteSpace: 'nowrap',
                   border: `1px solid ${p.on ? 'color-mix(in srgb,var(--p) 55%,transparent)' : 'var(--border)'}`,
                   background: p.on ? 'color-mix(in srgb,var(--p) 14%,transparent)' : 'var(--card2)',
                   color: p.on ? 'var(--p3)' : 'var(--text2)',

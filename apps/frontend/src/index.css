@@ -89,6 +89,30 @@
      rouge = danger (--danger) · orange/ambre = ARGENT, montants (--warn) */
   --z-base:0; --z-sticky:10; --z-dropdown:40;
   --z-modal:100; --z-toast:200; --z-overlay:300;
+  /* ── CIBLES TACTILES ────────────────────────────────────────────────────────
+     ⚠️ MESURÉ le 2026-08-14 : les trois boutons ICÔNE (.btn-icon, .icon-btn,
+     .footer-btn) portaient déjà « touch target ≥44px » en commentaire et faisaient
+     44×44. Les boutons TEXTE, eux, étaient restés à 36 (.btn), 38 (.btn-primary),
+     ~35 (.btn-ghost/.mini-btn) et 30 (.btn-sm) — pour 220+ points d'appel, contre 7
+     pour les icônes. Le correctif avait été appliqué à la forme qu'on regardait, pas
+     à la famille : c'est le motif du JUMEAU NON TRAITÉ, sur la surface la plus
+     touchée du produit.
+     ⚠️ 44 vient d'iOS HIG / Android 48dp, PAS de WCAG : le critère AA 2.5.8 se
+     contente de 24px, et les anciennes valeurs le passaient déjà. Ce n'est donc pas
+     une mise en conformité, c'est une décision d'ERGONOMIE — marché Afrique de
+     l'Ouest, Android bas de gamme, écrans 360–375px, usage au pouce en caisse.
+     ⚠️ --touch-sm (40) est une CONCESSION DE DENSITÉ, réservée aux contrôles SERRÉS
+     À L'INTÉRIEUR d'un panneau : .btn-sm, et la bascule grille/liste du Stock. Elle ne
+     doit pas fuir vers les boutons de premier plan. 40 reste au-dessus des 36 d'avant,
+     et au-dessus du minimum WCAG AA 2.5.8 (24). Aucune valeur sous 40 n'est légitime
+     ici — le verrou touchTargets.test.ts le fige.
+     ⚠️ CE VERROU NE VOIT QUE LES CLASSES CSS. Trois boutons de StockInventory étaient
+     stylés EN LIGNE et échappaient donc à tout scan de la feuille : la bascule de vue
+     faisait 29×21 — sous le minimum AA 2.5.8, pas seulement sous le repère iOS. Ils ont
+     été trouvés en lisant le DOM rendu (`e2e:density`), jamais par le verrou unitaire.
+     Résidu ASSUMÉ : un bouton inline sur un écran non couvert par un harnais passerait
+     encore. La parade est de mesurer chaque nouvel écran, pas de croire le verrou. */
+  --touch-min:44px; --touch-sm:40px;
   /* ⚠️ 248, pas 220 — MESURÉ le 2026-08-06. Largeur utile d'un libellé de nav :
      sidebar − marge 16 − padding 20 − icône 30 − gap 8. À 220 elle valait 146 px, et le
      plus long libellé existant fait 21 caractères (« Pannello di controllo » it,
@@ -164,16 +188,19 @@ html,body,#root {
 }
 
 /* ── Buttons ── */
-.btn,.topbar-btn,.mini-btn {
+/* ⚠️ .btn-ghost est AJOUTÉ à ce groupe : il est employé SEUL 5 fois (`className="btn-ghost"`),
+   et sans display:inline-flex/align-items un min-height colle le libellé en haut du bouton
+   au lieu de le centrer. Le min-height ne suffit pas — il faut de quoi centrer dedans. */
+.btn,.topbar-btn,.mini-btn,.btn-ghost {
   display:inline-flex; align-items:center; justify-content:center;
   gap:6px; cursor:pointer; font-family:var(--font); border:none;
   transition:all .15s var(--ease); white-space:nowrap;
 }
-.btn { padding:var(--sp-2) var(--sp-4); border-radius:var(--r-md); font-size:13px; font-weight:var(--fw-semibold); min-height:36px }
+.btn { padding:var(--sp-2) var(--sp-4); border-radius:var(--r-md); font-size:var(--fs-sm); font-weight:var(--fw-semibold); min-height:var(--touch-min) }
 .btn-primary,.topbar-btn {
   background:var(--grad-p); color:#fff;
   border-radius:var(--r-md); box-shadow:var(--sh-p);
-  font-weight:var(--fw-semibold); padding:9px 18px; font-size:13px; min-height:38px;
+  font-weight:var(--fw-semibold); padding:9px 18px; font-size:var(--fs-sm); min-height:var(--touch-min);
 }
 .btn-primary:hover,.topbar-btn:hover { transform:translateY(-1px); box-shadow:var(--sh-p2) }
 .btn-primary:active,.topbar-btn:active { transform:none }
@@ -181,7 +208,7 @@ html,body,#root {
 .btn-ghost,.mini-btn {
   background:rgba(255,255,255,.04); border:1px solid var(--border);
   color:var(--text2); border-radius:var(--r-md); padding:7px 14px;
-  font-size:12px; font-weight:var(--fw-regular);
+  font-size:var(--fs-label); font-weight:var(--fw-regular); min-height:var(--touch-min);
 }
 .btn-ghost:hover,.mini-btn:hover {
   background:rgba(255,255,255,.08); border-color:var(--border2); color:var(--text)
@@ -189,10 +216,15 @@ html,body,#root {
 .btn-danger {
   background:rgba(255,59,92,.1); border:1px solid rgba(255,59,92,.25);
   color:var(--danger); border-radius:var(--r-md); padding:7px 14px;
-  font-size:13px; font-weight:var(--fw-semibold); display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+  font-size:var(--fs-sm); font-weight:var(--fw-semibold); display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;
+  min-height:var(--touch-min);
 }
 .btn-danger:hover { background:rgba(255,59,92,.18); border-color:rgba(255,59,92,.4) }
-.btn-sm { padding:5px 12px; font-size:12px; min-height:30px }
+/* ⚠️ .btn-sm DOIT rester APRÈS .btn / .btn-ghost / .btn-primary / .btn-danger : même
+   spécificité, donc c'est l'ORDRE qui décide. `btn btn-ghost btn-sm` (30 usages) et
+   `btn btn-primary btn-sm` (15) doivent retomber sur 40, pas sur 44. Déplacer ce bloc
+   plus haut le rendrait muet sans qu'aucun test unitaire ne le voie. */
+.btn-sm { padding:5px 12px; font-size:var(--fs-label); min-height:var(--touch-sm) }
 .btn-icon {
   width:44px; height:44px; border-radius:var(--r-md); /* touch target ≥44px (WCAG 2.5.5) */
   background:rgba(255,255,255,.04); border:1px solid var(--border);
@@ -202,14 +234,16 @@ html,body,#root {
 /* backward compat */
 .btn-success {
   background:var(--grad-success); color:#fff; border:none;
-  border-radius:var(--r-md); padding:7px 14px; font-size:13px; font-weight:var(--fw-semibold);
-  display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+  border-radius:var(--r-md); padding:7px 14px; font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;
+  min-height:var(--touch-min);
 }
 .danger-btn {
-  display:inline-flex; align-items:center; gap:6px; padding:9px 18px;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:9px 18px;
   background:rgba(255,59,92,.1); border:1px solid rgba(255,59,92,.25);
   border-radius:var(--r-md); color:var(--danger); font-family:var(--font);
-  font-size:13px; font-weight:var(--fw-semibold); cursor:pointer; transition:all .15s;
+  font-size:var(--fs-sm); font-weight:var(--fw-semibold); cursor:pointer; transition:all .15s;
+  min-height:var(--touch-min);
 }
 .danger-btn:hover { background:rgba(255,59,92,.18); border-color:rgba(255,59,92,.4) }
 
@@ -299,7 +333,13 @@ textarea.input { resize:vertical; min-height:80px; line-height:1.6 }
 .stock-table tbody tr:hover, .data-table tbody tr:hover { background:var(--bg2) }
 .stock-table td, .data-table td { padding:12px 14px }
 .stock-table .td-num, .data-table .td-num { font-size:14px }
-.stock-action { min-width:36px; min-height:36px; justify-content:center }
+/* ⚠️ TROUVÉE PAR LA MESURE, PAS PAR LE VERROU. `.stock-action` est un bouton d'action carré
+   de la colonne Actions du Stock (18 usages, `btn btn-sm btn-ghost stock-action`), et elle
+   est déclarée APRÈS `.btn-sm` : elle écrasait donc la famille vers 36px. Le verrou unitaire
+   ne l'a pas vue — son périmètre était DÉRIVÉ du motif `btn`, et ce nom-là n'en contient pas.
+   C'est l'angle mort de PÉRIMÈTRE : le verrou lisait les bonnes règles, pas toutes les bonnes.
+   Seul `e2e:density`, qui lit le DOM rendu, l'a signalée (36px sur 51 éléments). */
+.stock-action { min-width:var(--touch-min); min-height:var(--touch-min); justify-content:center }
 /* Table Clients — colonnes resserrées (opt-in, n'affecte pas les autres data-table) */
 .customers-table th, .customers-table td { padding:8px 10px }
 /* ── Menus contextuels légers (Clients : « Exporter », actions « ⋯ ») ── */

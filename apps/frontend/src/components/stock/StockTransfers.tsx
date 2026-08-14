@@ -311,4 +311,4 @@ function NewTransferModal({ tenants, onClose, onCreated }: { tenants: { id: stri
   )
 }
 
-const lbl: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }
+const lbl: React.CSSProperties = { display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }

@@ -118,7 +118,7 @@ export default function SignupStep1({ tx, i, lang, form, setForm, currencyTouche
                   placeholder="77 000 00 00"
                   lang={lang}
                 />
-                <div style={{ marginTop: 5, fontSize: 10.5, color: D.text3, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ marginTop: 5, fontSize: 'var(--fs-caption)', color: D.text3, display: 'flex', alignItems: 'center', gap: 5 }}>
                   <MessageSquare size={11} color="#25D366"/>{tx.phone_hint}
                 </div>
               </div>
@@ -145,7 +145,7 @@ export default function SignupStep1({ tx, i, lang, form, setForm, currencyTouche
                         <span style={{ fontSize: 'var(--fs-md)' }}>{selectedCountry.flag}</span>
                         <span style={{ fontWeight: 600, fontSize: 'var(--fs-label)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedCountry.name}</span>
                       </div>
-                      <span style={{ fontSize: 9, color: D.text3, transform: showCountry ? 'rotate(180deg)' : 'none', transition: 'transform .2s', display: 'inline-block', flexShrink: 0 }}>▼</span>
+                      <span style={{ fontSize: 'var(--fs-caption)', color: D.text3, transform: showCountry ? 'rotate(180deg)' : 'none', transition: 'transform .2s', display: 'inline-block', flexShrink: 0 }}>▼</span>
                     </button>
 
                     {showCountry && (

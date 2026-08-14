@@ -177,7 +177,7 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
                     {c.phone && <span style={{ display: 'block', fontSize: 'var(--fs-caption)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{c.phone}</span>}
                   </span>
                   {enableLoyalty && c.tier && (
-                    <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 'var(--fw-bold)', padding: '2px 8px', borderRadius: 99, background: 'var(--bg4)', color: 'var(--text2)' }}>{tierLabel(c.tier)}</span>
+                    <span style={{ flexShrink: 0, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', padding: '2px 8px', borderRadius: 99, background: 'var(--bg4)', color: 'var(--text2)' }}>{tierLabel(c.tier)}</span>
                   )}
                 </button>
               ))}

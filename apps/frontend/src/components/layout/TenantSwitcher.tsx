@@ -79,7 +79,7 @@ export default function TenantSwitcher({ collapsed }: { collapsed: boolean }) {
             boxShadow: '0 12px 32px rgba(0,0,0,.24)', overflow: 'hidden', padding: 4,
           }}
         >
-          <div style={{ fontSize: 10, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', padding: '6px 10px 4px' }}>
+          <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', padding: '6px 10px 4px' }}>
             {i('Mes boutiques', 'My shops', 'Mis tiendas', 'I miei negozi')}
           </div>
           {tenants.map(t => {
@@ -106,7 +106,7 @@ export default function TenantSwitcher({ collapsed }: { collapsed: boolean }) {
                 <Store size={14} style={{ color: isActive ? 'var(--p2)' : 'var(--text3)', flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text3)' }}>{t.currency} · {t.role}</div>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{t.currency} · {t.role}</div>
                 </div>
                 {isPending
                   ? <Loader2 size={14} style={{ color: 'var(--p2)', animation: 'spin .6s linear infinite', flexShrink: 0 }} />

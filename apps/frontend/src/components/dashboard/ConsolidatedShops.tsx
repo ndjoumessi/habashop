@@ -90,7 +90,7 @@ export default function ConsolidatedShops() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <Store size={14} style={{ color: isActive ? 'var(--p2)' : 'var(--text3)', flexShrink: 0 }} />
                         <span style={{ fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{r.name}</span>
-                        {isActive && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 'var(--fw-bold)', color: 'var(--p2)' }}><Check size={11} /> {i('active', 'active', 'activa', 'attiva')}</span>}
+                        {isActive && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', color: 'var(--p2)' }}><Check size={11} /> {i('active', 'active', 'activa', 'attiva')}</span>}
                         {isPending && <Loader2 size={12} style={{ color: 'var(--p2)', animation: 'spin .6s linear infinite' }} />}
                       </div>
                     </td>

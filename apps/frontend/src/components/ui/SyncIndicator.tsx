@@ -120,7 +120,7 @@ export default function SyncIndicator() {
           }}
         >
           <div style={{
-            fontSize: 10, letterSpacing: '.07em', textTransform: 'uppercase',
+            fontSize: 'var(--fs-caption)', letterSpacing: '.07em', textTransform: 'uppercase',
             color: 'var(--text4)', marginBottom: 7,
           }}>{syncLabel}</div>
 

@@ -47,7 +47,7 @@ export default function LandingCurrencies({ lp, i, lang, setLang }: Props) {
               <span style={{ fontSize: 'var(--fs-xl)' }}>{c.flag}</span>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: 'var(--fs-label)', fontWeight: 800, color: D.text, fontFamily: MONO }}>{c.code}</div>
-                <div style={{ fontSize: 10, color: D.text3 }}>{c.name}</div>
+                <div style={{ fontSize: 'var(--fs-caption)', color: D.text3 }}>{c.name}</div>
               </div>
             </div>
           ))}

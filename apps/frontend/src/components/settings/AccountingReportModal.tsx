@@ -260,7 +260,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                       { label: i('Total TTC', 'Total incl. VAT', 'Total con IVA', 'Totale IVA incl.'), val: formatInCurrency(vat.totals.totalTTC, vat.currency), color: 'var(--acc2)' },
                     ].map(k => (
                       <div key={k.label} style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>{k.label}</div>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>{k.label}</div>
                         <div style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-semibold)', color: k.color, fontFamily: 'var(--mono)' }}>{k.val}</div>
                       </div>
                     ))}

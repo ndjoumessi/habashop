@@ -83,8 +83,8 @@ export default function SelectShop() {
                   <div style={{ fontSize: 'var(--fs-title)', fontWeight: 800, color: 'var(--public-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
                     <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--text3)' }}>{t.currency}</span>
-                    <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', color: PLAN_COLORS[t.plan] ?? 'var(--text3)' }}>{t.plan}</span>
-                    <span style={{ fontSize: 10, color: 'var(--text4)' }}>· {t.role}</span>
+                    <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', color: PLAN_COLORS[t.plan] ?? 'var(--text3)' }}>{t.plan}</span>
+                    <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)' }}>· {t.role}</span>
                   </div>
                 </div>
                 {isPending

@@ -12,7 +12,7 @@ const LANGS = [['fr', 'Français'], ['en', 'English'], ['es', 'Español'], ['it'
 const ROLES = ['CASHIER', 'MANAGER', 'ACCOUNTANT', 'HR', 'ADMIN'] as const
 
 const cardBase: React.CSSProperties = { background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }
-const lbl: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }
+const lbl: React.CSSProperties = { display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }
 
 export default function SectionShops() {
   const cfg = useConfig()
@@ -172,7 +172,7 @@ export default function SectionShops() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
                     {t.name}
-                    {isActive && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 800, color: 'var(--p2)' }}><Check size={11} /> {i('active', 'active', 'activa', 'attiva')}</span>}
+                    {isActive && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 'var(--fs-caption)', fontWeight: 800, color: 'var(--p2)' }}><Check size={11} /> {i('active', 'active', 'activa', 'attiva')}</span>}
                   </div>
                   <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)' }}>{t.currency} · {t.plan} · {t.role}</div>
                 </div>

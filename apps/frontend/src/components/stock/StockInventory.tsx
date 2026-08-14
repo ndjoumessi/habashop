@@ -101,8 +101,8 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
           <span className="panel-title">{t('stock_title')}</span>
           <div className="flex items-center gap-2">
             <div style={{ display:'flex', background:'var(--bg3)', borderRadius:8, padding:2, border:'1px solid var(--border)' }}>
-              <button onClick={() => setStockView('grid')} aria-pressed={stockView === 'grid'} aria-label={i('Vue grille', 'Grid view', 'Vista cuadrícula', 'Vista griglia')} style={{ padding:'4px 8px', borderRadius:6, border:'none', cursor:'pointer', background: stockView === 'grid' ? 'var(--p)' : 'transparent', color: stockView === 'grid' ? '#fff' : 'var(--text3)', display:'flex', alignItems:'center', transition:'all .15s' }} title={i('Vue grille', 'Grid view', 'Vista cuadrícula', 'Vista griglia')}><LayoutGrid size={13} /></button>
-              <button onClick={() => setStockView('list')} aria-pressed={stockView === 'list'} aria-label={i('Vue liste', 'List view', 'Vista lista', 'Vista elenco')} style={{ padding:'4px 8px', borderRadius:6, border:'none', cursor:'pointer', background: stockView === 'list' ? 'var(--p)' : 'transparent', color: stockView === 'list' ? '#fff' : 'var(--text3)', display:'flex', alignItems:'center', transition:'all .15s' }} title={i('Vue liste', 'List view', 'Vista lista', 'Vista elenco')}><AlignJustify size={13} /></button>
+              <button onClick={() => setStockView('grid')} aria-pressed={stockView === 'grid'} aria-label={i('Vue grille', 'Grid view', 'Vista cuadrícula', 'Vista griglia')} style={{ padding:'4px 8px', minWidth:'var(--touch-sm)', minHeight:'var(--touch-sm)', justifyContent:'center', borderRadius:6, border:'none', cursor:'pointer', background: stockView === 'grid' ? 'var(--p)' : 'transparent', color: stockView === 'grid' ? '#fff' : 'var(--text3)', display:'flex', alignItems:'center', transition:'all .15s' }} title={i('Vue grille', 'Grid view', 'Vista cuadrícula', 'Vista griglia')}><LayoutGrid size={13} /></button>
+              <button onClick={() => setStockView('list')} aria-pressed={stockView === 'list'} aria-label={i('Vue liste', 'List view', 'Vista lista', 'Vista elenco')} style={{ padding:'4px 8px', minWidth:'var(--touch-sm)', minHeight:'var(--touch-sm)', justifyContent:'center', borderRadius:6, border:'none', cursor:'pointer', background: stockView === 'list' ? 'var(--p)' : 'transparent', color: stockView === 'list' ? '#fff' : 'var(--text3)', display:'flex', alignItems:'center', transition:'all .15s' }} title={i('Vue liste', 'List view', 'Vista lista', 'Vista elenco')}><AlignJustify size={13} /></button>
             </div>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
               // Prix stockés en base XOF → convertis vers la devise d'affichage (pattern reportsExport)
@@ -183,7 +183,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
             <button type="button" onClick={() => setShowSearchScanner(true)}
               aria-label={i('Scanner pour rechercher', 'Scan to search', 'Escanear para buscar', 'Scansiona per cercare')}
               title={i('Scanner pour rechercher', 'Scan to search', 'Escanear para buscar', 'Scansiona per cercare')}
-              style={{ display:'flex', alignItems:'center', justifyContent:'center', width:32, height:32, marginRight:4, background:'transparent', border:'none', color:'var(--text3)', cursor:'pointer' }}>
+              style={{ display:'flex', alignItems:'center', justifyContent:'center', width:'var(--touch-min)', height:'var(--touch-min)', marginRight:4, background:'transparent', border:'none', color:'var(--text3)', cursor:'pointer' }}>
               <Camera size={16} />
             </button>
           </div>
@@ -303,7 +303,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                     {/* Pousse les badges à droite, le nom n'est plus dans cette rangée. */}
                     <div style={{ flex:1, minWidth:0 }} />
                     {isActivePromo(p) && (
-                      <span style={{ flexShrink:0, display:'inline-flex', alignItems:'center', gap:3, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px', background:'var(--c-purple-bg)', color:'var(--p2)', border:'1px solid var(--border3)' }}>
+                      <span style={{ flexShrink:0, display:'inline-flex', alignItems:'center', gap:3, fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px', background:'var(--c-purple-bg)', color:'var(--p2)', border:'1px solid var(--border3)' }}>
                         <Sparkles size={10} /> PROMO
                       </span>
                     )}
@@ -428,7 +428,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                             <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:'var(--fs-body)', fontWeight:'var(--fw-regular)', color:'var(--text)', minWidth:0 }}>
                               <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.name.replace(/^\S+\s?/, '')}</span>
                               {isActivePromo(p) && (
-                                <span style={{ flexShrink:0, display:'inline-flex', alignItems:'center', gap:3, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'1px 6px', background:'var(--c-purple-bg)', color:'var(--p2)', border:'1px solid var(--border3)' }}>
+                                <span style={{ flexShrink:0, display:'inline-flex', alignItems:'center', gap:3, fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'1px 6px', background:'var(--c-purple-bg)', color:'var(--p2)', border:'1px solid var(--border3)' }}>
                                   <Sparkles size={9} /> Promo
                                 </span>
                               )}

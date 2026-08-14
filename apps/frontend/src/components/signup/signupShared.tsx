@@ -284,7 +284,7 @@ export const inputBase: React.CSSProperties = {
 export const Label = ({ icon: Icon, children }: { icon: React.ComponentType<any>; children: React.ReactNode }) => (
     <label style={{
       display: 'inline-flex', alignItems: 'center', gap: 6,
-      fontSize: 10, fontWeight: 800, color: D.text3,
+      fontSize: 'var(--fs-caption)', fontWeight: 800, color: D.text3,
       textTransform: 'uppercase', letterSpacing: '.6px',
       marginBottom: 6,
     }}>

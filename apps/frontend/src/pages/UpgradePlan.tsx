@@ -86,7 +86,7 @@ export default function UpgradePlan() {
     }
   }
 
-  const lbl: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 'var(--fw-regular)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 7 }
+  const lbl: React.CSSProperties = { display: 'block', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 7 }
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#07070F,#0D0D1C)', fontFamily: 'var(--font)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -123,13 +123,13 @@ export default function UpgradePlan() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-semibold)', color: isSelected ? (isLead ? 'var(--p3)' : 'var(--acc)') : 'var(--text)', marginBottom: 2 }}>
                         {plan.label}
-                        {isLead && <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 'var(--fw-regular)', padding: '2px 7px', borderRadius: 99, background: 'rgba(108,71,255,.2)', color: 'var(--p3)' }}>{i('RECOMMANDÉ', 'RECOMMENDED', 'RECOMENDADO', 'CONSIGLIATO')}</span>}
+                        {isLead && <span style={{ marginLeft: 8, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', padding: '2px 7px', borderRadius: 99, background: 'rgba(108,71,255,.2)', color: 'var(--p3)' }}>{i('RECOMMANDÉ', 'RECOMMENDED', 'RECOMENDADO', 'CONSIGLIATO')}</span>}
                       </div>
                       <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{isLead ? i('5 utilisateurs · Stock illimité · RH & paie', '5 users · Unlimited stock · HR & payroll', '5 usuarios · Stock ilimitado · RRHH y nóminas', '5 utenti · Magazzino illimitato · HR e paghe') : i('1 poste · 500 produits · Rapports de base', '1 register · 500 products · Basic reports', '1 caja · 500 productos · Informes básicos', '1 cassa · 500 prodotti · Report di base')}</div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 'var(--fw-semibold)', color: isSelected ? (isLead ? 'var(--p3)' : 'var(--acc)') : 'var(--text2)', fontFamily: 'var(--mono)' }}>{price.toLocaleString('fr-FR')}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>F/{form.period === 'yearly' ? i('an', 'yr', 'año', 'anno') : i('mois', 'mo', 'mes', 'mese')}</div>
+                      <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>F/{form.period === 'yearly' ? i('an', 'yr', 'año', 'anno') : i('mois', 'mo', 'mes', 'mese')}</div>
                     </div>
                     {isSelected && <div style={{ width: 22, height: 22, borderRadius: '50%', background: isLead ? 'var(--p2)' : 'var(--acc)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-caption)', color: '#fff', fontWeight: 'var(--fw-regular)', flexShrink: 0 }}>✓</div>}
                   </button>
@@ -158,9 +158,9 @@ export default function UpgradePlan() {
                     <span style={{ fontSize: 'var(--fs-display)' }}>{m.icon}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: isSelected ? m.color : 'var(--text)' }}>{m.name}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>{L(m.desc)}</div>
+                      <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{L(m.desc)}</div>
                     </div>
-                    {isSelected && <div style={{ width: 20, height: 20, borderRadius: '50%', background: m.color, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff', fontWeight: 'var(--fw-regular)' }}>✓</div>}
+                    {isSelected && <div style={{ width: 20, height: 20, borderRadius: '50%', background: m.color, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-caption)', color: '#fff', fontWeight: 'var(--fw-regular)' }}>✓</div>}
                   </button>
                 )
               })}

@@ -236,7 +236,7 @@ export default function APIDocs() {
                   <td>
                     {e.auth ? (
                       <span style={{
-                        fontSize: 10, fontWeight: 'var(--fw-regular)',
+                        fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)',
                         color: 'var(--p)',
                         background: 'color-mix(in srgb, var(--p) 12%, transparent)',
                         border: '1px solid color-mix(in srgb, var(--p) 35%, transparent)',
@@ -245,7 +245,7 @@ export default function APIDocs() {
                       }}><Lock size={10} strokeWidth={2.6}/> JWT</span>
                     ) : (
                       <span style={{
-                        fontSize: 10, fontWeight: 'var(--fw-regular)',
+                        fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)',
                         color: 'var(--acc)',
                         background: 'color-mix(in srgb, var(--acc) 12%, transparent)',
                         border: '1px solid color-mix(in srgb, var(--acc) 35%, transparent)',

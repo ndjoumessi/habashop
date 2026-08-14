@@ -259,12 +259,12 @@ export default function PublicCatalog() {
               transition:'transform .15s, box-shadow .15s',
             }}>
               {onPromo && (
-                <span style={{ position:'absolute', top:8, right:8, padding:'2px 7px', borderRadius:6, background:'var(--danger)', color:'#fff', fontSize:9, fontWeight:800, letterSpacing:'.4px' }}>
+                <span style={{ position:'absolute', top:8, right:8, padding:'2px 7px', borderRadius:6, background:'var(--danger)', color:'#fff', fontSize:'var(--fs-caption)', fontWeight:800, letterSpacing:'.4px' }}>
                   PROMO
                 </span>
               )}
               {!inStock && (
-                <span style={{ position:'absolute', top:8, right:8, padding:'2px 7px', borderRadius:6, background:'var(--bg4)', color:'var(--text3)', fontSize:9, fontWeight:700 }}>
+                <span style={{ position:'absolute', top:8, right:8, padding:'2px 7px', borderRadius:6, background:'var(--bg4)', color:'var(--text3)', fontSize:'var(--fs-caption)', fontWeight:700 }}>
                   {i(lang, 'Rupture', 'Sold out', 'Agotado', 'Esaurito')}
                 </span>
               )}

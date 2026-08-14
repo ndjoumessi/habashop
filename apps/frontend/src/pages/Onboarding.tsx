@@ -138,7 +138,7 @@ export default function Onboarding() {
                     border: current ? 'none' : done ? '1px solid color-mix(in srgb, var(--acc2) 40%, transparent)' : '1px solid var(--border2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>{done ? <Check size={14} /> : <Icon size={14} />}</span>
-                  <span style={{ color: current ? 'var(--text)' : 'var(--text3)', fontSize: 10, marginTop: 5, whiteSpace: 'nowrap' }}>{s.label}</span>
+                  <span style={{ color: current ? 'var(--text)' : 'var(--text3)', fontSize: 'var(--fs-caption)', marginTop: 5, whiteSpace: 'nowrap' }}>{s.label}</span>
                 </div>
               </div>
             )

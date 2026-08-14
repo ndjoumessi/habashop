@@ -355,7 +355,7 @@ export default function Marketing() {
             borderRadius: 14, padding: '14px 16px',
             borderTop: `3px solid ${k.color}`,
           }}>
-            <div style={{ fontSize: 10, fontWeight: 'var(--fw-regular)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }}>
+            <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }}>
               {k.label}
             </div>
             <div style={{ fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-semibold)', color: k.color, fontFamily: 'var(--mono)' }}>
@@ -417,7 +417,7 @@ export default function Marketing() {
           {message && (
             <div style={{ marginTop: 12 }}>
               <div style={{
-                fontSize: 9, fontWeight: 'var(--fw-regular)', textTransform: 'uppercase',
+                fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', textTransform: 'uppercase',
                 letterSpacing: '.6px', color: 'rgba(37,211,102,.6)',
                 marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6,
               }}>
@@ -440,7 +440,7 @@ export default function Marketing() {
                   }}>🛒</div>
                   <div>
                     <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: '#E9EAE0' }}>HabaShop</div>
-                    <div style={{ fontSize: 10, color: '#8696A0' }}>
+                    <div style={{ fontSize: 'var(--fs-caption)', color: '#8696A0' }}>
                       {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}
                     </div>
                   </div>
@@ -454,7 +454,7 @@ export default function Marketing() {
                   <div style={{ fontSize: 'var(--fs-sm)', color: '#E9EAE0', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
                     <WhatsAppInlineRenderer text={message} />
                   </div>
-                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,.45)', textAlign: 'right', marginTop: 4 }}>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: 'rgba(255,255,255,.45)', textAlign: 'right', marginTop: 4 }}>
                     {new Date().toLocaleTimeString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { hour:'2-digit', minute:'2-digit' })} ✓✓
                   </div>
                 </div>
@@ -542,17 +542,17 @@ export default function Marketing() {
                         if (!canon) return null
                         return (
                           <span style={{
-                            fontSize: 10, fontWeight: 'var(--fw-regular)', padding: '2px 7px', borderRadius: 20,
+                            fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', padding: '2px 7px', borderRadius: 20,
                             background: canon === 'wholesale' ? 'rgba(91,78,232,.12)' : canon === 'semi-wholesale' ? 'rgba(240,165,0,.12)' : 'rgba(14,196,126,.12)',
                             color: canon === 'wholesale' ? 'var(--p2)' : canon === 'semi-wholesale' ? 'var(--acc)' : 'var(--acc2)',
                           }}>{typeLabel(clientTypeToLabel(canon), lang)}</span>
                         )
                       })()}
                       {(c.loyaltyPoints ?? 0) >= 5000
-                        ? <span title="Gold"   style={{ fontSize:9, fontWeight:'var(--fw-regular)', color:'#F0A500', background:'rgba(240,165,0,.15)',   borderRadius:4, padding:'1px 5px' }}>G</span>
+                        ? <span title="Gold"   style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-regular)', color:'#F0A500', background:'rgba(240,165,0,.15)',   borderRadius:4, padding:'1px 5px' }}>G</span>
                         : (c.loyaltyPoints ?? 0) >= 2000
-                          ? <span title="Silver" style={{ fontSize:9, fontWeight:'var(--fw-regular)', color:'#94A3B8', background:'rgba(148,163,184,.15)', borderRadius:4, padding:'1px 5px' }}>S</span>
-                          : <span title="Bronze" style={{ fontSize:9, fontWeight:'var(--fw-regular)', color:'#CD7F32', background:'rgba(205,127,50,.15)',  borderRadius:4, padding:'1px 5px' }}>B</span>}
+                          ? <span title="Silver" style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-regular)', color:'#94A3B8', background:'rgba(148,163,184,.15)', borderRadius:4, padding:'1px 5px' }}>S</span>
+                          : <span title="Bronze" style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-regular)', color:'#CD7F32', background:'rgba(205,127,50,.15)',  borderRadius:4, padding:'1px 5px' }}>B</span>}
                     </div>
                   </div>
                 )
@@ -710,8 +710,8 @@ export default function Marketing() {
                         {new Date(c.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </span>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(91,78,232,.1)', color: 'var(--p2)', fontWeight: 'var(--fw-semibold)' }}>{c.segment}</span>
-                        <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: c.failedCount === 0 ? 'rgba(14,196,126,.1)' : 'rgba(240,165,0,.1)', color: c.failedCount === 0 ? 'var(--acc2)' : 'var(--acc)', fontWeight: 'var(--fw-semibold)' }}>
+                        <span style={{ fontSize: 'var(--fs-caption)', padding: '2px 7px', borderRadius: 20, background: 'rgba(91,78,232,.1)', color: 'var(--p2)', fontWeight: 'var(--fw-semibold)' }}>{c.segment}</span>
+                        <span style={{ fontSize: 'var(--fs-caption)', padding: '2px 7px', borderRadius: 20, background: c.failedCount === 0 ? 'rgba(14,196,126,.1)' : 'rgba(240,165,0,.1)', color: c.failedCount === 0 ? 'var(--acc2)' : 'var(--acc)', fontWeight: 'var(--fw-semibold)' }}>
                           {c.sentCount}/{c.recipientCount}
                         </span>
                       </div>
@@ -719,7 +719,7 @@ export default function Marketing() {
                     <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {c.message.slice(0, 80)}{c.message.length > 80 ? '…' : ''}
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--text3)' }}>{c.user.name}</div>
+                    <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>{c.user.name}</div>
                   </div>
                 ))}
               </div>

@@ -108,7 +108,7 @@ export function BarcodeVignette({ value, lang }: { value: string; lang: string }
         padding: '20px 12px 6px', fontFamily: 'var(--font)', transition: 'box-shadow .15s',
       }}>
       {/* Badge format détecté (surface blanche → gris fixe discret) */}
-      <span style={{ position: 'absolute', top: 6, right: 8, fontSize: 10, fontWeight: 'var(--fw-semibold)', letterSpacing: '.4px', color: '#9CA3AF' }}>
+      <span style={{ position: 'absolute', top: 6, right: 8, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', letterSpacing: '.4px', color: '#9CA3AF' }}>
         {format === 'EAN8' ? 'EAN-8' : 'EAN-13'}
       </span>
       <svg ref={svgRef} style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }} />
