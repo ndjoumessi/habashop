@@ -42,6 +42,52 @@ async function applyApprovedLeaveSideEffects(tenantId: string, employeeId: strin
   }
 }
 
+/**
+ * LE MIROIR DE L'APPROBATION — une demande qui cesse d'être approuvée REND le planning.
+ *
+ * Décision de produit de Nelson (2026-08-14) : supprimer ou refuser un congé approuvé
+ * doit libérer le jour. Jusque-là, `applyApprovedLeaveSideEffects` marquait, et RIEN ne
+ * démarquait : `DELETE /:id` retirait la demande en laissant le planning afficher un
+ * congé sans demande derrière. Mesuré sur `e2e-tenant` — après une purge complète, une
+ * seule exécution de la suite E2E ramenait 3 shifts et 3 présences orphelins.
+ *
+ * ⚠️ UN AUTRE CONGÉ APPROUVÉ PEUT COUVRIR LE MÊME JOUR. C'est le cas qui interdit de
+ * supprimer aveuglément : deux demandes sur les mêmes dates existent (c'était exactement
+ * le résidu purgé), et retirer l'une ne doit pas démarquer un jour que l'autre justifie
+ * toujours. On vérifie donc jour par jour, en s'excluant soi-même.
+ *
+ * ⚠️ ASYMÉTRIE AVEC L'APPROBATION, ASSUMÉE ET IRRÉDUCTIBLE. Le `shift` est sûr : sa clé
+ * composite contient `shiftTypeKey: 'leave'`, donc l'approbation n'a JAMAIS écrasé un
+ * autre shift — on ne supprime que ce qu'on a créé. L'`attendance`, elle, a une clé SANS
+ * statut : son `upsert` a pu remplacer un `PRESENT` préexistant, et cette valeur est
+ * perdue. On ne la restaure donc pas — on retire notre marque, ce qui rend « aucun
+ * enregistrement », état neutre. Fabriquer un `PRESENT` serait inventer une présence
+ * que personne n'a constatée.
+ */
+async function revokeApprovedLeaveSideEffects(
+  tenantId: string, employeeId: string, startDate: string, endDate: string, sansCeConge: string,
+): Promise<void> {
+  for (const date of eachDateInclusive(startDate, endDate)) {
+    try {
+      // ⚠️ Comparaison de CHAÎNES, et c'est volontaire : les colonnes sont des `String`
+      // au format `YYYY-MM-DD`, dont l'ordre lexicographique EST l'ordre chronologique.
+      const autre = await prisma.leaveRequest.findFirst({
+        where: {
+          tenantId, employeeId, status: 'APPROVED',
+          id: { not: sansCeConge },
+          startDate: { lte: date }, endDate: { gte: date },
+        },
+        select: { id: true },
+      })
+      if (autre) continue
+      // On ne retire QUE ce qui porte encore la marque : un shift retypé ou une présence
+      // repassée à `PRESENT` depuis l'approbation n'est plus à nous.
+      await prisma.shift.deleteMany({ where: { tenantId, employeeId, date, shiftTypeKey: 'leave' } })
+      await prisma.attendance.deleteMany({ where: { tenantId, employeeId, date, status: 'LEAVE' } })
+    } catch (err) { console.warn('[leave-requests] revoke failed:', (err as Error)?.message ?? err) }
+  }
+}
+
 export async function leaveRequestRoutes(app: FastifyInstance): Promise<void> {
   // GET /api/leave-requests?status=PENDING — lecture tout membre, scope tenant.
   app.get('/api/leave-requests', { preHandler: authenticate }, async (request) => {
@@ -90,9 +136,12 @@ export async function leaveRequestRoutes(app: FastifyInstance): Promise<void> {
     const b = request.body as LeaveBody
     if (b.startDate !== undefined && !isValidDate(b.startDate)) return reply.code(400).send({ error: 'startDate invalide' })
     if (b.endDate !== undefined && !isValidDate(b.endDate)) return reply.code(400).send({ error: 'endDate invalide' })
-    const existing = await prisma.leaveRequest.findFirst({ where: { id, tenantId }, select: { id: true } })
+    const existing = await prisma.leaveRequest.findFirst({
+      where: { id, tenantId },
+      select: { id: true, employeeId: true, startDate: true, endDate: true, status: true },
+    })
     if (!existing) return reply.code(404).send({ error: 'Demande introuvable' })
-    return prisma.leaveRequest.update({
+    const maj = await prisma.leaveRequest.update({
       where: { id },
       data: {
         ...(b.startDate !== undefined ? { startDate: b.startDate } : {}),
@@ -101,6 +150,20 @@ export async function leaveRequestRoutes(app: FastifyInstance): Promise<void> {
         ...(b.reason !== undefined ? { reason: b.reason } : {}),
       },
     })
+    /**
+     * ⚠️ TROISIÈME CHEMIN, le moins visible : DÉPLACER les dates d'un congé approuvé.
+     * Les anciens jours restaient marqués et les nouveaux ne l'étaient pas — un congé
+     * qui s'affiche là où il n'est plus, et pas là où il est. On révoque l'ANCIENNE
+     * plage puis on ré-applique sur la NOUVELLE, dans cet ordre : l'inverse effacerait
+     * ce qu'on vient de poser sur les jours communs aux deux plages.
+     */
+    const datesChangees = (b.startDate !== undefined && b.startDate !== existing.startDate)
+                       || (b.endDate !== undefined && b.endDate !== existing.endDate)
+    if (existing.status === 'APPROVED' && datesChangees) {
+      await revokeApprovedLeaveSideEffects(tenantId!, existing.employeeId, existing.startDate, existing.endDate, id)
+      await applyApprovedLeaveSideEffects(tenantId!, existing.employeeId, maj.startDate, maj.endDate)
+    }
+    return maj
   })
 
   // POST /api/leave-requests/:id/approve — APPROVED + approvedBy/At + Shifts Congé + Attendance LEAVE.
@@ -141,9 +204,19 @@ export async function leaveRequestRoutes(app: FastifyInstance): Promise<void> {
     if (!requireApprover(request, reply)) return
     const tenantId = request.tenantId
     const { id } = request.params as { id: string }
-    const existing = await prisma.leaveRequest.findFirst({ where: { id, tenantId }, select: { id: true } })
+    // ⚠️ On relit l'ÉTAT COMPLET, pas seulement l'identifiant : sans les dates, le statut
+    // et l'employé, il n'y a plus rien à révoquer une fois la ligne partie.
+    const existing = await prisma.leaveRequest.findFirst({
+      where: { id, tenantId },
+      select: { id: true, employeeId: true, startDate: true, endDate: true, status: true },
+    })
     if (!existing) return reply.code(404).send({ error: 'Demande introuvable' })
     await prisma.leaveRequest.delete({ where: { id } })
+    // Seul un congé APPROUVÉ a marqué le planning ; en révoquer un autre ne ferait que
+    // des requêtes pour rien — et risquerait de démarquer un jour qu'il n'a jamais marqué.
+    if (existing.status === 'APPROVED') {
+      await revokeApprovedLeaveSideEffects(tenantId!, existing.employeeId, existing.startDate, existing.endDate, id)
+    }
     return { ok: true }
   })
 
@@ -152,8 +225,19 @@ export async function leaveRequestRoutes(app: FastifyInstance): Promise<void> {
     if (!requireApprover(request, reply)) return
     const tenantId = request.tenantId
     const { id } = request.params as { id: string }
-    const existing = await prisma.leaveRequest.findFirst({ where: { id, tenantId }, select: { id: true } })
+    // ⚠️ LE JUMEAU DE LA SUPPRESSION. Refuser un congé DÉJÀ APPROUVÉ le retire du planning
+    // aussi sûrement que le supprimer — ne traiter que `DELETE` aurait déplacé le défaut
+    // au lieu de le fermer : l'écran aurait encore montré un congé pour une demande
+    // refusée.
+    const existing = await prisma.leaveRequest.findFirst({
+      where: { id, tenantId },
+      select: { id: true, employeeId: true, startDate: true, endDate: true, status: true },
+    })
     if (!existing) return reply.code(404).send({ error: 'Demande introuvable' })
-    return prisma.leaveRequest.update({ where: { id }, data: { status: 'REFUSED' } })
+    const refusee = await prisma.leaveRequest.update({ where: { id }, data: { status: 'REFUSED' } })
+    if (existing.status === 'APPROVED') {
+      await revokeApprovedLeaveSideEffects(tenantId!, existing.employeeId, existing.startDate, existing.endDate, id)
+    }
+    return refusee
   })
 }
