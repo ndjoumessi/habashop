@@ -54,7 +54,7 @@ export default function LandingFooter({ lp }: Props) {
           0%, 100% { opacity: 1; transform: scale(1) }
           50%      { opacity: .5; transform: scale(.8) }
         }
-        @media (max-width: 880px) {
+        @media (max-width: 900px) {
           .lp-nav-desktop { display: none !important }
         }
         @media (max-width: 640px) {

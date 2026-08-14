@@ -115,7 +115,7 @@ export default function LandingFeatures({ lp, i }: Props) {
       </div>
 
       <style>{`
-        @media (max-width: 760px) {
+        @media (max-width: 768px) {
           .lp-pillar-row { grid-template-columns: 1fr !important; }
           .lp-pillar-lead { flex-direction: column !important; gap: 14px !important; }
         }

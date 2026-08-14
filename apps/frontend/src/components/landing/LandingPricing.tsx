@@ -217,7 +217,7 @@ export default function LandingPricing({ lp, i, navigate }: Props) {
       </div>
 
       <style>{`
-        @media (max-width: 880px) {
+        @media (max-width: 900px) {
           .lp-price-grid { grid-template-columns: 1fr !important; max-width: 420px; margin: 0 auto; }
         }
       `}</style>

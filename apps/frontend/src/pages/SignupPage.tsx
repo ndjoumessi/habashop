@@ -227,7 +227,7 @@ export default function SignupPage() {
         }
         @keyframes su-spin { to { transform: rotate(360deg) } }
         .su-spin { animation: su-spin 1s linear infinite; }
-        @media (max-width: 880px) {
+        @media (max-width: 900px) {
           .su-grid { grid-template-columns: 1fr !important; }
           .su-left { display: none !important; }
           .su-right { min-height: 100vh; padding: 32px 20px !important; }

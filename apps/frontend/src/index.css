@@ -734,7 +734,7 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
   .two-col { grid-template-columns:1fr }
   .product-grid { grid-template-columns:repeat(2,1fr) }
 }
-@media (max-width:600px) { .page-title { font-size:18px } .kpi-value { font-size:20px } }
+@media (max-width:560px) { .page-title { font-size:18px } .kpi-value { font-size:20px } }
 @media (max-width:480px) {
   .kpi-grid { grid-template-columns:1fr!important }
   .topbar-btn { padding:8px 14px; font-size:12px }
@@ -743,18 +743,14 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 
 /* Dashboard charts grid: wide chart 2/3 + donut 1/3 at >=880px; stack vertically below */
 .dashboard-charts-grid { grid-template-columns:1fr }
-@media (min-width:880px) {
+@media (min-width:900px) {
   .dashboard-charts-grid { grid-template-columns:2fr 1fr }
 }
 
 /* Login & Signup split: collapse left branding panel below 880px */
-@media (max-width:880px) {
-  .login-grid { grid-template-columns:1fr !important }
-  .login-brand { display:none !important }
-}
 
 /* Settings page: left settings-nav + right form panel — stack below 880px */
-@media (max-width:880px) {
+@media (max-width:900px) {
   .settings-grid { grid-template-columns:1fr !important }
 }
 
@@ -1073,7 +1069,7 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 }
 
 /* Étroit : la légende passe au-dessus sans écraser la table. */
-@media (max-width:760px) {
+@media (max-width:768px) {
   .att-legend { gap:6px 12px; padding:8px 12px }
   .att-seg-btn { width:34px }
 }
