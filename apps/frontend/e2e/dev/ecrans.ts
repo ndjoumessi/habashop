@@ -67,7 +67,20 @@ export function seedEcran(page: Page) {
     const produits = Array.from({ length: n }, (_, k) => ({
       id: `p-${k + 1}`, _id: `p-${k + 1}`, productId: `p-${k + 1}`,
       sku: `PRD-${String(k + 1).padStart(4, '0')}`,
-      name: `Produit témoin ${String(k + 1).padStart(3, '0')} 800g`,
+      /**
+       * ⚠️ LONGUEURS ALTERNÉES, ET C'EST PORTANT. Tous les noms faisaient la MÊME
+       * longueur — donc tous s'enroulaient sur deux lignes, et les prix s'alignaient
+       * même SANS le correctif. Le test de l'alignement des prix en caisse passait
+       * alors sur du code fautif : MESURÉ le 2026-08-14, les sabotages « prix à la
+       * suite du nom » et « plus de colonne flex » sont tous deux restés VERTS.
+       * Une démonstration calée sur une valeur uniforme ne démontre rien — comme le
+       * camembert calé sur six catégories exactement.
+       * Un nom sur trois est COURT (une ligne), les autres LONGS (deux lignes) : il
+       * faut les deux dans la MÊME rangée pour que le décalage existe.
+       */
+      name: k % 3 === 0
+        ? `Riz ${String(k + 1).padStart(3, '0')}`
+        : `Produit témoin ${String(k + 1).padStart(3, '0')} 800g`,
       emoji: '🌾',
       // Une photo sur deux : les DEUX branches de `ProductThumb` doivent être exercées.
       image: k % 2 === 0 ? photo : null,

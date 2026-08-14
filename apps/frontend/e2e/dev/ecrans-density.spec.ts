@@ -305,4 +305,102 @@ test.describe('écrans complets — géométrie réelle', () => {
       'page, pas dans un montage : `.pos-fullbleed`, la grille et la carte comprises.',
     ].join('\n')).toEqual([])
   })
+
+  /**
+   * LES PRIX D'UNE MÊME RANGÉE S'ALIGNENT, quels que soient les retours à la ligne.
+   *
+   * Défaut observé à l'écran le 2026-08-14 : le prix suivait le nom, si bien qu'un
+   * libellé sur DEUX lignes (« Café soluble 200g », « Tomate concentrée 800g ») le
+   * décalait vers le bas — les montants d'une rangée ne s'alignaient plus.
+   *
+   * ⚠️ CE TEST NE PEUT PAS VIVRE DANS LA SUITE UNITAIRE : jsdom ne fait AUCUNE mise en
+   * page — ni largeur, ni retour à la ligne, ni hauteur. Un test qui « vérifierait
+   * l'alignement » là-bas ne mesurerait rien du tout.
+   *
+   * ⚠️ La correction ne FIGE PAS la hauteur du nom, ce qui tronquerait les libellés
+   * longs — c'est la faute que le guide interdit (« corriger la CONTRAINTE, pas la
+   * chaîne »). Le nom garde ses lignes ; le prix est ancré en bas de tuile.
+   */
+  test('/app/pos — les prix d’une rangée sont alignés, sans tronquer les noms', async ({ page }) => {
+    await seedEcran(page)
+    await ouvrirEcran(page, '/app/pos', 1280, 900)
+    await page.locator('[data-thumb]').first().waitFor({ timeout: 30_000 })
+
+    const m = await page.evaluate(() => {
+      const tuiles = [...document.querySelectorAll('[role="button"]')]
+        .filter(e => (e.getAttribute('aria-label') ?? '').includes(' — '))
+      const lignes = new Map<number, { haut: number; enroule: boolean }[]>()   // rangée → blocs de prix
+      let nomsSurDeuxLignes = 0
+      let nomsTronques = 0
+      for (const t of tuiles) {
+        const rt = t.getBoundingClientRect()
+        const nomTxt = (t.getAttribute('aria-label') ?? '').split(' — ')[0]
+        const nom = [...t.querySelectorAll('div')].find(e => !e.children.length && e.textContent?.trim() === nomTxt)
+        const montant = [...t.querySelectorAll('span')]
+          .find(e => /^[\d\s ]+$/.test(e.textContent?.trim() ?? '') && (e.textContent?.trim().length ?? 0) > 0)
+        // ⚠️ ON MESURE LE BLOC DE PRIX, pas le `<span>` du montant — décision prise APRÈS
+        // mesure. Sur une tuile en PROMO, le prix barré à 10 px agrandit la boîte de ligne
+        // et descend le montant de 2 px À L'INTÉRIEUR d'un bloc pourtant parfaitement
+        // aligné (353 px sur toutes les tuiles). Asserter sur le span mesurerait cette
+        // typographie-là, pas l'alignement qu'on corrige — et une tentative en
+        // `display:flex` + `alignItems:baseline` n'y a rien changé (358 contre 356).
+        const bloc = montant?.parentElement
+        if (!nom || !montant || !bloc) continue
+        if (nom.getBoundingClientRect().height > parseFloat(getComputedStyle(nom).lineHeight) * 1.4) nomsSurDeuxLignes++
+        // ⚠️ Un nom tronqué se reconnaît au débordement de son contenu, pas à l'œil.
+        if (nom.scrollHeight > nom.clientHeight + 1 || nom.scrollWidth > nom.clientWidth + 1) nomsTronques++
+        const rangee = Math.round(rt.top)
+        const haut = Math.round(bloc.getBoundingClientRect().top)
+        const enroule = nom.getBoundingClientRect().height > parseFloat(getComputedStyle(nom).lineHeight) * 1.4
+        lignes.set(rangee, [...(lignes.get(rangee) ?? []), { haut, enroule }])
+      }
+      // Écart maximal des hauts de bloc, à l'intérieur de chaque rangée.
+      const ecarts = [...lignes.entries()]
+        .filter(([, hs]) => hs.length > 1)
+        .map(([rangee, hs]) => ({
+          rangee, n: hs.length,
+          ecart: Math.max(...hs.map(x => x.haut)) - Math.min(...hs.map(x => x.haut)),
+          // ⚠️ Une rangée n'est PROBANTE que si elle MÊLE un nom court et un nom long.
+          // Toutes longueurs égales, les prix s'alignent même sans correctif — c'est
+          // exactement ce qui a rendu ce test vert sur du code fautif.
+          probante: hs.some(x => x.enroule) && hs.some(x => !x.enroule),
+        }))
+      return { nbTuiles: tuiles.length, nbRangees: ecarts.length, nbProbantes: ecarts.filter(x => x.probante).length, nomsSurDeuxLignes, nomsTronques, ecarts }
+    })
+
+    // COUVERTURE : sans ces comptes, une grille vide — ou d'une seule tuile par rangée —
+    // rendrait la règle vraie sans avoir rien aligné.
+    expect(m.nbTuiles, 'la caisse doit rendre des tuiles').toBeGreaterThanOrEqual(10)
+    expect(m.nbRangees, 'il faut au moins une rangée de PLUSIEURS tuiles').toBeGreaterThanOrEqual(1)
+    // ⚠️ DISCRIMINANT — il ne suffit PAS qu'un nom s'enroule : il faut une rangée qui
+    // MÊLE un nom d'une ligne et un nom de deux. C'est ce mélange qui décale les prix.
+    // MESURÉ le 2026-08-14 : avec des noms de longueur uniforme, ce test passait sur du
+    // code fautif — les deux sabotages (« prix à la suite du nom », « plus de colonne
+    // flex ») restaient VERTS. Le harnais alterne désormais court/long.
+    expect(m.nomsSurDeuxLignes, 'aucun nom sur deux lignes : le cas fautif est absent').toBeGreaterThanOrEqual(1)
+    expect(m.nbProbantes, 'aucune rangée ne mêle nom court et nom long : le test ne prouverait rien')
+      .toBeGreaterThanOrEqual(1)
+
+    const desalignees = m.ecarts.filter(x => x.ecart > 1)
+    expect(desalignees, [
+      `Prix désalignés dans ${desalignees.length} rangée(s) : ${JSON.stringify(desalignees.slice(0, 3))}`,
+      'Le prix doit être ancré en BAS de tuile (`marginTop: auto` dans une colonne flex),',
+      'pas placé à la suite du nom — sinon un libellé sur deux lignes le décale.',
+    ].join('\n')).toEqual([])
+
+    /**
+     * ⚠️ ASSERTION NON PROUVÉE, ET DITE COMME TELLE. Elle vise le cas « on aligne en
+     * ROGNANT le nom », mais aucun des sabotages n'a réussi à la faire parler :
+     *  · nom figé à deux lignes → c'est l'ALIGNEMENT qui rougit (écart de 2 px) ;
+     *  · nom sur une ligne + ellipse → c'est la COUVERTURE qui rougit
+     *    (« aucun nom sur deux lignes »).
+     * Toute troncature raccourcit la boîte, donc l'un des deux autres contrôles part
+     * en premier. Celui-ci ne servirait qu'à une coupe qui GARDE deux lignes visibles
+     * — un `-webkit-line-clamp: 2` sur un libellé de trois lignes, qu'aucun produit du
+     * catalogue actuel ne produit à cette largeur.
+     * On la garde : elle est gratuite et couvre ce cas. On ne la COMPTE PAS comme une
+     * protection démontrée.
+     */
+    expect(m.nomsTronques, 'des noms de produit sont tronqués').toBe(0)
+  })
 })

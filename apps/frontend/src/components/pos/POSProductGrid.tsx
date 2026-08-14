@@ -161,6 +161,21 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
         cursor: blocked ? 'not-allowed' : 'pointer',
         opacity: blocked ? 0.45 : 1,
         textAlign: 'left',
+        /*
+          ⚠️ COLONNE FLEX pour que le PRIX s'ancre en BAS (cf. son `marginTop: auto`).
+          Sans ça, le prix suit le nom : un libellé qui passe sur deux lignes le décale
+          vers le bas, et les prix d'une même rangée ne s'alignent plus — observé à
+          l'écran le 2026-08-14 (« Café soluble 200g » et « Tomate concentrée 800g »
+          contre leurs voisins d'une ligne).
+          ⚠️ ON NE FIGE PAS LA HAUTEUR DU NOM, qui serait la correction évidente : elle
+          TRONQUERAIT les libellés longs, et c'est la faute que le guide interdit —
+          « corriger la CONTRAINTE, pas la chaîne ». Ici le nom garde toutes ses lignes,
+          c'est le prix qui va le chercher en bas.
+          La grille (`ResponsiveGrid`) étire déjà les tuiles d'une rangée à la même
+          hauteur : c'est ce qui rend l'ancrage possible.
+        */
+        display: 'flex',
+        flexDirection: 'column',
         transition: 'all .15s ease',
         position: 'relative',
       }}
@@ -254,7 +269,23 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
           tuile de CAISSE, où le caissier annonce un montant à voix haute. XOF et EUR
           diffèrent d'un facteur 656 : le symbole est ce qui rend le nombre interprétable,
           pas une décoration. Il suit la couleur et la taille du chiffre. */}
-      <div style={{ marginTop: 3 }}>
+      {/* ⚠️ `marginTop: auto` — le prix est POUSSÉ en bas de la tuile, pas placé après le
+          nom. C'est ce qui aligne les montants d'une même rangée quels que soient les
+          retours à la ligne des libellés. `paddingTop` conserve l'air minimum quand le
+          nom tient sur une seule ligne. */}
+      {/* ⚠️ `marginTop: auto` — le prix est POUSSÉ en bas de la tuile, pas placé après le
+          nom. C'est ce qui aligne les BLOCS de prix d'une même rangée quels que soient
+          les retours à la ligne des libellés : mesuré, bloc à 353 px sur toutes les
+          tuiles. `paddingTop` conserve l'air minimum quand le nom tient sur une ligne.
+
+          ⚠️ RÉSIDU CONNU, MESURÉ, NON CORRIGÉ : à l'INTÉRIEUR du bloc, le montant d'une
+          tuile en PROMO est 2 px plus bas que les autres — le prix barré à 10 px dans une
+          ligne de 12 agrandit la boîte de ligne. Une tentative en `display:flex` +
+          `alignItems:baseline` n'y a rien changé (mesuré : 358 contre 356). On s'arrête
+          là : deux pixels sur les seules tuiles en promotion ne justifient pas d'empiler
+          des acrobaties de mise en page sur le chemin de la caisse. Le test mesure donc
+          le BLOC, qui est l'unité d'alignement réelle. */}
+      <div style={{ marginTop: 'auto', paddingTop: 3 }}>
         {showStrike && (
           <span style={{ fontSize: 10, color: 'var(--text3)', textDecoration: 'line-through', fontFamily: 'var(--mono)', marginRight: 5 }}>
             {baseAmount}
