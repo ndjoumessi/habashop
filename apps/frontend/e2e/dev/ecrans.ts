@@ -184,17 +184,36 @@ export function seedEcran(page: Page) {
         // pas montrer — le tenant de démonstration compte dix événements, donc la
         // troncature n'y apparaît jamais. C'est exactement la configuration qui avait
         // masqué le défaut d'origine.
+        // ⚠️ LES SURFACES AUDITÉES DEPUIS LE 2026-08-14, EN TÊTE DE LISTE. Elles n'existent
+        // dans AUCUN journal de production — les produire demanderait de modifier un prix
+        // ou une dépense sur une boutique réelle, ce qu'on s'interdit. Le seul endroit où
+        // leur RENDU peut être vu est donc ici, sur un vrai moteur de mise en page.
+        // Chacune exerce une forme différente : sujet + diff, création, suppression,
+        // et une action dont le module tombe sur une catégorie partagée.
+        const NEUVES = [
+          { module: 'products', action: 'UPDATE_PRODUCT',
+            description: JSON.stringify({ name: 'Riz local 5kg', sellPrice: { avant: 1000, apres: 1200 } }) },
+          { module: 'expenses', action: 'CREATE_EXPENSE',
+            description: JSON.stringify({ name: 'Loyer août', amountTTC: { avant: null, apres: 100000 } }) },
+          { module: 'expenses', action: 'DELETE_EXPENSE',
+            description: JSON.stringify({ name: 'Facture SENELEC', amountTTC: { avant: 42500, apres: null } }) },
+          { module: 'stock_transfers', action: 'CONFIRM_STOCK_TRANSFER',
+            description: JSON.stringify({ name: 'Huile 1L', stockQty: { avant: null, apres: 24 } }) },
+        ]
         return json({
-          items: Array.from({ length: 100 }, (_, k) => ({
-            id: `al-${k + 1}`, tenantId: 'boutique-a', userId: 'u-1',
-            module: k % 3 === 0 ? 'SETTINGS' : k % 3 === 1 ? 'POS' : 'STOCK',
-            action: 'TENANT_LOCALE_CHANGE',
-            description: JSON.stringify({ currency: { avant: 'XOF', apres: 'XAF' } }),
-            severity: k % 25 === 0 ? 'danger' : 'info',
-            ip: '127.0.0.1',
-            createdAt: new Date(2026, 7, 12, 9, 0, k).toISOString(),
-            user: { name: 'Témoin' },
-          })),
+          items: Array.from({ length: 100 }, (_, k) => {
+            const neuve = NEUVES[k]
+            return {
+              id: `al-${k + 1}`, tenantId: 'boutique-a', userId: 'u-1',
+              module: neuve?.module ?? (k % 3 === 0 ? 'SETTINGS' : k % 3 === 1 ? 'POS' : 'STOCK'),
+              action: neuve?.action ?? 'TENANT_LOCALE_CHANGE',
+              description: neuve?.description ?? JSON.stringify({ currency: { avant: 'XOF', apres: 'XAF' } }),
+              severity: k % 25 === 0 ? 'danger' : 'info',
+              ip: '127.0.0.1',
+              createdAt: new Date(2026, 7, 12, 9, 0, k).toISOString(),
+              user: { name: 'Témoin' },
+            }
+          }),
           total: 1342,
           limite: 100,
           // ⚠️ LA LISTE des modules, pas leur compte — la route l'envoie depuis le
@@ -204,7 +223,12 @@ export function seedEcran(page: Page) {
           // deux codes (`orders`, `suppliers`) qui tombent sur la MÊME catégorie
           // d'écran : une dérivation depuis les lignes reçues, ou un comptage des
           // codes stockés sans dédoublonnage, rendrait un nombre différent.
-          modulesPresents: ['SETTINGS', 'POS', 'STOCK', 'orders', 'suppliers', 'payroll'],
+          // ⚠️ SIX codes stockés y tombent sur des catégories PARTAGÉES : `orders` et
+          // `suppliers` donnent tous deux « Commandes », `STOCK`, `products` et
+          // `stock_transfers` donnent tous trois « Stock ». Neuf codes, six options.
+          // Un comptage des codes bruts en afficherait neuf en face de six entrées.
+          modulesPresents: ['SETTINGS', 'POS', 'STOCK', 'orders', 'suppliers', 'payroll',
+            'products', 'expenses', 'stock_transfers'],
           // ⚠️ Compteurs VOLONTAIREMENT incohérents avec les 100 lignes envoyées :
           // s'ils coïncidaient, une dérivation depuis les lignes passerait pour exacte.
           stats: { aujourdhui: 37, alertes: 12 },

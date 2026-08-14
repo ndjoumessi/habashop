@@ -185,6 +185,9 @@ test.describe('écrans complets — géométrie réelle', () => {
         .map(o => o.textContent?.trim() ?? ''),
       panneauSecurite: [...document.querySelectorAll('h2')]
         .some(h => /Sécurité de mon compte/i.test(h.textContent ?? '')),
+      // Le texte RENDU des lignes du journal, normalisé.
+      textesLignes: [...document.querySelectorAll('.panel [style*="border-left"]')]
+        .map(l => (l.textContent ?? '').replace(/\s+/g, ' ').trim()),
     }))
 
     // COUVERTURE : sans lignes rendues, tout le reste serait vert et vide.
@@ -210,7 +213,7 @@ test.describe('écrans complets — géométrie réelle', () => {
     //     cinq. Ce test attendait « 6 » : il figeait le comptage SERVEUR des codes
     //     bruts, celui qui faisait afficher un nombre sans rapport avec la liste
     //     deroulante d'a cote — deux nombres muets qui se contredisent.
-    expect(m.kpis.find(k => /Modules/i.test(k.label))?.valeur).toBe('5')
+    expect(m.kpis.find(k => /Modules/i.test(k.label))?.valeur).toBe('6')
 
     // (4) La promesse d'exhaustivite a disparu de l'ecran.
     expect(m.soustitre.toLowerCase()).not.toContain('complete')
@@ -220,7 +223,9 @@ test.describe('écrans complets — géométrie réelle', () => {
     //     serveur et un `Record` fige — et rien ne les obligeait a parler du meme
     //     ensemble. Ici on ne verifie plus deux nombres separement : on verifie
     //     qu'ils sont LE MEME.
-    expect(m.optionsModules.length).toBe(5)
+    // ⚠️ NEUF codes stockés, SIX options : `orders`+`suppliers` tombent sur
+    //     « Commandes », et `STOCK`+`products`+`stock_transfers` sur « Stock ».
+    expect(m.optionsModules.length).toBe(6)
     expect(String(m.optionsModules.length))
       .toBe(m.kpis.find(k => /Modules/i.test(k.label))?.valeur)
 
@@ -237,6 +242,37 @@ test.describe('écrans complets — géométrie réelle', () => {
     // (7) La securite du COMPTE est rendue — elle etait ecrite, lisible par API, et
     //     affichee nulle part. Panneau distinct : echelle utilisateur, hors boutique.
     expect(m.panneauSecurite, 'le panneau de securite du compte doit etre rendu').toBe(true)
+
+    // (8) LES SURFACES AUDITEES DEPUIS LE 2026-08-14 SONT RENDUES, ET LISIBLES.
+    //     ⚠️ Elles n'existent dans AUCUN journal de production : les produire
+    //     demanderait de modifier un prix ou une depense sur une boutique reelle.
+    //     Ce bloc est donc le SEUL endroit ou leur rendu est observe sur un vrai
+    //     moteur de mise en page — les tests unitaires jugent la chaine, pas l'ecran.
+    const ligne = (motif: RegExp) => m.textesLignes.find(t => motif.test(t)) ?? ''
+
+    //     Le SUJET accompagne le changement : sans lui, « sellPrice 1000 -> 1200 »
+    //     ne designe aucun produit, et c'est ce que l'ecran affichait.
+    expect(ligne(/Riz local 5kg/)).toContain('Riz local 5kg — sellPrice 1000 → 1200')
+    //     L'action est LIBELLEE, pas rendue en SNAKE_CASE.
+    expect(ligne(/Riz local 5kg/)).toContain('Produit modifié')
+    expect(ligne(/Riz local 5kg/)).not.toContain('UPDATE_PRODUCT')
+
+    //     Une valeur ABSENTE se dit « — », jamais par un vide : une depense supprimee
+    //     se lit « 42500 → — », ce qui montre le montant qui a disparu.
+    expect(ligne(/Facture SENELEC/)).toContain('Facture SENELEC — amountTTC 42500 → —')
+    expect(ligne(/Loyer août/)).toContain('Loyer août — amountTTC — → 100000')
+
+    //     Et le module tombe sur la bonne CATEGORIE : « Dépenses », pas « Paramètres ».
+    expect(ligne(/Loyer août/)).toContain('Dépenses')
+    expect(ligne(/Huile 1L/)).toContain('Transfert de stock reçu')
+    expect(ligne(/Huile 1L/)).toContain('Stock')
+
+    //     COUVERTURE — les quatre formes sont bien presentes a l'ecran ; sans ce
+    //     compte, un `find` qui ne trouve rien rendrait '' et toutes les assertions
+    //     `not.toContain` ci-dessus passeraient au vert sur du vide.
+    for (const sujet of [/Riz local 5kg/, /Loyer août/, /Facture SENELEC/, /Huile 1L/]) {
+      expect(ligne(sujet), `ligne manquante pour ${sujet}`).not.toBe('')
+    }
   })
 
   test('/app/pos — la caisse : page contenue, vignettes carrées', async ({ page }) => {
