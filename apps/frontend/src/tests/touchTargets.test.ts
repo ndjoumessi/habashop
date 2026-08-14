@@ -38,7 +38,26 @@ const CSS = readFileSync(join(SRC, 'index.css'), 'utf8')
  * Corollaire déjà connu du dépôt : un scanneur qui ne retire pas les commentaires
  * s'interdit d'EXPLIQUER ce qu'il interdit.
  */
-const CSS_NU = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+const CSS_INDEX = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+
+/**
+ * ⚠️ LA FEUILLE N'EST PAS QUE `index.css`. Deux contrôles du LOGIN — l'œil du mot de passe
+ * (32×32) et « Mot de passe oublié ? » (135×21, SOUS le minimum WCAG AA 2.5.8) — vivaient
+ * dans un bloc `<style>` à l'intérieur de `LoginPage.tsx`. Un verrou qui ne lit qu'index.css
+ * les déclarait conformes en ne les ayant jamais lus, sur le premier écran que touche un
+ * commerçant. Ces blocs partent bien dans le bundle (c'est déjà ce que `verify:classes`
+ * inspecte dans le `dist/`) : ils font partie de la feuille livrée, donc du périmètre.
+ * ⚠️ Le test d'ORDRE, lui, reste borné à `index.css` : la cascade entre un fichier et un
+ * bloc injecté par React ne se déduit pas d'une position dans un texte.
+ */
+const STYLES_TSX = (() => {
+  let out = ''
+  for (const f of fichiersTsx(SRC)) {
+    for (const m of readFileSync(f, 'utf8').matchAll(/<style[^>]*>\{?`([\s\S]*?)`\}?<\/style>/g)) out += '\n' + m[1]
+  }
+  return out.replace(/\/\*[\s\S]*?\*\//g, '')
+})()
+const CSS_NU = CSS_INDEX + '\n' + STYLES_TSX
 
 // ── Tokens LUS dans la feuille (pas recopiés) ────────────────────────────────────────
 function token(nom: string): number {
@@ -145,6 +164,10 @@ describe('cibles tactiles — la famille entière, pas la forme qu’on regardai
     // prouve que le périmètre ne se réduit plus au motif du NOM — c'est exactement la classe
     // que la première version du verrou avait laissée à 36px.
     expect(CLASSES_BOUTON).toContain('.stock-action')
+    // DISCRIMINANT de la source élargie : `.login-link` n'est PAS dans index.css — elle vit
+    // dans un bloc <style> de LoginPage.tsx. Sa présence prouve que le verrou lit bien la
+    // feuille LIVRÉE, pas seulement le fichier qu'on avait en tête.
+    expect(CLASSES_BOUTON).toContain('.login-link')
   })
 
   it('aucune classe de bouton ne descend sous 40px', () => {
@@ -173,6 +196,7 @@ describe('cibles tactiles — la famille entière, pas la forme qu’on regardai
     // Position de la règle qui DÉCLARE le min-height du sélecteur (la dernière).
     const posDecl = (sel: string) => {
       const b = REGLES.filter(r =>
+        r.pos < CSS_INDEX.length &&
         r.sel.split(',').some(s => s.trim() === sel) && /min-height:/.test(r.corps))
       if (!b.length) throw new Error(`aucune déclaration min-height pour ${sel}`)
       return b[b.length - 1].pos

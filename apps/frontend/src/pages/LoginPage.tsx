@@ -548,12 +548,23 @@ export default function LoginPage() {
           background: none; border: none; border-radius: 8px;
           color: var(--text3); cursor: pointer; transition: color .15s, background .15s;
         }
+        /* ⚠️ La ZONE DE FRAPPE atteint 44px sans que le DESSIN grossisse. Le bouton est
+           positionné en absolu DANS le champ (48px de haut) : le porter à 44×44 y collerait
+           un carré de survol qui remplit presque le champ. Ce qu'iOS HIG et WCAG 2.5.8
+           mesurent est la RÉGION QUI ACCEPTE LE POINTEUR, et un pseudo-élément du bouton en
+           fait partie — on élargit donc la cible, pas la vignette. */
+        .login-eye::before { content: ''; position: absolute; inset: -6px; }
         .login-eye:hover { color: var(--text); background: var(--card2); }
 
+        /* ⚠️ Il faisait 135×21 : SOUS le minimum WCAG AA 2.5.8 (24×24), pas seulement sous
+           le repère iOS — et c'est le premier écran que touche un commerçant. L'exception
+           « lien en ligne dans une phrase » du critère ne s'applique pas : il est seul sur
+           sa ligne, sa hauteur n'est contrainte par aucun texte voisin. */
         .login-link {
-          background: none; border: none; padding: 2px 0; cursor: pointer;
+          background: none; border: none; padding: 2px 8px; cursor: pointer;
           font-size: 13px; font-weight: 600; color: var(--p3);
           font-family: var(--font); border-radius: 6px;
+          display: inline-flex; align-items: center; min-height: var(--touch-min);
         }
         .login-link:hover { text-decoration: underline; }
 
