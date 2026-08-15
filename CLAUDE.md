@@ -890,6 +890,15 @@ automatique et qui ne l'est pas ne protège rien* — même famille que `notify-
 `dist/`) ; vérifié avant branchement : les quatre passent sur un artefact construit dans les
 conditions exactes du job.
 
+⚠️ **RÉCIPROQUE — LA RÈGLE EXISTE, PERSONNE NE LA REND.** Audit d'interface du 2026-08-15 :
+**quatre défauts sur huit visaient une règle CSS MORTE** (`.toggle`, `.stat-chip`, `.tab-btn`,
+`.btn-success` — 0 point d'appel, 0 fichier livré qui les cite), pendant que le vrai contrôle
+vivait ailleurs, stylé en ligne, **en huit exemplaires pour le seul interrupteur**. Corriger la
+règle n'aurait rien changé à l'écran, et se serait déclaré vert. **Avant de corriger une règle
+CSS, compter ses points d'appel dans `src/`, dans `e2e/` ET dans le `dist/` livré, avec un
+témoin positif à côté** — un 0 sans témoin ne prouve rien. 📖 *`docs/lessons/audit-uiux-2026-08.md`
+(les 8 livraisons, les 5 verrous, et les DOUZE fois où ma propre mesure était fausse).*
+
 ⚠️ **Corollaire — un fait peut être encodé en DONNÉES, pas en texte.** Le JSON-LD portait
 `serviceArea.geoMidpoint = 14.6928 / -17.4467` : Dakar. Un signal de ciblage géographique aussi
 fort que le mot, **qu'aucune recherche de chaînes ne peut trouver** — vu en balayant les surfaces
