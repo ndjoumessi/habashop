@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conditions générales — HabaShop</title>
+<!--
+  ⚠️ JUMEAU STATIQUE de `apps/frontend/src/pages/Terms.tsx` (route `/terms`).
+
+  Ce fichier existe parce que `legal/` est le domicile public des documents légaux —
+  servi par GitHub Pages, atteignable SANS l'application — et qu'il proposait la
+  politique de confidentialité mais pas les conditions générales. L'asymétrie a été
+  mesurée le 2026-08-15 : `legal/index.html` ne citait les CGU nulle part.
+
+  ⚠️ DEUX DOCUMENTS QUI DISENT LA MÊME CHOSE DIVERGENT. C'est le motif le plus coûteux de
+  ce dépôt, et il a DÉJÀ frappé ici : `privacy-policy.html` déclarait « Éditeur : HabaShop »
+  quand la page in-app déclarait « Nelson Djoumessi ». D'où le verrou
+  `apps/frontend/src/tests/legalTwins.test.ts`, qui compare CE fichier à la version React :
+  mêmes intitulés d'articles, mêmes tarifs (lus dans `lib/plans.ts`), même éditeur, même
+  adresse de contact, mêmes limites annoncées. Il échoue si l'un des deux bouge seul.
+
+  ⚠️ LES TARIFS SONT ÉCRITS EN DUR ICI, et c'est un compromis assumé : une page statique ne
+  peut pas lire `lib/plans.ts`. Le verrou les confronte donc à la source unique — c'est lui
+  qui rend cette copie sûre, pas la vigilance.
+-->
+<style>
+  :root{--violet:#5B4EE8;--ink:#1b1a2e;--muted:#5a5878;--line:#e6e4f2;--bg:#ffffff;--soft:#f7f6fd;--warn-bg:#FFF4D6;--warn-line:#E0B341;--warn-ink:#6B4E00}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Nunito','Segoe UI',system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg);line-height:1.7}
+  .wrap{max-width:820px;margin:0 auto;padding:48px 24px 80px}
+  header{border-bottom:3px solid var(--violet);padding-bottom:20px;margin-bottom:8px}
+  .brand{font-size:30px;font-weight:800;color:var(--violet);letter-spacing:-.5px}
+  h1{font-size:26px;margin:28px 0 6px}
+  .updated{color:var(--muted);font-size:14px;margin-bottom:32px}
+  h2{font-size:20px;margin:36px 0 10px;color:var(--ink);border-left:3px solid var(--violet);padding-left:10px}
+  h3{font-size:17px;margin:22px 0 8px;color:var(--ink)}
+  p,li{font-size:16px;color:#26243a}
+  ul{padding-left:22px}
+  a{color:var(--violet)}
+  .avis{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:8px;padding:14px 16px;margin-bottom:32px;color:var(--warn-ink);font-size:15px}
+  .ac{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:4px;padding:1px 6px;font-weight:700;color:var(--warn-ink)}
+  footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="brand">HabaShop</div></header>
+  <h1>Conditions générales d'utilisation et de vente</h1>
+  <p class="updated">Dernière mise à jour : 15 août 2026</p>
+
+  <div class="avis">
+    <strong>Document en cours de validation juridique.</strong> Les mentions surlignées
+    restent à compléter par l'éditeur. Jusqu'à leur renseignement et à une relecture
+    professionnelle, ce texte décrit l'usage du service mais ne peut pas être invoqué
+    comme un engagement contractuel complet.
+  </div>
+
+  <h2>1. Objet</h2>
+  <p>Les présentes conditions régissent l'accès et l'utilisation de HabaShop, logiciel de gestion commerciale accessible sur <a href="https://habashop.vercel.app">habashop.vercel.app</a>. Elles forment un contrat entre l'éditeur et le commerçant qui souscrit un compte (« le Client »).</p>
+  <p>La création d'un compte vaut acceptation sans réserve des présentes. Le Client qui n'y consent pas doit renoncer à utiliser le service.</p>
+
+  <h2>2. Éditeur</h2>
+  <p>HabaShop est édité par <strong>Nelson Djoumessi</strong> (<a href="mailto:romel.djoumessi@gmail.com">romel.djoumessi@gmail.com</a>) — <span class="ac">[À COMPLÉTER — forme juridique, numéro d'immatriculation et adresse du siège]</span>.</p>
+  <p>Contact : <a href="mailto:romel.djoumessi@gmail.com">romel.djoumessi@gmail.com</a> · Données personnelles : voir la <a href="privacy-policy.html">politique de confidentialité</a>.</p>
+
+  <h2>3. Description du service</h2>
+  <p>HabaShop est un logiciel en ligne (SaaS) de gestion pour commerces de détail : caisse, catalogue et stock, clients et fidélité, achats et fournisseurs, ressources humaines et paie, dépenses, rapports.</p>
+  <h3>3.1 Ce que le service ne fait pas, à ce jour</h3>
+  <p>Ces limites sont énoncées parce qu'elles conditionnent l'usage attendu :</p>
+  <ul>
+    <li><strong>Aucun encaissement en ligne n'est opérationnel.</strong> Les intégrations de paiement mobile sont développées mais les comptes marchands ne sont pas ouverts : aucun paiement réel ne transite par le service. Les paiements enregistrés dans la caisse sont des <em>saisies</em> du commerçant, pas des transactions traitées par HabaShop.</li>
+    <li><strong>La caisse web exige une connexion.</strong> Il n'existe pas de persistance locale des ventes dans le navigateur : hors réseau, l'encaissement n'aboutit pas.</li>
+    <li><strong>L'application mobile n'est pas publiée.</strong> Les fonctions annoncées comme mobiles ne sont pas disponibles au public tant que la publication n'a pas eu lieu.</li>
+  </ul>
+
+  <h2>4. Compte et période d'essai</h2>
+  <p>L'inscription ouvre une période d'essai de <strong>14 jours</strong>, sans communication de moyen de paiement. À l'issue de cette période, l'accès aux fonctions facturées est suspendu tant qu'aucun abonnement n'est activé ; les données du Client sont conservées dans les conditions de l'article 9.</p>
+  <p>Le Client est responsable de la confidentialité de ses identifiants et des actions effectuées depuis son compte. Il lui appartient de gérer les droits des utilisateurs qu'il invite dans sa boutique.</p>
+
+  <h2>5. Abonnements et tarifs</h2>
+  <p>Les tarifs en vigueur, exprimés en francs CFA (XOF) <span class="ac">[À COMPLÉTER — hors taxes ou toutes taxes comprises, et régime de TVA applicable]</span>, sont :</p>
+  <ul>
+    <li><strong>Starter</strong> — 8 000 FCFA par mois, ou 80 000 FCFA par an.</li>
+    <li><strong>Business</strong> — 25 000 FCFA par mois, ou 250 000 FCFA par an.</li>
+    <li><strong>Enterprise</strong> — sur devis.</li>
+  </ul>
+  <p>L'engagement annuel est facturé 10 mois pour douze mois d'usage.</p>
+  <p>Les tarifs peuvent être modifiés. Toute modification est notifiée au Client et ne s'applique qu'à compter de la période de facturation suivante.</p>
+
+  <h2>6. Facturation et paiement</h2>
+  <p>Le règlement s'effectue par les moyens proposés lors de la souscription. À ce jour, l'activation d'un abonnement est traitée manuellement par l'éditeur après demande du Client : aucun prélèvement automatique n'est en place.</p>
+  <p>Un compte peut prendre les états suivants : essai, actif, paiement en attente, suspendu, résilié. En cas de défaut de paiement, l'éditeur peut suspendre l'accès après <span class="ac">[À COMPLÉTER — délai de relance avant suspension]</span>.</p>
+
+  <h2>7. Obligations du Client</h2>
+  <p>Le Client s'engage à :</p>
+  <ul>
+    <li>fournir des informations exactes lors de l'inscription et les tenir à jour ;</li>
+    <li>n'utiliser le service que dans le cadre d'une activité licite, et respecter la réglementation applicable à son commerce — notamment en matière fiscale, de facturation et de conservation des pièces comptables ;</li>
+    <li>ne pas tenter d'accéder aux données d'une autre boutique ;</li>
+    <li>ne pas soumettre le service à une charge manifestement anormale, ni contourner les limites d'usage.</li>
+  </ul>
+  <h3>7.1 Données des clients du commerçant</h3>
+  <p>Le Client enregistre dans HabaShop des données concernant ses propres clients (identité, téléphone, historique d'achat). Il en demeure <strong>responsable de traitement</strong> : il lui revient de disposer d'une base légale, d'informer les personnes concernées et de répondre à leurs demandes. L'éditeur agit comme sous-traitant pour ces données.</p>
+
+  <h2>8. Données personnelles</h2>
+  <p>Le traitement des données personnelles est décrit dans la <a href="privacy-policy.html">politique de confidentialité</a>, qui fait partie intégrante des présentes conditions.</p>
+
+  <h2>9. Disponibilité, sauvegarde et données</h2>
+  <p>L'éditeur met en œuvre les moyens raisonnables pour assurer la disponibilité du service, sans engagement de continuité : <strong>aucun niveau de disponibilité n'est garanti</strong> à ce jour. Des interruptions pour maintenance ou pour cause externe (hébergeur, réseau, fournisseur tiers) peuvent survenir.</p>
+  <p>Le Client peut exporter ses données depuis l'application à tout moment. Il lui est recommandé de conserver ses propres copies des documents dont la loi lui impose la conservation.</p>
+
+  <h2>10. Responsabilité</h2>
+  <p>Le service est fourni en l'état. L'éditeur ne peut être tenu responsable des conséquences d'une saisie erronée par le Client, d'une perte de données imputable à un tiers ou au Client, ni d'un manque à gagner résultant d'une indisponibilité.</p>
+  <p>Les chiffres produits par le service (rapports, marges, bulletins de paie, déclarations) sont des aides à la décision : leur exactitude dépend des données saisies et des paramètres choisis par le Client, qui en conserve la responsabilité. <span class="ac">[À COMPLÉTER — plafond de responsabilité retenu]</span>.</p>
+
+  <h2>11. Suspension, résiliation et suppression du compte</h2>
+  <p>Le Client peut résilier son abonnement à tout moment ; l'abonnement reste actif jusqu'au terme de la période payée, sans remboursement au prorata <span class="ac">[À COMPLÉTER — sauf mention contraire à retenir]</span>.</p>
+  <p>L'éditeur peut suspendre ou résilier un compte en cas de défaut de paiement, de manquement aux présentes conditions, ou d'usage manifestement illicite, après mise en demeure restée sans effet sauf urgence.</p>
+  <p>Le Client peut demander la suppression définitive de son compte depuis l'application ou par écrit à <a href="mailto:romel.djoumessi@gmail.com">romel.djoumessi@gmail.com</a>. La suppression est irréversible : elle efface le compte et les données associées, sous réserve des durées de conservation légales décrites dans la politique de confidentialité. La procédure complète est décrite sur la <a href="account-deletion.html">page de suppression de compte</a>.</p>
+
+  <h2>12. Propriété intellectuelle</h2>
+  <p>Le logiciel, sa marque et ses éléments graphiques demeurent la propriété de l'éditeur. L'abonnement confère un droit d'usage personnel, non exclusif et non cessible, pour la durée de l'abonnement.</p>
+  <p>Les données saisies par le Client restent sa propriété. L'éditeur ne les exploite que pour fournir le service.</p>
+
+  <h2>13. Modification des conditions</h2>
+  <p>Les présentes conditions peuvent être modifiées. Le Client en est informé et dispose d'un délai raisonnable pour résilier s'il refuse les nouvelles conditions. La date de dernière mise à jour figure en tête de ce document.</p>
+
+  <h2>14. Droit applicable et litiges</h2>
+  <p>Les présentes conditions sont régies par <span class="ac">[À COMPLÉTER — droit applicable]</span>. En cas de différend, les parties rechercheront une solution amiable avant toute action. À défaut, compétence est attribuée à <span class="ac">[À COMPLÉTER — juridiction compétente]</span>.</p>
+
+  <h2>15. Contact</h2>
+  <p>Toute question relative aux présentes conditions peut être adressée à <a href="mailto:romel.djoumessi@gmail.com">romel.djoumessi@gmail.com</a>.</p>
+
+  <footer>HabaShop · Conditions générales · v1.0 · Août 2026</footer>
+</div>
+</body>
+</html>
