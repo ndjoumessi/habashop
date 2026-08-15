@@ -146,6 +146,84 @@ describe('aucun nouveau texte clair sur une surface verte trop claire', () => {
     }
     expect([...new Set(fautives)]).toEqual([])
   })
+  it('⚠️ ni BLANC HÉRITÉ d’une classe sur un fond vert posé en ligne', () => {
+    // TROISIÈME voie, et la plus discrète : la couleur vient de la CLASSE, le fond de
+    // l'objet de style. C'est par là qu'`OrderDetailModal` avait échappé au comptage initial
+    // des boutons verts — `className="btn btn-primary"` (blanc) avec un dégradé vert
+    // surchargé en ligne. Sans ce cas, le verrou EMPÊCHE l'ajout d'un défaut écrit d'une
+    // seule façon ; il ne PROUVE toujours pas l'absence.
+    //
+    // ⚠️ ON APPARIE L'OBJET DE STYLE, on ne lit pas une fenêtre de caractères. Première
+    // version fausse : une fenêtre de 160 signes après `background:` ramassait le
+    // `color:'#25D366'` déclaré JUSTE APRÈS et le jugeait comme un fond. `SectionCatalog`
+    // était accusé à tort — il redéfinit sa couleur EN LIGNE, donc elle gagne sur la classe.
+    const nuCss = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+    const blanches = new Set<string>()
+    for (const r of nuCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (!/color\s*:\s*(#fff(fff)?|white)\b/i.test(r[2])) continue
+      for (const s of r[1].split(',')) {
+        const c = s.trim()
+        if (c.startsWith('.') && !c.includes(':') && !c.includes(' ')) blanches.add(c.slice(1))
+      }
+    }
+    // COUVERTURE : sans classes blanches, la boucle ci-dessous jugerait sur le vide.
+    expect(blanches.size).toBeGreaterThanOrEqual(3)
+
+    const fautifs: string[] = []
+    let apparies = 0
+    for (const f of FICHIERS) {
+      const txt = readFileSync(f, 'utf8')
+      for (const m of txt.matchAll(/className="([^"]+)"/g)) {
+        if (!m[1].split(/\s+/).some(c => blanches.has(c))) continue
+        // l'objet `style={{…}}` de CE même élément : le premier avant le `>` fermant
+        const suite = txt.slice(m.index!, m.index! + 900)
+        const s0 = suite.indexOf('style={{')
+        if (s0 === -1) continue
+        let d = 0, fin2 = -1
+        for (let k = s0 + 6; k < suite.length; k++) {
+          if (suite[k] === '{') d++
+          else if (suite[k] === '}') { d--; if (d === 0) { fin2 = k; break } }
+        }
+        if (fin2 === -1) continue
+        const obj = suite.slice(s0 + 6, fin2 + 1)
+        apparies++
+        // Une `color` déclarée EN LIGNE écrase celle de la classe : plus de blanc hérité.
+        if (/\bcolor\s*:/.test(obj)) continue
+        for (const b of obj.matchAll(/(?:background|backgroundColor|backgroundImage)\s*:/g)) {
+          // ⚠️ LA VALEUR SE LIT EN RESPECTANT LES PARENTHÈSES, jamais en découpant sur la
+          // virgule : `linear-gradient(135deg,var(--acc2),#059669)` en contient DEUX, et un
+          // `[^,}]*` s'arrête à « 135deg » — avant la moindre couleur. C'est la faute qui a
+          // laissé ce cas passer VERT à son premier sabotage, et c'est la deuxième fois
+          // qu'elle est commise dans ce chantier.
+          const valeur = (() => {
+            let prof = 0
+            for (let k = b.index! + b[0].length; k < obj.length; k++) {
+              const ch = obj[k]
+              if (ch === '(') prof++
+              else if (ch === ')') prof--
+              else if ((ch === ',' || ch === '}') && prof === 0) return obj.slice(b.index! + b[0].length, k)
+            }
+            return obj.slice(b.index! + b[0].length)
+          })()
+          if (/color-mix/i.test(valeur)) continue   // teinte translucide : non jugeable statiquement
+          const couleurs = [...valeur.matchAll(/#[0-9A-Fa-f]{6}/g)].map(x => x[0])
+          for (const v of valeur.matchAll(/var\(--([\w-]+)\)/g)) {
+            try { couleurs.push(...hexesDe(token(v[1]))) } catch { /* hors feuille */ }
+          }
+          for (const c of couleurs) {
+            const [rr, gg, bb] = hex(c)
+            if (gg > rr && gg > bb && gg > 90 && ratio(hex('#FFFFFF'), hex(c)) < 4.5) {
+              fautifs.push(`${f.replace(SRC, 'src')} → ${c}`)
+            }
+          }
+        }
+      }
+    }
+    // COUVERTURE — sans objet apparié, « 0 fautif » ne vérifierait rien.
+    expect(apparies).toBeGreaterThan(5)
+    expect([...new Set(fautifs)]).toEqual([])
+  })
+
   it('chaque paire « fond vert + texte clair » atteint 4,5:1', () => {
     const FOND = /(?:background|backgroundColor|backgroundImage)\s*:/g
     // ⚠️ Le blanc est cherché PARTOUT dans l'objet, ternaire compris : c'est la forme qui

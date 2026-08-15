@@ -232,7 +232,7 @@ html,body,#root {
   font-size:var(--fs-label); font-weight:var(--fw-regular); min-height:var(--touch-min);
 }
 .btn-ghost:hover,.mini-btn:hover {
-  background:rgba(255,255,255,.08); border-color:var(--border2); color:var(--text)
+  background:color-mix(in srgb, var(--text) 8%, transparent); border-color:var(--border2); color:var(--text)
 }
 /* ⚠️ RETOUR D'APPUI — il n'existait que sur `.btn-primary` et les tuiles produit : les
    boutons les plus employés du produit (`.btn-ghost` 81 usages, `.mini-btn` 61) ne
@@ -262,7 +262,7 @@ html,body,#root {
   background:rgba(255,255,255,.04); border:1px solid var(--border);
   color:var(--text3); flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
 }
-.btn-icon:hover { background:rgba(255,255,255,.08); color:var(--text) }
+.btn-icon:hover { background:color-mix(in srgb, var(--text) 8%, transparent); color:var(--text) }
 
 /* ── Inputs ── */
 .input {
@@ -382,7 +382,7 @@ table { width:100%; border-collapse:collapse; font-size:13px }
 thead tr { background:var(--bg4); border-bottom:1px solid var(--border) }
 th { padding:10px 14px; text-align:left; font-size:11px; font-weight:var(--fw-regular); text-transform:uppercase; letter-spacing:.6px; color:var(--text3); white-space:nowrap }
 tbody tr { border-bottom:1px solid rgba(255,255,255,.04); transition:background .1s }
-tbody tr:hover { background:rgba(255,255,255,.025) }
+tbody tr:hover { background:color-mix(in srgb, var(--text) 3%, transparent) }
 tbody tr:last-child { border-bottom:none }
 td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 .td-bold { font-weight:var(--fw-semibold); color:var(--text) }
@@ -598,7 +598,7 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 /* ── Activity ── */
 .act-list { display:flex; flex-direction:column; gap:9px }
 .act-item { display:flex; align-items:center; gap:11px; padding:6px 8px; border-radius:8px; transition:.12s }
-.act-item:hover { background:rgba(255,255,255,.025) }
+.act-item:hover { background:color-mix(in srgb, var(--text) 3%, transparent) }
 .act-ic { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0 }
 .act-ic.sale { background:rgba(14,196,126,.15) }
 .act-ic.stock { background:rgba(240,165,0,.15) }
