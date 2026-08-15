@@ -48,7 +48,8 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
             <a key={it.target} href={`#${it.target}`}
               onClick={e => { e.preventDefault(); scrollTo(it.target) }}
               style={{
-                padding: '7px 14px', borderRadius: 99,
+                padding: '7px 14px', minHeight: 'var(--touch-min)', borderRadius: 99,
+                display: 'inline-flex', alignItems: 'center',
                 color: D.text2, fontSize: 'var(--fs-sm)', fontWeight: 600,
                 textDecoration: 'none', cursor: 'pointer', transition: 'color .15s',
               }}
@@ -103,7 +104,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
             className="lp-nav-login"
             aria-label={lp.nav_login}
             style={{
-              padding: '8px 16px', borderRadius: 10, background: 'transparent',
+              padding: '8px 16px', minHeight: 'var(--touch-min)', borderRadius: 10, background: 'transparent',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               border: `1px solid ${D.border2}`, color: D.text2,
               fontSize: 'var(--fs-sm)', fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
@@ -124,7 +125,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
           <button type="button" onClick={() => navigate('/signup')}
             className="lp-nav-cta-signup"
             style={{
-              padding: '8px 18px', borderRadius: 10,
+              padding: '8px 18px', minHeight: 'var(--touch-min)', borderRadius: 10,
               background: `linear-gradient(135deg,${D.p},${D.p2})`,
               border: 'none', color: '#fff', fontSize: 'var(--fs-sm)', fontWeight: 800,
               cursor: 'pointer', fontFamily: FONT,
@@ -160,7 +161,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
         @media (max-width: 640px) {
           .lp-nav-login-txt  { display: none !important; }
           .lp-nav-login-ico  { display: inline-flex !important; }
-          .lp-nav-login      { padding: 8px 10px !important; }
+          .lp-nav-login      { padding: 8px 10px !important; min-width: var(--touch-min); }
           .lp-nav-wordmark   { display: none !important; }
           .lp-selectors > select { padding: 6px 20px 6px 7px !important; }
         }

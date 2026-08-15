@@ -170,7 +170,7 @@ export default function PhoneInputWithCountry({
           aria-label={lang === 'en' ? 'Choose country dial code' : lang === 'es' ? 'Elegir prefijo del país' : lang === 'it' ? 'Scegli prefisso paese' : "Choisir l'indicatif pays"}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            padding: '0 10px',
+            padding: '0 10px', minHeight: 'var(--touch-min)',
             background: 'var(--bg3)',
             border: 'none',
             borderRight: '1px solid var(--border)',

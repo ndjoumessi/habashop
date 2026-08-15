@@ -57,7 +57,7 @@ export default function LandingCurrencies({ lp, i, lang, setLang }: Props) {
           {languageChips.map(l => (
             <button key={l.code} type="button" onClick={() => setLang(l.code)}
               style={{
-                padding: '8px 16px', borderRadius: 99,
+                padding: '8px 16px', minHeight: 'var(--touch-min)', borderRadius: 99,
                 background: lang === l.code ? 'rgba(108,71,255,.16)' : 'rgba(108,71,255,.06)',
                 border: `1px solid ${lang === l.code ? 'rgba(108,71,255,.4)' : 'rgba(108,71,255,.18)'}`,
                 fontSize: 'var(--fs-sm)', fontWeight: 700, color: D.p3,

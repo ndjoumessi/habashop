@@ -206,6 +206,7 @@ export default function LoginPage() {
           display: 'inline-flex', alignItems: 'center', gap: 7, width: 'fit-content',
           fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text3)',
           textDecoration: 'none', transition: 'color .15s',
+          padding: '12px 6px', margin: '-12px -6px',
         }}>
           <ArrowLeft size={15} strokeWidth={2.4} />
           {i('Retour à l\'accueil','Back to home','Volver al inicio','Torna alla home')}
@@ -374,6 +375,7 @@ export default function LoginPage() {
           fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text3)',
           textDecoration: 'none', marginBottom: 18,
           transition: 'color .15s',
+          padding: '12px 6px', marginLeft: -6, marginRight: -6, marginTop: -12,
         }}>
           <ArrowLeft size={15} strokeWidth={2.4} />
           {i('Retour à l\'accueil','Back to home','Volver al inicio','Torna alla home')}
@@ -383,6 +385,7 @@ export default function LoginPage() {
           {/* Logo repris en mobile, où le volet gauche est masqué */}
           <Link to="/" className="login-mobile-logo" aria-label="HabaShop" style={{
             display: 'none', alignItems: 'center', gap: 10, marginBottom: 20, textDecoration: 'none', width: 'fit-content',
+            minHeight: 'var(--touch-min)',
           }}>
             <span style={{ width: 34, height: 34, borderRadius: 10, overflow: 'hidden', display: 'flex' }}><LogoMark /></span>
             <span style={{ fontSize: 'var(--fs-title)', fontWeight: 700, color: 'var(--text)', letterSpacing: '-.02em' }}>HabaShop</span>

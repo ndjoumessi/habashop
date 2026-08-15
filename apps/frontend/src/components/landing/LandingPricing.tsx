@@ -88,7 +88,7 @@ export default function LandingPricing({ lp, i, navigate }: Props) {
             <button key={p.id} type="button" onClick={() => setPeriod(p.id)}
               aria-pressed={period === p.id}
               style={{
-                padding: '8px 18px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                padding: '8px 18px', minHeight: 'var(--touch-sm)', borderRadius: 9, border: 'none', cursor: 'pointer',
                 fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)', fontWeight: 700,
                 background: period === p.id ? 'var(--grad-p)' : 'transparent',
                 color: period === p.id ? '#fff' : 'var(--text2)',

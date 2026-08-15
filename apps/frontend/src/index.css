@@ -113,8 +113,9 @@
      une mise en conformité, c'est une décision d'ERGONOMIE — marché Afrique de
      l'Ouest, Android bas de gamme, écrans 360–375px, usage au pouce en caisse.
      ⚠️ --touch-sm (40) est une CONCESSION DE DENSITÉ, réservée aux contrôles SERRÉS
-     À L'INTÉRIEUR d'un panneau : .btn-sm, et la bascule grille/liste du Stock. Elle ne
-     doit pas fuir vers les boutons de premier plan. 40 reste au-dessus des 36 d'avant,
+     À L'INTÉRIEUR d'un panneau : .btn-sm, la bascule grille/liste du Stock, et la
+     bascule Mensuel/Annuel de la landing (segmentée, dans un conteneur à padding:4).
+     Elle ne doit pas fuir vers les boutons de premier plan. 40 reste au-dessus des 36 d'avant,
      et au-dessus du minimum WCAG AA 2.5.8 (24). Aucune valeur sous 40 n'est légitime
      ici — le verrou touchTargets.test.ts le fige.
      ⚠️ CE VERROU NE VOIT QUE LES CLASSES CSS. Trois boutons de StockInventory étaient

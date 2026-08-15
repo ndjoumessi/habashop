@@ -204,7 +204,7 @@ export default function SignupPage() {
               <>
                 {tx.login_q}{' '}
                 <button type="button" onClick={() => navigate('/login')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: D.p3, fontSize: 'var(--fs-sm)', fontWeight: 700, fontFamily: FONT, textDecoration: 'underline' }}>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: D.p3, fontSize: 'var(--fs-sm)', fontWeight: 700, fontFamily: FONT, textDecoration: 'underline', padding: '14px 4px', margin: '-14px -4px' }}>
                   {tx.login_link}
                 </button>
               </>

@@ -33,6 +33,7 @@ export default function LandingFooter({ lp }: Props) {
               <a key={link} href="#" style={{
                 fontSize: 'var(--fs-label)', color: D.text2, textDecoration: 'none',
                 transition: 'color .15s', cursor: 'pointer',
+                padding: '12px 8px', margin: '-12px -8px',
               }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#fff'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = D.text2}
