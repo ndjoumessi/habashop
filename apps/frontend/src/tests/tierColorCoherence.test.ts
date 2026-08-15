@@ -111,11 +111,11 @@ describe('règles CSS supprimées — elles étaient MORTES, elles le restent', 
     expect(FICHIERS.length).toBeGreaterThan(150)
   })
 
-  it('`.stat-chip`, `.tabs-bar`, `.tab-btn` et `.btn-success` ne sont ni définies ni rendues', () => {
+  it('`.stat-chip`, `.tabs-bar`, `.tab-btn`, `.btn-success` et `.danger-btn` ne sont ni définies ni rendues', () => {
     // ⚠️ Les DEUX sens comptent. Réintroduire la règle sans consommateur reconstitue du CSS
     // mort ; réintroduire un consommateur sans la règle rend un élément sans style — et
     // `verify:classes`, qui inspecte le dist/, échouerait sur ce second cas seulement.
-    for (const c of ['stat-chip', 'tabs-bar', 'tab-btn', 'btn-success']) {
+    for (const c of ['stat-chip', 'tabs-bar', 'tab-btn', 'btn-success', 'danger-btn']) {
       const dansCss = new RegExp(`\\.${c}[\\s,.:{]`).test(CSS)
       const rendu = FICHIERS.filter(f => readFileSync(f, 'utf8').includes(c))
       expect({ c, dansCss, rendu: rendu.map(f => f.replace(SRC, 'src')) })

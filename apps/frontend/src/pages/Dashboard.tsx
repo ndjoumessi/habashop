@@ -15,6 +15,7 @@ import { normCat } from '@/utils/normCat'
 import { pourcentagesEntiers } from '@/lib/pourcentages'
 import { payModeLabel } from '@/components/pos/posShared'
 import ConsolidatedShops from '@/components/dashboard/ConsolidatedShops'
+import ChartDataTable from '@/components/charts/ChartDataTable'
 import {
   noSalesInPeriodLabel, noSalesThisMonthLabel, salesChartTitle, periodOptionLabel,
   isChartPeriod, buildSalesSeries, salesPointLabel, pickAxisTicks, CHART_PERIODS, type ChartPeriod,
@@ -477,11 +478,27 @@ export default function Dashboard() {
               {noSalesInPeriodLabel(reportPeriod, lang)}
             </div>
           ) : (
+          <>
           <Suspense fallback={<Skeleton height={190} count={1} radius={12} />}>
             <DashSalesArea data={salesChart} abbr={abbr} tooltip={<CustomTooltip />}
               ticks={pickAxisTicks(salesChart)}
               tickFormatter={(ts: number) => salesPointLabel(new Date(ts), reportPeriod, lang)} />
           </Suspense>
+          {/* Équivalent textuel : les valeurs de la courbe n'existaient que dans le
+              tooltip, donc à la souris seulement. Cf. `ChartDataTable`. */}
+          <ChartDataTable
+            resume={lang === 'en' ? 'View chart data' : lang === 'es' ? 'Ver los datos del gráfico' : lang === 'it' ? 'Vedi i dati del grafico' : 'Voir les données du graphique'}
+            colonnes={[
+              lang === 'en' ? 'Date' : lang === 'es' ? 'Fecha' : lang === 'it' ? 'Data' : 'Date',
+              lang === 'en' ? 'Sales' : lang === 'es' ? 'Ventas' : lang === 'it' ? 'Vendite' : 'Ventes',
+            ]}
+            lignes={salesChart.map((pt: any, i: number) => ({
+              cle: `${pt.ts}-${i}`,
+              label: salesPointLabel(new Date(pt.ts), reportPeriod, lang),
+              valeur: fmt(pt.ventes),
+            }))}
+          />
+          </>
           )}
           </div>
         </div>

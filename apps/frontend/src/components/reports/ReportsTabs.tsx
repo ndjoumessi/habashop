@@ -2,6 +2,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector, AreaChart, A
 import { Trophy, Receipt, CreditCard, Wallet, DollarSign } from 'lucide-react'
 import { t } from '@/stores/appStore'
 import { useThemeColor } from '@/hooks/useThemeColor'
+import ChartDataTable from '@/components/charts/ChartDataTable'
 import { RADIAN } from '@/components/reports/reportsShared'
 import InventoryInsights from '@/components/reports/InventoryInsights'
 import { StockKpis, HrKpis, ClientSegments } from '@/components/reports/ReportsLiveKpis'
@@ -158,6 +159,16 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
               <Area dataKey="val" stroke="#6C47FF" strokeWidth={2.5} fill="url(#areaGradCA)" dot={false} activeDot={{ r:5, fill:'#6C47FF', strokeWidth:0 }} />
             </AreaChart>
           </ResponsiveContainer>
+          {/* Équivalent textuel : les valeurs de la courbe n'existaient que dans le tooltip,
+              donc à la souris seulement. Cf. `ChartDataTable`. */}
+          <ChartDataTable
+            resume={lang === 'en' ? 'View chart data' : lang === 'es' ? 'Ver los datos del gráfico' : lang === 'it' ? 'Vedi i dati del grafico' : 'Voir les données du graphique'}
+            colonnes={[
+              lang === 'en' ? 'Day' : lang === 'es' ? 'Día' : lang === 'it' ? 'Giorno' : 'Jour',
+              lang === 'en' ? 'Revenue' : lang === 'es' ? 'Ingresos' : lang === 'it' ? 'Ricavi' : 'CA',
+            ]}
+            lignes={chartData.map((d: any, i: number) => ({ cle: `${d.day}-${i}`, label: String(d.day), valeur: fmt(d.val) }))}
+          />
         </div>
 
         {/* Modes paiement — donut premium */}

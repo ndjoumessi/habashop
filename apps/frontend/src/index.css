@@ -234,6 +234,17 @@ html,body,#root {
 .btn-ghost:hover,.mini-btn:hover {
   background:rgba(255,255,255,.08); border-color:var(--border2); color:var(--text)
 }
+/* ⚠️ RETOUR D'APPUI — il n'existait que sur `.btn-primary` et les tuiles produit : les
+   boutons les plus employés du produit (`.btn-ghost` 81 usages, `.mini-btn` 61) ne
+   donnaient AUCUN signe qu'on venait de les toucher. Sur mobile, où il n'y a pas de survol,
+   c'est le seul retour possible avant que l'écran ne réagisse.
+   ⚠️ `color-mix` sur `--text` et non un `rgba(255,255,255,…)` : ce dernier est INVISIBLE
+   en thème clair. Le survol souffre du même défaut — il est plus ancien, il n'est pas
+   corrigé ici, et c'est dit plutôt que tu. */
+.btn-ghost:active,.mini-btn:active,.btn-danger:active,
+.btn-icon:active,.icon-btn:active,.footer-btn:active,.stock-action:active {
+  background:color-mix(in srgb, var(--text) 14%, transparent);
+}
 .btn-danger {
   background:rgba(255,59,92,.1); border:1px solid rgba(255,59,92,.25);
   color:var(--danger); border-radius:var(--r-md); padding:7px 14px;
@@ -252,14 +263,6 @@ html,body,#root {
   color:var(--text3); flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
 }
 .btn-icon:hover { background:rgba(255,255,255,.08); color:var(--text) }
-.danger-btn {
-  display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:9px 18px;
-  background:rgba(255,59,92,.1); border:1px solid rgba(255,59,92,.25);
-  border-radius:var(--r-md); color:var(--danger); font-family:var(--font);
-  font-size:var(--fs-sm); font-weight:var(--fw-semibold); cursor:pointer; transition:all .15s;
-  min-height:var(--touch-min);
-}
-.danger-btn:hover { background:rgba(255,59,92,.18); border-color:rgba(255,59,92,.4) }
 
 /* ── Inputs ── */
 .input {
@@ -301,11 +304,24 @@ textarea.input { resize:vertical; min-height:80px; line-height:1.6 }
   background:var(--header-bg); backdrop-filter:blur(12px); z-index:var(--z-sticky);
   display:flex; align-items:center; padding:0 20px; gap:10px;
 }
-.app-content,.page-content { flex:1; overflow-y:auto; padding:var(--sp-5); background:var(--bg) }
+/* ⚠️ ZONE SÛRE — `viewport-fit=cover` est posé dans `index.html` depuis toujours, donc
+   `env(safe-area-inset-*)` est LU par le navigateur ; il ne l'était simplement JAMAIS
+   (0 occurrence mesurée le 2026-08-15). Sur un téléphone à encoche ou à barre de geste, le
+   contenu passait dessous.
+   ⚠️ `max()` et jamais une addition : `env()` vaut 0 sur un écran sans encoche, donc le
+   padding d'origine est conservé partout ailleurs. Une addition aurait épaissi TOUS les
+   écrans pour corriger une minorité d'appareils. */
+.app-content,.page-content {
+  flex:1; overflow-y:auto; background:var(--bg);
+  padding:var(--sp-5);
+  padding-bottom:max(var(--sp-5), env(safe-area-inset-bottom));
+  padding-left:max(var(--sp-5), env(safe-area-inset-left));
+  padding-right:max(var(--sp-5), env(safe-area-inset-right));
+}
 /* POS plein écran (item 11) : la caisse gère son propre layout interne — sans ça,
    le padding du conteneur + height:calc(100vh-54px) créent ~2×padding de débordement
    permanent (CTA Encaisser coupé). */
-.page-content:has(.pos-fullbleed) { padding:0; overflow:hidden }
+.page-content:has(.pos-fullbleed) { padding:0; padding-bottom:env(safe-area-inset-bottom); overflow:hidden }
 /* Champ montant sans spinners natifs (feuille d'encaissement — maquette 02) */
 .no-spin::-webkit-outer-spin-button, .no-spin::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
 .no-spin { -moz-appearance:textfield; appearance:textfield }
@@ -413,7 +429,8 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 :root[data-theme="light"] .badge-gray,   :root[data-theme="light"] .pill.gray   { color:#63637B }
 
 /* ── Modals ── */
-.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:var(--z-modal); padding:20px }
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:var(--z-modal);
+  padding:20px; padding-bottom:max(20px, env(safe-area-inset-bottom)); padding-top:max(20px, env(safe-area-inset-top)) }
 .modal-box {
   background:var(--bg3); border:1px solid var(--border2); border-radius:var(--r-2xl);
   width:100%; max-width:520px; max-height:92vh; overflow:hidden;
@@ -756,7 +773,7 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
   .modal-box { max-width:100%; max-height:90vh }
 }
 @media (max-width:768px) {
-  #sidebar.mobile-open { display:flex!important; position:fixed; left:0; top:0; bottom:0; z-index:300; width:var(--sidebar)!important }
+  #sidebar.mobile-open { display:flex!important; position:fixed; left:0; top:0; bottom:0; z-index:300; width:var(--sidebar)!important; padding-bottom:env(safe-area-inset-bottom) }
   .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:299 }
   .sidebar-overlay.open { display:block }
   .page-content { padding:12px 16px }

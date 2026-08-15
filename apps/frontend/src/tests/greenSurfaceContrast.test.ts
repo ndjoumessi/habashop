@@ -122,6 +122,30 @@ describe('aucun nouveau texte clair sur une surface verte trop claire', () => {
     expect(ex[0][1]).toContain('d: 3')
   })
 
+  it('⚠️ AUCUNE RÈGLE CSS ne pose du blanc sur un vert trop clair', () => {
+    // ⚠️ Le cas suivant ne balaie que les objets `style={{…}}`. Il EMPÊCHAIT l'ajout sans
+    // PROUVER l'absence : une règle de la feuille pouvait porter le même défaut sans qu'il
+    // la voie. Inventaire fait le 2026-08-15 — 0 règle — et gardé ici.
+    const nuCss = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+    const fautives: string[] = []
+    for (const r of nuCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const sel = r[1], corps = r[2]
+      if (!/color\s*:\s*(#fff(fff)?|white)\b/i.test(corps)) continue
+      for (const f of corps.matchAll(/(?:background|background-color|background-image)\s*:([^;]*)/gi)) {
+        const couleurs = [...f[1].matchAll(/#[0-9A-Fa-f]{6}/g)].map(m => m[0])
+        for (const v of f[1].matchAll(/var\(--([\w-]+)\)/g)) {
+          try { couleurs.push(...hexesDe(token(v[1]))) } catch { /* hors feuille */ }
+        }
+        for (const c of couleurs) {
+          const [rr, gg, bb] = hex(c)
+          if (gg > rr && gg > bb && gg > 90 && ratio(hex('#FFFFFF'), hex(c)) < 4.5) {
+            fautives.push(`${sel.trim().slice(0, 40)} → ${c}`)
+          }
+        }
+      }
+    }
+    expect([...new Set(fautives)]).toEqual([])
+  })
   it('chaque paire « fond vert + texte clair » atteint 4,5:1', () => {
     const FOND = /(?:background|backgroundColor|backgroundImage)\s*:/g
     // ⚠️ Le blanc est cherché PARTOUT dans l'objet, ternaire compris : c'est la forme qui
