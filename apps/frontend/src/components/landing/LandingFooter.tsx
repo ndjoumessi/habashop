@@ -1,4 +1,5 @@
 import { Shield } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import LogoMark from '@/components/ui/LogoMark'
 import { copyrightLine } from '@/lib/publicYear'
 import { D } from './landingShared'
@@ -29,16 +30,42 @@ export default function LandingFooter({ lp }: Props) {
             <span style={{ fontSize: 'var(--fs-md)', fontWeight: 900, color: D.text }}>HabaShop</span>
           </div>
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
-            {lp.footer_links.map(link => (
-              <a key={link} href="#" style={{
+            {/**
+              * ⚠️ Ces trois liens étaient des `href="#"` — ils ne menaient NULLE PART, et un
+              * clic remontait simplement en haut de page. Un pied de page qui annonce des
+              * documents institutionnels sans les servir est une promesse fausse.
+              *
+              * ⚠️ « CGU » A ÉTÉ RETIRÉE, pas recâblée : AUCUN document de conditions
+              * générales n'existe dans ce dépôt — ni route (`App.tsx` n'a que `/privacy`),
+              * ni fichier (`legal/` ne contient que `privacy-policy.html`,
+              * `account-deletion.html` et son index). La pointer vers `/privacy` aurait
+              * présenté la politique de confidentialité comme des conditions de service :
+              * deux documents différents, et le lecteur n'aurait pas su qu'il lui en manque
+              * un. Rédiger des CGU est un acte juridique, pas un correctif d'interface.
+              * → À REMETTRE le jour où le document existe. Cf. aussi `SignupStep2`, où le
+              *   commerçant DÉCLARE les accepter à l'inscription.
+              *
+              * ⚠️ La cible n'est plus POSITIONNELLE : les libellés sont traduits, et une
+              * langue qui réordonnait ses entrées aurait fait pointer « Contact » vers
+              * `/privacy` sans que rien ne rougisse. Clé stable → cible.
+              */}
+            {([
+              { cle: 'privacy' as const, to: '/privacy',  externe: false },
+              { cle: 'contact' as const, to: 'mailto:contact@habashop.com', externe: true },
+            ]).map(({ cle, to, externe }) => {
+              const style = {
                 fontSize: 'var(--fs-label)', color: D.text2, textDecoration: 'none',
                 transition: 'color .15s', cursor: 'pointer',
                 padding: '12px 8px', margin: '-12px -8px',
-              }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#fff'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = D.text2}
-              >{link}</a>
-            ))}
+              } as const
+              const survol = {
+                onMouseEnter: (e: React.MouseEvent) => (e.currentTarget as HTMLElement).style.color = '#fff',
+                onMouseLeave: (e: React.MouseEvent) => (e.currentTarget as HTMLElement).style.color = D.text2,
+              }
+              return externe
+                ? <a key={cle} href={to} style={style} {...survol}>{lp.footer_links[cle]}</a>
+                : <Link key={cle} to={to} style={style} {...survol}>{lp.footer_links[cle]}</Link>
+            })}
           </div>
         </div>
         <div style={{ textAlign: 'center', fontSize: 'var(--fs-caption)', color: D.text4, paddingTop: 18, borderTop: `1px solid ${D.border}`, display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center', width: '100%' }}>

@@ -164,10 +164,29 @@ export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd,
                   onChange={e => setForm(f => ({ ...f, acceptTerms: e.target.checked }))}
                   style={{ display: 'none' }}/>
                 <span style={{ fontSize: 'var(--fs-label)', color: D.text2, lineHeight: 1.5 }}>
+                  {/**
+                    * ⚠️ LES DEUX LIENS ÉTAIENT DES `href="#"`. Le commerçant cochait « j'accepte »
+                    * DEUX documents dont AUCUN n'était atteignable : un consentement à des
+                    * conditions illisibles.
+                    *
+                    * · La politique de confidentialité EXISTE (`/privacy`, 247 lignes) → vrai
+                    *   lien, ouvert dans un NOUVEL ONGLET pour ne pas perdre le formulaire, et
+                    *   `stopPropagation` parce que ce texte vit dans un `<label>` : sans lui, le
+                    *   clic décocherait la case au moment même où on va lire ce qu'on accepte.
+                    * · Les CONDITIONS GÉNÉRALES n'existent NULLE PART — ni route, ni fichier dans
+                    *   `legal/`. Elles restent donc du TEXTE, pas un lien : promettre un document
+                    *   qu'on ne peut pas servir est pire que d'admettre qu'il manque.
+                    *   ⚠️ CE N'EST PAS UNE CORRECTION COMPLÈTE, et il ne faut pas la lire comme
+                    *   telle : la phrase demande toujours d'accepter des CGU inexistantes. Le
+                    *   correctif réel est de les RÉDIGER — acte juridique, décision de Nelson.
+                    *   Le lien mort masquait ce trou ; le texte nu le laisse voir.
+                    */}
                   {tx.terms_pre}
-                  <a href="#" style={{ color: D.p3, textDecoration: 'underline' }}>{tx.terms_a}</a>
+                  <span>{tx.terms_a}</span>
                   {tx.terms_and}
-                  <a href="#" style={{ color: D.p3, textDecoration: 'underline' }}>{tx.terms_b}</a>
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    style={{ color: D.p3, textDecoration: 'underline' }}>{tx.terms_b}</a>
                 </span>
               </label>
 

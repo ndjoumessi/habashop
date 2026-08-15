@@ -5,7 +5,12 @@ const { navigateMock, mockState } = vi.hoisted(() => ({
   navigateMock: vi.fn(),
   mockState: { lang: 'fr', currency: 'XOF', setLang: vi.fn(), setCurrency: vi.fn() },
 }))
-vi.mock('react-router-dom', () => ({ useNavigate: () => navigateMock }))
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => navigateMock,
+  // Le pied de page emploie <Link> depuis que « Confidentialité » pointe vraiment
+  // sur /privacy (elle était un href="#"). Même mock que login.anchor.
+  Link: ({ children, to, ...rest }: any) => <a href={to} {...rest}>{children}</a>,
+}))
 // store : useAppStore() sans sélecteur (LandingPage) ET avec sélecteur (useI18n) ; convertAmount réel
 vi.mock('@/stores/appStore', async (orig) => {
   const actual = await orig() as any

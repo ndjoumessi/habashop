@@ -196,7 +196,7 @@ export const LANDING_TRANSLATIONS = {
 
     // ── Pied de page (l'année est CALCULÉE, cf. lib/publicYear.ts) ──
     footer_tagline: 'Logiciel de gestion commerciale pour les boutiques d’Afrique',
-    footer_links: ['Confidentialité', 'CGU', 'Contact'],
+    footer_links: { privacy: 'Confidentialité', contact: 'Contact' },
   },
 
   en: {
@@ -297,7 +297,7 @@ export const LANDING_TRANSLATIONS = {
     cta_foot: '14-day trial · no card required · cancel any time',
 
     footer_tagline: 'Business management software for African shops',
-    footer_links: ['Privacy', 'Terms', 'Contact'],
+    footer_links: { privacy: 'Privacy', contact: 'Contact' },
   },
 
   es: {
@@ -398,7 +398,7 @@ export const LANDING_TRANSLATIONS = {
     cta_foot: '14 días de prueba · sin tarjeta · cancela cuando quieras',
 
     footer_tagline: 'Software de gestión comercial para comercios africanos',
-    footer_links: ['Privacidad', 'Términos', 'Contacto'],
+    footer_links: { privacy: 'Privacidad', contact: 'Contacto' },
   },
 
   it: {
@@ -499,7 +499,7 @@ export const LANDING_TRANSLATIONS = {
     cta_foot: '14 giorni di prova · nessuna carta · disdici quando vuoi',
 
     footer_tagline: 'Software gestionale per i negozi africani',
-    footer_links: ['Privacy', 'Termini', 'Contatto'],
+    footer_links: { privacy: 'Privacy', contact: 'Contatto' },
   },
 }
 
