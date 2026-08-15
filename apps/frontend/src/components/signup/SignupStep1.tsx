@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import { suggestedCurrencyForCountry } from '@/utils/countryCurrency'
-import { Store, User, Mail, MessageSquare, Globe, Coins, Search, Check, AlertCircle, ArrowRight } from 'lucide-react'
+import { Store, User, Mail, MessageSquare, Globe, Coins, Search, Check, AlertCircle, ArrowRight, ChevronDown } from 'lucide-react'
 import { D, FONT, COUNTRIES, inputBase, focusOn, focusOff, Label } from './signupShared'
 import type { ST, Lang, Currency } from './signupShared'
 
@@ -145,7 +145,7 @@ export default function SignupStep1({ tx, i, lang, form, setForm, currencyTouche
                         <span style={{ fontSize: 'var(--fs-md)' }}>{selectedCountry.flag}</span>
                         <span style={{ fontWeight: 600, fontSize: 'var(--fs-label)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedCountry.name}</span>
                       </div>
-                      <span style={{ fontSize: 'var(--fs-caption)', color: D.text3, transform: showCountry ? 'rotate(180deg)' : 'none', transition: 'transform .2s', display: 'inline-block', flexShrink: 0 }}>▼</span>
+                      <ChevronDown size={14} aria-hidden="true" style={{ color: D.text3, transform: showCountry ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }} />
                     </button>
 
                     {showCountry && (

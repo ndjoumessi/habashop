@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { dialCodeFor } from '@/lib/defaultMarket'
 import { useTenantCountry } from '@/hooks/useTenantDialCode'
+import { ChevronDown } from 'lucide-react'
 
 const COUNTRY_CODES = [
   { code:'+237', flag:'🇨🇲', country:'Cameroun',        iso:'CM' },
@@ -121,7 +122,7 @@ export default function PhoneInput({
       >
         <span style={{ fontSize:'var(--fs-md)' }}>{selectedCode.flag}</span>
         <span style={{ fontWeight:'var(--fw-regular)' }}>{selectedCode.code}</span>
-        <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>▼</span>
+        <ChevronDown size={14} aria-hidden="true" style={{ color:'var(--text3)', flexShrink:0 }} />
       </button>
 
       {/* Input numéro */}

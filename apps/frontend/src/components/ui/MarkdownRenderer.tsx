@@ -1,4 +1,5 @@
 import React from 'react'
+import { ChevronRight } from 'lucide-react'
 
 interface Props {
   content: string
@@ -132,10 +133,7 @@ export default function MarkdownRenderer({ content, style }: Props) {
               display: 'flex', gap: 8,
               alignItems: 'flex-start', fontSize: 'var(--fs-sm)',
             }}>
-              <span style={{
-                color: 'var(--p2)', flexShrink: 0,
-                marginTop: 2, fontSize: 'var(--fs-caption)',
-              }}>▶</span>
+              <ChevronRight size={14} aria-hidden="true" style={{ color: 'var(--p2)', flexShrink: 0, marginTop: 2 }} />
               <span style={{ color: 'var(--text2)', lineHeight: 1.6 }}>
                 {renderInline(item)}
               </span>

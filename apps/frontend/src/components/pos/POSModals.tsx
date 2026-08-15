@@ -1,5 +1,5 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
-import { X, Smartphone, AlertTriangle, AlertCircle, Loader2, TestTube, CreditCard, Coins, Waves, Wallet, Split, Check, Printer, Percent } from 'lucide-react'
+import { X, Smartphone, AlertTriangle, AlertCircle, Loader2, TestTube, CreditCard, Coins, Waves, Wallet, Split, Check, Printer, Percent, ChevronDown } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { t, CURRENCY_SYMBOLS, CURRENCY_DECIMALS, formatInCurrency } from '@/stores/appStore'
@@ -680,7 +680,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       >
                         <span style={{ fontSize:'var(--fs-lg)' }}>{waCountryFlag}</span>
                         <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)' }}>{waCountryCode}</span>
-                        <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', marginLeft:2 }}>▼</span>
+                        <ChevronDown size={14} aria-hidden="true" style={{ color:'var(--text3)', marginLeft:2, flexShrink:0 }} />
                       </button>
                       {showCountryPicker && (
                         <div
