@@ -148,10 +148,10 @@ export default function LoginPage() {
 
   const handleForgot = () => {
     toast(i(
-      'Contactez votre administrateur ou support@habashop.com pour réinitialiser votre mot de passe.',
-      'Contact your administrator or support@habashop.com to reset your password.',
-      'Contacta a tu administrador o support@habashop.com para restablecer tu contraseña.',
-      'Contatta il tuo amministratore o support@habashop.com per reimpostare la password.',
+      'Contactez votre administrateur ou romel.djoumessi@gmail.com pour réinitialiser votre mot de passe.',
+      'Contact your administrator or romel.djoumessi@gmail.com to reset your password.',
+      'Contacta a tu administrador o romel.djoumessi@gmail.com para restablecer tu contraseña.',
+      'Contatta il tuo amministratore o romel.djoumessi@gmail.com per reimpostare la password.',
     ), { duration: 5000 })
   }
 

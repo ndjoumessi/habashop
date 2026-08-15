@@ -57,7 +57,7 @@ export default function LandingPricing({ lp, i, navigate }: Props) {
   const ctaFor = (id: string, purchasable: boolean) =>
     purchasable
       ? { label: lp.try_free, run: () => navigate(`/signup?plan=${id}&period=${period}`) }
-      : { label: lp.contact_us, run: () => { window.location.href = 'mailto:contact@habashop.com' } }
+      : { label: lp.contact_us, run: () => { window.location.href = 'mailto:romel.djoumessi@gmail.com' } }
 
   return (
     <section id="section-pricing" style={{

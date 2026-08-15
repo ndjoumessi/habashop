@@ -17,10 +17,18 @@ import { PLANS, YEARLY_MONTHS } from '@/lib/plans'
  * unique — un prix écrit à la main dans des conditions de vente se périme au premier
  * changement de grille, et il se périme en silence.
  *
- * ⚠️ Divergence CONSTATÉE et non tranchée : `legal/privacy-policy.html` déclare
- * « Éditeur : HabaShop », `pages/Privacy.tsx` déclare « édité par Nelson Djoumessi ». Deux
- * documents publics, deux éditeurs. Ce fichier suit la page in-app, qui est celle vers
- * laquelle pointent le pied de page et le consentement d'inscription.
+ * ⚠️ L'ÉDITEUR ET SON CONTACT VIENNENT D'UNE SOURCE UNIQUE —
+ * `docs/shared-fixtures/publisher.json`, gardée par `publisherIdentity.test.ts`. Quatre
+ * surfaces publiques déclaraient DEUX éditeurs et DEUX adresses le 2026-08-15 :
+ * `legal/privacy-policy.html` disait « Éditeur : HabaShop » (un nom de PRODUIT n'est pas
+ * un éditeur), la page in-app disait « Nelson Djoumessi ».
+ *
+ * ⚠️ ET LES ADRESSES @habashop.com NE RECEVAIENT RIEN : le domaine est enregistré mais
+ * n'a AUCUN MX (mesuré sur deux résolveurs, témoin positif gmail.com). contact@, support@
+ * et privacy@ étaient des boîtes mortes — y compris celle que j'avais mise ici le matin
+ * même. Un document légal qui donne une adresse injoignable, c'est un lien mort sur la
+ * voie de recours. Le jour où le domaine aura ses MX, la fixture est le SEUL endroit à
+ * changer.
  */
 
 const A_COMPLETER: React.CSSProperties = {
@@ -96,7 +104,7 @@ export default function Terms() {
           adresse du siège</AC>.
         </p>
         <p>
-          Contact commercial : contact@habashop.com · Support : support@habashop.com ·
+          Contact : romel.djoumessi@gmail.com ·
           Données personnelles : voir la{' '}
           <a href="/privacy" style={{ color: '#6C47FF' }}>politique de confidentialité</a>.
         </p>
@@ -268,7 +276,7 @@ export default function Terms() {
         </p>
         <p>
           Le Client peut demander la suppression définitive de son compte depuis
-          l'application ou par écrit à support@habashop.com. La suppression est
+          l'application ou par écrit à romel.djoumessi@gmail.com. La suppression est
           irréversible : elle efface le compte et les données associées, sous réserve des
           durées de conservation légales décrites dans la politique de confidentialité.
         </p>
@@ -309,8 +317,8 @@ export default function Terms() {
         <h2>15. Contact</h2>
         <p>
           Toute question relative aux présentes conditions peut être adressée à{' '}
-          <a href="mailto:contact@habashop.com" style={{ color: '#6C47FF' }}>
-            contact@habashop.com
+          <a href="mailto:romel.djoumessi@gmail.com" style={{ color: '#6C47FF' }}>
+            romel.djoumessi@gmail.com
           </a>.
         </p>
       </section>

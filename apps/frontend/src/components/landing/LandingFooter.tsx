@@ -47,7 +47,7 @@ export default function LandingFooter({ lp }: Props) {
             {([
               { cle: 'privacy' as const, to: '/privacy',  externe: false },
               { cle: 'terms'   as const, to: '/terms',    externe: false },
-              { cle: 'contact' as const, to: 'mailto:contact@habashop.com', externe: true },
+              { cle: 'contact' as const, to: 'mailto:romel.djoumessi@gmail.com', externe: true },
             ]).map(({ cle, to, externe }) => {
               const style = {
                 fontSize: 'var(--fs-label)', color: D.text2, textDecoration: 'none',

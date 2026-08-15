@@ -1,0 +1,32 @@
+{
+  "_pourquoi": [
+    "SOURCE UNIQUE de l'identité de l'éditeur et de son adresse de contact PUBLIQUE.",
+    "",
+    "⚠️ DIVERGENCE MESURÉE le 2026-08-15, avant cette fixture : quatre surfaces publiques,",
+    "DEUX éditeurs et DEUX adresses. `legal/privacy-policy.html` déclarait « Éditeur :",
+    "HabaShop » (un nom de PRODUIT n'est pas un éditeur) avec privacy@habashop.com, quand",
+    "`pages/Privacy.tsx` déclarait « édité par Nelson Djoumessi » avec une adresse gmail.",
+    "Deux documents publics qui se contredisent sur qui s'engage.",
+    "",
+    "⚠️ ET LES ADRESSES @habashop.com NE REÇOIVENT RIEN. Mesuré sur deux résolveurs, avec",
+    "témoin positif (gmail.com rend ses MX) : le domaine est ENREGISTRÉ (A 193.158.2.130,",
+    "page de parking domaindiscount24) mais n'a AUCUN enregistrement MX. contact@,",
+    "support@ et privacy@ sont donc des boîtes mortes. Un document légal qui donne une",
+    "adresse injoignable ne vaut pas mieux qu'un lien mort — c'est le même défaut, sur la",
+    "voie de recours cette fois.",
+    "",
+    "→ `contact` porte donc l'adresse RÉELLEMENT JOIGNABLE. Le jour où habashop.com aura",
+    "  ses MX, cette fixture est le SEUL endroit à changer. C'est toute sa raison d'être.",
+    "",
+    "Verrou : `publisherIdentity.test.ts` compare cette fixture aux quatre surfaces, dont",
+    "les deux pages HTML de `legal/` qui vivent hors d'`apps/frontend`."
+  ],
+  "editeur": "Nelson Djoumessi",
+  "contact": "romel.djoumessi@gmail.com",
+  "surfaces": [
+    "legal/privacy-policy.html",
+    "legal/account-deletion.html",
+    "apps/frontend/src/pages/Privacy.tsx",
+    "apps/frontend/src/pages/Terms.tsx"
+  ]
+}
