@@ -468,7 +468,16 @@ export default function AdminDashboard() {
                À zéro « jamais activées » = BONNE nouvelle → état de succès (vert discret),
                pas une carte d'alerte avec un zéro géant. Le compte à rebours n'apparaît qu'≥1. */}
           {/* ══ MRR — le chiffre pour lequel cette console existe, et qui n'y était pas ══ */}
-          <div className="panel" style={{ marginBottom: 14 }}>
+          {/* ⚠️ LA BORNE EST SUR LE PANNEAU, pas seulement sur la rangée intérieure.
+              MESURÉ le 2026-08-15 à 2560 px : panneau 2512, contenu 947 → **1 533 px de
+              carte vide**, soit 36 % de remplissage. Une carte pleine largeur qui porte
+              trois blocs courts se lit comme une carte INACHEVÉE.
+              ⚠️ On la RÉTRÉCIT, on ne la REMPLIT pas : les KPI (segments, churn) ont été
+              retirés à l'étape 2 comme « des chiffres qu'on regarde sans pouvoir agir
+              dessus » (cf. ligne ~424), et la leçon densité interdit d'inventer des mesures
+              pour justifier une taille. La carte doit être aussi large que ce qu'elle a
+              à dire. */}
+          <div className="panel" style={{ marginBottom: 14, maxWidth: 1180 }}>
             {/* ⚠️ `maxWidth` + PAS de `marginLeft:auto` : à 2560 le `auto` collait la note
                 des fixtures au bord droit, ~1 400 px après le chiffre qu'elle commente. Une
                 note qu'il faut traverser l'écran pour relier à son sujet n'est pas lue. */}

@@ -71,9 +71,29 @@ function installerFauxReseau(n: number) {
     if (url.includes('/api/admin/tenants')) return json(tenants)
     if (url.includes('/api/admin/plan-requests')) return json([])
     if (url.includes('/api/admin/stats')) {
+      /**
+       * ⚠️ FIXTURE PÉRIMÉE, CORRIGÉE le 2026-08-15 — et le coût était exactement celui que
+       * ce harnais existe pour éviter.
+       *
+       * Elle rendait `mrr: 640_000`. Or `AdminDashboard` lit `mrrXof`, `mrrParPlan` et
+       * `fixtureTenants` (cf. `routes/admin.ts:109-112`) : les trois étaient `undefined`,
+       * donc le bandeau MRR affichait « 0 FCFA · Aucun plan facturé » et **taisait
+       * complètement le troisième bloc**. Sur cette base j'ai signalé un « vide » de la
+       * carte MRR qui, en production, n'existe pas de la même façon.
+       *
+       * *Un harnais de GÉOMÉTRIE nourri d'une forme périmée mesure la géométrie d'un écran
+       * qui n'existe pas.* La forme se recopie donc depuis la ROUTE, pas de mémoire.
+       */
       return json({
         totalTenants: n, activeTenants: n, totalUsers: 120, totalSales: 48_000,
-        totalRevenue: 987_654_321, mrr: 640_000,
+        totalRevenue: 987_654_321,
+        fixtureTenants: 3,
+        mrrXof: 640_000,
+        mrrParPlan: [
+          { plan: 'starter',    tenants: 4, mrrXof: 39_600, surDevis: false },
+          { plan: 'business',   tenants: 2, mrrXof: 60_000, surDevis: false },
+          { plan: 'enterprise', tenants: 1, mrrXof: 0,      surDevis: true  },
+        ],
       })
     }
     return vrai(entree as RequestInfo, init)

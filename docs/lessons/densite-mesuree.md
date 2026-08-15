@@ -168,3 +168,36 @@ lisaient « propre ») ; les « coupables » de débordement comptaient la barre
 et le détecteur de vide mettait son curseur au bas de page dès le premier conteneur pleine
 hauteur, si bien qu'il ne trouvait **jamais** de trou. *Un détecteur qui rend zéro doit prouver
 qu'il sait rendre autre chose.*
+
+
+## La carte MRR — et la fixture qui décrivait un écran inexistant
+
+Signalée comme « ~1 250 px de vide » d'après une capture du harnais. **La mesure a d'abord
+disculpé à moitié, puis accusé.**
+
+Le harnais rendait `mrr: 640_000` quand `AdminDashboard` lit `mrrXof`, `mrrParPlan` et
+`fixtureTenants` (`routes/admin.ts:109-112`). Les trois valaient `undefined` : le bandeau
+affichait « 0 FCFA · Aucun plan facturé » et **taisait complètement le troisième bloc**.
+*Un harnais de GÉOMÉTRIE nourri d'une forme périmée mesure la géométrie d'un écran qui
+n'existe pas* — et c'est sur cette base que le « vide » avait été rapporté.
+
+Fixture corrigée depuis la ROUTE (pas de mémoire), remesure :
+
+| Largeur | panneau | contenu | vide | remplissage |
+|---|---|---|---|---|
+| 2560 (avant) | 2512 | 947 | **1 533** | 36 % |
+| 1440 (avant) | 1392 | 947 | 413 | 68 % |
+| 2560 / 1440 (après) | 1180 | 947 | 201 | **80 %** |
+
+**On RÉTRÉCIT, on ne REMPLIT pas.** Les KPI (segments, churn) ont été retirés à l'étape 2
+comme « des chiffres qu'on regarde sans pouvoir agir dessus » : les rappeler pour occuper la
+place aurait défait une décision produit, et la règle du tiroir l'interdit déjà.
+
+⚠️ **Coût assumé et écrit** : à 2560 la carte (1 180) est plus étroite que le panneau
+Activation en dessous (2 512). On lit une bande de SYNTHÈSE au-dessus d'un panneau de DÉTAIL.
+C'est un choix, pas une fatalité — si Nelson préfère l'alignement, la conversation est ouverte.
+
+Verrou sans pixel absolu (portable Ubuntu/macOS) : **le vide ne doit pas dépasser la largeur
+du contenu**, plus une garde « contenu > 500 px » qui rougit si la fixture redevient périmée.
+Les deux sabotages ont dû être joués SÉPARÉMENT — la garde de fixture rougissait la première
+et masquait celle du remplissage.

@@ -119,3 +119,46 @@ test('RH — un employé sans département le DIT, il ne laisse pas un libellé 
   expect(r.filter(x => !x.texte), 'des libellés « Dept » sans valeur').toEqual([])
   expect(r.filter(x => x.bordure === 'none'), 'boîte « Dept » sans bordure → couleur concaténée INVALIDE').toEqual([])
 })
+
+
+for (const w of [2560, 1440]) {
+  test(`console Ops @${w} — la carte MRR n'est pas une carte INACHEVÉE`, async ({ page }) => {
+    /**
+     * ⚠️ MESURÉ le 2026-08-15 à 2560 px : panneau **2512**, contenu **947** → 1 533 px de
+     * carte vide, soit **36 % de remplissage**. Une carte pleine largeur portant trois blocs
+     * courts se lit comme inachevée — elle promet une information qu'elle n'a pas.
+     *
+     * ⚠️ ON LA RÉTRÉCIT, ON NE LA REMPLIT PAS. Les KPI (segments, churn) ont été retirés à
+     * l'étape 2 comme « des chiffres qu'on regarde sans pouvoir agir dessus », et la leçon
+     * densité interdit d'inventer des mesures pour justifier une taille.
+     *
+     * ⚠️ COÛT ASSUMÉ : à 2560 la carte (1 180) est plus étroite que le panneau Activation
+     * en dessous (2 512). C'est une bande de SYNTHÈSE au-dessus d'un panneau de DÉTAIL, pas
+     * un défaut d'alignement — mais c'est un choix, et il est écrit ici pour être discuté.
+     *
+     * L'assertion est SANS PIXEL ABSOLU : le vide ne doit pas dépasser la largeur du contenu.
+     * Portable entre Ubuntu et macOS, et vraie à n'importe quelle largeur d'écran.
+     */
+    await seedEcran(page)
+    await ouvrirEcran(page, '/__dev/table', w, 900)
+    await page.waitForTimeout(2000)
+    await expect(page.locator('body')).toContainText(/Console plateforme/)
+
+    const m = await page.evaluate(() => {
+      const etiq = [...document.querySelectorAll('div')]
+        .find(d => d.children.length === 0 && (d.textContent ?? '').trim() === 'MRR')
+      const panel = etiq?.closest('.panel') as HTMLElement | null
+      const rangee = etiq?.parentElement?.parentElement as HTMLElement | null
+      if (!panel || !rangee) return null
+      const contenu = [...rangee.children].reduce((t, c) => t + c.getBoundingClientRect().width, 0)
+      return { panel: Math.round(panel.getBoundingClientRect().width), contenu: Math.round(contenu) }
+    })
+    // ⚠️ TÉMOIN : sans lui, un sélecteur cassé rendrait `null` et le cas se dirait vert.
+    expect(m, 'la carte MRR n’a pas été trouvée — le sélecteur ne mesure rien').not.toBeNull()
+    expect(m!.contenu, 'contenu MRR anormalement petit — fixture périmée ?').toBeGreaterThan(500)
+
+    const vide = m!.panel - m!.contenu
+    expect(vide, `carte MRR : ${m!.panel} px pour ${m!.contenu} px de contenu → ${vide} px vides`)
+      .toBeLessThanOrEqual(m!.contenu)
+  })
+}
