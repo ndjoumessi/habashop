@@ -248,32 +248,30 @@ Helpers : `makeI(lang)` (settings), `pick(lang, obj)`.
 
 ## État fonctionnel
 
-### POS / Ventes
-- **Paiements** : cash/wave/orange/mtn/card. **Mixte** : `Sale.cashAmount/mobileMoneyAmount/cardAmount`, `|somme−total|≤1` + ≥2 modes. Helper `lib/paymentSplit.ts`.
-- **Idempotence** : `idempotencyKey` (`@@unique([tenantId,idempotencyKey])`), P2002 gérée.
-- **Remboursement** : `POST /api/sales/:id/refund`, motif requis, restock optionnel, idempotent 409, `refunded` exclu CA + retire points.
-- **Anti-survente** : backend `400 INSUFFICIENT_STOCK` (garde AVANT tx, décrément atomique). Front : `confirmSale` surface l'erreur + refetch stock. Tuile rupture grisée `opacity .45`. 4 tests `overselling.test.ts`.
-- **Scan douchette (« keyboard wedge »)** ⚠️ — chemin de scan PRIMAIRE en boutique, plus courant que la caméra. La douchette est un CLAVIER : elle tape dans le champ de recherche POS. `looksLikeScannedInput` (`components/pos/wedgeScan.ts`) tranche scan vs recherche par **deux voies** — la **forme** (code canonique valide, jugé par `lib/barcode.ts`, jamais une regex locale) et la **vitesse** (≤ 30 ms/car sur ≥ 4 car, ce qui rattrape les étiquettes CODE128-sur-SKU). Le champ est **vidé AVANT de résoudre** : sinon, en cas d'échec, la grille resterait filtrée sur le code — vide et muette, l'incident même qu'on ferme (#148).
-  - **Sans terminateur** (#161) : certaines douchettes n'envoient pas Entrée. Le champ tranche alors sur l'**INACTIVITÉ** (`WEDGE_IDLE_MS` 60 ms après la dernière touche), avec `elapsed` figé de la 1re à la **DERNIÈRE touche** — jamais jusqu'au déclenchement, sinon le délai diluerait la cadence sous le seuil.
-  - ⚠️ **Le tir sur inactivité n'utilise QUE la vitesse** (`looksLikeScannerBurst`), **jamais** `looksLikeScannedInput`. **MESURÉ sur 10 000 EAN-13 : 10,0 % ont un préfixe de 12 caractères qui est un UPC-A VALIDE**, et la collision tombe *exactement* à 12 — restreindre à « ≥ 12 car » ne servirait à rien. Un caissier qui RECOPIE marque des pauses : s'il s'arrête au 12ᵉ chiffre, la voie forme validerait le code **partiel** et ajouterait **un AUTRE produit** au panier — erreur d'ARGENT, silencieuse, une fois sur dix. **Ne pas « simplifier » les deux prédicats en un seul.**
-  - **La recopie manuelle reste servie par ENTRÉE**, où la saisie est finie *par construction* — c'est l'appui qui dit « j'ai fini », pas une horloge. Délibéré.
-  - **Deux gardes REDONDANTES** annulent le minuteur après Entrée (`onKeyDown` + `resetTyping`) : retirer une seule des deux laisse la suite **verte** (vérifié) — ceinture et bretelles sur un double-ajout au panier.
-  - Verrous : `wedgeScan.test.ts` (25, invariant PUR) + **`pos-wedge-wiring.test.tsx`** (10, **câblage** — monte le VRAI `POS.tsx` avec faux timers ; 3 sabotages). ⚠️ L'invariant pur ne peut RIEN dire du câblage (minuteur posé/annulé) : il faut les deux. **Limite assumée** : la saisie exige le focus du champ — une capture clavier au niveau `document` volerait les touches aux autres champs et modales.
-- **Intégrité prix — SERVEUR-autoritaire** ⚠️ (`sales.ts`) 📖 *raisonnement complet, expositions mesurées et justification des bornes : `docs/lessons/integrite-prix-pos.md`* :
-  - Le prix soumis n'est facturé **QUE** s'il correspond au tarif **DÉCLARÉ par la ligne** (`items[].clientType` ∈ `retail|semi|wholesale`, résolu palier+promo à la qté par `expectedPrice`). Sinon = **divergence** → on facture le prix serveur de ce tarif. Défaut rétro-compatible `retail`. Accepter « un tarif quelconque » **n'est pas** vérifier un prix (c'était l'ancien `legitimatePrices`, qui laissait un client détail payer le tarif de gros en silence).
-  - ⚠️ **Le tarif est porté par la LIGNE, pas par la vente** — un panier monté en Détail puis basculé en Grossiste garde légitimement ses prix détail. `toSaleItemPayload(cart)` (`saleReconcile.ts`) **ne reçoit pas** le tarif sélectionné : l'erreur est rendue inécrivable, ne pas « réparer » cette signature.
-  - **Produit inconnu du catalogue → 400 `UNKNOWN_PRODUCT`** (sans prix serveur, rien à comparer). Total = **Σ lignes serveur** − remise − fidélité, **TVA serveur** (`tenant.vatRate` + `posVatIncluded`). La déviation légitime (abîmé/négo) passe par la **remise manuelle**, déjà tracée : le panier n'offre AUCUN champ d'édition de prix de ligne.
-  - **REJEU HORS-LIGNE HONORÉ (option A, voie 1)** ⚠️ : `honored = offlineReplay && staleCatalogAt !== null` — **DEUX conditions cumulatives**, et l'ORDRE du bloc est load-bearing (la qualification se calcule AVANT la décision ; l'inverse honorerait sur le seul drapeau — `tsc` le refuse, TS2448). `offlineReplay` est posé **UNIQUEMENT** par la file mobile (`saleReplay.ts`). ⚠️ **Ne pas ré-adosser un honneur à une horloge client** — `clientCreatedAt`/`REPLAY_THRESHOLD_MS`/`honorClientPrice` sont SUPPRIMÉS (ils honoraient n'importe quel prix sur un horodatage antidaté) ; `salesPriceIntegrity.test.ts` échoue si on le refait.
-  - **Le drapeau est FALSIFIABLE — vecteur assumé et BORNÉ** : un caissier forgeant `offlineReplay:true` ne peut faire passer qu'un prix qui **était réellement celui de son tarif DÉCLARÉ il y a moins de 48 h**. Il ne peut pas inventer un montant : le gain maximal est le delta d'un vrai changement de prix récent, sur les seuls produits concernés. Aucun signal non falsifiable de « c'était hors-ligne » n'existe (`idempotencyKey` ne porte pas le temps, l'horloge client n'est jamais transmise, un jeton pré-signé serait rejouable). La protection est donc le **CADRE** (`staleCatalogAt`, fait serveur) **+ la TRACE** : toute divergence écrit `submittedPrice`/`catalogPrice`/`staleCatalogAt` + `SaleItem.pricingHonored` + `Sale.priceDivergence=true` (audit a posteriori, `GET /api/sales?priceDivergence=true`). ⚠️ **« Posé uniquement par la file mobile » n'est PAS une garantie de provenance** — c'est une description de l'écrivain légitime, pas une preuve. Retirer les écritures d'audit au motif que le drapeau serait fiable est le geste que cette ligne existe pour empêcher.
-  - **BORNES, et ce qui se passe dehors** : fenêtre **48 h** (2× le TTL du cache SW), **profondeur 1**. Hors bornes — ou tarif non qualifié, ou vente mixte partiellement qualifiée — le serveur **re-tarife** et le mobile écrit une entrée durable **`repriced`** (« à vérifier »), **distincte de `rejected`** (« à ressaisir ») : la vente EXISTE, la confondre la ferait compter deux fois. **Jamais un honneur par défaut.**
-  - **Qualification « tarif précédent »** : `Product.previousPricing` + `pricingChangedAt` instantanéisent le jeu de tarifs sortant à chaque écriture qui change RÉELLEMENT un prix ; `SaleItem.staleCatalogAt` porte la qualification (**deux conditions cumulatives** : appartenance au tarif déclaré ET fenêtre 48 h). Profondeur 1 ⇒ non concluant = `null`, **jamais une affirmation d'innocence**. **N'influence RIEN de ce qui est facturé**, serveur-autoritaire (colonnes hors de `PRODUCT_UPDATE`). ⚠️ **Toute nouvelle colonne de prix sur `Product` DOIT être ajoutée à `PRICING_FIELDS`** (`utils/pricing.ts`), sinon un changement cesse d'être instantanéisé.
-  - **UI d'audit** (ADMIN seul, `canAuditPrices`) : **une source unique `priceGapLevel(rows)`** alimente badge + détail + sous-filtres → **QUATRE** niveaux par ordre de PRUDENCE — `look` ambre · **`honored` ambre « à vérifier »** · `previous` bleu · `offline` gris. ⚠️ **`honored` ne doit JAMAIS retomber dans le bleu** : là-bas le serveur a corrigé, donc l'argent est juste et le bleu se lit « fait établi » ; ici **l'argent a bougé** — il y a une caisse à vérifier. **Biais de PRUDENCE** : une vente mêlant expliqué et inexpliqué reste `look`. ⚠️ **Le filtre « Écarts honorés » est résolu CÔTÉ SERVEUR** (`GET /api/sales?pricingHonored=true`) — côté client on ne verrait que la page de 50 ventes, et un écart de quelques jours deviendrait **introuvable**. Vocabulaire **factuel** — « écart de prix », jamais « suspect »/« fraude ».
-  - Verrous : `salesTariffIntention` · `salesPriceIntegrity` · `staleCatalogDivergence` · `offlineReplayHonor` · mobile `saleReplay` · front `cartTariff` / `saleReconcile` / `priceGapLevel` — comptes et sabotages détaillés dans la leçon.
-- **Réconciliation du total encaissé** ⚠️ (Chantier B (c)) : `confirmSale` **capture** la réponse de `POST /api/sales` (elle était JETÉE). Le serveur étant autoritaire sur le prix, une re-tarification facture un autre montant que celui encaissé → **caisse courte sans cause explicable**. `reconcileSaleTotal(serverTotal, netTotal)` (`components/pos/saleReconcile.ts`, tolérance **1** comme le paiement mixte) dit au caissier **combien réclamer ou rendre** tant que le client est au comptoir (toast 15 s + `announce`).
-  - `authoritativeTotal` alimente **le ticket imprimé ET le reçu WhatsApp** (les deux affichaient le total CLIENT ; le reçu WhatsApp envoyait même le BRUT). Il transite par une **`ref`** (`billedTotalRef`), pas un state, et `printTicket` garde sa **signature à zéro argument** — sinon `onPrint={printTicket}` passerait l'événement en 1er argument.
-  - ⚠️ **`Number(null) === 0`** : sans filtre d'absence explicite (`readTotal`), un total serveur absent déclenchait « rendre 1 000 F » sur une vente saine et imprimait un ticket à **0**. Une absence de donnée doit rester une absence.
-  - **Effet de bord utile** : une alerte sur une vente au tarif courant signale une **dérive des miroirs front/back** (TVA `computePosVat`, fidélité) — c'est un signal, pas un faux positif à museler. Verrou : `saleReconcile.test.ts` (11, sabotage vérifié). Aucun appel réseau ajouté au chemin critique. *(Prévenir AVANT l'encaissement = décision produit ouverte.)*
-- **Session caisse** : `cashierIsOpen = requireCashier ? cashierOpen : !cashierForcedClosed` — sélecteur `useCashierIsOpen()` partout. `cashierForcedClosed` persisté ; `cashierOpen/Fund/Tx/CA`+`cart` exclus de partialize. `requireCashier` refetché au montage POS. Montants caisse XOF → `fmt()`. ⚠️ `onClick={() => confirmSale()}` jamais `onClick={confirmSale}` (event = JSON circulaire).
+### POS / Ventes ⚠️ — DÉCLENCHEUR
+
+📖 **À LIRE AVANT de toucher `POS.tsx`, `components/pos/*`, `routes/sales.ts`,
+`saleReconcile.ts`, `wedgeScan.ts` ou la file de rejeu mobile : `docs/lessons/pos-caisse.md`**
+(paiement mixte, idempotence, remboursement, anti-survente, scan douchette, intégrité prix
+serveur-autoritaire, réconciliation du total encaissé, session caisse) — et
+`docs/lessons/integrite-prix-pos.md` pour le raisonnement et les bornes.
+
+Ce qui mord depuis l'EXTÉRIEUR du POS, donc reste ici :
+
+- ⚠️ **Le SERVEUR est autoritaire sur le prix** (`routes/sales.ts`) : un total client n'est jamais
+  facturé tel quel. Tout test qui monte une route de vente doit envoyer des **lignes qui somment
+  au total voulu** — un `total` DÉCOUPLÉ des lignes est l'ancien « trust client total », et il est
+  refusé. ⚠️ Produit hors catalogue → **400 `UNKNOWN_PRODUCT`**.
+- ⚠️ **Toute nouvelle colonne de prix sur `Product` DOIT être ajoutée à `PRICING_FIELDS`**
+  (`utils/pricing.ts`), sinon un changement de prix cesse d'être instantanéisé et la
+  qualification « tarif précédent » ment en silence.
+- ⚠️ **Le scan douchette est le chemin PRIMAIRE en boutique**, plus courant que la caméra : toute
+  logique de code-barres passe par `lib/barcode.ts`, jamais une regex locale.
+- ⚠️ **`onClick={() => confirmSale()}`, jamais `onClick={confirmSale}`** — l'événement React
+  arriverait en 1er argument (JSON circulaire). Même piège sur `onPrint={printTicket}`, d'où la
+  signature à zéro argument de `printTicket`.
+- ⚠️ **`cart` et les états de caisse sont EXCLUS de `partialize`** (cf. § Pièges critiques) —
+  sélecteur `useCashierIsOpen()` partout.
 
 ### Paiements mobiles
 
@@ -301,23 +299,31 @@ Les règles qu'on enfreint **sans même travailler sur ces écrans** :
 ### Fidélité
 Backend AUTORITAIRE (plafond 50 %, `sale.total` = NET). ⚠️ Le front envoie le **BRUT** + `customerId` — **ne PAS envoyer le net** (double remise). 📖 *`docs/modules.md` § Fidélité.*
 
-### Paie ⚠️ — bulletins PERSISTÉS, instantané GELÉ
+### Paie ⚠️ — DÉCLENCHEUR
 
-📖 *POURQUOI intégral (les deux règles de retenues incompatibles — 150 000 imprimé contre 130 500 affiché —, les trois temps de la correction de conversion, le verrou tout négatif aveugle au « zéro fois », les cas dorés chiffrés) : `docs/lessons/paie-conversion-et-gel.md`* — **à lire AVANT** de toucher `payrollShared`, `utils/payroll.ts`, `payrollDisplay`, `PayrollGrid`, `PayrollPayslips`, `printBulletin` ou l'une des 5 surfaces d'affichage.
+📖 **À LIRE AVANT de toucher `payrollShared`, `utils/payroll.ts`, `payrollDisplay`,
+`PayrollGrid`, `PayrollPayslips`, `printBulletin` ou l'une des 5 surfaces d'affichage :
+`docs/lessons/paie-regles.md`** (instantané gelé, retenues source unique, `month` en clé ISO,
+un seul générateur de bulletin, les 6 verrous) — et `docs/lessons/paie-conversion-et-gel.md`
+pour le POURQUOI (les deux règles de retenues incompatibles, les trois temps de la correction).
 
-📖 *Modèle `Payroll`, routes, miroir des rôles, idempotence de la génération et `paidAt` serveur : `docs/modules.md` § Paie.*
+Ce qui mord depuis l'EXTÉRIEUR de la paie, donc reste ici :
 
-⚠️ **INSTANTANÉ GELÉ — c'est l'INVERSE de la règle Abonnements**, et c'est délibéré. Un abonnement ne stocke aucun total (« au tarif du jour ») ; un bulletin de paie FIGE `baseSalary/bonus/overtime/deductions/absences/net` **et le nom de l'employé** au moment de la génération. Une augmentation en août ne doit pas réécrire ce qui a été versé en juin — sinon la paie passée devient irrécupérable et l'export comptable ment rétroactivement. Ne jamais « simplifier » en joignant `Employee.salary` à l'affichage. ⚠️ **`Payroll.cnss` et `Payroll.ir` sont GELÉS** comme `net` : ils dépendent de taux **légaux**, donc les recalculer à l'affichage rejouerait un bulletin passé au barème du jour. Geler `baseSalary` sans geler `cnss` ne suffit pas. (La pénalité d'absence, elle, se redérive des champs gelés + la constante de 26 jours.)
-
-⚠️ **`month` = clé ISO `YYYY-MM`, JAMAIS le libellé d'écran** (« Juillet 2026 »). Une clé qui dépend de la langue d'affichage rend les données illisibles au changement de locale et fait écrire des mois incompatibles à deux tenants en langues différentes. Conversion côté front (`monthKey`, rend `null` sur l'irreconnaissable — **jamais un mois par défaut**, un repli silencieux écrirait la paie sur le mauvais mois) ; le serveur **refuse** tout le reste en 400.
-
-**Retenues ⚠️ SOURCE UNIQUE `payrollShared.payrollBreakdown`** (miroir back `utils/payroll.ts`, cas partagés `payroll-net-cases.json`) : **CNSS 8 % + IR 5 % assis sur le BRUT** (base+primes+heures sup), **tous deux DÉDUITS** ; `deductions` = retenues **EXCEPTIONNELLES** (avance, casse) qui s'**AJOUTENT** aux cotisations ; pénalité d'absence = `round(absences × base / 26)`. ⚠️ **Les taux ne vivent QUE dans `CNSS_RATE`/`IR_RATE`** — jamais en dur, jamais dans un libellé i18n (un taux écrit dans la chaîne redevient faux dans 4 langues au premier changement de loi).
-
-⚠️ **CONVERTIR UNE FOIS — `payrollDisplay(record, currency)` puis `fmtDisplay`.** Le calcul vit en XOF, l'affichage peut être à 2 décimales : convertir chaque ligne PUIS le total séparément donne un bulletin **qui ne s'additionne pas**. **Règle : total = SOMME des lignes arrondies · net = brut − total**, gains inclus. Les valeurs rendues sont **DÉJÀ CONVERTIES** → `useFormatAmount`/`formatAmount`/`convertFromXOF`/`convertAmount` sont **INTERDITS** sur toute surface de paie (double conversion), et `payrollBreakdown` (XOF) n'est plus utilisé pour afficher. **Les 5 surfaces y passent** : page Paie (table + KPI + totaux), bulletin PDF, modale bulletin, cartes RH `PayrollPayslips`, grille RH `PayrollGrid`. ⚠️ **Un local qui porte des XOF se suffixe `Xof`** — deux locaux de même nom et d'unités différentes ont coûté une soustraction d'euros à des francs CFA.
-
-⚠️ **UN SEUL générateur de bulletin : `printBulletin`** (l'onglet RH passe par l'adaptateur `payRecordFromEmployee` + `labelFromMonthKey`). Ne pas recréer un template : le méta-test rougit si un fichier consommant le détail de paie ouvre un document. **Logo — `LogoMark` est la seule source.**
-
-**Verrous** : `payrollPersistence.test.ts` (20, dont augmentation-postérieure et bulletin-déjà-payé) · `payrollDisplayCoherence.test.ts` (12, cas doré + les 6 devises, 2 sabotages) · `payrollConvertOnce.test.ts` (15, règle POSITIVE incluse — *un verrou tout négatif est aveugle au « zéro fois »* — 5 sabotages inline + 2 réels) · `payrollFrozenNet.test.ts` · `payrollNetShared.test.ts` (jumeaux front/back sur le fixture) · `payroll-calc.test.ts`. **Sabotages vérifiés dans les deux sens** : ancien taux côté front seul → 8 rouges ; déduction retirée côté back seul → 8 rouges.
+- ⚠️ **`useFormatAmount` / `formatAmount` / `convertFromXOF` / `convertAmount` sont INTERDITS sur
+  toute surface de paie** — les valeurs y sont **DÉJÀ CONVERTIES** par `payrollDisplay(record,
+  currency)`. C'est l'**EXCEPTION** à la règle générale « tout montant passe par `fmt()` » du
+  § Règles devise : appliquer la règle générale ici produit une **double conversion**.
+  ⚠️ Un local qui porte des XOF se suffixe `Xof` — deux locaux de même nom et d'unités
+  différentes ont coûté une soustraction d'euros à des francs CFA.
+- ⚠️ **INSTANTANÉ GELÉ — c'est l'INVERSE de la règle Abonnements**, et c'est délibéré. Un bulletin
+  FIGE `baseSalary/bonus/overtime/deductions/absences/net`, **le nom de l'employé**, ET
+  `cnss`/`ir` (taux LÉGAUX). Ne jamais « simplifier » en joignant `Employee.salary` à
+  l'affichage : une augmentation en août réécrirait ce qui a été versé en juin.
+- ⚠️ **`month` = clé ISO `YYYY-MM`, JAMAIS le libellé d'écran.** Une clé qui dépend de la langue
+  rend les données illisibles au changement de locale. `monthKey` rend `null` sur
+  l'irreconnaissable — jamais un mois par défaut ; le serveur refuse le reste en 400.
+- ⚠️ **Les taux ne vivent QUE dans `CNSS_RATE`/`IR_RATE`** — jamais en dur, jamais dans un libellé
+  i18n (un taux écrit dans la chaîne redevient faux dans 4 langues au premier changement de loi).
 
 ### Modules — index
 
@@ -326,21 +332,23 @@ et le POURQUOI de chaque décision) — **à ouvrir dès qu'on touche l'un d'eux
 les règles **transverses** : celles qu'on enfreint sans même travailler sur le module concerné.
 
 - **Codes-barres** ⚠️ : RÈGLE CANONIQUE UNIQUE `src/lib/barcode.ts`, **3 miroirs** (back/mobile/front, à l'identique) testés contre `docs/shared-fixtures/barcode-cases.json`. **Toute** logique barcode y passe — méta-test (`barcode.test.ts` front) échoue si une regex `\d{13}` locale réapparaît ailleurs. Jamais de strip des zéros de tête (casse le round-trip scan) ; `matchesScannedCode` (scan→panier) n'accepte **jamais** une sous-chaîne.
-- **Étiquettes** ⚠️ : **EAN-13/EAN-8 uniquement**, JAMAIS de CODE128-sur-SKU (code non standard = piège caisse). Prix en **noir gras** sur les deux gabarits (Avery + thermique), jamais le violet écran. Quiet zones ≥10 modules via `quietZonePx`.
 - **Facture PDF** ⚠️ : **DEUX générateurs vivants** — backend pdfkit (`lib/invoicePdf.ts`, LA vraie facture) et devis frontend (`utils/export.ts generateInvoice`). **Corriger les DEUX.** Tout montant imprimé passe par `pdfSafeSpaces()` / `printableAmount()` (U+202F absent de WinAnsi → « 8 /500 »), toute donnée dynamique par **`escHtml` de `lib/html.ts`** — ⚠️ **RÈGLE CANONIQUE UNIQUE, 3 jumeaux**, cas partagés `html-escape-cases.json`. ⚠️ **`&#39;`, jamais `&apos;`** ; `utils/xlsxWriter.ts` émet `&apos;` et c'est CORRECT chez lui (OOXML) — **exempté par raison nommée**, ne pas le fondre. ⚠️ Le méta-test prouve qu'on ne RÉÉCRIT pas la règle, **pas qui l'APPELLE** : un fichier qui n'échappe rien ne ressemble à rien et échappe à tous les scans (c'était `routes/export.ts`). D'où `exportHtmlEscape.test.ts`, sur les octets rendus. ⚠️ **AUCUNE photo produit dans un DOCUMENT** (facture PDF, devis HTML, étiquette thermique) alors que les 18 surfaces d'ÉCRAN en portent une : décision du 2026-08-12, motivée en tête d'`InvoiceSale.items` — l'imprimer ferait aller le SERVEUR chercher une URL lue en base (SSRF, délai par ligne, aucun repli en WinAnsi). Ne pas « compléter » en câblant le stockage.
 - **Audit** ⚠️ : **TOUTE écriture d'audit passe par `writeAudit(label, promise)`** (fail-open mais TRACÉ). Exception : les 3 sites en `$transaction` propagent. Méta-test `auditWriteConvention.test.ts`. `UserAuditLog` est **hors boutique et SANS FK vers User** — un audit de sécurité survit à la suppression du compte.
 - **Multi-boutiques** ⚠️ : **DEUX champs tenant, DEUX helpers** (`lib/tenantId.ts`) — `request.user.tenantId` (JWT, hérité) → `getTenantId()` ; `request.tenantId` (boutique ACTIVE résolue par `authenticate`) → `getActiveTenantId()`. Ne pas les confondre : sur une route platform-scopée, `user.tenantId` est légitimement nullable et `getTenantId` lèverait à tort. Appeler **APRÈS** les gardes 400/403.
 - **Admin PLATEFORME** ⚠️ : `User.isPlatformAdmin` est le **SEUL** critère d'accès à `/api/admin/*`. **JAMAIS gater sur le rôle `SUPER_ADMIN`** — rôle INTERNE au tenant, y gater = fuite inter-tenants (P0 corrigé, `adminPlatformIsolation.test.ts`). Symétriquement, ne jamais masquer le commerçant **par le rôle** : le dépouillement de l'interface se fait sur `isPlatformAdmin`.
 - **Zone franc CFA** ⚠️ : un pays **UEMOA ne peut pas être en XAF**, ni un pays **CEMAC en XOF** — `lib/currencyZone.ts` + `currency-zones.json`, **BACKEND SEUL** (2 lecteurs, tous deux backend). ⚠️ Le jumeau front a existé puis a été SUPPRIMÉ en revue : **aucune propriété anti-dérive ici**, contrairement aux 13 autres jumeaux, et c'est cohérent — le serveur est autoritaire sur les 4 chemins d'écriture. **Ne pas « restaurer » le jumeau.** Refus **400 `CURRENCY_ZONE_MISMATCH`** sur les **4** chemins d'écriture de tenant. ⚠️ Le `PATCH` juge le couple **EFFECTIF** (corps + base) : un corps qui ne porte que `currency` se confronte au pays DÉJÀ STOCKÉ — c'est par là qu'un `XAF` est arrivé sur un tenant `SN`, sans aucune trace. ⚠️ **NE PAS dériver la zone du taux de TVA** : `GA` (CEMAC) porte 18 comme l'UEMOA — justesse empruntée. ⚠️ Une devise **hors franc CFA reste légitime partout** (`e2e-tenant` SN/EUR passe **sans exemption nommée** — *une exemption dont on n'a pas besoin est un trou*). ⚠️ **DÉRIVER, PAS REFUSER — le garde ne 400 que sur un couple que l'appelant a CONSTRUIT.** À la création, le pays HÉRITE de la boutique d'origine puis retombe sur le marché par défaut, et la devise en DÉRIVE : refuser un couple non choisi avait rendu **XOF incréable** dans le produit ET la console. Au `PATCH`, asymétrie assumée — le **pays** qui bouge seul dérive la devise (le commerçant a déménagé, il n'a pas choisi de franc) ; la **devise** choisie seule et en conflit est refusée.
 ⚠️ **Le même geste pose la TRACE** : `PATCH /api/tenant` n'écrivait AUCUN audit, et c'est ce trou qui a rendu l'écrivain du `XAF` introuvable. `TENANT_LOCALE_CHANGE` consigne **AVANT → APRÈS** (« la devise a changé » n'aurait rien permis) sur une liste blanche NOMMÉE de codes et de nombres (`currency/country/lang/vatRate`) — **aucun champ personnel**. ⚠️ La devise DÉRIVÉE doit y figurer aussi : la trace compare toute la liste blanche, pas les champs soumis. ⚠️ **LES QUATRE ROUTES SONT EXERCÉES PAR INJECTION** (`currencyZoneRoutes4.test.ts`) — le garde avait été posé sur quatre et vérifié sur UNE ; une revue a trouvé dans les non testées **deux régressions livrées en prod**. Verrous : `currencyZone.test.ts` · `currencyZoneRoute.test.ts` · `currencyZoneRoutes4.test.ts` — **12 sabotages**. ⚠️ Le mock de `writeAudit` **délègue au module réel** : l'attendre sans l'attraper prouverait le mock, pas le fail-open.
-- **Expiration de promo** ⚠️ : helper pur **`isPromotionActive(hasPromotion, promotionEnd, now)`**, miroir back (`utils/pricing.ts`) ↔ front (`lib/pricing.ts`), cas partagés `promotion-active-cases.json`, `now` **injecté**. Échéance inclusive au jour calendaire **UTC**. ✅ **Miroir MOBILE (`posStore.ts`) ALIGNÉ et désormais ENFORCED** — `mobile/src/__tests__/promotionActiveShared.test.ts` exerce `isPromotionActive` sur les 9 cas partagés et tourne en CI depuis #163. *(Ce fichier a longtemps affirmé le miroir « PAS aligné » : c'était FAUX — il l'était, il n'était simplement pas enforced. Une dette d'exécution lue comme une dette de code.)*
+- **Étiquettes · Expiration de promo · Commandes · Suppression d'employé · Photo produit** ⚠️ :
+  règles **module-LOCALES** rapatriées dans **`docs/modules.md`** (section « Règles rapatriées ») —
+  **à ouvrir dès qu'on touche l'un d'eux**. Les quatre pièges qui mordent quand même de l'extérieur :
+  ⚠️ **EAN-13/EAN-8 uniquement sur une étiquette**, jamais de CODE128-sur-SKU (code non standard =
+  piège caisse) ; ⚠️ **`StockForm.image` EST L'ÉMOJI, PAS LA PHOTO** — `Product.image` porte une URL,
+  deux champs homonymes de sens OPPOSÉS dans les mêmes fichiers, d'où `ProductItem.photo` côté
+  domaine ; ⚠️ **il n'y a PLUS de route `DELETE /api/employees/:id`** — on DÉSACTIVE (`isActive:false`),
+  et **ne pas la rétablir « pour le ménage »** : les 5 FK vers Employee sont en CASCADE ;
+  ⚠️ **`PurchaseOrder` ne représente QUE des commandes FOURNISSEUR** — les commandes CLIENT de
+  l'écran sont LOCALES et éphémères (décision produit #171), leur persistance est une dette backend.
 - **Abonnements** : **aucun total n'est stocké** (dérivé de `product.sellPrice` → « au tarif du jour ») et **aucune colonne de fréquence** n'existe (`dayOfWeek` impose l'hebdo) — ne pas promettre en UI ce que le modèle ne porte pas.
-- **Commandes** ⚠️ : **`PurchaseOrder` ne représente QUE des commandes FOURNISSEUR** — `supplierId` y est une FK obligatoire, et il n'existe ni `clientName`, ni `clientPhone`, ni colonne `type`. Les **commandes CLIENT de l'écran sont donc LOCALES et ÉPHÉMÈRES** (décision produit #171) : aucun appel serveur n'est émis pour elles. Avant, il l'était — sans `supplierId` — et se faisait refuser en **400 systématique**, dont le caissier ne voyait qu'un « Échec de la création ». Leur persistance est une **dette backend** (colonnes + zod), pas un oubli du front.
-  - ⚠️ **ASYMÉTRIE écriture/lecture** : on ENVOIE `items[].product`, le serveur range en `items[].productName`. **Passer par `toOrderPayload`** — envoyer les lignes du formulaire telles quelles est exactement ce qui a cassé la création : **0 commande en base**, avec `tsc` vert parce que `create` prenait `any`.
-  - **Frontière dans la frontière** : `GET /api/orders` inclut `supplier` → on reçoit la ligne Prisma **brute** (`ApiSupplier` : `categories` en CHAÎNE, `leadTime` camelCase), pas l'interface `Supplier` du front. Le `POST` ne l'inclut pas → sa réponse est plus étroite (`Omit<ApiOrder,'supplier'>`).
-  - Verrous : test **JUMEAU** sur `docs/shared-fixtures/order-create-cases.json` ; plus `ordersApiTypes.test.ts` (accès fantôme = **TS2339**, comparaison hors union = **TS2367**).
-- **Suppression d'employé** ⚠️ : **il n'y a PLUS de route `DELETE /api/employees/:id`** (retirée le 2026-08-11, décision de Nelson). Un employé se **DÉSACTIVE** — `PUT { isActive: false }`, bouton `UserX` ambre, la personne reste dans la liste marquée inactive. ⚠️ **NE PAS la rétablir « pour le ménage »** : les 5 FK vers Employee sont en CASCADE (présences, shifts, congés, primes, historique de salaire) — un hard delete les emportait, seuls les BULLETINS étant protégés par un `Restrict`. ⚠️ **Ce que l'absence coûte, assumé** : aucun chemin d'API n'efface plus une fiche ; `Employee.deletedAt` existe au schéma et n'est utilisé par personne — c'est la voie douce si le besoin revient. Verrous : `hrEmployeeDeactivate.test.tsx` (7) · le cas « la route n'existe plus » de `payrollPersistence.test.ts`, avec témoin discriminant (un 404 seul ne prouve rien).
-- **Photo produit** ⚠️ **PIÈGE DE NOM — `StockForm.image` EST L'ÉMOJI, PAS LA PHOTO.** Il part en `emoji` et il est **préfixé au nom** (`form.image + ' ' + form.name`, `Stock.tsx`) ; `Product.image` porte une URL. Deux champs homonymes de sens **opposés**, manipulés dans les mêmes fichiers — les fondre envoie un émoji comme URL, ou écrase l'émoji par une URL. Côté domaine la photo s'appelle donc **`ProductItem.photo`**, délibérément. La photo ne transite **jamais** par `StockForm` : endpoint séparé, envoi immédiat sur un produit existant, **différé après `create`** sinon (l'échec partiel se DIT). Un rendu = `ProductThumb`. 📖 *`docs/modules.md` § Photos produit.*
 - **Sidebar / permissions** : zone quotidienne épinglée + 4 groupes d'intention ; en-têtes masqués si aucune entrée `canAccess`. Pas de badge factice (seul Stock en a un, réel).
 
 ### Tests
@@ -487,112 +495,57 @@ D'où `spendGuardStatusOrder.test.ts` : il ne teste pas le plafond, il teste que
 même texte pour fr et es faute de branche espagnole, juste *par coïncidence* lexicale : la
 première reformulation française aurait emporté l'espagnol.
 
-### Marché par défaut ⚠️ — SOURCE UNIQUE `defaultMarket.ts`
+### Marché par défaut ⚠️ — DÉCLENCHEUR
 
-**DÉCISION PRODUIT du 2026-08-06 : Cameroun / XAF / +237.** Motif MESURÉ — les seuls
-prestataires câblés ET appelables sont camerounais (Campay est en politique `cm-only`,
-MTN MoMo est camerounais) ; **Wave est sénégalais et n'a aucune clé**, Orange non plus.
-Un commerçant qui s'inscrivait avec les valeurs par défaut obtenait SN + XOF, puis se
-voyait proposer le seul chemin de paiement qui ne fonctionne pas.
+**DÉCISION PRODUIT du 2026-08-06 : Cameroun / XAF / +237** — source unique
+`defaultMarket.ts` (**3 jumeaux** front/back/mobile + `docs/shared-fixtures/default-market.json`,
+lus à l'EXÉCUTION, contexte Docker oblige). Motif mesuré : les seuls prestataires câblés ET
+appelables sont camerounais ; Wave et Orange n'ont aucune clé.
 
-Fixture `docs/shared-fixtures/default-market.json` + **TROIS jumeaux**
-(`apps/{frontend,backend}/src/lib/defaultMarket.ts`, `mobile/src/lib/defaultMarket.ts`),
-lus à l'exécution — contexte Docker oblige.
+📖 **À LIRE AVANT de toucher `defaultMarket.ts`, `dialCodeFor`, une liste de pays ou un défaut
+de devise : `docs/lessons/marche-par-defaut.md`** (les 6 valeurs par défaut supprimées, ce que
+le verrou distingue, les 6 listes de pays dont la sixième invisible au scanner, le piège
+d'insertion d'import, la preuve de non-régression).
 
-⚠️ **XOF → XAF n'a AUCUN effet sur les montants**, vérifié dans le code et non supposé :
-`TO_XOF_RATES` XOF:1 / XAF:1 · `CURRENCY_DECIMALS` 0 / 0 · symbole « FCFA » des deux
-côtés. `lib/plans.ts` ne dépend pas du code de devise (`XOF` n'y nomme que l'unité de
-base). Aucun recalcul, aucun prix ne bouge.
+Ce qui mord depuis l'EXTÉRIEUR, donc reste ici :
 
-⚠️ **L'INDICATIF N'EST PAS UNE CONSTANTE — il se DÉRIVE de `tenant.country`.** Corriger
-`useState('+221')` en `useState('+237')` aurait créé une SEPTIÈME valeur par défaut au lieu
-d'en supprimer six. `dialCodeFor(country)` (+ `useTenantDialCode`) rend le préfixe du pays
-DÉCLARÉ ; `DEFAULT_MARKET.dialCode` n'est que le repli. Une boutique de Dakar ne doit pas
-plus recevoir +237 qu'une boutique de Douala ne devait recevoir +221. ⚠️ **Ce n'est pas une
-inférence de pays** : on part d'un pays connu pour proposer un préfixe, on ne devine pas le
-pays d'un numéro — et `resolveRecipient` reste seul juge côté serveur. On corrige la CAUSE
-(un préfixe faux proposé au caissier), pas le symptôme : **ne pas retirer la garde serveur**.
+- ⚠️ **L'INDICATIF N'EST PAS UNE CONSTANTE — il se DÉRIVE de `tenant.country`** (`dialCodeFor`,
+  `useTenantDialCode`) ; `DEFAULT_MARKET.dialCode` n'est QUE le repli. Corriger un
+  `useState('+221')` en `useState('+237')` créerait une SEPTIÈME valeur par défaut au lieu d'en
+  supprimer six. ⚠️ Ce n'est PAS une inférence de pays : on part d'un pays connu pour proposer un
+  préfixe — `resolveRecipient` reste seul juge côté serveur, **ne pas retirer la garde**.
+- ⚠️ **`dialCodeFor` prend `unknown`, pas `string | null`** — le pays vient d'un JSON d'API et d'un
+  store persisté ; le typer `string` est une AFFIRMATION, pas une garantie (un objet y est arrivé
+  et a fait lever `.toUpperCase()`). Même raisonnement que `resolvePlanId(raw: unknown)`.
+- ⚠️ **XOF → XAF n'a AUCUN effet sur les montants** — vérifié, pas supposé : taux 1/1, 0 décimale
+  des deux côtés, symbole « FCFA » commun. Aucun prix ne bouge.
+- ⚠️ **LES DÉMOS RESTENT OUEST-AFRICAINES** — ne pas « aligner » sur ce défaut (cf. § Comptes démo).
 
-⚠️ **`dialCodeFor` prend `unknown`, pas `string | null`.** Le pays vient d'un JSON d'API et
-d'un store persisté : le typer `string` est une AFFIRMATION, pas une garantie — un objet y
-est arrivé et a fait lever `.toUpperCase()`. Même raisonnement que `resolvePlanId(raw: unknown)`.
+### ⚠️ TVA — DÉCLENCHEUR : le taux se DÉRIVE du pays, il n'a pas de valeur par défaut
 
-**Ce que le verrou distingue** (`defaultMarket.test.ts`) : un DÉFAUT (ce qu'on obtient quand
-personne n'a choisi) d'un MEMBRE DE LISTE (`countryList.ts` contient légitimement `'SN'`) et
-d'un REPLI D'AFFICHAGE (`tenant.currency ?? 'XOF'` rend une devise absente, il ne décide
-d'aucun marché — **décision explicite : on les laisse**, ils sont exemptés par raison nommée
-sur une fenêtre de ±3 lignes, pas par fichier). Il vise la FORME (`??` · `||` · `useState` ·
-champ de formulaire · const `DEFAULT_*`), jamais l'identifiant. Sabotages COPIÉS depuis
-`fixtures/default-market-avant.txt`, extrait par `git show`.
+Il n'existait AUCUN mapping pays → TVA : le taux venait du `vatRate Float @default(18)` de Prisma
+— le taux **UEMOA** — qu'aucun des trois chemins de création de tenant n'écrivait. **Toute
+inscription camerounaise recevait donc 18 % au lieu de 19,25 %**, en silence, sur des factures.
+Source unique : `docs/shared-fixtures/vat-rates.json` + **2 jumeaux** `lib/vatRate.ts`.
 
-⚠️ **Un verrou justifié par la MESURE, pas par principe** — et c'est l'inverse de l'arité des
-ternaires : là-bas 1 211 chaînes sur 1 268 étaient correctes et un scanner aurait crié au
-loup ; ici la quasi-totalité des occurrences était à corriger.
+📖 **À LIRE AVANT de toucher `lib/vatRate.ts`, `vat-rates.json` ou un `tenant.create` :
+`docs/lessons/tva-derivee-du-pays.md`** (la table des 12 pays sourcés, pourquoi CEMAC n'est PAS
+homogène, les deux règles structurelles du verrou, l'alignement des tenants existants).
 
-⚠️ **SIX listes de pays, pas cinq.** La sixième (`Onboarding.tsx`) est un **tableau de tableaux**
-que la détection par forme, qui cherchait `{ iso: … }`, n'a **PAS** vue — trouvée à l'inventaire
-de l'imaginaire, pas par le scanner. **Limite assumée** : les listes sont exemptées au FICHIER,
-un vrai défaut ajouté dedans passerait.
+Ce qui mord depuis l'EXTÉRIEUR, donc reste ici :
 
-⚠️ **Deux tests figeaient le défaut d'hier** et ont rougi alors que rien n'était cassé :
-`signup.anchor` exigeait « Sénégal » en dur, il lit désormais `DEFAULT_MARKET`. Un test qui
-nomme le défaut au lieu de le dériver devient un frein au changement qu'il devrait garder.
-
-⚠️ **Piège d'insertion d'import, rencontré DEUX fois dans ce chantier** : ajouter un `import`
-après « la dernière ligne qui commence par `import` » le place **à l'intérieur** d'un bloc
-`import {` multi-ligne → TS1003 en cascade. Ancrer sur la fin du bloc (`} from '…'`), ou
-balayer après coup : `if (/^import\s/.test(l) && /^import (type )?\{\s*$/.test(lignePrécédente))`.
-
-**Preuve de non-régression** : le basculement ne touche **AUCUN** tenant existant — vérifié sur
-tenant jetable (`verif-market-tmp`, détruit, orphelins 0). ⚠️ La valeur de l'empreinte a été
-perdue à une compression : elle se **RECALCULE** — hash du
-`(id, country, currency, vatRate, updatedAt)` des 4 tenants, trié par id. *Une assertion dont on a supprimé le moyen de
-vérification n'est plus une preuve, c'est une affirmation.*
-
-### ⚠️ TVA — le taux se DÉRIVE du pays, il n'a pas de valeur par défaut
-
-**Il n'existait AUCUN mapping pays → TVA** : le taux venait du `vatRate Float @default(18)` de Prisma — le taux **UEMOA** — qu'aucun des trois chemins de création de tenant n'écrivait, si bien que **toute inscription camerounaise recevait 18 % au lieu de 19,25 %**, en silence, sur des factures.
-
-Source unique : `docs/shared-fixtures/vat-rates.json` + **deux jumeaux**
-(`apps/{frontend,backend}/src/lib/vatRate.ts`). ⚠️ **Pas de jumeau mobile** : `mobile/` ne crée
-aucun tenant et ne porte aucun repli — un troisième serait du code mort.
-
-⚠️ **CEMAC n'est PAS homogène**, contrairement à l'UEMOA. C'est tout le piège : traiter « zone
-franc » comme un bloc est exactement l'erreur qu'encodait le `@default(18)`.
-
-| | Taux |
-|---|---|
-| UEMOA (SN CI ML BF NE TG BJ GW) | **18** — directive d'harmonisation |
-| **CM** | **19,25** = 17,5 % + 10 % de centimes additionnels communaux |
-| GA | 18 |
-| CG | **18,9** = 18 % + 5 % de surtaxe |
-| FR | 20 — présent parce qu'un tenant de production est en FR |
-
-⚠️ **Un pays non documenté rend `null`, et l'écriture vaut `0` — JAMAIS 18.** Sous-facturer
-**bruyamment** vaut mieux que facturer faux en silence : un 0 se voit au POS dès le premier
-encaissement, un 18 erroné part sur des factures sans que personne ne le remarque. Même
-raisonnement que `ratingSummary` (→ `null`) et `resolvePosPayMode` (→ pas de prestataire deviné).
-
-⚠️ **Table volontairement INCOMPLÈTE — 12 pays sur les 32 de `SUPPORTED_COUNTRIES`** (recomptés, pas recopiés : clés de `rates` dans la fixture, codes de `lib/country.ts`). On
-n'inscrit que les taux SOURCÉS. La compléter au jugé reviendrait à écrire du droit fiscal de
-mémoire ; **ajouter un pays impose d'en citer la source dans la fixture.**
-
-⚠️ **Ce module ne dit pas le droit, il propose une VALEUR DE DÉPART** — le taux reste éditable
-(Réglages → POS). Et **le taux standard n'est pas le taux de chaque produit** : au Cameroun les
-produits alimentaires de base sont **exonérés**, donc une supérette n'applique pas 19,25 % sur
-l'essentiel de son catalogue. Le produit ne modélise pas la TVA par ligne (un seul
-`tenant.vatRate`) : limite **assumée et écrite**, pas masquée par un chiffre d'apparence précise.
-
-⚠️ **Le `@default(18)` du schéma RESTE en place, et c'est délibéré** : le changer imposerait une
-migration DDL sur la PROD pour un défaut qui ne doit plus jamais se déclencher. On le rend
-**inatteignable** en exigeant que chaque `tenant.create` pose la valeur — vérifiable par un test,
-sans toucher la base. *Un `@default` qui ne se déclenche jamais ne peut plus mentir.*
-
-Verrous : `vatRateShared.test.ts` **des deux côtés** (back 10 / front 7, **5 sabotages**, dont
-les deux sens du jumelage) — le back porte en plus les deux règles structurelles « aucun
-`tenant.create` sans `vatRate` » et « plus aucun `?? 18` dans les routes », à périmètre DÉRIVÉ.
-
-✅ **ALIGNÉ le 2026-08-09** — seul écart : le tenant FR à 18 % (la France est à 20), hérité de l'ancien `@default(18)` ; ⚠️ c'est le tenant `isPlatform` INTERNE, donc sans effet fonctionnel. `prisma/align-tenant-vat.ts` (`CONFIRM=1`) **DÉRIVE le taux de `vatRateFor(country)`** — un script qui écrirait « 20 » serait un cinquième endroit où le droit fiscal est écrit. ⚠️ Les démos ouest-africaines sont **lues, jugées concordantes, NON écrites** (18 % est correct pour SN et CI) ; un pays non documenté (`vatRateFor` → `null`) n'est jamais touché.
+- ⚠️ **Un pays non documenté rend `null`, et l'écriture vaut `0` — JAMAIS 18.** Sous-facturer
+  **bruyamment** vaut mieux que facturer faux en silence : un 0 se voit au POS dès le premier
+  encaissement, un 18 erroné part sur des factures sans que personne ne le remarque. Même
+  raisonnement que `ratingSummary` (→ `null`) et `resolvePosPayMode`.
+- ⚠️ **NE PAS dériver la zone franc du taux de TVA** : `GA` (CEMAC) porte 18 comme l'UEMOA —
+  justesse empruntée.
+- ⚠️ **Le `@default(18)` du schéma RESTE en place** (le changer imposerait une migration DDL sur la
+  PROD) : on le rend **inatteignable** en exigeant que chaque `tenant.create` pose la valeur.
+  *Un `@default` qui ne se déclenche jamais ne peut plus mentir.*
+- ⚠️ **Le taux standard n'est pas le taux de chaque produit** — au Cameroun les produits
+  alimentaires de base sont exonérés, et le modèle ne porte qu'un seul `tenant.vatRate` : limite
+  **assumée et écrite**, pas masquée par un chiffre d'apparence précise.
 
 ### Le COMMENTAIRE QUI INVENTE UN REPLI ⚠️ — règle exécutoire
 
@@ -1003,60 +956,35 @@ Méta-test `redactPhone.test.ts` : assertions sur le contenu **réellement journ
 (`console.warn` capturé), + scan ligne-par-ligne interdisant un numéro ou un `err.message`
 brut sur la surface d'envoi. Exclut les horodatages ISO (même silhouette qu'un numéro).
 
-### ⚠️ Normalisation téléphonique — chantier CLOS. **Ne PAS re-concevoir.**
+### ⚠️ Téléphone — DÉCLENCHEUR : chantier CLOS, ne PAS re-concevoir
 
-📖 **POURQUOI intégral : `docs/lessons/normalisation-telephonique.md`** — 4 tentatives, dont
-**3 fuites de données annulées** (reçus clients et résumés commerçants livrés à des inconnus),
-et les faits MESURÉS sur `libphonenumber-js` qui les expliquent. **Lire ce fichier AVANT de
-toucher** `recipientPhone.ts`, `twilioClient`, `smsClient` ou la surface d'envoi.
+📖 **À LIRE AVANT de toucher `recipientPhone.ts`, `twilioClient`, `smsClient`, `lib/country.ts`
+ou la surface d'envoi : `docs/lessons/telephone-chantier-clos.md`** (la conception `resolveRecipient`,
+les deux politiques MSISDN, la dette `Tenant.country`, les verrous) — et
+`docs/lessons/normalisation-telephonique.md` pour le POURQUOI : **4 tentatives, dont 3 fuites de
+données annulées** (reçus clients et résumés commerçants livrés à des inconnus).
 
-**La conception en place** (PR #100, `lib/spend/recipientPhone.ts` `resolveRecipient`) : la
-question se pose **AVANT** la bibliothèque — « à qui appartient ce numéro ? » — via un paramètre
-**`owner` OBLIGATOIRE** sur `sendWhatsApp`/`sendSms` (le compilateur le force à tout futur appelant) :
-- **flux commerçant** (`ownerPhone`, crons) → normalisable avec `tenant.country`, UNIQUEMENT si
-  `isSupportedCountry()` ; sinon refus `COUNTRY_UNKNOWN` ;
-- **flux client** (reçu, send-ticket, send-alert, broadcast, campagne) → **AUCUNE inférence de
-  pays** ; seul un `+` littéral que `isValid()` valide passe, sinon `PHONE_NOT_INTERNATIONAL`/
-  `PHONE_INVALID`. Le flux se déduit de la **PROVENANCE**, jamais de l'intention (`send-alert`
-  reçoit son numéro du corps de requête ⇒ c'est un tiers) ;
-- le refus **REMONTE** (`SendResult.refused[]`) → 422, jamais un `+` deviné vers Twilio.
+Ce qui mord depuis l'EXTÉRIEUR, donc reste ici :
 
-`resolveRecipient` est la **seule autorité** : toutes les pré-transformations amont (`00→+`,
-`replace(/^0/)`, `+` collé, mapping des campagnes) sont supprimées. Verrous : `phoneCollision.test.ts`
-(harnais de collision, 2 sabotages) + `phoneChokepoint.test.ts` (méta-test : `libphonenumber-js`
-interdit hors du résolveur, motifs de fabrication interdits sur la surface d'envoi — **résidu
-assumé** : un motif INÉDIT passerait ; la couche solide est `owner` obligatoire + relancer le
-harnais sur tout nouveau chemin).
-
-⚠️ **Les trois intuitions qui ont causé les fuites, toutes MESURÉES fausses** (détail + chiffres
-dans le fichier de leçon) : le pays du commerçant n'informe **pas** le numéro de son client (plans
-qui se recouvrent : `76123456` est valide en ML, BF, NE **et** TG) · la bibliothèque **fabrique**
-au lieu de refuser (seul `isValid()` écarte) · « Twilio rejettera un numéro mal formé » est **faux**
-(un `+` à l'aveugle produit des numéros étrangers **livrables**). Donc « on ne normalise pas » ne
-vaut **jamais** « on n'envoie pas » : il faut refuser d'envoyer, explicitement.
-
-✅ **Dette `Tenant.country` : TRAITÉE.** Le champ a contenu des LIBELLÉS français à côté d'ISO-2,
-faute de validation entre `Onboarding` et `SignupPage`. Conséquence NON cosmétique :
-`resolveRecipient` n'accepte que l'ISO-2, donc un tenant « France » ne recevait **ni WhatsApp ni
-SMS**, en silence — *le garde faisait son travail, la donnée mentait*.
-
-**`lib/country.ts`** (`normalizeCountry`, `SUPPORTED_COUNTRIES`) est le seul juge, appelé par les
-**3** chemins d'écriture (`PATCH /api/tenant` → **400** sur l'irrésolvable, register, admin).
-⚠️ **Liste blanche, PAS `^[A-Z]{2}$`** : la regex accepterait `XX`, remplaçant une valeur invalide
-*bruyante* par une *silencieuse*. ⚠️ **`null` ≠ repli** — un défaut implicite sur `SN` rend
-indistinguables un choix et une valeur jamais saisie. ⚠️ **Ne PAS y importer `libphonenumber-js`**
-(`isSupportedCountry`) : un second point d'entrée rouvrirait ce que `phoneChokepoint.test.ts`
-ferme. Table des libellés hérités conservée (une PWA en cache les envoie encore) — ensemble CLOS
-de nos propres anciennes `value`, pas une inférence sur du texte libre. Front : `Onboarding` et le
-champ Réglages → Boutique (qui était en TEXTE LIBRE, donc 400 garanti) passent par le sélecteur
-`utils/countryList.ts`. Verrou : `tenantCountryIso.test.ts` (12, 3 sabotages). `Customer` n'a
-toujours **aucun** champ pays — c'est voulu (cf. flux client).
-
-⚠️ **Méthode — la leçon la plus chère, valable au-delà du téléphone** : ne JAMAIS poser une garantie
-de sûreté par RAISONNEMENT. Les trois échecs ont le même motif — une affirmation plausible écrite en
-commentaire et jamais exécutée, qu'un script de dix lignes aurait démentie **avant** le commit.
-**Mesurer d'abord, coder ensuite** ; si un commentaire affirme une propriété de sûreté, un test doit
-l'exercer, et être vérifié **dans les deux sens**.
+- ⚠️ **`sendWhatsApp` / `sendSms` exigent un paramètre `owner`** — le compilateur force tout futur
+  appelant à répondre « à qui appartient ce numéro ? » AVANT que la bibliothèque n'entre en jeu.
+  **Flux commerçant** (`ownerPhone`, crons) → normalisable avec `tenant.country`. **Flux client**
+  (reçu, send-ticket, send-alert, broadcast, campagne) → **AUCUNE inférence de pays**. Le flux se
+  déduit de la **PROVENANCE**, jamais de l'intention.
+- ⚠️ **« On ne normalise pas » ne vaut JAMAIS « on n'envoie pas »** — il faut refuser d'envoyer,
+  explicitement. Les trois intuitions qui ont causé les fuites sont MESURÉES fausses : le pays du
+  commerçant n'informe pas le numéro de son client (`76123456` est valide en ML, BF, NE **et** TG),
+  la bibliothèque **fabrique** au lieu de refuser (seul `isValid()` écarte), et « Twilio rejettera
+  un numéro mal formé » est **faux** (un `+` à l'aveugle produit des numéros étrangers LIVRABLES).
+- ⚠️ **`lib/country.ts` est le seul juge du pays**, appelé par les **3** chemins d'écriture ;
+  **liste blanche, PAS `^[A-Z]{2}$`** (la regex accepterait `XX`, remplaçant une valeur invalide
+  *bruyante* par une *silencieuse*). ⚠️ **Ne PAS y importer `libphonenumber-js`** : un second point
+  d'entrée rouvrirait ce que `phoneChokepoint.test.ts` ferme.
+- ⚠️ **MÉTHODE — la leçon la plus chère, valable bien au-delà du téléphone** : ne JAMAIS poser une
+  garantie de sûreté par RAISONNEMENT. Les trois échecs ont le même motif — une affirmation
+  plausible écrite en commentaire et jamais exécutée, qu'un script de dix lignes aurait démentie
+  **avant** le commit. **Mesurer d'abord, coder ensuite** ; si un commentaire affirme une propriété
+  de sûreté, un test doit l'exercer, et être vérifié **dans les deux sens**.
 
 ## Dette ouverte
 
@@ -1118,43 +1046,56 @@ en sont l'essentiel — à savoir **avant** de lancer une passe. Périmètre bor
 `.graphifyignore` ; ⚠️ **ne jamais y mettre du code de production** — la règle actuelle ne retire
 aucun fichier du dénominateur de couverture, c'est ce qui la rend sûre.
 
-## Comptes démo
+## Comptes démo ⚠️ — DÉCLENCHEUR
 
-⚠️ **`demo-tenant-001` et `demo-tenant-002` portent `isDemo = true`** depuis 2026-07-22 : toute action à coût externe ou destructive y est refusée côté serveur (403 `DEMO_TENANT_FORBIDDEN`, cf. § Garde de dépense). Le mot de passe démo est PUBLIC — c'est ce flag qui protège, pas la discrétion.
+📖 **À CONSULTER quand on touche les tenants `demo-*`, le seed ou le balayage PII :
+`docs/lessons/comptes-demo.md`** (comptes et rôles, multi-boutiques, le tenant orphelin supprimé,
+l'inventaire des devises) — et `docs/lessons/demos-devise-et-pii.md` pour l'incident PII.
 
-`demo1234` — `admin@`/`manager@`/`cashier@`/`accountant@`/`hr@habashop.com`, tenant principal `demo-tenant-001` (« HabaShop — Dakar Central »). 5 employés (`demo-emp-${name}`). Données hors seed : `requireCashier=false`, `ownerPhone='+221771234567'`. Si reseed → repasser `requireCashier=false`.
+Ce qui mord depuis l'EXTÉRIEUR, donc reste ici :
 
-⚠️ **QUATRE tenants** — un cinquième, orphelin, a été supprimé le 2026-08-09 (`prisma/delete-orphan-tenant.ts`, `CONFIRM=1`). ⚠️ **Le comptage des références se DÉRIVE des relations inverses de `model Tenant`, jamais des champs nommés `tenantId`** : un scan par nom de champ annonçait « 0 référence » en ayant manqué `StockTransfer` (`fromTenantId`/`toTenantId`) — *un périmètre dérivé de la mauvaise propriété rend un zéro qui a l'air d'une preuve.*
+- ⚠️ **`demo-tenant-001` et `demo-tenant-002` portent `isDemo = true`** : toute action à coût
+  externe ou destructive y est refusée **côté serveur** (403 `DEMO_TENANT_FORBIDDEN`). Le mot de
+  passe démo est **PUBLIC** — c'est ce flag qui protège, **pas la discrétion**, et masquer un
+  bouton côté front ne protège RIEN.
+- ✅ **TRANCHÉ le 2026-08-09 par Nelson : le mot de passe démo RESTE PUBLIC.** `isDemo` borne le
+  **coût**, **pas l'exposition**. ⚠️ **DÉCLENCHEUR DE RÉOUVERTURE : le premier prospect envoyé sur
+  la démo.** Le balayage PII hebdomadaire (`runDemoPiiSweep`, lundi 9 h) réduit la fenêtre à sept
+  jours — **il ne la ferme pas**. ⚠️ Il **RAPPORTE, il n'empêche pas**, et son rapport ne reproduit
+  **aucune valeur** : la recopier écrirait la PII dans les logs Railway et déplacerait la fuite.
+- ⚠️ **`e2e-tenant` reste en EUR, et c'est DÉLIBÉRÉ — ne pas « harmoniser ».** En XOF (0 décimale,
+  taux 1), convertir zéro, une ou deux fois donne le **même affichage** : tous les défauts de
+  conversion y seraient invisibles.
+- ⚠️ **LES DÉMOS RESTENT OUEST-AFRICAINES** — ne pas « aligner » sur le marché par défaut
+  camerounais : la TVA à 18 % est CORRECTE pour SN et CI, et une démo sénégalaise sous un défaut
+  produit camerounais est la meilleure preuve que le multi-pays fonctionne.
+- ⚠️ **« Re-seeder » ne ferait RIEN** : tous les `upsert` du seed ont `update: {}`. Le seed a déjà
+  DÉRIVÉ du contenu de la base, et un re-seed ne réconcilierait pas l'écart.
 
-⚠️ **DEVISES DES TENANTS — ne PAS recopier d'inventaire ici, il se RELIT** (`tenant.findMany`). Ce fichier a déjà annoncé « EUR 2 / XOF 2 » sur la foi d'un `PATCH` non revérifié, et `demo-001` a porté `XAF` — un tenant sénégalais en devise d'Afrique CENTRALE, que rien ne pouvait signaler puisque les deux calculent à l'identique. Corrigé et vérifié le 2026-08-07 ; depuis le 2026-08-08 un garde empêche le couple incohérent de revenir. 📖 *`docs/lessons/demos-devise-et-pii.md`.*
+## Env vars ⚠️ — DÉCLENCHEUR
 
-⚠️ **`e2e-tenant` reste en EUR, et c'est DÉLIBÉRÉ — ne pas « harmoniser ».** En XOF (0 décimale, taux 1), convertir zéro, une ou deux fois donne le **même affichage** : tous les défauts de conversion y sont invisibles. C'est exactement la raison pour laquelle les cas dorés de paie doublent chaque cas XOF d'un cas EUR (§ Paie). `HabaShop Ops` est un tenant interne, pas une boutique.
-⚠️ **LES DÉMOS RESTENT OUEST-AFRICAINES — ne pas « aligner » sur le marché par défaut.** Mesuré avant de décider : chaque démo est ancrée sur 16 lignes (SN pour `demo-001`, CI pour `demo-002`), l'indicatif dérive déjà de `tenant.country`, et **la TVA à 18 % est CORRECTE pour SN et CI**. Une démo sénégalaise sous un défaut produit camerounais est la meilleure preuve que le multi-pays fonctionne.
+📖 **À CONSULTER dès qu'on pose, lit ou renomme une variable — inventaire complet par plateforme (Railway, Vercel, EAS) : `docs/env-vars.md`.**
+⚠️ **MIGRATION vers un domaine propre : `docs/handoff/2026-08-12-migration-domaine.md`** —
+inventaire MESURÉ (51 occurrences), ordre contraint par le **CORS en dur** de `server.ts`, et les
+4 plateformes hors dépôt. À lire AVANT de toucher une seule de ces variables.
 
-⚠️ **Et « re-seeder » ne ferait RIEN** : tous les `upsert` du seed ont `update: {}` (seules exceptions : `lang` sur le tenant, `role`/`name` sur les users). Le seed a d'ailleurs **déjà dérivé** du contenu de la base, et un re-seed ne réconcilierait pas l'écart — il ne réécrit aucune ligne existante.
+Ce qui mord depuis l'EXTÉRIEUR, donc reste ici :
 
-✅ **DONNÉES PERSONNELLES RÉELLES — TRAITÉES le 2026-08-06, et surveillées depuis** (un client de `demo-001` portait nom, mobile, adresse et e-mail réels, **trois semaines** en lecture publique ; anonymisé). 📖 *`docs/lessons/demos-devise-et-pii.md`.*
-
-⚠️ **LE TIROIR MENTAIT, ET C'EST LA LEÇON** : l'écran affichait « Aucun achat », la base portait **1 abonnement actif** — c'est ce comptage qui a imposé l'ANONYMISATION plutôt que la suppression (`Subscription.customerId` non nullable). **Compter les références avant de choisir, jamais déduire de l'écran.**
-
-⚠️ **BALAYAGE HEBDOMADAIRE** — `runDemoPiiSweep` (lundi 9h), `lib/piiSweep.ts`. Il **RAPPORTE, il n'empêche pas** : empêcher supposerait de refuser des saisies dans une démo dont l'intérêt est qu'on puisse tout y faire. Détection **de FORME** (indicatif, domaine), jamais par liste de pays ou de messageries — le critère « absent des seeds » a été ABANDONNÉ après **8 faux positifs sur 12**. ⚠️ Le rapport ne reproduit **aucune valeur**, seulement identifiants et noms de champs : le recopier l'écrirait dans les logs Railway et **déplacerait la fuite au lieu de la fermer**. Périmètre `isDemo` UNIQUEMENT.
-
-✅ **TRANCHÉ le 2026-08-09 par Nelson : le mot de passe démo RESTE PUBLIC**, le balayage PII hebdomadaire pour seule borne — `isDemo` borne le **coût** (403 sur toute dépense externe), **pas l'exposition**. **DÉCLENCHEUR DE RÉOUVERTURE : le premier prospect envoyé sur la démo** ; ce jour-là le mot de passe public devient un choix, plus un reliquat. ⚠️ `runDemoPiiSweep` réduit la fenêtre à sept jours — **il ne la ferme pas**.
-
-**Multi-boutiques** : `admin@` et `manager@` sont liés à une 2ᵉ boutique `demo-tenant-002` (« Alimentation Koné — Abidjan », XOF) via `UserTenant` → login déclenche le sélecteur. `admin@` = SUPER_ADMIN/ADMIN, `manager@` = MANAGER/MANAGER. Les 3 autres restent mono-boutique.
-
-## Env vars
-
-**Railway** : `FRONTEND_URL` (**URL de l'app web — SOURCE UNIQUE backend**, `lib/appUrl.ts` ; déjà posée à `https://habashop.vercel.app`. Le jour d'un domaine propre, la changer ICI suffit : e-mails — logo, pied, liens login/upgrade/stock/dashboard — et redirections de paiement Campay/PayDunya suivent. Absente ⇒ repli sur l'URL vercel, comportement inchangé. ⚠️ NE PAS créer un second nom type `APP_URL` : `FRONTEND_URL` sert aussi la liste CORS. Verrou : `appUrlSource.test.ts` (8, sabotage vérifié) échoue si le littéral réapparaît dans `src/services`/`src/routes` — il ignore volontairement l'adresse factice `test@habashop.vercel.app` d'`admin.ts`. ✅ Les deux autres surfaces sont traitées : front statique via `VITE_APP_URL` (#158) et applicatif (#159), mobile via `EXPO_PUBLIC_APP_URL` (#160). **Quatre lectures, une valeur** — chaque plateforme a son environnement d'exécution, et les méta-tests verrouillent l'ÉGALITÉ des défauts), `DATABASE_URL`, `TWILIO_ACCOUNT_SID/AUTH_TOKEN/WHATSAPP_FROM`, `WAVE_WEBHOOK_SECRET`, Resend, Redis, `ANTHROPIC_API_KEY`, `SENTRY_AUTH_TOKEN`, `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` (+ `VAPID_SUBJECT` optionnel — Web Push PWA ; absents = feature inerte), `SMS_API_KEY` (+ `SMS_USERNAME` défaut `sandbox`, `SMS_SENDER_ID` optionnel — SMS Africa's Talking ; absente = feature inerte).
-- MTN : `MTN_MOMO_SUBSCRIPTION_KEY/USER_ID/API_KEY/ENVIRONMENT` · `MTN_SANDBOX_AUTO_SUCCESS`
-- Campay : `CAMPAY_USERNAME/PASSWORD/TOKEN/WEBHOOK_KEY/ENVIRONMENT` · `CAMPAY_SANDBOX_AUTO_SUCCESS`
-- PayDunya : `PAYDUNYA_MASTER_KEY/PRIVATE_KEY/PUBLIC_KEY/TOKEN/MODE` · `PAYDUNYA_SANDBOX_AUTO_SUCCESS`
-
-- **Stockage photos produit (Cloudflare R2)** ⚠️ : `R2_ACCOUNT_ID` · `R2_ACCESS_KEY_ID` · `R2_SECRET_ACCESS_KEY` · `R2_BUCKET` · **`R2_PUBLIC_BASE_URL`** (domaine public servant le bucket). **LES CINQ ou rien** — `isR2Configured()` exige l'ensemble : sans l'URL publique on saurait ÉCRIRE sans savoir rendre l'adresse à ranger dans `Product.image`. Absentes = feature inerte (**503 `STORAGE_NOT_CONFIGURED`**, jamais un 500). ⚠️ **`lib/spend/r2Client.ts` est le SEUL module autorisé à importer `@aws-sdk/*s3*`** (allowlist). ⚠️ **R2 est le seul poste au coût RÉCURRENT** (Go·mois) : un abus n'y fait pas un pic, il fait une rente — d'où `SpendKind` **`storage`** (`QUOTA_TRIAL_STORAGE`/`QUOTA_ACTIVE_STORAGE`, 30/300) gardé à l'ÉCRITURE et **jamais à la suppression** (refuser de ranger fait grossir la facture). 📖 *`docs/modules.md` § Photos produit.*
-- Garde de dépense : `QUOTA_TRIAL_AI/OCR/WHATSAPP/WHATSAPP_MARKETING/EMAIL` · `QUOTA_ACTIVE_*` (défauts 20/15/30/**10**/20 et 200/150/300/**50**/200 ; `WHATSAPP_MARKETING` = placeholder bas) · `COST_BURST_PER_MIN` (défaut 10, `0` = désactivé) · `RATE_LIMIT_MAX` (global, défaut 300/min/IP). Tous **lus à l'appel** → ajustables sans redéploiement.
-
-⚠️ **MIGRATION vers un domaine propre : 📖 `docs/handoff/2026-08-12-migration-domaine.md`** — inventaire MESURÉ (51 occurrences, dont ~15 de code), l'ordre contraint par le **CORS en dur** de `server.ts`, et les 4 plateformes hors dépôt. À lire AVANT de toucher une seule de ces variables.
-
-**Vercel** : **`VITE_APP_URL`** (URL publique de l'app — **miroir front de `FRONTEND_URL`** ; même valeur, deux plateformes où la poser, contrainte inhérente). Défaut garanti dans `apps/frontend/.env` (tracké). ⚠️ **Si elle manque, Vite livre le littéral `%VITE_APP_URL%`** dans `canonical`/`og:url`/JSON-LD — un canonical cassé désindexe, donc PIRE que l'URL en dur (mesuré). **Deux mécanismes, car les fichiers ne sont pas produits pareil** : `index.html` traverse Vite → substitution native `%VITE_APP_URL%` (9 balises) ; `public/` est copié **octet pour octet** → aucune substitution possible, d'où les gabarits `scripts/seo/*.tmpl` + `scripts/gen-seo.mjs` qui écrivent `dist/sitemap.xml` et `dist/robots.txt` au build (⚠️ ils ne sont donc plus servis par `vite dev` — sans effet, ils ne valent que déployés). Gardes : `npm run verify:seo-urls` inspecte le **`dist/` livré** (marqueur non substitué = échec, invisible pour tsc/tests puisque la SOURCE est correcte — c'est l'ENV de build qui manque) + méta-test `appUrlStatic.test.ts` (8, **4 sabotages**). ✅ **Les 6 liens user-facing de `src/`** (`Privacy.tsx` ×4, `PublicCatalog.tsx` ×2) passent par `src/lib/appUrl.ts` (#159) — module DISTINCT de `gen-seo.mjs`, qui tourne hors du pipeline Vite et n'a pas accès à `import.meta.env`. Verrou : bloc `src/` d'`appUrlStatic.test.ts`, qui interdit le retour d'un **`href`** en dur, pas toute mention du littéral (fixtures d'`Integrations.tsx`, repli `window.location.origin` de `SectionCatalog` — un verrou qui crie au loup se fait désarmer). `VITE_GOOGLE_MAPS_KEY` (.env tracké), `VITE_ENV`, `SENTRY_AUTH_TOKEN` (.env.local), `VITE_DEMO_MODE=1` (**déploiement DÉMO uniquement** — jamais en prod : sort le raccourci par rôle et `demo1234` du bundle).
-
-**EAS (mobile)** : **`EXPO_PUBLIC_APP_URL`** (miroir mobile de `FRONTEND_URL`/`VITE_APP_URL` — URL de l'app WEB, à ne pas confondre avec `app.json` `version` qui pilote le runtime OTA et reste une piste séparée). Lue par `mobile/src/lib/appUrl.ts` ; absente = repli sur l'hôte actuel, comportement inchangé. ⚠️ **`mobile/.env` est gitignoré et n'atteint PAS le builder** : `eas.json` déclare `"environment": preview|production`, donc les variables viennent d'**EAS**. Mesuré le 2026-07-29 : `EXPO_PUBLIC_API_URL` n'est posée dans **aucun** environnement EAS — tout build/OTA tourne donc sur le repli littéral d'`api.ts`, et le `.env` local n'agit qu'en dev. Conséquence : `EXPO_PUBLIC_APP_URL` est **inerte tant que Nelson ne la pose pas** (`eas env:create --environment preview --name EXPO_PUBLIC_APP_URL`), exactement comme VAPID et SMS. ⚠️ **Expo inline `EXPO_PUBLIC_*` STATIQUEMENT au bundling** (substitution textuelle) → la variable doit apparaître en toutes lettres ; un accès calculé `process.env[clef]` ne serait jamais remplacé. D'où `normalizeAppUrl(raw)` séparé de `appUrl()` : la logique reste testable sans dépendre de ce que babel a inliné. Verrou : `mobile/src/__tests__/appUrl.test.ts` (8, **3 sabotages**) — il scanne **`src/` ET `app/`**, contrairement à `versionSource.test.ts` qui s'arrête à `src/` alors qu'un des sites vivait dans `app/(app)/(tabs)/settings.tsx`. ✅ **Ce verrou tourne en CI** depuis #163 (job `unit-tests-mobile`) ; en local, `cd mobile && npx jest`.
+- ⚠️ **`FRONTEND_URL` est la SOURCE UNIQUE de l'URL de l'app côté backend** (`lib/appUrl.ts`).
+  **NE PAS créer un second nom type `APP_URL`** : `FRONTEND_URL` sert aussi la liste CORS.
+  **QUATRE lectures, UNE valeur** — `FRONTEND_URL` (Railway) · `VITE_APP_URL` (Vercel) ·
+  `EXPO_PUBLIC_APP_URL` (EAS) · `src/lib/appUrl.ts` (front applicatif). Chaque plateforme a son
+  environnement d'exécution ; les méta-tests verrouillent l'**ÉGALITÉ des défauts**.
+- ⚠️ **`VITE_APP_URL` absente ⇒ Vite livre le littéral `%VITE_APP_URL%`** dans `canonical`/`og:url`
+  — un canonical cassé **désindexe**, donc PIRE que l'URL en dur. Garde : `verify:seo-urls` sur le
+  `dist/` LIVRÉ (invisible pour tsc et les tests : la SOURCE est correcte, c'est l'ENV de build).
+- ⚠️ **Stockage R2 : LES CINQ variables ou rien** (`isR2Configured()`) — sans `R2_PUBLIC_BASE_URL`
+  on saurait ÉCRIRE sans savoir rendre l'adresse à ranger dans `Product.image`. Absentes = **503
+  `STORAGE_NOT_CONFIGURED`**, jamais un 500. ⚠️ R2 est le seul poste au coût **RÉCURRENT** : un
+  abus n'y fait pas un pic, il fait une rente — d'où `SpendKind` `storage`, gardé à l'ÉCRITURE et
+  **jamais à la suppression** (refuser de ranger fait grossir la facture).
+- ⚠️ **Les plafonds de dépense sont lus À L'APPEL** → ajustables sans redéploiement. Pas de
+  `|| 10` : `Number('0') || 10` rendrait la désactivation inopérante.
+- ⚠️ **`VITE_DEMO_MODE=1` : déploiement DÉMO uniquement**, jamais en prod (sort `demo1234` du bundle).
+- ⚠️ **Clé absente = fonctionnalité INERTE, jamais une erreur** (VAPID, SMS, R2, Wave, Campay,
+  PayDunya). C'est la convention du dépôt, et elle vaut pour tout nouveau prestataire.

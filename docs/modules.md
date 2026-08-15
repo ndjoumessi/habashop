@@ -206,3 +206,25 @@ natif au doigt gardent leur chemin, et `hrContractDomain.test.ts` (qui interdit 
 libre) reste satisfait. Le panneau est en **portail** : `.modal-box` porte `overflow:hidden` et
 la plupart des champs vivent dans une modale. Méta-test : plus aucun `type="date"` / `"month"`
 nu dans `src/`.
+
+
+---
+
+# Règles rapatriées de `CLAUDE.md` le 2026-08-15
+
+> ⚠️ **DÉPLACÉES SUR DÉCISION DE NELSON.** Elles ne se chargent plus à chaque session. Le
+> § Modules — index de `CLAUDE.md` garde un déclencheur qui renvoie ici. Ces règles sont
+> **module-LOCALES** : elles n'ont de sens qu'une fois sur la surface concernée — contrairement
+> à Codes-barres, Audit, Multi-boutiques, Admin plateforme, Zone franc CFA et Facture PDF, qui
+> restent dans `CLAUDE.md` parce qu'on les enfreint **sans même travailler sur le module**.
+>
+> Texte repris **VERBATIM**.
+
+- **Étiquettes** ⚠️ : **EAN-13/EAN-8 uniquement**, JAMAIS de CODE128-sur-SKU (code non standard = piège caisse). Prix en **noir gras** sur les deux gabarits (Avery + thermique), jamais le violet écran. Quiet zones ≥10 modules via `quietZonePx`.
+- **Expiration de promo** ⚠️ : helper pur **`isPromotionActive(hasPromotion, promotionEnd, now)`**, miroir back (`utils/pricing.ts`) ↔ front (`lib/pricing.ts`), cas partagés `promotion-active-cases.json`, `now` **injecté**. Échéance inclusive au jour calendaire **UTC**. ✅ **Miroir MOBILE (`posStore.ts`) ALIGNÉ et désormais ENFORCED** — `mobile/src/__tests__/promotionActiveShared.test.ts` exerce `isPromotionActive` sur les 9 cas partagés et tourne en CI depuis #163. *(Ce fichier a longtemps affirmé le miroir « PAS aligné » : c'était FAUX — il l'était, il n'était simplement pas enforced. Une dette d'exécution lue comme une dette de code.)*
+- **Commandes** ⚠️ : **`PurchaseOrder` ne représente QUE des commandes FOURNISSEUR** — `supplierId` y est une FK obligatoire, et il n'existe ni `clientName`, ni `clientPhone`, ni colonne `type`. Les **commandes CLIENT de l'écran sont donc LOCALES et ÉPHÉMÈRES** (décision produit #171) : aucun appel serveur n'est émis pour elles. Avant, il l'était — sans `supplierId` — et se faisait refuser en **400 systématique**, dont le caissier ne voyait qu'un « Échec de la création ». Leur persistance est une **dette backend** (colonnes + zod), pas un oubli du front.
+  - ⚠️ **ASYMÉTRIE écriture/lecture** : on ENVOIE `items[].product`, le serveur range en `items[].productName`. **Passer par `toOrderPayload`** — envoyer les lignes du formulaire telles quelles est exactement ce qui a cassé la création : **0 commande en base**, avec `tsc` vert parce que `create` prenait `any`.
+  - **Frontière dans la frontière** : `GET /api/orders` inclut `supplier` → on reçoit la ligne Prisma **brute** (`ApiSupplier` : `categories` en CHAÎNE, `leadTime` camelCase), pas l'interface `Supplier` du front. Le `POST` ne l'inclut pas → sa réponse est plus étroite (`Omit<ApiOrder,'supplier'>`).
+  - Verrous : test **JUMEAU** sur `docs/shared-fixtures/order-create-cases.json` ; plus `ordersApiTypes.test.ts` (accès fantôme = **TS2339**, comparaison hors union = **TS2367**).
+- **Suppression d'employé** ⚠️ : **il n'y a PLUS de route `DELETE /api/employees/:id`** (retirée le 2026-08-11, décision de Nelson). Un employé se **DÉSACTIVE** — `PUT { isActive: false }`, bouton `UserX` ambre, la personne reste dans la liste marquée inactive. ⚠️ **NE PAS la rétablir « pour le ménage »** : les 5 FK vers Employee sont en CASCADE (présences, shifts, congés, primes, historique de salaire) — un hard delete les emportait, seuls les BULLETINS étant protégés par un `Restrict`. ⚠️ **Ce que l'absence coûte, assumé** : aucun chemin d'API n'efface plus une fiche ; `Employee.deletedAt` existe au schéma et n'est utilisé par personne — c'est la voie douce si le besoin revient. Verrous : `hrEmployeeDeactivate.test.tsx` (7) · le cas « la route n'existe plus » de `payrollPersistence.test.ts`, avec témoin discriminant (un 404 seul ne prouve rien).
+- **Photo produit** ⚠️ **PIÈGE DE NOM — `StockForm.image` EST L'ÉMOJI, PAS LA PHOTO.** Il part en `emoji` et il est **préfixé au nom** (`form.image + ' ' + form.name`, `Stock.tsx`) ; `Product.image` porte une URL. Deux champs homonymes de sens **opposés**, manipulés dans les mêmes fichiers — les fondre envoie un émoji comme URL, ou écrase l'émoji par une URL. Côté domaine la photo s'appelle donc **`ProductItem.photo`**, délibérément. La photo ne transite **jamais** par `StockForm` : endpoint séparé, envoi immédiat sur un produit existant, **différé après `create`** sinon (l'échec partiel se DIT). Un rendu = `ProductThumb`. 📖 *`docs/modules.md` § Photos produit.*
