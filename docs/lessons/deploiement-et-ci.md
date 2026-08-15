@@ -145,3 +145,26 @@ part.
 
 ⚠️ Le méta-test `dockerContextImports.test.ts` **s'est épinglé lui-même au premier tir** : sa
 contre-preuve écrivait le motif en toutes lettres. *Un scanneur doit survivre à son propre scan.*
+
+## Sonder un run rouge — les trois commandes
+
+Dans cet ordre, et **jamais** en partant de la facturation (§ `CLAUDE.md` — sur un dépôt
+PUBLIC les minutes runner sont gratuites et illimitées, la piste est structurellement
+impossible) :
+
+```bash
+gh api repos/<o>/<r>/actions/runs/<id>/jobs \
+  -q '.jobs[] | "\(.name) \(.conclusion) étapes=\(.steps|length)"'
+gh api /repos/<o>/<r>/actions/workflows -q '.workflows[].state'   # active ≠ désactivé
+curl -s https://www.githubstatus.com/api/v2/summary.json | jq '.components[]|select(.name=="Actions")'
+```
+
+Le discriminant est `steps.length`. Un job `cancelled` à **zéro étape** n'a rien jugé : il
+n'a jamais obtenu de runner, et l'annulation tombe à 15 min pile. Un job dont les étapes ont
+tourné accuse bien le code.
+
+## Le job mobile — mesures d'installation
+
+`unit-tests-mobile` (#163) fait son `npm ci` **dans** `mobile/`
+(`cache-dependency-path: mobile/package-lock.json`) : `mobile/` a son propre lockfile et
+n'est pas servi par le `npm ci` racine. Mesuré : install à froid **28 s**, suite **5 s**.

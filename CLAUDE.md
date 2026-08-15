@@ -7,6 +7,13 @@ SaaS de gestion commerciale multi-tenant **et multi-boutiques** (boutiques/super
 > **Le critère** — reste ici ce qui **change un comportement sans qu'on l'ait demandé** (le piège du pipe sur `tsc`, le contexte Docker, la garde de dépense, le jumeau, le sabotage copié, le contrôle discriminant, l'arité) ; part dans `docs/lessons/` ce qu'on **consulte une fois déjà sur le sujet** (récits d'incident, tableaux de mesure, chiffres datés).
 > ⚠️ **Une règle rétrogradée vers une leçon est une règle qui ne se charge plus.** Le texte existe encore, il ne s'applique plus tout seul — c'est ainsi que 3 des 5 régressions du 2026-08-07 sont passées (compression à 149 844 conforme, **cinq règles supprimées**, dont la trace d'audit qui borne une fraude de caisse ; une revue les a rattrapées).
 >
+> ✅ **L'outil existe : `python3 scripts/verifier-allegement-claudemd.py HEAD`** — il diffe les
+> identifiants ET les règles ⚠️ entre `git show <ref>:CLAUDE.md` et le fichier courant, sans
+> jamais regarder `docs/lessons/`, et s'auto-teste (témoin positif, témoin inexistant,
+> normalisation). ⚠️ **Il ne lit que les accents graves EN LIGNE, pas les blocs de code** : un
+> identifiant qui n'y vit qu'en bloc sera signalé perdu à tort. Chaque signalement se tranche à
+> la main — la plupart sont des reformulations.
+>
 > **Vérifier un allègement, c'est vérifier ce qui a QUITTÉ ce fichier**, pas ce qui est bien arrivé à destination : différence des identifiants entre `git show <avant>:CLAUDE.md` et le fichier courant, **indépendamment des leçons**, avec un contrôle discriminant (témoin positif trouvé, témoin inexistant non signalé, chemins normalisés — `lib/x.ts` et `x` sont le même identifiant).
 >
 > ⚠️ **L'extraction REDISTRIBUE, elle ne réduit pas.** Mesuré le 2026-08-07 : `CLAUDE.md` **−7 722**, `docs/lessons/` **+6 584**, documentation totale **−1 138**. Le plafond mesure donc la **CONCENTRATION** — ce qui se charge à CHAQUE session — pas le coût réel : graphify indexe les deux répertoires, et une session peut se faire lire une leçon. Sortir une page n'est un gain que si elle n'est pas lue à chaque fois.
@@ -46,20 +53,12 @@ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH"
 
 ⚠️ **TOUTE commande composée commence par `set -euo pipefail`, et TOUT est entre guillemets.**
 Consigne de Nelson du 2026-08-07, après **cinq faux zéros en vingt-quatre heures** — cinq
-formes différentes, toutes rendant une sortie vide qui se lit comme un résultat propre :
-
-| Forme | Ce qui s'est passé |
-|---|---|
-| `--include=*.ts` non quoté | zsh a mangé le glob → « 0 correspondance » sur trois workspaces |
-| `for f in $CIBLES` | zsh ne découpe PAS une variable non quotée → « 0/15 fichiers » |
-| `xargs grep -nP` | `xargs` appelle le `grep` **BSD** (sans `-P`), pas l'`ugrep` du shell → erreur affichée, **exit 0**, sortie vide |
-| `cd apps/backend` déjà appliqué | chemins relatifs non résolus → « aucune occurrence dans les fichiers de paie », faux |
-| `cd apps/frontend` en échec | la commande suivante a tourné dans le MAUVAIS répertoire, et son résultat plausible a failli être rendu |
-
-`set -e` fait qu'un `cd` en échec **interrompt** au lieu de laisser la suite s'exécuter ailleurs ;
-`pipefail` fait qu'une commande qui échoue dans un pipe fait échouer le pipe (c'est le
-`npx tsc | tail` qui rendait « exit=0 » sur deux erreurs de type). Les quatre gardes sont
-**vérifiées dans ce shell**, pas supposées.
+formes différentes (glob non quoté, `for` sur variable nue, `xargs` appelant le `grep` BSD,
+`cd` déjà appliqué, `cd` en échec), toutes rendant une **sortie vide qui se lit comme un
+résultat propre**. `set -e` interrompt sur un `cd` en échec au lieu de laisser la suite
+s'exécuter ailleurs ; `pipefail` fait échouer le pipe (c'est le `npx tsc | tail` qui rendait
+« exit=0 » sur deux erreurs de type). 📖 *les cinq formes et leur mécanique :
+`docs/lessons/hygiene-shell.md`.*
 
 ⚠️ **PIÈGE D'ADOPTION, mesuré** : sous `set -e`, un `grep` **sans correspondance** sort en 1 et
 **interrompt le script** — or « rien trouvé » est parfois la bonne réponse. Écrire alors
@@ -147,22 +146,15 @@ Ce n'est pas le cliquet franchi qui compte, c'est que l'échec soit **passé ina
 
 ### ⚠️ CI ROUGE ≠ CODE FAUTIF — lire l'exécution AVANT d'accuser le dépôt
 
-Deux causes **indépendantes** peuvent se superposer sur une série de runs rouges — notre code, et une panne de la plateforme. Les confondre a produit deux diagnostics faux d'affilée.
+Deux causes **indépendantes** se superposent sur une série de runs rouges — notre code, et une panne de plateforme. Les confondre a produit deux diagnostics faux d'affilée.
 
-**Le discriminant est `steps.length`, pas la conclusion.** Un job `cancelled` avec **zéro étape** n'a rien jugé : il n'a jamais démarré (aucun runner obtenu ; l'annulation tombe à **15 min pile**). Un job dont les étapes ont TOURNÉ accuse bien le code.
+⚠️ **Le discriminant est `steps.length`, pas la conclusion.** Un job `cancelled` à **zéro étape** n'a rien jugé : il n'a jamais obtenu de runner (annulation à 15 min pile). Un job dont les étapes ont TOURNÉ accuse bien le code.
 
-**L'ordre des vérifications** : (1) le run a-t-il exécuté des étapes ? (2) les workflows sont-ils `active` ? (3) githubstatus. ⚠️ **La facturation vient en DERNIER, et seulement sur un dépôt privé** — celui-ci est **PUBLIC**, donc les minutes runner y sont gratuites et illimitées : la piste « minutes épuisées » y est structurellement impossible, et elle a été proposée une fois sans vérifier une seule ligne de `gh api`. Une hypothèse qui envoie chercher dans la facturation coûte le temps de quelqu'un d'autre.
+**Ordre des vérifications** : (1) le run a-t-il exécuté des étapes ? (2) les workflows sont-ils `active` ? (3) githubstatus. ⚠️ **La facturation vient en DERNIER, et seulement sur un dépôt privé** — celui-ci est **PUBLIC**, donc minutes gratuites et illimitées : la piste « minutes épuisées » y est structurellement impossible, et elle a été proposée une fois sans vérifier une ligne de `gh api`. *Une hypothèse qui envoie chercher dans la facturation coûte le temps de quelqu'un d'autre.*
 
-```bash
-gh api repos/<o>/<r>/actions/runs/<id>/jobs \
-  -q '.jobs[] | "\(.name) \(.conclusion) étapes=\(.steps|length)"'
-gh api /repos/<o>/<r>/actions/workflows -q '.workflows[].state'   # active ≠ désactivé
-curl -s https://www.githubstatus.com/api/v2/summary.json | jq '.components[]|select(.name=="Actions")'
-```
+📖 *Les trois commandes de sondage, l'incident du 2026-08-06 et la concordance des symptômes : `docs/lessons/deploiement-et-ci.md`.*
 
-📖 *Incident du 2026-08-06 et concordance des symptômes : `docs/lessons/deploiement-et-ci.md`.*
-
-⚠️ **Pendant une panne Actions, repousser ne sert à rien** — aucun run n'est créé, et un `git push` de plus n'en déclenche pas. Attendre la résolution, puis **relancer les étapes manquées en local et RENDRE le résultat** (§ ci-dessous), plutôt que de supposer qu'elles passent. ✅ **`mobile/` est COUVERT** depuis #163 par un job dédié `unit-tests-mobile` (`tsc` + la suite jest) : `mobile/` ayant son propre lockfile, il fait son `npm ci` **dans** `mobile/` (`cache-dependency-path: mobile/package-lock.json`), il n'est PAS servi par le `npm ci` racine. ⚠️ **AUCUN filtre de chemin, délibérément** : restreindre à `mobile/**` rouvrirait le trou qu'on ferme — une fixture partagée vit dans `docs/`, pas dans `mobile/`, et ne déclencherait donc pas le job. MESURÉ : install à froid **28 s**, suite **5 s**.
+⚠️ **Pendant une panne Actions, repousser ne sert à rien** — aucun run n'est créé. Attendre la résolution, puis **relancer les étapes manquées en local et RENDRE le résultat**, plutôt que de supposer qu'elles passent. ✅ **`mobile/` est COUVERT** depuis #163 (job `unit-tests-mobile`, `tsc` + jest). ⚠️ **AUCUN filtre de chemin, délibérément** : restreindre à `mobile/**` rouvrirait le trou qu'on ferme — une fixture partagée vit dans `docs/`, pas dans `mobile/`, et ne déclencherait donc pas le job.
 
 ### ⚠️ Vérification en PROD — trois formes autorisées, pas une de plus
 
@@ -339,8 +331,8 @@ les règles **transverses** : celles qu'on enfreint sans même travailler sur le
 - **Audit** ⚠️ : **TOUTE écriture d'audit passe par `writeAudit(label, promise)`** (fail-open mais TRACÉ). Exception : les 3 sites en `$transaction` propagent. Méta-test `auditWriteConvention.test.ts`. `UserAuditLog` est **hors boutique et SANS FK vers User** — un audit de sécurité survit à la suppression du compte.
 - **Multi-boutiques** ⚠️ : **DEUX champs tenant, DEUX helpers** (`lib/tenantId.ts`) — `request.user.tenantId` (JWT, hérité) → `getTenantId()` ; `request.tenantId` (boutique ACTIVE résolue par `authenticate`) → `getActiveTenantId()`. Ne pas les confondre : sur une route platform-scopée, `user.tenantId` est légitimement nullable et `getTenantId` lèverait à tort. Appeler **APRÈS** les gardes 400/403.
 - **Admin PLATEFORME** ⚠️ : `User.isPlatformAdmin` est le **SEUL** critère d'accès à `/api/admin/*`. **JAMAIS gater sur le rôle `SUPER_ADMIN`** — rôle INTERNE au tenant, y gater = fuite inter-tenants (P0 corrigé, `adminPlatformIsolation.test.ts`). Symétriquement, ne jamais masquer le commerçant **par le rôle** : le dépouillement de l'interface se fait sur `isPlatformAdmin`.
-- **Zone franc CFA** ⚠️ : un pays **UEMOA ne peut pas être en XAF**, ni un pays **CEMAC en XOF** — `lib/currencyZone.ts` — ⚠️ **BACKEND SEUL, malgré ce que ce fichier a longtemps écrit** : le jumeau front a existé (`af5aacd8`) puis a été SUPPRIMÉ en revue (`43730f0d`), et `currency-zones.json` n'a que **2 lecteurs, tous deux backend** — donc **aucune propriété anti-dérive** ici, contrairement aux 13 autres jumeaux. C'est cohérent : le serveur est autoritaire sur les 4 chemins d'écriture. Ne pas « restaurer » le jumeau. Refus **400 `CURRENCY_ZONE_MISMATCH`** refus **400 `CURRENCY_ZONE_MISMATCH`** sur les **4** chemins d'écriture de tenant. ⚠️ Le `PATCH` juge le couple **EFFECTIF** (corps + base) : un corps qui ne porte que `currency` doit être confronté au pays déjà stocké — c'est par là qu'un `XAF` est arrivé sur un tenant `SN`, **sans aucune trace** (`PATCH /api/tenant` n'appelle pas `writeAudit`). ⚠️ **NE PAS dériver la zone du taux de TVA** : `GA` (CEMAC) porte 18 comme l'UEMOA — justesse empruntée. ⚠️ Une devise **hors franc CFA reste légitime partout** (`e2e-tenant` SN/EUR passe **sans exemption nommée** — *une exemption dont on n'a pas besoin est un trou*). ⚠️ **DÉRIVER, PAS REFUSER — le garde ne 400 que sur un couple que l'appelant a CONSTRUIT.** À la création, le pays HÉRITE de la boutique d'origine puis retombe sur le marché par défaut, et la devise en DÉRIVE : les formulaires n'ont pas tous de champ pays, et refuser un couple non choisi avait rendu **XOF incréable** dans le produit ET la console. Au `PATCH`, asymétrie : le **pays** qui bouge seul dérive la devise (le commerçant a déménagé, il n'a pas choisi de franc) ; la **devise** choisie seule et en conflit est refusée. ⚠️ La devise DÉRIVÉE doit rester journalisée — la trace compare toute la liste blanche, pas les champs soumis.
-⚠️ **Le même geste pose la TRACE** : `PATCH /api/tenant` n'écrivait AUCUN audit — c'est ce trou qui a rendu l'écrivain du `XAF` introuvable. `TENANT_LOCALE_CHANGE` consigne **AVANT → APRÈS** (« la devise a changé » n'aurait rien permis) sur une liste blanche NOMMÉE de codes et de nombres (`currency/country/lang/vatRate`) — **aucun champ personnel**, la leçon du balayage PII. ⚠️ **LES QUATRE ROUTES SONT EXERCÉES PAR INJECTION** (`currencyZoneRoutes4.test.ts`) — le garde avait été posé sur quatre et vérifié sur UNE ; une revue a trouvé dans les non testées deux régressions **livrées en prod**. *Le sabotage S3 avait déjà enseigné qu'un invariant pur ne dit rien du câblage : la leçon n'avait été appliquée qu'à la route qu'on regardait.* Verrous : `currencyZone.test.ts` · `currencyZoneRoute.test.ts` (13, câblage ET trace) · `currencyZoneRoutes4.test.ts` — **12 sabotages**. ⚠️ Le mock de `writeAudit` **délègue au module réel** : l'attendre sans l'attraper prouverait le mock, pas le fail-open.
+- **Zone franc CFA** ⚠️ : un pays **UEMOA ne peut pas être en XAF**, ni un pays **CEMAC en XOF** — `lib/currencyZone.ts` + `currency-zones.json`, **BACKEND SEUL** (2 lecteurs, tous deux backend). ⚠️ Le jumeau front a existé puis a été SUPPRIMÉ en revue : **aucune propriété anti-dérive ici**, contrairement aux 13 autres jumeaux, et c'est cohérent — le serveur est autoritaire sur les 4 chemins d'écriture. **Ne pas « restaurer » le jumeau.** Refus **400 `CURRENCY_ZONE_MISMATCH`** sur les **4** chemins d'écriture de tenant. ⚠️ Le `PATCH` juge le couple **EFFECTIF** (corps + base) : un corps qui ne porte que `currency` se confronte au pays DÉJÀ STOCKÉ — c'est par là qu'un `XAF` est arrivé sur un tenant `SN`, sans aucune trace. ⚠️ **NE PAS dériver la zone du taux de TVA** : `GA` (CEMAC) porte 18 comme l'UEMOA — justesse empruntée. ⚠️ Une devise **hors franc CFA reste légitime partout** (`e2e-tenant` SN/EUR passe **sans exemption nommée** — *une exemption dont on n'a pas besoin est un trou*). ⚠️ **DÉRIVER, PAS REFUSER — le garde ne 400 que sur un couple que l'appelant a CONSTRUIT.** À la création, le pays HÉRITE de la boutique d'origine puis retombe sur le marché par défaut, et la devise en DÉRIVE : refuser un couple non choisi avait rendu **XOF incréable** dans le produit ET la console. Au `PATCH`, asymétrie assumée — le **pays** qui bouge seul dérive la devise (le commerçant a déménagé, il n'a pas choisi de franc) ; la **devise** choisie seule et en conflit est refusée.
+⚠️ **Le même geste pose la TRACE** : `PATCH /api/tenant` n'écrivait AUCUN audit, et c'est ce trou qui a rendu l'écrivain du `XAF` introuvable. `TENANT_LOCALE_CHANGE` consigne **AVANT → APRÈS** (« la devise a changé » n'aurait rien permis) sur une liste blanche NOMMÉE de codes et de nombres (`currency/country/lang/vatRate`) — **aucun champ personnel**. ⚠️ La devise DÉRIVÉE doit y figurer aussi : la trace compare toute la liste blanche, pas les champs soumis. ⚠️ **LES QUATRE ROUTES SONT EXERCÉES PAR INJECTION** (`currencyZoneRoutes4.test.ts`) — le garde avait été posé sur quatre et vérifié sur UNE ; une revue a trouvé dans les non testées **deux régressions livrées en prod**. Verrous : `currencyZone.test.ts` · `currencyZoneRoute.test.ts` · `currencyZoneRoutes4.test.ts` — **12 sabotages**. ⚠️ Le mock de `writeAudit` **délègue au module réel** : l'attendre sans l'attraper prouverait le mock, pas le fail-open.
 - **Expiration de promo** ⚠️ : helper pur **`isPromotionActive(hasPromotion, promotionEnd, now)`**, miroir back (`utils/pricing.ts`) ↔ front (`lib/pricing.ts`), cas partagés `promotion-active-cases.json`, `now` **injecté**. Échéance inclusive au jour calendaire **UTC**. ✅ **Miroir MOBILE (`posStore.ts`) ALIGNÉ et désormais ENFORCED** — `mobile/src/__tests__/promotionActiveShared.test.ts` exerce `isPromotionActive` sur les 9 cas partagés et tourne en CI depuis #163. *(Ce fichier a longtemps affirmé le miroir « PAS aligné » : c'était FAUX — il l'était, il n'était simplement pas enforced. Une dette d'exécution lue comme une dette de code.)*
 - **Abonnements** : **aucun total n'est stocké** (dérivé de `product.sellPrice` → « au tarif du jour ») et **aucune colonne de fréquence** n'existe (`dayOfWeek` impose l'hebdo) — ne pas promettre en UI ce que le modèle ne porte pas.
 - **Commandes** ⚠️ : **`PurchaseOrder` ne représente QUE des commandes FOURNISSEUR** — `supplierId` y est une FK obligatoire, et il n'existe ni `clientName`, ni `clientPhone`, ni colonne `type`. Les **commandes CLIENT de l'écran sont donc LOCALES et ÉPHÉMÈRES** (décision produit #171) : aucun appel serveur n'est émis pour elles. Avant, il l'était — sans `supplierId` — et se faisait refuser en **400 systématique**, dont le caissier ne voyait qu'un « Échec de la création ». Leur persistance est une **dette backend** (colonnes + zod), pas un oubli du front.
@@ -803,10 +795,6 @@ absence du bundle est **vérifiée** par `verify:demo-flag` (marqueur
 
 ⚠️ **BALAYAGE DE LA CLASSE FAIT — la « quatrième occurrence » attendue N'EXISTE PAS.** 681 fichiers sur les trois workspaces : `analytics.ts` était le **seul** site dont la troncature alimentait un dénominateur. Les autres sont d'une autre nature et **correctes** (total calculé AVANT le `slice`, barres relatives au maximum). *Écrit pour qu'on ne re-balaye pas cette classe en croyant qu'elle est ouverte.* ⚠️ **Il portait sur la TRONCATURE.** La famille SŒUR — deux totaux d'une même grandeur sur deux **POPULATIONS** — y échappe : mesurée en prod le 2026-08-08 (« Budget vs Réel »). **Parade : une source unique qui reçoit une liste DÉJÀ FILTRÉE** — la période est décidée en UN endroit, donc indécidable ailleurs (`buildBudgetSummary` ; y remettre un filtre de date recréerait le second endroit où elle diverge). ⚠️ **Et la cohérence ne suffit PAS** : depuis ce refactor, total, écart et taux dérivent du même résumé — ils restent d'accord **même si l'appelant passe la MAUVAISE liste**. La POPULATION s'épingle séparément, sinon le défaut revient sous un verrou vert. 📖 *`docs/lessons/chiffres-affiches.md`.*
 
-**Dette voisine, NON traitée et distincte** : `routes/export.ts:56` plafonne l'export CSV des
-ventes à `take: 1000` sans le dire. Aucun total n'en dérive — ce n'est pas cette famille — mais
-c'est un plafond silencieux. **Entrée complète, avec son déclencheur de réouverture : § Dette ouverte.**
-
 ### La MOYENNE SANS SON DÉNOMINATEUR ⚠️ — `perf` / `rating`
 
 `Employee.perf` et `Supplier.rating` étaient `Int NOT NULL DEFAULT 3` : un employé jamais évalué valait **3**, indiscernable d'un employé réellement noté 3. Colonnes **nullables sans défaut** depuis le 2026-08-06 (`20260806170000_perf_rating_nullable`).
@@ -922,16 +910,38 @@ elle pourrait aussi vivre : coordonnées, code pays, indicatif, fuseau, code dev
 
 ✅ **XLSX : PAS concerné — verdict MESURÉ, pas supposé. Ne pas « corriger » `xlsxWriter` par analogie avec le CSV.** Il ne sanitise que les noms de feuille, jamais les cellules, et c'est **correct** : en OOXML le type est **DÉCLARÉ** (`<c t="inlineStr">`) et une formule exige un `<f>` dédié, que nous n'émettons jamais — là où un CSV ne porte aucun type et force le tableur à **deviner**. Rien à deviner ⇒ rien à neutraliser, et **préfixer abîmerait la donnée** (l'apostrophe s'afficherait). Verrou : bloc « injection de formule » de `xlsxWriter.test.ts`. **Limite assumée** : ce sont les octets QUE NOUS ÉMETTONS — le rond-trip « Enregistrer sous → CSV » depuis Excel est hors de portée d'un garde applicatif.
 
-### Sécurité (remédiation audit 2026-07 — `docs/audits/AUDIT_APPROFONDI_2026-07.md`)
-- **Handler d'erreur durci (P1.6)** : `lib/errorHandler.ts` (extrait de `server.ts`, testable). Un **≥500 ne renvoie PLUS `error.message` brut** au client (fuite d'infos internes Prisma/DB) → message générique « Erreur serveur », le vrai message reste journalisé (log + Sentry). Les 4xx intentionnels (zod→400, P2025→404, framework 413/415/429) gardent leur message. Verrou : `errorHandler.test.ts` (message sensible masqué sur 500, conservé sur 4xx ; sabotage vérifié).
-- **Validation déclarative zod** (item 6) : `app.setValidatorCompiler(validatorCompiler)` global dans `server.ts` (seul le **validator**, PAS le serializer → réponses inchangées ; routes sans `schema` inchangées). Schémas `body/params/querystring` sur les routes **argent** (sales, payments *, payroll), **auth** (login/register/switch-tenant/password), **écritures** (products, customers, suppliers, orders, employees, expenses, goals, subscriptions, stockTransfers). Erreurs zod → **400 `{ error, code:'VALIDATION' }`** (handler global). Les règles métier (nom requis, `total<0`, MSISDN, force mdp) **restent dans les handlers** (messages conservés). ⚠️ **Tout test qui monte une route avec `schema` zod DOIT appeler `app.setValidatorCompiler(validatorCompiler)` avant `register`** (sinon Ajv casse : « schema is invalid »). Schémas d'écriture mutualisés : `src/schemas/writesB.ts`.
-- **Anti mass-assignment** : `PUT /products/:id`, `POST|PUT /suppliers`, `POST|PUT /expenses` passaient le body BRUT à Prisma → un `tenantId` injecté réassignait la ressource. Schémas UPDATE = **liste blanche stricte (strip)** → clés hors modèle (`tenantId`/`id`/timestamps/`sku`) supprimées. `create` : `tenantId` imposé serveur.
-- **W1** (`stockTransfers.ts` confirm/cancel) : scope tenant **avant** existence/statut → **404 uniforme** pour un tiers (pas d'oracle). La source garde son 403 sur `/confirm`.
-- **W2** (`whatsapp.ts` send-ticket) : reçu brandé avec `request.tenantId` (boutique **active**), pas `request.user.tenantId`.
-- **Rate-limit GLOBAL** (item 5) : `@fastify/rate-limit` `global:true`, 300/min par IP (ajustable `RATE_LIMIT_MAX`). Overrides plus stricts conservés (auth, checkouts, paiements). **Exemptés** (`config.rateLimit:false`) : webhooks/IPN paiement + health checks. `bodyLimit` explicite **4 Mo** (photos employé base64 ; multipart OCR 10 Mo non concerné).
-- **Isolation cross-tenant** (item 7) : `tenantIsolation.test.ts` (mock Prisma tenant-aware) prouve 404/aucune mutation pour tenant B sur les ressources de tenant A. `PUT /customers/:id` : P2025 → **404** (était 500).
-- **Extension Prisma tenant** (item 8, defense-in-depth) : `src/db.ts` exporte `prisma` (étendu `$extends`) + **`basePrisma`** (non étendu, pour cross-tenant légitime — dashboard consolidé). Auto-injecte `tenantId` sur 19 modèles scopés **si absent** (n'écrase jamais un tenantId explicite). Contexte ALS (`src/lib/tenantContext.ts`) établi par un hook **`onRequest`** (`initTenantStore`) puis renseigné par `authenticate` (`bindActiveTenant`). ⚠️ `enterWith` dans un preHandler (après `await`) ne remonte PAS au handler → d'où l'établissement en `onRequest`. **Durci (#35)** : les ÉCRITURES `create`/`createMany`/`upsert` sont GARDÉES — `tenantId` absent → injecté ; présent et ≠ contexte → `TenantScopeMismatchError` (403), jamais d'écrasement silencieux (lectures : `where.tenantId` explicite respecté). `findUnique` résiduels sur modèles scopés convertis en `findFirst({id,tenantId})` (stockTransfers confirm/cancel = `OR` source/dest, analytics, cron hebdo ; TicketZ conservé — clé composite contient tenantId). Purge push tokens = `basePrisma` (nettoyage cross-tenant par token exact). `update`/`delete` par clé unique restent aux handlers. Filtrage manuel conservé. `TxClient` (db.ts) type les `tx` du client étendu. **Comportement neutre** pour le code existant (tous les handlers filtrent déjà) — c'est un filet.
-- **Rotation secrets (P0.1, action Nelson)** : `apps/backend/.env` fut commité (repo PUBLIC) — `JWT_SECRET` + `TWILIO_AUTH_TOKEN` à tourner (Anthropic déjà 401, DB déjà migrée). Purge d'historique = destructive, après rotation + accord.
+### Sécurité (remédiation audit 2026-07)
+
+📖 *Compte rendu intégral — P1.6, item 6 (liste des routes schématisées), W1/W2, items 5/7/8,
+mécanique ALS et conversions `findUnique` : `docs/lessons/remediation-securite-2026-07.md`* —
+**à lire avant** de toucher `errorHandler.ts`, `db.ts`, `tenantContext.ts` ou un schéma de
+`src/schemas/`. Audit d'origine : `docs/audits/AUDIT_APPROFONDI_2026-07.md`.
+
+Ce qui décide encore un geste :
+
+- **Un ≥500 ne renvoie JAMAIS `error.message` au client** (fuite Prisma/DB) → « Erreur serveur »,
+  le vrai message reste journalisé. Les 4xx INTENTIONNELS gardent le leur — ils sont écrits pour
+  l'appelant. Verrou `errorHandler.test.ts`.
+- **Validation zod déclarative** : `setValidatorCompiler` global (⚠️ le **validator** SEUL, pas le
+  serializer — sinon les réponses changent). Erreurs zod → **400 `{ error, code:'VALIDATION' }`**.
+  ⚠️ Les règles MÉTIER (nom requis, `total<0`, MSISDN, force mdp) **restent dans les handlers** :
+  les remonter dans le schéma remplacerait des messages écrits pour un commerçant par des messages
+  écrits pour un développeur. Schémas mutualisés : `src/schemas/writesB.ts`.
+- ⚠️ **Anti mass-assignment — tout schéma UPDATE est une liste blanche STRICTE (`strip`)**, et
+  `tenantId` est imposé serveur à la création. Trois routes passaient le corps BRUT à Prisma : un
+  `tenantId` injecté RÉASSIGNAIT la ressource à une autre boutique.
+- ⚠️ **DEUX clients Prisma, et le choix est une décision de sécurité** — `prisma` (étendu :
+  auto-injecte `tenantId` sur 19 modèles scopés, n'écrase jamais un `tenantId` explicite) et
+  **`basePrisma`** (non étendu, pour le cross-tenant LÉGITIME : tableau de bord consolidé, purge de
+  jetons push). Les ÉCRITURES sont GARDÉES — `tenantId` différent du contexte → **403
+  `TenantScopeMismatchError`**, jamais d'écrasement silencieux. C'est un FILET : tous les handlers
+  filtrent déjà.
+- **Rate-limit GLOBAL** 300/min par IP (`RATE_LIMIT_MAX`), overrides stricts conservés (auth,
+  checkouts, paiements). ⚠️ **Exemptés** : webhooks/IPN de paiement (un prestataire qui rejoue ne
+  doit pas être bloqué) et health checks. `bodyLimit` **4 Mo** (photos employé base64).
+- ⚠️ **Rotation secrets (P0.1, action Nelson, TOUJOURS OUVERTE)** : `apps/backend/.env` fut commité
+  sur un dépôt **PUBLIC** — `JWT_SECRET` + `TWILIO_AUTH_TOKEN` à tourner. Purge d'historique =
+  destructive, après rotation + accord.
 
 ### Garde de DÉPENSE externe ⚠️ (2026-07 — Anthropic / Twilio / Resend)
 
@@ -1062,64 +1072,51 @@ l'exercer, et être vérifié **dans les deux sens**.
 - ✅ **Rejeu hors-ligne MOBILE : TRAITÉ** (option A, voie 1) — `saleReplay.ts` pose `offlineReplay` et **consomme la réponse** ; hors bornes → `repriced`. Cf. § Intégrité prix + `docs/handoff/2026-07-25-rejeu-mobile-option-a-design.md`.
 
 ### 🟡 Medium
-- ✅ **Congés E2E : CLOS le 2026-08-07** — fuite fermée, résidu purgé (**307 → 0** sur
-  `e2e-tenant`, effets de bord vérifiés intacts).
-  📖 *`docs/lessons/menage-e2e-conges.md`* — **à lire avant** d'écrire un bloc de ménage E2E.
-  - ⚠️ **Un ménage s'ASSERTE, il n'est jamais « best-effort ».** Non bloquant, il a échoué une
-    journée entière sans que rien ne le dise (repli en `console.warn`, et **un test vert
-    n'imprime rien**). L'assertion porte sur **le COMPTE avant/après**, jamais sur le code de
-    retour : un 200 dit que l'appel a abouti, pas que la base est revenue à son état d'avant.
-  - ⚠️ **Le jeton E2E se lit sous `habashop_token`** (store persisté : `habashop-auth`). Le
-    ménage lisait `auth-storage`, **clé qui n'existe nulle part** → `Bearer ` → 401 muet.
-  - ⚠️ **Une purge sur un tenant réel** : périmètre **en dur dans le script**, garde `CONFIRM=1`,
-    refus si `isDemo`, instantané avant / diff de l'objet entier après.
+- ✅ **Congés E2E : CLOS le 2026-08-07** — fuite fermée, résidu purgé (**307 → 0**).
+  📖 *`docs/lessons/menage-e2e-conges.md`* — **à lire AVANT d'écrire un bloc de ménage E2E** :
+  il porte les trois règles du chantier (un ménage s'ASSERTE sur le COMPTE avant/après et n'est
+  jamais « best-effort » · le jeton E2E se lit sous `habashop_token` · une purge sur tenant réel
+  = périmètre en dur + `CONFIRM=1` + refus si `isDemo`).
 - ✅ **Export tronqué en silence : CLOS le 2026-08-09.** ⚠️ **La troncature s'annonce dans le NOM
   DE FICHIER** (`ventes-JJ-10000-sur-42130.csv`), **jamais dans une ligne du CSV** : une ligne de
-  plus est une ligne de DONNÉES pour le tableur — elle se trie, entre dans une somme, se recopie.
-  ⚠️ **La route ne prend AUCUNE période** (les N plus récentes, toutes périodes confondues) : la
-  dette était écrite avec un déclencheur qui nommait un paramètre inexistant. Rapport mensuel :
-  effectif annoncé + `orderBy` AJOUTÉ — sans lui « les 30 plus récentes » était faux. ⚠️ **Famille
-  DISTINCTE** de « le total est la somme de ce qu'on montre » : aucun total n'en dérivait.
-  Verrou `exportTroncature.test.ts` — le mock **applique `take`**.
-  - ✅ **Balayage de CETTE famille : FAIT le 2026-08-07 — ne pas le refaire.** 15 producteurs
-    de documents (export, facture PDF, ticket, reçu, e-mail, rapport, étiquette, xlsx), web +
-    API + mobile : les deux ci-dessus sont les **seuls** défauts. Le bon motif à copier —
-    `services/email.ts:473` calcule `totalCount = products.length` **avant** son `slice(0,20)`,
-    `routes/whatsapp.ts:93` annonce `lowStock.length` avant de n'en lister que cinq. Écartés à
+  plus est une ligne de DONNÉES pour le tableur — elle se trie et entre dans une somme. ⚠️ **La route ne prend AUCUNE période** — les N plus récentes, toutes périodes confondues ;
+  la dette avait été écrite avec un déclencheur qui nommait un paramètre inexistant. ⚠️ **Famille
+  DISTINCTE** de « le total est la somme de ce qu'on montre » : aucun total n'en dérivait. Verrou
+  `exportTroncature.test.ts` — le mock **applique `take`**.
+  - ✅ **Balayage de CETTE famille : FAIT le 2026-08-07 — ne pas le refaire.** 15 producteurs de
+    documents (web + API + mobile) ; les deux ci-dessus étaient les **seuls** défauts. Motif à
+    copier : `services/email.ts:473` calcule `totalCount` **avant** son `slice(0,20)`. Écartés à
     raison : limites dures de format (`xlsxWriter` 31 car., `thermalLabel` 2 lignes) et listes
-    d'écran ou de destinataires, qui ne sont pas des documents.
-- ✅ **Cahier des charges : REMPLACÉ le 2026-08-07** — `docs/HabaShop_CDC_v4.md` (Markdown, versionné, diffable) succède au `.docx` de mai, renommé `HabaShop_CDC_v3.PERIME-2026-05.docx`. La v3 ne se contentait pas d'être périmée : elle prescrivait `vercel --prod` depuis `apps/frontend` (§2.4, chemin qui échoue) et documentait le gating de `/api/admin/*` sur le rôle `SUPER_ADMIN` (§6.3, la fuite P0 corrigée) — *un document de référence périmé dit le contraire, avec autorité.* **Ne plus s'y référer.** ⚠️ La v4 pose une règle qui lui survit : *rien n'y est affirmé qui n'ait été compté*, et son **annexe B donne la commande de recomptage de chaque chiffre**. Un chiffre sans son moyen de recalcul redevient une affirmation.
+    d'écran, qui ne sont pas des documents.
+- ✅ **Cahier des charges : `docs/HabaShop_CDC_v4.md`** (Markdown, versionné) remplace le `.docx`
+  de mai depuis le 2026-08-07. ⚠️ **Ne plus se référer à la v3** : elle ne se contentait pas d'être
+  périmée, elle prescrivait un chemin de déploiement qui échoue et documentait le gating admin sur
+  `SUPER_ADMIN` — *la fuite P0 corrigée*. Un document de référence périmé dit le contraire, avec
+  autorité. ⚠️ La v4 pose une règle qui lui survit : **rien n'y est affirmé qui n'ait été compté**,
+  et son annexe B donne la commande de recomptage de chaque chiffre.
 - ✅ **Paie statuts : RÉSOLU** — modèle `Payroll` (instantané GELÉ) + routes `GET /api/payroll?month=YYYY-MM`, `POST /api/payroll/generate`, `PATCH /api/payroll/:id`. Cf. § Paie.
 - **Bundle recharts ~105KB gz** : lazy + hors precache. Remplacer visx = **L**.
 - **Densité — UN SEUL lot avec la table dense** ⚠️ : tout touche la même structure, séparer ferait le travail plusieurs fois. Défauts MESURÉS sur captures (console Ops, Rapports/RH, Planning) — 📖 *liste et mesures : `docs/lessons/densite-mesuree.md`* ; la garde P0 sur `/admin` reste intacte, cf. § DENSITÉ.
   - ✅ **Le workflow densité tourne EN CI** (`density.yml`, filtré par `paths:`). ⚠️ La géométrie diffère entre Ubuntu et macOS : l'assertion porte sur le DÉBORDEMENT et l'enroulement, **jamais sur un pixel exact**.
 
-- ✅ **A11y résiduel : FAIT** — SectionCatalog (4 champs `aria-label` : catalogue/slug/description/WhatsApp), POSModals sélecteur pays devenu vrai `role="listbox"` (+ `role="group"` par région, `role="option"`+`aria-selected` sur `CountryItem`), Stock vue grille en `role="list"`/`role="listitem"` (via props A11y additives de `ResponsiveGrid`).
 
 ## Carte du dépôt (graphify) ⚠️ — datée, et elle se périme vite
 
-📖 *Passes mesurées, périmètre recalculable, archéologie et POURQUOI de chaque
-exclusion : `docs/lessons/carte-graphify.md`.* Passe : `graphify . --update` ; sorties dans
-`graphify-out/`, **gitignoré**.
+📖 *Passes mesurées, périmètre recalculable et POURQUOI de chaque exclusion :
+`docs/lessons/carte-graphify.md`.* Passe : `graphify . --update` → `graphify-out/`, **gitignoré**.
 
-⚠️ **RAFRAÎCHIR au premier des deux :** **50 commits** depuis la dernière passe, ou **la
-création d'un module de source unique** (`lib/*` jumelé, fixture partagée). Le second est
-celui qui coûte cher : mesuré, une carte de 86 commits de retard ignorait **29 modules de
-source unique** — exactement ceux que ce guide traite comme faisant autorité. *Une carte
-qui ignore les sources uniques répond, et répond à côté.*
+⚠️ **RAFRAÎCHIR au premier des deux : 50 commits**, ou **la création d'un module de source
+unique** (`lib/*` jumelé, fixture partagée). Le second coûte cher — mesuré, une carte de 86
+commits de retard ignorait **29 modules de source unique**, exactement ceux que ce guide traite
+comme faisant autorité. *Une carte qui ignore les sources uniques répond, et répond à côté.*
 
-⚠️ **LE MODÈLE DE DONNÉES EST INVISIBLE AU GRAPHE** — `schema.prisma` n'est pas une
-extension supportée, les 35 migrations `.sql` exigent `graphifyy[sql]` (absent). Ne pas
-lui demander « quelles colonnes porte `Sale` ? » : lire `schema.prisma`.
+⚠️ **LE MODÈLE DE DONNÉES EST INVISIBLE AU GRAPHE** — `schema.prisma` n'est pas une extension
+supportée. Ne pas lui demander « quelles colonnes porte `Sale` ? » : lire `schema.prisma`.
 
-⚠️ **Le coût suit la DOCUMENTATION, pas le code** (AST = coût nul), et ce guide plus
-`docs/lessons/` en sont l'essentiel — à savoir **avant** de lancer une passe.
-
-**Périmètre borné par `.graphifyignore`** (racine, exclusions motivées en clair) : images,
-`.docx` sans jumeau markdown, `docs/shared-fixtures/`. ⚠️ **Ne jamais y mettre du code de
-production** — la règle actuelle ne retire aucun fichier du dénominateur de couverture,
-c'est ce qui la rend sûre. Et le « N files » de la *Corpus Check* n'est PAS la couverture :
-compter les `source_file` distincts de `graph.json`.
+⚠️ **Le coût suit la DOCUMENTATION, pas le code** (AST = coût nul) : ce guide et `docs/lessons/`
+en sont l'essentiel — à savoir **avant** de lancer une passe. Périmètre borné par
+`.graphifyignore` ; ⚠️ **ne jamais y mettre du code de production** — la règle actuelle ne retire
+aucun fichier du dénominateur de couverture, c'est ce qui la rend sûre.
 
 ## Comptes démo
 
@@ -1127,9 +1124,9 @@ compter les `source_file` distincts de `graph.json`.
 
 `demo1234` — `admin@`/`manager@`/`cashier@`/`accountant@`/`hr@habashop.com`, tenant principal `demo-tenant-001` (« HabaShop — Dakar Central »). 5 employés (`demo-emp-${name}`). Données hors seed : `requireCashier=false`, `ownerPhone='+221771234567'`. Si reseed → repasser `requireCashier=false`.
 
-⚠️ **QUATRE tenants** — un cinquième, orphelin (aucune référence, donc aucun utilisateur, mais compté « 1 boutique cliente » par la console Ops), a été supprimé le 2026-08-09 (`prisma/delete-orphan-tenant.ts`, `CONFIRM=1`). ⚠️ **Le comptage des références se DÉRIVE des relations inverses de `model Tenant`, jamais des champs nommés `tenantId`** : un scan par nom de champ annonçait « 0 référence » en ayant manqué `StockTransfer` (`fromTenantId`/`toTenantId`) — *un périmètre dérivé de la mauvaise propriété rend un zéro qui a l'air d'une preuve.*
+⚠️ **QUATRE tenants** — un cinquième, orphelin, a été supprimé le 2026-08-09 (`prisma/delete-orphan-tenant.ts`, `CONFIRM=1`). ⚠️ **Le comptage des références se DÉRIVE des relations inverses de `model Tenant`, jamais des champs nommés `tenantId`** : un scan par nom de champ annonçait « 0 référence » en ayant manqué `StockTransfer` (`fromTenantId`/`toTenantId`) — *un périmètre dérivé de la mauvaise propriété rend un zéro qui a l'air d'une preuve.*
 
-✅ **DEVISES DES TENANTS — corrigées et VÉRIFIÉES le 2026-08-07** : `demo-001` SN/**XOF** (il portait `XAF` — un tenant sénégalais en devise d'Afrique CENTRALE, que rien ne pouvait signaler puisque les deux calculent à l'identique) · `demo-002` CI/XOF · `e2e-tenant` SN/EUR · interne FR/EUR. ⚠️ **Ne PAS recopier cette liste comme un fait acquis** : ce fichier a déjà annoncé « EUR 2 / XOF 2 » sur la foi d'un `PATCH` non revérifié. Elle se **relit** (`tenant.findMany`), et depuis le 2026-08-08 un garde empêche le couple incohérent de revenir. 📖 *`docs/lessons/demos-devise-et-pii.md`.*
+⚠️ **DEVISES DES TENANTS — ne PAS recopier d'inventaire ici, il se RELIT** (`tenant.findMany`). Ce fichier a déjà annoncé « EUR 2 / XOF 2 » sur la foi d'un `PATCH` non revérifié, et `demo-001` a porté `XAF` — un tenant sénégalais en devise d'Afrique CENTRALE, que rien ne pouvait signaler puisque les deux calculent à l'identique. Corrigé et vérifié le 2026-08-07 ; depuis le 2026-08-08 un garde empêche le couple incohérent de revenir. 📖 *`docs/lessons/demos-devise-et-pii.md`.*
 
 ⚠️ **`e2e-tenant` reste en EUR, et c'est DÉLIBÉRÉ — ne pas « harmoniser ».** En XOF (0 décimale, taux 1), convertir zéro, une ou deux fois donne le **même affichage** : tous les défauts de conversion y sont invisibles. C'est exactement la raison pour laquelle les cas dorés de paie doublent chaque cas XOF d'un cas EUR (§ Paie). `HabaShop Ops` est un tenant interne, pas une boutique.
 ⚠️ **LES DÉMOS RESTENT OUEST-AFRICAINES — ne pas « aligner » sur le marché par défaut.** Mesuré avant de décider : chaque démo est ancrée sur 16 lignes (SN pour `demo-001`, CI pour `demo-002`), l'indicatif dérive déjà de `tenant.country`, et **la TVA à 18 % est CORRECTE pour SN et CI**. Une démo sénégalaise sous un défaut produit camerounais est la meilleure preuve que le multi-pays fonctionne.
