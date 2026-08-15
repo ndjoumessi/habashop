@@ -114,6 +114,21 @@ export function seedEcran(page: Page) {
       if (url.includes('/api/tenant')) {
         return json({ id: 'boutique-a', name: 'Boutique A', currency: 'XOF', lang: 'fr', country: 'CM', vatRate: 19.25, requireCashier: false })
       }
+      // ── Sonde d'expédition e-mail (console Ops) ────────────────────────
+      // ⚠️ Le harnais stubbe `window.fetch` DANS la page : `page.route()` de Playwright
+      // ne voit jamais ces requêtes. Un spec qui croirait intercepter ici mesurerait le
+      // repli générique en se déclarant vert — c'est arrivé le 2026-08-15, les trois cas
+      // rendaient « non concluant » et le test passait. Le cas se choisit donc PAR LA
+      // PAGE, via `__RESEND_CAS__` posé en `addInitScript`.
+      if (url.includes('/api/admin/integrations/resend')) {
+        const cas = (window as unknown as { __RESEND_CAS__?: string }).__RESEND_CAS__ ?? 'resenddev'
+        const mesureA = '2026-08-15T04:00:00.000Z'
+        if (cas === 'verifie') return json({ configured: true, expediteur: 'HabaShop <bonjour@habashop.com>', domaineExpedition: 'habashop.com', domaineVerifie: true, domaines: [{ name: 'habashop.com', verified: true, statut: 'verified' }], echec: null, mesureA })
+        if (cas === 'sanscle') return json({ configured: false, expediteur: 'HabaShop <onboarding@resend.dev>', domaineExpedition: 'resend.dev', domaineVerifie: null, domaines: null, echec: 'NOT_CONFIGURED', mesureA })
+        if (cas === 'injoignable') return json({ configured: true, expediteur: 'HabaShop <bonjour@habashop.com>', domaineExpedition: 'habashop.com', domaineVerifie: null, domaines: null, echec: 'UNREACHABLE', mesureA })
+        // Défaut = l'état RÉEL d'aujourd'hui : on expédie depuis un domaine partagé.
+        return json({ configured: true, expediteur: 'HabaShop <onboarding@resend.dev>', domaineExpedition: 'resend.dev', domaineVerifie: false, domaines: [], echec: null, mesureA })
+      }
       // ── Jeux de données par DOMAINE ────────────────────────────────────
       // ⚠️ Sans eux, chaque écran rendrait son état VIDE : il serait « complet » et
       // ne mesurerait RIEN. C'est le faux vert le plus facile à obtenir ici, et

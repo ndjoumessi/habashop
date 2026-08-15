@@ -502,3 +502,70 @@ comme un succès. La page avait redirigé vers `/login` : je n'avais pas amorcé
 supprimé) · `integrationsRendered.test.tsx` (11 cas, dont le cas POSITIF « sans bac à sable le
 vert redevient légitime » — un verrou qui n'interdit que le vert serait satisfait par une
 pastille éteinte pour toujours).
+
+### Ce qu'on a rebranché — et ce qu'on a refusé de rebrancher
+
+Remplacer un panneau simulé par un panneau réel n'est pas « rebrancher la même chose en
+vrai ». Le SDK Resend expose `domains.list`, `emails.list` et `logs.list` : trois sources
+disponibles, une seule retenue.
+
+| Source | Décision | Pourquoi |
+|---|---|---|
+| `domains.list` | **relayée** | c'est le seul fait qui change une décision : expédie-t-on depuis un domaine vérifié ? |
+| `emails.list` · `logs.list` | **refusées** | leurs réponses portent les **adresses des clients de nos commerçants**. On ne construit pas une surface d'exposition PII pour afficher un chiffre que le tableau de bord Resend rend déjà. |
+
+Le refus est **verrouillé, pas seulement écrit** : un cas de `resendAccountStatus.test.ts`
+sérialise la réponse et exige qu'aucune adresse autre que la nôtre n'y figure. Qui
+brancherait le flux d'e-mails demain devrait d'abord supprimer cette assertion — donc y penser.
+
+⚠️ **Le public a changé, et c'est le cœur du correctif.** Le compte Resend appartient à
+HabaShop, pas au commerçant : quota, domaines et réputation sont de la **stack**. Le
+panneau supprimé les affichait sur un écran de boutique — la faute que `OPS_CATS` existe
+précisément pour empêcher (« ça publierait la stack à tous les clients »). La sonde vit
+donc dans la console plateforme, gardée par `isPlatformAdmin`.
+
+### Trois défauts trouvés en instrumentant, aucun cherché
+
+**1. L'adresse e-mail est une PII, et la règle n'avait jamais été transposée.**
+`deliver()` journalisait `'📧 Email envoyé:', opts.subject, '→', opts.to` — le destinataire
+en clair dans les logs Railway. La règle existait pour les numéros depuis des mois ; ce
+canal n'y avait simplement jamais été soumis. `redactEmail` garde le **domaine** (diagnostic
+de délivrabilité par fournisseur) et supprime la partie locale — celle qui désigne la
+personne. Dans `redactError`, l'e-mail se caviarde **avant** le téléphone : une partie
+locale numérique (`vendeur0771234567@x.sn`) serait sinon coupée en son milieu, résultat ni
+lisible ni anonyme.
+
+**2. Deux périmètres écrits à la main, tous deux déjà faux.**
+
+- `SEND_SURFACE` du méta-test PII listait TROIS fichiers. `resendClient.ts` n'existait pas
+  quand la liste a été tapée : la fuite a vécu là, sous un test vert qui avait l'air de
+  garder la surface d'envoi. Dérivé désormais de `lib/spend/*Client.ts` — les seuls modules
+  autorisés à parler à un SDK payant, propriété déjà garantie par l'allowlist.
+- `ADMIN_GET_ROUTES` du test d'isolation P0 listait TROIS routes. La quatrième, ajoutée ce
+  jour, n'y était pas. Dérivé désormais du hook `onRoute` de Fastify. **Le sabotage le
+  prouve** : regater `/api/admin/integrations/resend` sur `authenticate` au lieu de
+  `authenticateAdmin` fait rougir le test en nommant la route — une liste en dur ne
+  l'aurait pas vue.
+
+*Deux fois le même motif, dans deux fichiers écrits par des mains différentes, à des mois
+d'intervalle. Le périmètre écrit à la main n'est pas une négligence : c'est le geste
+naturel, et c'est pour ça qu'il faut une règle contre lui.*
+
+**3. Un « non concluant » NU, trouvé à l'écran.** Quand les domaines sont lus mais que
+l'adresse d'expédition est illisible, le serveur rend `domaineVerifie: null` avec
+`echec: null` — et l'écran affichait « non concluant » sans dire pourquoi. *Un état non
+concluant qui n'explique pas est un état muet : exactement le reproche fait au panneau
+qu'on venait de supprimer.* Vu en lisant une capture, pas en relisant le code.
+
+### Le piège de vérification, deux fois dans la même heure
+
+La première vérification à l'écran a rendu **trois fois le même résultat** pour trois cas
+différents — et le test passait. `page.route()` de Playwright n'interceptait rien : le
+harnais stubbe `window.fetch` **dans la page**, hors de portée du routage réseau. Les trois
+cas mesuraient le repli générique.
+
+C'est la deuxième forme du même piège en une session, après les huit « absent » d'une page
+redirigée vers `/login`. **La leçon n'est pas « ajouter un témoin positif » — c'est que
+l'absence de différence entre des cas censés différer est, en soi, le signal.** Trois
+sorties identiques pour trois entrées distinctes ne valident rien ; elles disent que le
+levier n'est pas branché.

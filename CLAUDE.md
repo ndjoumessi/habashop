@@ -839,7 +839,7 @@ l'ACTIVITÉ (elle vend). Notions orthogonales, elles se contredisaient sur le m�
 plus de `st` brut) ; l'activité se dit « **sans vente depuis 14 j** » — ce qu'elle mesure,
 pas un état.
 
-⚠️ **UNE PASTILLE QUI NE PEUT PAS ROUGIR NE PROUVE RIEN.** « Santé technique » lisait un **littéral** de `pages/Integrations.tsx` : aucune requête n'était émise. Le panneau porte maintenant (a) **une sonde réelle** sur `/api/health-extended`, datée (« vérifié il y a N s ») et capable de rougir, et (b) la mention explicite que le reste est de la **configuration DÉCLARÉE**, pas une vérification. Sonder Sentry/Resend/Twilio demanderait un relais serveur : **dette assumée, écrite plutôt que masquée par du vert.** 📖 *`docs/lessons/chiffres-affiches.md`.*
+⚠️ **UNE PASTILLE QUI NE PEUT PAS ROUGIR NE PROUVE RIEN.** « Santé technique » lisait un **littéral** de `pages/Integrations.tsx` : aucune requête n'était émise. Le panneau porte maintenant (a) **une sonde réelle** sur `/api/health-extended`, datée (« vérifié il y a N s ») et capable de rougir, et (b) la mention explicite que le reste est de la **configuration DÉCLARÉE**, pas une vérification. Sentry et **Resend** sont SONDÉS par relais serveur (`GET /api/admin/integrations/resend` : le domaine d'expédition est-il vérifié — `resend.dev` = réputation partagée) ; **Twilio reste une dette assumée.** ⚠️ Le relais ne remonte **jamais** `emails.list`/`logs.list` : ces réponses portent les adresses des clients des commerçants. ⚠️ Et une dette ÉCRITE ici n'a empêché personne de la « combler » AILLEURS avec de la fiction. 📖 *`docs/lessons/chiffres-affiches.md`.*
 
 ### Le JUMEAU NON TRAITÉ ⚠️ — le motif le plus coûteux de ce dépôt
 

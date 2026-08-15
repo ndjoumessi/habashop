@@ -27,7 +27,7 @@ vi.mock('../redis', () => ({ redis: redisMock }))
 vi.mock('../db', () => ({ prisma: { tenant: { findUnique: vi.fn(async () => tenantStore.current) } } }))
 vi.mock('@sentry/node', () => ({ captureMessage: vi.fn(), captureException: vi.fn() }))
 
-import { redactPhone, redactError } from '../lib/redactPhone'
+import { redactPhone, redactEmail, redactError } from '../lib/redactPhone'
 import { sendWhatsApp } from '../lib/spend/twilioClient'
 
 beforeEach(() => {
@@ -121,23 +121,93 @@ describe('Méta-test — pas de journalisation brute d’un numéro', () => {
     // variable et signalait un appel pourtant correct (faux positif constaté).
     const CONSOLE   = /console\.(log|warn|error)\(/
     const PHONE_VAR = /\b(waPhone|formattedPhone|cleanPhone|customer\.phone|ownerPhone)\b/
+    // ⚠️ L'ADRESSE E-MAIL EST UNE DONNÉE PERSONNELLE AU MÊME TITRE QUE LE NUMÉRO.
+    // Ajouté le 2026-08-15 après avoir trouvé `console.log('📧 Email envoyé:', …, opts.to)`
+    // dans `resendClient.ts` : le destinataire partait en clair dans les logs Railway.
+    // La règle PII existait, elle n'avait jamais été transposée à ce canal.
+    const EMAIL_VAR = /\b(opts\.to|payload\.to|\bto:\s*\w|recipientEmail|user\.email|admin\.email)\b/
     const RAW_ERR   = /\berr(or)?\.message\b/
-    // `err.message` n'embarque un numéro que sur la surface d'envoi : une erreur Redis
-    // ou Prisma n'en contient pas, et tout interdire noierait la règle sous le bruit.
-    const SEND_SURFACE = ['lib/spend/twilioClient.ts', 'services/whatsappSend.ts', 'routes/whatsapp.ts']
 
-    for (const f of walk(SRC)) {
+    /**
+     * ⚠️ PÉRIMÈTRE DÉRIVÉ, PLUS ÉCRIT À LA MAIN — et ce changement est la LEÇON du jour.
+     *
+     * `SEND_SURFACE` était une liste de TROIS chemins, tapée en dur. `resendClient.ts`
+     * n'y figurait pas — il n'existait pas quand elle a été écrite — donc la fuite e-mail
+     * a vécu là, sous un méta-test vert qui avait l'air de garder la surface d'envoi.
+     * *Un périmètre écrit à la main est faux dès qu'on ajoute quelque chose, et
+     * l'assertion de couverture ne le dira pas : elle prouve qu'on a lu N fichiers,
+     * jamais que N était le bon N.*
+     *
+     * La surface d'envoi se DÉRIVE donc : tout `lib/spend/*Client.ts` — c'est-à-dire les
+     * seuls modules autorisés à parler à un SDK payant, propriété déjà garantie par
+     * `spendGuardAllowlist.test.ts` — plus les routes/services d'envoi nommés. Un
+     * sixième prestataire câblé demain entre dans le périmètre sans que personne n'y pense.
+     */
+    const surfaceEnvoi = (rel: string) =>
+      /^lib\/spend\/\w+Client\.ts$/.test(rel)
+      || ['services/whatsappSend.ts', 'routes/whatsapp.ts'].includes(rel)
+
+    const fichiers = walk(SRC)
+    for (const f of fichiers) {
       const rel = relative(SRC, f).split('\\').join('/')
       if (rel.startsWith('lib/redactPhone')) continue
       for (const line of readFileSync(f, 'utf8').split('\n')) {
         if (!CONSOLE.test(line) || line.includes('redact')) continue
         if (PHONE_VAR.test(line)) offenders.push(`${rel} :: ${line.trim().slice(0, 70)}`)
-        if (SEND_SURFACE.includes(rel) && RAW_ERR.test(line)) offenders.push(`${rel} :: ${line.trim().slice(0, 70)}`)
+        if (surfaceEnvoi(rel) && (RAW_ERR.test(line) || EMAIL_VAR.test(line))) {
+          offenders.push(`${rel} :: ${line.trim().slice(0, 70)}`)
+        }
       }
     }
+
+    // ⚠️ COUVERTURE — un `walk()` cassé rend une liste vide, donc « zéro coupable ».
+    expect(fichiers.length).toBeGreaterThan(80)
+    // Et le périmètre dérivé doit VRAIMENT contenir les clients payants : sans ce
+    // contrôle, une regex trop stricte le viderait en se déclarant verte.
+    const surfaces = fichiers.map(f => relative(SRC, f).split('\\').join('/')).filter(surfaceEnvoi)
+    expect(surfaces).toContain('lib/spend/twilioClient.ts')
+    expect(surfaces).toContain('lib/spend/resendClient.ts')
+    expect(surfaces).toContain('lib/spend/smsClient.ts')
+
     expect(
       [...new Set(offenders)],
-      'Numéro ou message d’erreur Twilio journalisé sans redactPhone/redactError — CLAUDE.md § PII.',
+      'Numéro, adresse e-mail ou message d’erreur d’un SDK d’envoi journalisé sans caviardage — CLAUDE.md § PII.',
     ).toEqual([])
+  })
+})
+
+describe('redactEmail — la personne disparaît, le fournisseur reste', () => {
+  it('caviarde la partie locale et garde le domaine', () => {
+    expect(redactEmail('kone.awa@boutique.sn')).toBe('k***@boutique.sn')
+    // Le domaine sert au diagnostic de délivrabilité (« tous les gmail rebondissent ») ;
+    // la partie locale est ce qui désigne la personne.
+    expect(redactEmail('nelson.djoumessi@gmail.com')).toBe('n***@gmail.com')
+  })
+
+  it('caviarde DANS un message d’erreur, et toutes les adresses d’une ligne', () => {
+    expect(redactEmail('Invalid recipient: a@x.sn, b@y.ci'))
+      .toBe('Invalid recipient: a***@x.sn, b***@y.ci')
+  })
+
+  it('est idempotent et sûr sur une entrée vide ou non-chaîne', () => {
+    const une = redactEmail('kone.awa@boutique.sn')
+    expect(redactEmail(une)).toBe(une)
+    for (const v of [null, undefined, 42, {}]) expect(() => redactEmail(v)).not.toThrow()
+  })
+
+  it('laisse intact ce qui n’est pas une adresse', () => {
+    expect(redactEmail('total 12 500 FCFA · 2026-08-15')).toBe('total 12 500 FCFA · 2026-08-15')
+  })
+
+  it('⚠️ `redactError` traite les DEUX, et l’e-mail EN PREMIER', () => {
+    // L'ordre est load-bearing : une partie locale numérique (`vendeur0771234567`) serait
+    // attrapée par PHONE_LIKE au milieu de l'adresse, laissant un résultat NI lisible NI
+    // anonyme. Ce cas échoue si quelqu'un inverse les deux passes.
+    expect(redactError(new Error('to vendeur0771234567@boutique.sn failed')))
+      .toBe('to v***@boutique.sn failed')
+    // Et un message qui porte les deux formes est intégralement caviardé.
+    const deux = redactError(new Error('client +221771234567 / awa@x.sn injoignable'))
+    expect(deux).toContain('+221****4567')
+    expect(deux).toContain('a***@x.sn')
   })
 })

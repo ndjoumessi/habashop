@@ -6,7 +6,7 @@ import { useAppStore } from '@/stores/appStore'
 const API_BASE: string =
   (import.meta.env.VITE_API_URL as string | undefined) ?? 'https://habashop-production.up.railway.app'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
-import { sentryStatusApi } from '@/lib/api'
+import { sentryStatusApi, resendAccountApi, type ResendAccount } from '@/lib/api'
 import { INTEGRATIONS_LIST, CATEGORY_OF, OPS_CATS, API_VERSION, CARD_DETAIL } from '@/pages/Integrations'
 
 // ── Infrastructure OPÉRATEUR (étape 1bis) ────────────────────────────────────
@@ -29,8 +29,13 @@ import { INTEGRATIONS_LIST, CATEGORY_OF, OPS_CATS, API_VERSION, CARD_DETAIL } fr
  *   2. UNE sonde réelle est ajoutée, sur la seule chose qu'un navigateur peut vérifier :
  *      l'API (`/api/health-extended`). Celle-là peut rougir, et son horodatage le dit.
  *
- * Les autres lignes (Resend, Twilio…) resteraient à sonder côté serveur : c'est une dette
- * assumée, écrite plutôt que masquée par une pastille rassurante.
+ * ⚠️ RESEND : dette CLOSE le 2026-08-15 — `GET /api/admin/integrations/resend` mesure
+ * réellement le domaine d'expédition (bandeau dédié ci-dessous). Elle avait été écrite ici
+ * comme « à sonder côté serveur » ; entre-temps un panneau qui SIMULAIT ce monitoring
+ * (`Math.random()` sous un badge LIVE) avait pris sa place sur l'écran commerçant. **Une
+ * dette écrite vaut mieux qu'une pastille rassurante — mais une dette écrite quelque part
+ * n'empêche personne de la « combler » ailleurs avec de la fiction.**
+ * TWILIO reste à sonder : dette assumée, toujours écrite plutôt que peinte en vert.
  *
  * ⚠️ SENTRY fait exception depuis le 2026-08-06, et pour une raison qui vaut d'être écrite :
  * sa sonde EXISTAIT DÉJÀ (`sentryStatusApi.check()`, vérification côté backend), mais elle
@@ -46,6 +51,31 @@ function useSentryProbe() {
     sentryStatusApi.check()
       .then(r => { if (vivant) setEtat({ ok: r.connected, ms: r.ms }) })
       .catch(() => { if (vivant) setEtat({ ok: false, ms: null }) })
+    return () => { vivant = false }
+  }, [])
+  return etat
+}
+
+/**
+ * SONDE D'EXPÉDITION E-MAIL — la dette « Resend reste à sonder côté serveur » est CLOSE.
+ *
+ * ⚠️ Ce qu'elle mesure est étroit ET choisi : **le domaine d'où nous expédions est-il
+ * vérifié ?** Tant que la réponse est `resend.dev`, nous partageons la réputation
+ * d'expéditeurs inconnus et rien ne relie nos e-mails à HabaShop. C'est le seul fait de
+ * cet écran qui change une décision.
+ *
+ * ⚠️ Elle NE relaie PAS le flux des e-mails : ces réponses portent les adresses des
+ * clients de nos commerçants (cf. `resendAccountStatus` côté serveur). Le panneau
+ * supprimé, lui, en INVENTAIT.
+ */
+function useResendProbe() {
+  const [etat, setEtat] = useState<{ compte: ResendAccount | null; a: number | null }>({ compte: null, a: null })
+  useEffect(() => {
+    let vivant = true
+    resendAccountApi.get()
+      .then(r => { if (vivant) setEtat({ compte: r, a: Date.now() }) })
+      // ⚠️ Un échec réseau laisse `compte` à `null` : l'écran reste MUET, jamais rassurant.
+      .catch(() => { if (vivant) setEtat({ compte: null, a: Date.now() }) })
     return () => { vivant = false }
   }, [])
   return etat
@@ -76,6 +106,7 @@ export default function OpsInfrastructure() {
   const infra = INTEGRATIONS_LIST.filter(itg => OPS_CATS.has(CATEGORY_OF[itg.id]))
   const probe = useApiProbe()
   const sentry = useSentryProbe()
+  const resend = useResendProbe()
   const [maintenant, setMaintenant] = useState(Date.now())
   useEffect(() => { const id = setInterval(() => setMaintenant(Date.now()), 1000); return () => clearInterval(id) }, [])
   const ilYA = probe.a === null ? null : Math.max(0, Math.round((maintenant - probe.a) / 1000))
@@ -107,6 +138,67 @@ export default function OpsInfrastructure() {
           </span>
         )}
       </div>
+
+      {/* ── SONDE D'EXPÉDITION E-MAIL — mesurée, datée, capable de ne PAS conclure ── */}
+      {(() => {
+        const c = resend.compte
+        // ⚠️ QUATRE états de rendu, et l'ordre est celui de la PRUDENCE : tant qu'on n'a
+        // rien reçu, on n'est pas optimiste ; quand on a reçu sans pouvoir conclure, on
+        // dit POURQUOI ; le vert est le dernier cas, jamais le premier.
+        const verifie = c?.domaineVerifie ?? null
+        const ton = verifie === true ? 'var(--acc2)' : verifie === false ? 'var(--warn)' : 'var(--text4)'
+        const cause = !c
+          ? (lang === 'en' ? 'probe unavailable' : lang === 'es' ? 'sonda no disponible' : lang === 'it' ? 'sonda non disponibile' : 'sonde indisponible')
+          : c.echec === 'NOT_CONFIGURED'
+          ? (lang === 'en' ? 'no API key on the server' : lang === 'es' ? 'sin clave API en el servidor' : lang === 'it' ? 'nessuna chiave API sul server' : 'aucune clé API sur le serveur')
+          : c.echec === 'UNREACHABLE'
+          ? (lang === 'en' ? 'Resend API unreachable' : lang === 'es' ? 'API Resend inaccesible' : lang === 'it' ? 'API Resend irraggiungibile' : 'API Resend injoignable')
+          : c.echec === 'UNEXPECTED_SHAPE'
+          ? (lang === 'en' ? 'unexpected API response' : lang === 'es' ? 'respuesta inesperada de la API' : lang === 'it' ? 'risposta API inattesa' : 'réponse d’API inattendue')
+          : !c.domaineExpedition
+          /* ⚠️ TROUVÉ À L'ÉCRAN, pas en relisant : `domaines` lu correctement mais adresse
+             d'expédition illisible donne `domaineVerifie: null` AVEC `echec: null` — donc
+             un « non concluant » NU, qui n'explique rien. Un état non concluant qui ne dit
+             pas pourquoi est un état muet, et c'est ce qu'on reprochait à l'ancien panneau. */
+          ? (lang === 'en' ? 'sender address unreadable' : lang === 'es' ? 'dirección de envío ilegible' : lang === 'it' ? 'indirizzo mittente illeggibile' : 'adresse d’expédition illisible')
+          : (lang === 'en' ? 'reason unknown' : lang === 'es' ? 'motivo desconocido' : lang === 'it' ? 'motivo sconosciuto' : 'motif inconnu')
+        const ilYAResend = resend.a === null ? null : Math.max(0, Math.round((maintenant - resend.a) / 1000))
+        return (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12,
+            padding: '10px 14px', borderRadius: 12, background: 'var(--card)',
+            border: `1px solid ${verifie === false ? 'var(--warn)' : 'var(--border)'}`,
+          }}>
+            <span aria-hidden="true" style={{
+              width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+              background: verifie === null ? 'transparent' : ton,
+              border: `1px solid ${verifie === null ? 'var(--text4)' : ton}`,
+            }}/>
+            <span style={{ fontSize: 13.5, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
+              {lang === 'en' ? 'Email sending domain' : lang === 'es' ? 'Dominio de envío de emails' : lang === 'it' ? 'Dominio di invio email' : 'Domaine d’expédition e-mail'}
+            </span>
+            {/* Le domaine RÉELLEMENT employé, lu côté serveur — plus un littéral du dépôt. */}
+            {c?.domaineExpedition && (
+              <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text2)', fontFamily: 'var(--mono)', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 7px' }}>
+                {c.domaineExpedition}
+              </span>
+            )}
+            <span style={{ fontSize: 'var(--fs-caption)', color: ton, fontWeight: 'var(--fw-semibold)' }}>
+              {verifie === true
+                ? (lang === 'en' ? 'verified' : lang === 'es' ? 'verificado' : lang === 'it' ? 'verificato' : 'vérifié')
+                : verifie === false
+                /* ⚠️ On NOMME la conséquence : « non vérifié » seul ne dit pas ce qu'on risque. */
+                ? (lang === 'en' ? 'NOT verified — shared sender reputation' : lang === 'es' ? 'NO verificado — reputación de envío compartida' : lang === 'it' ? 'NON verificato — reputazione di invio condivisa' : 'NON vérifié — réputation d’expédition partagée')
+                : `${lang === 'en' ? 'not concluded' : lang === 'es' ? 'no concluyente' : lang === 'it' ? 'non concludente' : 'non concluant'}${cause ? ` — ${cause}` : ''}`}
+            </span>
+            {ilYAResend !== null && (
+              <span style={{ marginLeft: 'auto', fontSize: 'var(--fs-caption)', color: 'var(--text3)' }}>
+                {lang === 'en' ? `checked ${ilYAResend}s ago` : lang === 'es' ? `verificado hace ${ilYAResend}s` : lang === 'it' ? `verificato ${ilYAResend}s fa` : `vérifié il y a ${ilYAResend} s`}
+              </span>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ⚠️ Ci-dessous : CONFIGURATION DÉCLARÉE, pas mesure — SAUF Sentry, qui est sondé. */}
       <p style={{ margin: '0 0 10px', fontSize: 'var(--fs-caption)', color: 'var(--text3)', lineHeight: 1.5 }}>

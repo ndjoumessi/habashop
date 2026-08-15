@@ -675,3 +675,26 @@ export const sentryStatusApi = {
     '/api/integrations/sentry/status'
   ),
 }
+
+/**
+ * État MESURÉ du compte d'expédition e-mail — **console PLATEFORME uniquement**
+ * (`isPlatformAdmin`). Le compte Resend appartient à HabaShop, pas au commerçant : son
+ * quota et ses domaines sont de la stack, et les publier sur un écran de boutique est la
+ * faute que le panneau supprimé commettait, en plus d'inventer ses chiffres.
+ *
+ * ⚠️ `domaineVerifie` a TROIS états — `null` signifie « non concluant », jamais « non
+ * vérifié ». `echec` en donne la cause pour que l'écran puisse la DIRE.
+ */
+export type ResendAccount = {
+  configured: boolean
+  expediteur: string | null
+  domaineExpedition: string | null
+  domaineVerifie: boolean | null
+  domaines: { name: string; verified: boolean; statut: string }[] | null
+  echec: 'NOT_CONFIGURED' | 'UNREACHABLE' | 'UNEXPECTED_SHAPE' | null
+  mesureA: string
+}
+
+export const resendAccountApi = {
+  get: () => api.get<ResendAccount>('/api/admin/integrations/resend'),
+}
