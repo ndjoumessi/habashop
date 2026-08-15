@@ -8,15 +8,15 @@ import { mkdirSync } from 'node:fs'
  * produisait « Sam · Ven · Mer · Mar · Lun · Dim · Jeu » : ni chronologique, ni une date.
  *
  * Les tests unitaires (`dashboardSalesSeries.test.ts`) prouvent la fonction pure ; celui-ci
- * prouve que la page CÂBLE bien la fonction et que recharts rend l'axe attendu.
+ * prouve que la page CÂBLE bien la fonction et que le graphique rend l'axe attendu.
  */
 
 const BASE = process.env.DASH_BASE ?? process.env.E2E_BASE ?? 'https://habashop.vercel.app'
 const OUT = 'e2e/screenshots/sales-axis'
 
-/** Libellés de l'axe X, dans l'ordre où recharts les rend. */
+/** Libellés de l'axe X, dans l'ordre où le graphique les rend. */
 async function axisTicks(page: Page): Promise<string[]> {
-  const ticks = page.locator('.recharts-xAxis .recharts-cartesian-axis-tick-value')
+  const ticks = page.locator('[data-testid="chart-area"] [data-testid="axe-x-tick"]')
   await expect(ticks.first()).toBeVisible({ timeout: 15000 })
   return (await ticks.allTextContents()).map(s => s.trim()).filter(Boolean)
 }
@@ -33,7 +33,7 @@ test.describe('graphe de ventes — axe temporel', () => {
 
     for (const period of ['7days', '30days', '3months'] as const) {
       await select.selectOption(period)
-      await page.waitForTimeout(1500) // refetch + re-render recharts
+      await page.waitForTimeout(1500) // refetch + re-rendu du graphique
 
       const empty = page.getByText(/Aucune vente sur les|No sales in the last/)
       if (await empty.count() > 0) {

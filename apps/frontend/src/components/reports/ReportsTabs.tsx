@@ -1,4 +1,29 @@
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { Anneau, Aire } from '@/components/charts/primitives'
+
+/**
+ * Infobulle de l'aire « CA 7 jours ».
+ *
+ * ⚠️ Elle REMPLACE la `<Tooltip formatter=… contentStyle=… labelStyle=…>` intégrée de
+ * recharts, qui n'existe plus. Le rendu visé est identique — libellé du jour, puis
+ * « CA : <montant formaté> » — et le montant passe par `fmt`, jamais par un formatage
+ * manuel (§ Règles devise).
+ */
+function InfobulleCA({ active, payload, label, fmt, lang }: {
+  active?: boolean
+  payload?: { value: number }[]
+  label?: unknown
+  fmt: (n: number) => string
+  lang: string
+}) {
+  if (!active || !payload?.length) return null
+  const titre = lang === 'en' ? 'Revenue' : lang === 'es' ? 'Ingresos' : lang === 'it' ? 'Ricavi' : 'CA'
+  return (
+    <div style={{ background: 'var(--card)', border: '1px solid rgba(108,71,255,.3)', borderRadius: 10, fontSize: 12, padding: '8px 12px', boxShadow: 'var(--sh-md)' }}>
+      <div style={{ color: 'var(--text2)', fontWeight: 'var(--fw-semibold)', marginBottom: 2 }}>{String(label ?? '')}</div>
+      <div style={{ color: 'var(--text)' }}>{titre} : {fmt(payload[0].value)}</div>
+    </div>
+  )
+}
 import { Trophy, Receipt, CreditCard, Wallet, DollarSign } from 'lucide-react'
 import { t } from '@/stores/appStore'
 import { useThemeColor } from '@/hooks/useThemeColor'
@@ -35,7 +60,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
   // avec le reste du composant, qui lit déjà `lang` partout.
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
-  // var() non résolu en attribut SVG recharts → couleurs résolues en JS, réactives au thème.
+  // var() non résolu en attribut SVG → couleurs résolues en JS, réactives au thème.
   const gridColor = useThemeColor('--border')
   const tickColor = useThemeColor('--text3', '#888')
   const recentSales = salesData.slice(0, 8).map((s: any) => ({
@@ -55,26 +80,29 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
    * Le pourcentage vient désormais du `payload`, c'est-à-dire de la MÊME série que la
    * légende, l'infobulle et le PDF. Un dessin, un nombre.
    */
-  const renderActiveShape = (props: any) => {
-    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload } = props
+  /**
+   * Contenu central du secteur actif — ex-`renderActiveShape`/`Sector` de recharts.
+   * ⚠️ Rendu à l'INTÉRIEUR du `translate(cx,cy)` de `Anneau` : les coordonnées sont donc
+   * relatives au centre (0,0), là où recharts passait `cx`/`cy` absolus. Le grossissement
+   * du secteur et le halo sont désormais portés par la primitive (`halo`), pas redessinés.
+   */
+  const centreActif = (i: number) => {
+    const d = paymentData[i]
+    if (!d) return null
     return (
       <g>
-        <g style={{ filter: `drop-shadow(0 0 12px ${fill}80)` }}>
-          <Sector cx={cx} cy={cy} innerRadius={innerRadius - 4} outerRadius={outerRadius + 8}
-            startAngle={startAngle} endAngle={endAngle} fill={fill} />
-        </g>
-        <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle"
-          style={{ fontSize: 28, fontWeight: 'var(--fw-semibold)', fill, fontFamily: 'JetBrains Mono, monospace' }}>
-          {pctLabel(payload)}
+        <text x={0} y={-14} textAnchor="middle" dominantBaseline="middle"
+          style={{ fontSize: 28, fontWeight: 'var(--fw-semibold)', fill: d.color, fontFamily: 'JetBrains Mono, monospace' }}>
+          {pctLabel(d)}
         </text>
-        <text x={cx} y={cy + 14} textAnchor="middle" dominantBaseline="middle"
+        <text x={0} y={14} textAnchor="middle" dominantBaseline="middle"
           style={{ fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)', fill: 'var(--text2)', fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '.5px' }}>
-          {payload.name}
+          {d.name}
         </text>
-        {payload.amount > 0 && (
-          <text x={cx} y={cy + 32} textAnchor="middle"
+        {d.amount > 0 && (
+          <text x={0} y={32} textAnchor="middle"
             style={{ fontSize: 'var(--fs-caption)', fill: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace' }}>
-            {fmt(payload.amount)}
+            {fmt(d.amount)}
           </text>
         )}
       </g>
@@ -139,26 +167,14 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 la remettre suppose de faire descendre la vraie plage depuis l'endroit où
                 `chartData` est calculé — sinon elle redériverait. */}
           </div>
-          <ResponsiveContainer width="100%" height={160}>
-            <AreaChart data={chartData} margin={{ top:4, right:8, left:0, bottom:0 }}>
-              <defs>
-                <linearGradient id="areaGradCA" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#6C47FF" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#6C47FF" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-              <XAxis dataKey="day" tick={{ fill:tickColor, fontSize:11 }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={v => abbr(v)} tick={{ fill:tickColor, fontSize:11 }} axisLine={false} tickLine={false} width={38} />
-              <Tooltip
-                formatter={(v: number) => [fmt(v), lang === 'en' ? 'Revenue' : lang === 'es' ? 'Ingresos' : lang === 'it' ? 'Ricavi' : 'CA']}
-                contentStyle={{ background:'var(--card)', border:'1px solid rgba(108,71,255,.3)', borderRadius:10, fontSize:12 }}
-                labelStyle={{ color:'var(--text2)', fontWeight:'var(--fw-semibold)' }}
-                cursor={{ stroke:'rgba(108,71,255,.3)', strokeWidth:1 }}
-              />
-              <Area dataKey="val" stroke="#6C47FF" strokeWidth={2.5} fill="url(#areaGradCA)" dot={false} activeDot={{ r:5, fill:'#6C47FF', strokeWidth:0 }} />
-            </AreaChart>
-          </ResponsiveContainer>
+          {/* ⚠️ Abscisse CATÉGORIELLE ici (`day` est une chaîne) : les 7 points sont
+              contigus par construction, contrairement à l'aire du Dashboard qui porte des
+              timestamps et exige un axe TEMPOREL. `Aire` distingue les deux sur la nature
+              de la clé — ne pas passer un `ts` numérique sans le vouloir. */}
+          <Aire data={chartData} xKey="day" yKey="val" hauteur={160}
+            couleur="#6C47FF" degradeId="areaGradCA" abbr={abbr}
+            gridColor={gridColor} tickColor={tickColor}
+            tooltip={<InfobulleCA fmt={fmt} lang={lang} />} />
           {/* Équivalent textuel : les valeurs de la courbe n'existaient que dans le tooltip,
               donc à la souris seulement. Cf. `ChartDataTable`. */}
           <ChartDataTable
@@ -209,36 +225,17 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', flexShrink: 0 }}>
               {/* ⚠️ `dataKey="pct"` — et non un compte brut. Les `pct` somment à 100
-                  exactement (plus forts restes), donc l'ANGLE que recharts calcule
+                  exactement (plus forts restes), donc l'ANGLE que la primitive calcule
                   (`pct / Σpct`) vaut `pct/100` : la géométrie et le chiffre écrit
                   dessus sont le même nombre, par construction et non par chance. */}
-              <ResponsiveContainer width={220} height={220}>
-                <PieChart>
-                  <Pie
-                    activeIndex={activePayIndex ?? undefined}
-                    activeShape={renderActiveShape}
-                    data={paymentData}
-                    cx="50%" cy="50%"
-                    innerRadius={68} outerRadius={100}
-                    paddingAngle={2} dataKey="pct"
-                    labelLine={false}
-                    label={activePayIndex === null ? renderLabel : undefined}
-                    onMouseEnter={(_: any, index: number) => setActivePayIndex(index)}
-                    onMouseLeave={() => setActivePayIndex(null)}
-                    strokeWidth={0}
-                  >
-                    {paymentData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.color}
-                        opacity={activePayIndex === null || activePayIndex === index ? 1 : 0.35}
-                        style={{ cursor: 'pointer', transition: 'opacity .2s' }}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomPayTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
+              <Anneau data={paymentData as unknown as Record<string, unknown>[]}
+                colors={[]} colorKey="color" dataKey="pct"
+                innerRadius={68} outerRadius={100} hauteur={220} padAngle={0.035}
+                label={activePayIndex === null ? renderLabel : undefined}
+                centre={centreActif} halo
+                activeIndex={activePayIndex}
+                onActive={setActivePayIndex}
+                tooltip={<CustomPayTooltip />} />
               {activePayIndex === null && (
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%',

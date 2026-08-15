@@ -1,6 +1,6 @@
 import { useAppStore } from '@/stores/appStore'
 
-// Résout une couleur de thème à passer en ATTRIBUT SVG (stroke=/fill= de recharts), où les
+// Résout une couleur de thème à passer en ATTRIBUT SVG (stroke=/fill=), où les
 // CSS custom properties (var(--x)) ne sont PAS résolues par le navigateur. On lit donc la
 // valeur calculée en JS sur :root. Pur + testable (pas de hook).
 export function resolveThemeColor(cssVar: string, fallback: string): string {

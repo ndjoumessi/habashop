@@ -192,6 +192,32 @@ export function seedEcran(page: Page) {
           lowStock: 3, totalProducts: n, totalCustomers: 12,
           salesByDay: Array.from({ length: 7 }, (_, k) => ({ day: `J-${6 - k}`, total: 100000 + k * 12000 })),
           topProducts: [{ name: 'Produit témoin 001 800g', qty: 42, total: 50400 }],
+          // ⚠️ `categoryBreakdown` est lu par l'effet `dashboardApi.stats()`, PAS par
+          // `reports/sales` — première tentative posée sur la mauvaise route, et le donut
+          // restait donc invisible. Le reliquat porte son DRAPEAU `other`, jamais son nom.
+          categoryBreakdown: [
+            { name: 'Épicerie', value: 420_000, count: 12 },
+            { name: 'Boissons', value: 260_000, count: 8 },
+            { name: 'Hygiène',  value: 140_000, count: 5 },
+            { name: 'Autres',   value: 80_000,  count: 4, other: true },
+          ],
+        })
+      }
+      /**
+       * ⚠️ SÉRIES DU DASHBOARD — sans elles, `salesChart` est VIDE et la page rend son état
+       * vide : les DEUX graphiques du Dashboard ne sont pas montés du tout. Une vérification
+       * qui compte « 0 anneau, 0 aire » sur cet écran ne mesure donc RIEN — c'est arrivé au
+       * premier tir de la migration visx, le 2026-08-15, et le test se déclarait vert.
+       * Un harnais qui ne fournit pas la donnée ne teste pas l'absence de défaut : il teste
+       * l'absence d'écran.
+       */
+      if (url.includes('/api/reports/sales')) {
+        const jour = (k: number) => new Date(2026, 7, 8 + k).toISOString()
+        return json({
+          sales: Array.from({ length: 7 }, (_, k) => ({
+            id: `v-${k + 1}`, createdAt: jour(k), total: 90_000 + k * 15_000,
+            paymentMethod: ['cash', 'wave', 'mtn'][k % 3], status: 'completed', items: [],
+          })),
         })
       }
       if (url.includes('/api/tenant/users')) {

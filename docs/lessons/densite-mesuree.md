@@ -201,3 +201,60 @@ Verrou sans pixel absolu (portable Ubuntu/macOS) : **le vide ne doit pas dépass
 du contenu**, plus une garde « contenu > 500 px » qui rougit si la fixture redevient périmée.
 Les deux sabotages ont dû être joués SÉPARÉMENT — la garde de fixture rougissait la première
 et masquait celle du remplissage.
+
+---
+
+## Sortie de recharts — mesure d'abord, migration ensuite (2026-08-15)
+
+| | avant | après |
+|---|---|---|
+| chunk `charts` livré | **107 808 o gz** | **18 650 o gz** (−82,7 %) |
+| dépendance | `recharts@2.12.7` | `@visx/shape` + `@visx/scale` |
+| points d'appel | 3 fichiers, 2 formes | inchangé |
+
+**La mesure a précédé la décision.** Une sonde jetable (`@visx/shape` + `scale` + `axis` +
+`group`, React externalisé) a donné un plancher de **28 404 o gz**. Le résultat final est
+plus bas parce que `@visx/axis` et `@visx/group` se sont révélés inutiles : les axes tiennent
+en vingt lignes de SVG dans la primitive, et le `<g transform>` est natif.
+
+### La décision de conception qui a limité le risque
+
+⚠️ **Les CONTRATS de recharts sont conservés à l'identique.** Le renderer d'étiquettes reçoit
+toujours `{cx, cy, midAngle, innerRadius, outerRadius, index}`, l'infobulle toujours
+`{active, payload}`. Conséquence : `makeDonutLabel`, `CatTooltip`, `CustomTooltip` et
+`CustomPayTooltip` n'ont **pas changé d'une ligne**.
+
+*Ce sont des graphiques d'ARGENT. Une migration qui réécrit la plomberie ET les formules
+d'affichage en même temps rend toute régression indémêlable.* On change une chose.
+
+Seule subtilité, écrite dans le fichier plutôt que redéduite : visx compte en radians depuis
+midi, sens horaire ; recharts en degrés depuis 3 h, sens trigonométrique — d'où **m = 90° − a**.
+
+### Ce que la vérification a coûté avant de valoir quelque chose
+
+⚠️ **Premier tir : VACANT.** Le Dashboard rendait son état vide (aucune vente dans le
+harnais), donc « 0 anneau, 0 aire » — et le test passait. *Un harnais qui ne fournit pas la
+donnée ne teste pas l'absence de défaut, il teste l'absence d'écran.*
+
+⚠️ **Deuxième tir : la moitié.** J'ai posé `categoryBreakdown` sur `/api/reports/sales` alors
+que le composant le lit dans la réponse de `dashboardApi.stats()`. L'aire apparaissait, le
+donut restait invisible. Deux fixtures périmées ou mal placées dans la même journée, après
+celle du MRR : **le harnais est du code, il se périme comme le reste.**
+
+Les seuils du verrou sont donc **strictement positifs et exacts** (4 secteurs sur le
+Dashboard, 1 sur Rapports) : ils échouent sur un écran vide, pas seulement sur un écran faux.
+
+### Ce qui reste vrai à l'écran
+
+Étiquettes du donut Dashboard : **47 / 29 / 15 / 9** — identiques à la légende, somme 100.
+L'invariant « la géométrie et le chiffre écrit dessus sont le même nombre, par construction »
+survit à la migration, parce que c'est toujours notre série d'entiers qui alimente l'angle.
+
+### Les trois specs E2E étaient couplés aux classes internes de recharts
+
+`.recharts-surface`, `.recharts-pie-sector`, `.recharts-tooltip-wrapper`,
+`.recharts-xAxis .recharts-cartesian-axis-tick-value` → remplacés par des `data-testid`
+stables. ⚠️ Une différence de comportement est **assumée et écrite** : recharts gardait le
+conteneur d'infobulle monté en permanence et basculait sa `visibility` ; la primitive le
+monte au survol et le démonte à la sortie — plus honnête pour un lecteur d'écran. Le spec
+exige donc l'attachement **après** un premier survol, pas avant.

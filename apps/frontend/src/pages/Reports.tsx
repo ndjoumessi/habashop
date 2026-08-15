@@ -11,7 +11,7 @@ import { writeXlsx } from '@/utils/xlsxWriter'
 import { buildReportSheets } from '@/components/reports/reportsExport'
 import { salesApi, expensesApi, productsApi, employeesApi } from '@/lib/api'
 
-// ReportsTabs porte les graphes recharts (chunk `charts`) → lazy pour alléger le shell Reports
+// ReportsTabs porte les graphes (chunk `charts`, visx) → lazy pour alléger le shell Reports
 const ReportsTabs = lazy(() => import('@/components/reports/ReportsTabs'))
 import { type Period, Trend } from '@/components/reports/reportsShared'
 import { buildPaymentBreakdown, pctLabel } from '@/components/reports/paymentBreakdown'

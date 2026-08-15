@@ -148,8 +148,11 @@ export default defineConfig(({ mode }) => {
           ) {
             return 'pdf'
           }
-          // Recharts / d3 — lazy via les routes Dashboard/Reports uniquement
-          if (id.includes('recharts') || id.includes('node_modules/d3-')) {
+          // ⚠️ visx / d3 — lazy via les routes Dashboard/Reports uniquement.
+          // Le NOM du chunk (`charts`) est conservé : il est câblé dans `globIgnores` et
+          // dans l'`urlPattern` du cache runtime ci-dessus. Le renommer sortirait le chunk
+          // du cache `lazy-chunks-cache` sans que rien ne le signale.
+          if (id.includes('@visx') || id.includes('node_modules/d3-')) {
             return 'charts'
           }
           // UI helpers

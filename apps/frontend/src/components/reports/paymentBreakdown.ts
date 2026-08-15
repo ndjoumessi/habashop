@@ -9,7 +9,7 @@ import {
  * L'écran portait **deux** séries de pourcentages sur le même camembert :
  *
  *   légende / infobulle : `Math.round(counts[m] / TOUTES_LES_VENTES * 100)`
- *   donut / part active : `percent` de recharts = `value / Σ(values RENDUES)`
+ *   donut / part active : un `percent` recalculé par la bibliothèque = `value / Σ(values RENDUES)`
  *
  * Tant que rien n'est avalé les deux coïncident. Dès qu'un mode manque à la liste en
  * dur, ils divergent : sur `demo-tenant-001`, légende **96 %** et donut **101 %**, pour
@@ -24,7 +24,7 @@ import {
  * (Σ des parts dessinées) n'est pas un choix, c'est une conséquence de la géométrie —
  * il ne devient honnête que si les parts couvrent TOUT. C'est donc l'exhaustivité qui
  * rend les deux dénominateurs égaux, et l'égalité est ici **par construction** : une
- * seule série d'entiers est calculée, et c'est elle que recharts reçoit en `dataKey`.
+ * seule série d'entiers est calculée, et c'est elle que le graphique reçoit en `dataKey`.
  *
  * ─── L'ARRONDI EST DISTRIBUÉ, PAS SUBI ───────────────────────────────────────
  * Quatre pourcentages arrondis ne somment pas nécessairement à 100. On applique la

@@ -18,7 +18,7 @@ test('Reports — all 5 tabs render (charts incl.), no errors', async ({ page })
 
   // Default tab = Ventes: donut + area chart render (charts use the moved render helpers)
   await expect(page.getByText(/Répartition paiements|Payment breakdown/).first()).toBeVisible({ timeout: 12000 })
-  await expect(page.locator('.recharts-surface').first()).toBeVisible()
+  await expect(page.locator('[data-testid="chart-donut"]').first()).toBeVisible()
 
   // NB : les onglets sont des role="tab" (composant <Tabs> unifié, Vague 2), pas role="button".
   // Stock

@@ -25,9 +25,9 @@ test('Dashboard — donut : tooltip % == légende % (source unique) + cursor hel
   await expect(panel.getByText(TITLES)).toBeVisible({ timeout: 15000 })
 
   // Donut rendu (réplique unique → laisser le chart lazy se charger)
-  const surface = panel.locator('.recharts-surface').first()
+  const surface = panel.locator('[data-testid="chart-donut"] svg').first()
   await expect(surface).toBeVisible({ timeout: 12000 })
-  const n = await panel.locator('.recharts-pie-sector').count()
+  const n = await panel.locator('[data-testid="donut-sector"]').count()
   expect(n, 'le donut doit avoir au moins une catégorie sur le tenant démo').toBeGreaterThan(0)
 
   // Légende : name -> pct (textContent d'une ligne = "Épicerie33%" → on parse nom + %)
@@ -85,10 +85,13 @@ test('Dashboard — donut : tooltip % == légende % (source unique) + cursor hel
   expect(box).toBeTruthy()
   const cx = box!.x + box!.width / 2
   const cy = box!.y + box!.height / 2
-  const tip = panel.locator('.recharts-tooltip-wrapper')
-  // Le conteneur d'infobulle est monté dès le chart (recharts bascule sa `visibility`, il ne
-  // le démonte pas). On l'exige UNE fois : sinon les 45 `evaluate` du balayage expireraient
-  // l'un après l'autre sur une absence, et le message parlerait de temps, pas de structure.
+  const tip = panel.locator('[data-testid="chart-tooltip"]')
+  // ⚠️ DIFFÉRENCE AVEC RECHARTS, ASSUMÉE : recharts gardait le conteneur d'infobulle MONTÉ
+  // en permanence et basculait sa `visibility` ; notre primitive le monte au survol et le
+  // démonte à la sortie — c'est plus honnête pour un lecteur d'écran (rien d'invisible ne
+  // traîne dans l'arbre). On l'exige donc APRÈS un premier survol, pas avant : sinon les 45
+  // `evaluate` du balayage expireraient l'un après l'autre sur une absence attendue.
+  await page.mouse.move(cx + 88, cy)
   await expect(tip).toBeAttached()
   const seen: Record<string, number> = {}
 

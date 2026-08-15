@@ -786,7 +786,7 @@ export function generateCDC() {
   const modules = [
     { id: 'M01', name: 'Point de Vente (POS)', desc: 'Encaissement rapide, catalogue filtrable, multi-modes de paiement (espèces, mobile money, Wave, Orange Money, carte), ticket imprimable ou WhatsApp, mode offline PWA.', status: 'Livré' },
     { id: 'M02', name: 'Gestion des Stocks', desc: "CRUD produits avec photo/emoji, alertes rupture configurables, bon de commande automatique, historique des mouvements, export CSV.", status: 'Livré' },
-    { id: 'M03', name: 'Tableau de Bord', desc: "KPIs temps réel (CA, ventes, stock, RH), graphiques recharts interactifs, alertes critiques, activité récente.", status: 'Livré' },
+    { id: 'M03', name: 'Tableau de Bord', desc: "KPIs temps réel (CA, ventes, stock, RH), graphiques interactifs, alertes critiques, activité récente.", status: 'Livré' },
     { id: 'M04', name: 'CRM Clients', desc: "Fiches clients, catégories (gros/semi-gros/fidèle), programme de fidélité, historique des achats, import/export CSV.", status: 'Livré' },
     { id: 'M05', name: 'Fournisseurs & Commandes', desc: "Fiches fournisseurs, bons de commande PDF, suivi des livraisons, balance fournisseur.", status: 'Livré' },
     { id: 'M06', name: 'Rapports & Analytics', desc: "Rapports par période, donut paiements, top produits, marges, exports PDF/CSV. Support multi-devises.", status: 'Livré' },

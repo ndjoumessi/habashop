@@ -1023,7 +1023,14 @@ Ce qui mord depuis l'EXTÉRIEUR, donc reste ici :
   autorité. ⚠️ La v4 pose une règle qui lui survit : **rien n'y est affirmé qui n'ait été compté**,
   et son annexe B donne la commande de recomptage de chaque chiffre.
 - ✅ **Paie statuts : RÉSOLU** — modèle `Payroll` (instantané GELÉ) + routes `GET /api/payroll?month=YYYY-MM`, `POST /api/payroll/generate`, `PATCH /api/payroll/:id`. Cf. § Paie.
-- **Bundle recharts ~105KB gz** : lazy + hors precache. Remplacer visx = **L**.
+- ✅ **Bundle graphiques : CLOS le 2026-08-15** — recharts SORTI au profit de `@visx/shape` +
+  `@visx/scale`. Chunk `charts` livré : **107 808 → 18 650 o gz (−82,7 %)**, mesuré sur le
+  `dist/`. ⚠️ **Les CONTRATS de recharts sont conservés** (`{cx,cy,midAngle,…}` pour les
+  étiquettes, `{active,payload}` pour les infobulles) : les formules d'affichage n'ont pas
+  bougé — sur des graphiques d'ARGENT, on ne change qu'une chose à la fois. ⚠️ Le NOM du chunk
+  `charts` est câblé dans `globIgnores` ET l'`urlPattern` du cache runtime : le renommer
+  sortirait le chunk de `lazy-chunks-cache` sans que rien ne le signale.
+  📖 *`docs/lessons/densite-mesuree.md`.*
 - ✅ **Densité : CLOS le 2026-08-15.** Les défauts de 2026-08-06/07 revérifiés dans le code (tous corrigés) ; la mesure autonome en a trouvé **six autres**, corrigés (astuce Planning écrite deux fois, libellé « Dept » orphelin, deux `var(--…)` concaténés avec une alpha, `<option key={undefined}>`, « 1 MODES »). 📖 *`docs/lessons/densite-mesuree.md`* ; la garde P0 sur `/admin` reste intacte, cf. § DENSITÉ.
   - ⚠️ **CES ÉCRANS SE MESURENT SEULS DÉSORMAIS** — `seedEcran` + `ouvrirEcran` (`e2e/dev/ecrans.ts`) amorcent la session et navigent partout, `/__dev/table` compris. La leçon affirmait qu'il fallait une capture de Nelson : **c'était une limite SUPPOSÉE, jamais réexaminée**, alors que le harnais qui la levait existait déjà. *Une limite déclarée se re-teste comme une garantie déclarée.*
   - ⚠️ Le workflow densité tourne EN CI (`density.yml`). La géométrie diffère entre Ubuntu et macOS : l'assertion porte sur le DÉBORDEMENT, l'ENROULEMENT et la REDONDANCE, **jamais sur un pixel exact**.

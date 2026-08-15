@@ -1,29 +1,24 @@
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { Anneau, type EtiquetteAnneau } from './primitives'
 
 interface Props {
   data: any[]
   colors: string[]
-  label: any
+  label: EtiquetteAnneau
   tooltip: React.ReactElement
 }
 
-// Donut « CA par catégorie » du Dashboard — isolé dans le chunk `charts`,
-// chargé à la demande via React.lazy.
+/**
+ * Donut « CA par catégorie » du Dashboard — chunk `charts`, chargé à la demande.
+ *
+ * ⚠️ Migré de recharts vers visx le 2026-08-15 (107 808 → voir le commit). Les CONTRATS
+ * sont inchangés : `label` reçoit toujours `{cx,cy,midAngle,innerRadius,outerRadius,index}`
+ * et `tooltip` toujours `{active,payload}` — `makeDonutLabel` et `CatTooltip` n'ont pas
+ * bougé d'une ligne. On change la plomberie, pas les formules d'affichage.
+ */
 export default function DashCategoryDonut({ data, colors, label, tooltip }: Props) {
   return (
-    <ResponsiveContainer width="100%" height={220}>
-      <PieChart>
-        <Pie
-          data={data} cx="50%" cy="50%"
-          innerRadius={68} outerRadius={108}
-          stroke="none" paddingAngle={2}
-          dataKey="value"
-          label={label} labelLine={false}
-        >
-          {data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
-        </Pie>
-        <Tooltip content={tooltip} wrapperStyle={{ zIndex: 9999, pointerEvents: 'none' }} />
-      </PieChart>
-    </ResponsiveContainer>
+    <Anneau data={data} colors={colors} hauteur={220}
+      innerRadius={68} outerRadius={108} dataKey="value"
+      label={label} tooltip={tooltip} />
   )
 }
