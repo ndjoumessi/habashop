@@ -102,6 +102,63 @@ describe('① le vocabulaire dit ce qui est mesuré', () => {
     expect(container.textContent).not.toMatch(/\d\/\d\s*configurées/)
   })
 
+  /**
+   * ⚠️ LE BAC À SABLE NE SE FOND PAS DANS « CONFIGURÉ ».
+   *
+   * MESURÉ en production le 2026-08-15 : la pastille d'en-tête affichait « 5/5 configurées »
+   * en VERT alors que les TROIS prestataires de paiement étaient en bac à sable — donc
+   * qu'AUCUN encaissement réel n'était possible. Les cartes, elles, disaient « Sandbox » en
+   * ambre : c'est l'AGRÉGAT qui écrasait une distinction que le reste de l'écran prenait
+   * soin de faire. Le haut de page contredisait le bas, et c'est le haut qu'on lit.
+   *
+   * ⚠️ Vérifié sur le DOM RENDU. La source ne peut rien en dire : le total et sa couleur
+   * ne s'évaluent qu'au montage, à partir d'une réponse serveur.
+   */
+  it('⚠️ un prestataire en bac à sable interdit le VERT et se DIT', async () => {
+    api.integrationStatusApi.get.mockResolvedValue({
+      states: { twilio: 'live', resend: 'live', mtnmomo: 'sandbox', campay: 'sandbox', paydunya: 'sandbox' },
+    })
+    const { container } = render(<Integrations />)
+    await waitFor(() => expect(container.textContent).toMatch(/configurées/i))
+
+    // Le compte reste honnête — les cinq ONT bien leurs secrets…
+    expect(container.textContent).toMatch(/5\/5\s*configurées/)
+    // …mais l'écran doit dire que trois d'entre eux ne servent qu'à simuler.
+    expect(container.textContent).toMatch(/3 en bac à sable/)
+
+    // Et la pastille n'est pas verte. On lit la COULEUR RENDUE, pas une classe : c'est un
+    // style en ligne, et c'est la couleur que l'œil croit — pas la légende à côté.
+    const pastille = [...container.querySelectorAll('span')]
+      .find(s => /configurées/.test(s.textContent ?? ''))
+    expect(pastille, 'la pastille doit être rendue').toBeTruthy()
+    expect(pastille!.style.color).not.toContain('--acc2')
+    expect(pastille!.style.color).toContain('--warn')
+  })
+
+  it('sans aucun bac à sable, le vert redevient légitime', async () => {
+    // ⚠️ Le cas POSITIF est obligatoire : un verrou qui n'interdit que le vert serait
+    // satisfait par une pastille éteinte pour toujours — aveugle au « zéro fois ».
+    api.integrationStatusApi.get.mockResolvedValue({
+      states: { twilio: 'live', resend: 'live', mtnmomo: 'live', campay: 'live', paydunya: 'live' },
+    })
+    const { container } = render(<Integrations />)
+    await waitFor(() => expect(container.textContent).toMatch(/5\/5\s*configurées/))
+
+    expect(container.textContent).not.toMatch(/bac à sable/)
+    const pastille = [...container.querySelectorAll('span')]
+      .find(s => /configurées/.test(s.textContent ?? ''))
+    expect(pastille!.style.color).toContain('--acc2')
+  })
+
+  it('⚠️ aucune donnée n’est présentée comme un taux mesuré sur une série', async () => {
+    // « 0 % d'erreurs » était rendu dès qu'UN ping avait abouti : un pourcentage dont le
+    // dénominateur valait un. On rend désormais le verdict de la sonde.
+    const { container } = render(<Integrations />)
+    await waitFor(() => expect(container.textContent).toMatch(/répond|injoignable/))
+    expect(container.textContent).not.toMatch(/\b0%|\b100%/)
+    expect(container.textContent).not.toMatch(/Erreurs/)
+  })
+
   it('le titre ne s’appelle plus comme l’autre entrée de menu', async () => {
     render(<Integrations />)
     // « API & Intégrations » était le titre de CETTE page ET le libellé de menu de /api-docs.

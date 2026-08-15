@@ -419,3 +419,86 @@ son message d'échec nomme la ligne à corriger.
 c'est en écrivant l'assertion qu'est apparue la question « et si l'écran ne rechargeait
 pas ? ». Aucun des deux niveaux existants ne pouvait la poser : l'unitaire simule Prisma, le
 script de production ne monte aucune interface.
+
+---
+
+## Le flux qui se fabrique — `/app/integrations`, 2026-08-15
+
+Trouvé sur une **capture d'écran** envoyée par Nelson, pas par une suite. Toutes les gardes de
+ce dépôt étaient vertes.
+
+### Ce qui s'affichait
+
+`components/integrations/ResendMonitor.tsx`, replié derrière une ligne « Monitoring temps réel »
+portant un badge **LIVE** vert et une pastille pulsée. 294 lignes, **zéro appel réseau** :
+
+| À l'écran | La source |
+|---|---|
+| 1 284 envoyés · 23 échoués · 342 ms | `DEFAULT_STATS`, littéral |
+| jauge de rate-limit qui **dérive** | `Math.random() > .5 ? +1 : -1`, toutes les 5 s |
+| flux d'événements webhook | `Math.random() > .7` → un événement inventé |
+| `user@senegal.sn`, `shop@mali.ml` | tableau en dur, tiré au sort |
+| alerte « rebond élevé : 1.8 % » | dérivée des faux chiffres |
+
+### Pourquoi c'est pire qu'un chiffre figé
+
+**Le mouvement se lit comme une preuve.** Un nombre immobile finit par éveiller le soupçon —
+on se demande d'où il sort. Un flux qui défile, non : il *démontre* qu'un système observe.
+C'est la forme la plus convaincante de la famille « le champ déclaré qui se fait passer pour
+une mesure », et c'est celle qu'aucune relecture ne suspecte, parce qu'on ne relit pas un
+composant qui *marche visiblement*.
+
+⚠️ Et il fabriquait des **adresses e-mail de commerçants**. Un opérateur qui cherche pourquoi
+un client n'a rien reçu allait lire des destinataires qui n'existent pas.
+
+### Ce qui a rendu le verrou possible — la mesure d'abord
+
+`Math.random` semblait un marqueur trop grossier. **Compté avant d'écrire la règle : CINQ
+occurrences dans tout le front**, dont quatre dans ce composant. Les deux survivants sont
+légitimes *et* naturellement hors périmètre — un suffixe d'identifiant (`stores/`), une source
+injectable de `generateEAN13` (`lib/`). Le périmètre `components/` + `pages/` — les surfaces de
+**rendu** — ferme donc la porte à **zéro faux positif**.
+
+C'est la contre-partie exacte de la décision inverse prise sur l'arité des ternaires : là-bas
+1 211 chaînes sur 1 268 étaient correctes et un scanner aurait crié au loup. **La différence
+n'est pas de principe, elle est dans le comptage.**
+
+⚠️ **Résidu assumé** : ceci attrape la fabrication **en mouvement**, jamais le littéral
+immobile. `DEFAULT_STATS` passerait — c'était pourtant la moitié du défaut. Contre celui-là il
+n'existe pas de parade automatique, seulement la question de revue : *d'où vient ce nombre ?*
+
+### L'agrégat qui écrase la distinction que l'écran fait
+
+Second défaut de la même page, indépendant. La pastille d'en-tête affichait **« 5/5 configurées »
+en VERT** alors que les trois prestataires de paiement étaient en bac à sable — donc qu'aucun
+encaissement réel n'était possible. Les cartes, elles, disaient « Sandbox » en ambre, et
+`lib/integrationStatus.ts` écrit noir sur blanc que « `sandbox` n'est PAS une nuance cosmétique
+de `live` ».
+
+**Personne n'avait tort localement.** Le total additionnait `live` et `sandbox` parce qu'un
+total additionne. La règle qui manque est celle-ci :
+
+> ⚠️ **Un agrégat ne doit pas fondre une distinction que le reste de l'écran prend soin de
+> faire.** Le haut de page contredisait le bas — et c'est le haut qu'on lit.
+
+Même forme que les quatre dénominateurs du camembert : chaque site était correct, c'est leur
+coexistence qui mentait.
+
+### Le taux dont le dénominateur valait un
+
+« 0 % d'erreurs » s'affichait dès qu'**un** ping avait abouti, « 100 % » dès qu'un seul avait
+échoué. Un pourcentage se lit comme une série. Il n'y avait qu'une mesure. Rendu désormais
+comme un **verdict** — « répond » / « injoignable » / « — » —, un fait sur une mesure, qui ne
+promet rien au-delà d'elle. Famille `perf`/`rating` sans leur effectif.
+
+### Ce que la vérification sur écran a encore appris
+
+Le premier montage Playwright a rendu **huit « absent » sur huit** — et j'ai failli le lire
+comme un succès. La page avait redirigé vers `/login` : je n'avais pas amorcé la session.
+*Une liste d'absences sans témoin positif est une vérité vacante.* Le spec assert désormais
+`Paiements & canaux` **avant** de conclure quoi que ce soit sur ce qui manque.
+
+**Verrous** : `noSimulatedData.test.ts` (5 cas, sabotage extrait par `git show` du fichier
+supprimé) · `integrationsRendered.test.tsx` (11 cas, dont le cas POSITIF « sans bac à sable le
+vert redevient légitime » — un verrou qui n'interdit que le vert serait satisfait par une
+pastille éteinte pour toujours).

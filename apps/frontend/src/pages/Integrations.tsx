@@ -1,12 +1,16 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
-import { ExternalLink, RotateCw, Globe, Zap, Settings2, X, KeyRound } from 'lucide-react'
+import {
+  ExternalLink, RotateCw, Globe, Zap, Settings2, X, KeyRound,
+  // ⚠️ Icônes des déclencheurs d'e-mail : Lucide, jamais d'emoji (§ Conventions).
+  Mail, UserPlus, Clock, AlertTriangle, Lock, CheckCircle2, BarChart3,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import Button from '@/components/ui/AppButton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { paymentStatsApi, paydunyaApi, integrationStatusApi, type ProviderStat, type IntegrationState, type MerchantIntegrationId } from '@/lib/api'
 import toast from 'react-hot-toast'
-import ResendMonitor from '@/components/integrations/ResendMonitor'
 
 type PingState = 'checking' | 'ok' | 'slow' | 'error'
 
@@ -328,7 +332,6 @@ export default function Integrations() {
   const { lang } = useAppStore()
   const fmt = useFormatAmount()
 
-  const [showResendMonitor, setShowResendMonitor] = useState(false)
   const [pingStatus, setPingStatus]   = useState<Record<string, PingState>>({})
   const [pingLatency, setPingLatency] = useState<Record<string, number>>({})
   const [payDunyaOpen, setPayDunyaOpen] = useState(false)
@@ -419,9 +422,9 @@ export default function Integrations() {
   const testConnection = async (itg: Integration) => {
     const { status, ms } = await pingIntegration(itg.id, itg.pingUrl)
     if (status === 'error') {
-      toast.error(lang === 'en' ? '✗ Connection failed — check your configuration' : lang === 'es' ? '✗ Conexión fallida — verifique su configuración' : lang === 'it' ? '✗ Connessione fallita — verifica la configurazione' : '✗ Connexion échouée — vérifiez votre configuration')
+      toast.error(lang === 'en' ? 'Connection failed — check your configuration' : lang === 'es' ? 'Conexión fallida — verifique su configuración' : lang === 'it' ? 'Connessione fallita — verifica la configurazione' : 'Connexion échouée — vérifiez votre configuration')
     } else {
-      toast.success(lang === 'en' ? `✓ ${itg.name} — Connection OK (${ms}ms)` : lang === 'es' ? `✓ ${itg.name} — Conexión OK (${ms}ms)` : lang === 'it' ? `✓ ${itg.name} — Connessione OK (${ms}ms)` : `✓ ${itg.name} — Connexion OK (${ms}ms)`)
+      toast.success(lang === 'en' ? `${itg.name} — Connection OK (${ms}ms)` : lang === 'es' ? `${itg.name} — Conexión OK (${ms}ms)` : lang === 'it' ? `${itg.name} — Connessione OK (${ms}ms)` : `${itg.name} — Connexion OK (${ms}ms)`)
     }
   }
 
@@ -498,13 +501,36 @@ export default function Integrations() {
   // serveur (secrets posés), pas d'une sonde. Le mot doit dire ce qu'il mesure.
   const totalConfigured = displayList.filter(itg => itg.status === 'connected').length
 
-  const EMAIL_FLOWS = [
-    { trigger: lang === 'en' ? '🎉 Signup' : lang === 'es' ? '🎉 Registro' : lang === 'it' ? '🎉 Iscrizione' : '🎉 Inscription',                   email: lang === 'en' ? 'Welcome email' : lang === 'es' ? 'Email de bienvenida' : lang === 'it' ? 'Email di benvenuto' : 'Email de bienvenue',   delay: lang === 'en' ? 'Immediate' : lang === 'es' ? 'Inmediato' : lang === 'it' ? 'Immediato' : 'Immédiat' },
-    { trigger: lang === 'en' ? '⏰ D-7 before expiry' : lang === 'es' ? '⏰ D-7 antes de expirar' : lang === 'it' ? '⏰ G-7 prima della scadenza' : '⏰ J-7 avant expiration', email: lang === 'en' ? 'Trial reminder' : lang === 'es' ? 'Recordatorio de prueba' : lang === 'it' ? 'Promemoria prova' : 'Rappel essai',         delay: 'Cron 1h' },
-    { trigger: lang === 'en' ? '🔴 D-3 before expiry' : lang === 'es' ? '🔴 D-3 antes de expirar' : lang === 'it' ? '🔴 G-3 prima della scadenza' : '🔴 J-3 avant expiration', email: lang === 'en' ? 'Urgent reminder' : lang === 'es' ? 'Recordatorio urgente' : lang === 'it' ? 'Promemoria urgente' : 'Rappel urgent',       delay: 'Cron 1h' },
-    { trigger: lang === 'en' ? '🔒 Expiry' : lang === 'es' ? '🔒 Expiración' : lang === 'it' ? '🔒 Scadenza' : '🔒 Expiration',                     email: lang === 'en' ? 'Account suspended' : lang === 'es' ? 'Cuenta suspendida' : lang === 'it' ? 'Account sospeso' : 'Compte suspendu',   delay: 'Cron 1h' },
-    { trigger: lang === 'en' ? '✅ Upgrade approved' : lang === 'es' ? '✅ Upgrade aprobado' : lang === 'it' ? '✅ Upgrade approvato' : '✅ Upgrade validé',        email: lang === 'en' ? 'Plan confirmation' : lang === 'es' ? 'Confirmación de plan' : lang === 'it' ? 'Conferma piano' : 'Confirmation plan', delay: lang === 'en' ? 'Immediate' : lang === 'es' ? 'Inmediato' : lang === 'it' ? 'Immediato' : 'Immédiat' },
-    { trigger: lang === 'en' ? '📊 Monday 8am' : lang === 'es' ? '📊 Lunes 8h' : lang === 'it' ? '📊 Lunedì 8' : '📊 Lundi 8h',                   email: lang === 'en' ? 'Weekly report' : lang === 'es' ? 'Informe semanal' : lang === 'it' ? 'Report settimanale' : 'Rapport hebdomadaire',  delay: lang === 'en' ? 'Weekly cron' : lang === 'es' ? 'Cron semanal' : lang === 'it' ? 'Cron settimanale' : 'Cron hebdo' },
+  /**
+   * ⚠️ LE BAC À SABLE NE SE FOND PAS DANS « CONFIGURÉ » — mesuré en production le
+   * 2026-08-15 : la pastille d'en-tête affichait « 5/5 configurées » en VERT alors que
+   * les TROIS prestataires de paiement étaient en bac à sable. Aucun encaissement réel
+   * n'était possible, et le haut de page disait le contraire du bas.
+   *
+   * Les cartes, elles, faisaient déjà la distinction (badge ambre « Sandbox »). C'est
+   * l'AGRÉGAT qui l'écrasait — un total qui additionne deux états que le reste de l'écran
+   * prend soin de séparer. `lib/integrationStatus.ts` le dit en toutes lettres :
+   * « `sandbox` n'est PAS une nuance cosmétique de `live` ».
+   *
+   * Le vert exige donc l'absence de bac à sable. Biais de PRUDENCE : un seul prestataire
+   * en simulation suffit à faire passer la pastille en ambre.
+   */
+  const enSandbox = displayList.filter(itg => itg.paymentStatus === 'sandbox').length
+
+  /**
+   * ⚠️ ICÔNES LUCIDE, PAS EMOJI — la colonne « Déclencheur » portait 🎉 ⏰ 🔴 🔒 ✅ 📊,
+   * soit six emojis employés exactement comme des icônes, sur une page qui importe
+   * déjà Lucide sept fois. Un emoji est rendu par la police système : sa taille, sa
+   * couleur et son alignement échappent aux tokens, et il est LU À VOIX HAUTE par un
+   * lecteur d'écran (« visage qui fait la fête, Inscription »).
+   */
+  const EMAIL_FLOWS: { Icon: LucideIcon; trigger: string; email: string; delay: string }[] = [
+    { Icon: UserPlus,      trigger: lang === 'en' ? 'Signup' : lang === 'es' ? 'Registro' : lang === 'it' ? 'Iscrizione' : 'Inscription',                                    email: lang === 'en' ? 'Welcome email' : lang === 'es' ? 'Email de bienvenida' : lang === 'it' ? 'Email di benvenuto' : 'Email de bienvenue',   delay: lang === 'en' ? 'Immediate' : lang === 'es' ? 'Inmediato' : lang === 'it' ? 'Immediato' : 'Immédiat' },
+    { Icon: Clock,         trigger: lang === 'en' ? 'D-7 before expiry' : lang === 'es' ? 'D-7 antes de expirar' : lang === 'it' ? 'G-7 prima della scadenza' : 'J-7 avant expiration', email: lang === 'en' ? 'Trial reminder' : lang === 'es' ? 'Recordatorio de prueba' : lang === 'it' ? 'Promemoria prova' : 'Rappel essai',         delay: 'Cron 1h' },
+    { Icon: AlertTriangle, trigger: lang === 'en' ? 'D-3 before expiry' : lang === 'es' ? 'D-3 antes de expirar' : lang === 'it' ? 'G-3 prima della scadenza' : 'J-3 avant expiration', email: lang === 'en' ? 'Urgent reminder' : lang === 'es' ? 'Recordatorio urgente' : lang === 'it' ? 'Promemoria urgente' : 'Rappel urgent',       delay: 'Cron 1h' },
+    { Icon: Lock,          trigger: lang === 'en' ? 'Expiry' : lang === 'es' ? 'Expiración' : lang === 'it' ? 'Scadenza' : 'Expiration',                                     email: lang === 'en' ? 'Account suspended' : lang === 'es' ? 'Cuenta suspendida' : lang === 'it' ? 'Account sospeso' : 'Compte suspendu',   delay: 'Cron 1h' },
+    { Icon: CheckCircle2,  trigger: lang === 'en' ? 'Upgrade approved' : lang === 'es' ? 'Upgrade aprobado' : lang === 'it' ? 'Upgrade approvato' : 'Upgrade validé',        email: lang === 'en' ? 'Plan confirmation' : lang === 'es' ? 'Confirmación de plan' : lang === 'it' ? 'Conferma piano' : 'Confirmation plan', delay: lang === 'en' ? 'Immediate' : lang === 'es' ? 'Inmediato' : lang === 'it' ? 'Immediato' : 'Immédiat' },
+    { Icon: BarChart3,     trigger: lang === 'en' ? 'Monday 8am' : lang === 'es' ? 'Lunes 8h' : lang === 'it' ? 'Lunedì 8' : 'Lundi 8h',                                     email: lang === 'en' ? 'Weekly report' : lang === 'es' ? 'Informe semanal' : lang === 'it' ? 'Report settimanale' : 'Rapport hebdomadaire',  delay: lang === 'en' ? 'Weekly cron' : lang === 'es' ? 'Cron semanal' : lang === 'it' ? 'Cron settimanale' : 'Cron hebdo' },
   ]
 
   const renderCard = (itg: MerchantCard) => {
@@ -522,8 +548,23 @@ export default function Integrations() {
     const detail  = CARD_DETAIL[itg.id]?.[lang] ?? CARD_DETAIL[itg.id]?.fr
     // Transactions du jour (cartes paiement MTN MoMo / Campay) — données réelles.
     const tx: ProviderStat | undefined = itg.id === 'mtnmomo' ? txStats?.mtn : itg.id === 'campay' ? txStats?.campay : itg.id === 'paydunya' ? txStats?.paydunya : undefined
-    // Taux d'erreur : signal réel uniquement (un ping joignable = 0 erreur) ; sinon non mesuré.
-    const errorRate = itg.noPing ? '—' : pingStatus[itg.id] === 'error' ? '100%' : (pingStatus[itg.id] === 'ok' || pingStatus[itg.id] === 'slow') ? '0%' : '—'
+    /**
+     * ⚠️ UN TAUX A UN DÉNOMINATEUR — celui-ci valait UN.
+     *
+     * Cette cellule affichait « 0 % » d'erreurs dès qu'UN ping avait abouti, et « 100 % »
+     * dès qu'un seul avait échoué. Un pourcentage se lit comme une SÉRIE : « sur la durée,
+     * rien n'échoue ». Il n'y a pas de série — il y a une mesure, prise au montage de la
+     * page. Même famille que `perf`/`rating` rendus sans leur effectif, et que le « 4,2/5 »
+     * dont on ne sait pas s'il porte sur trois personnes ou sur toute l'équipe.
+     *
+     * On rend donc le VERDICT de la sonde : un fait sur une mesure, qui ne promet rien
+     * au-delà d'elle. `null` = non mesuré, et l'absence se dit « — ».
+     */
+    const verdictSonde: 'repond' | 'injoignable' | null =
+      itg.noPing                                                                   ? null
+      : pingStatus[itg.id] === 'error'                                             ? 'injoignable'
+      : pingStatus[itg.id] === 'ok' || pingStatus[itg.id] === 'slow'                ? 'repond'
+      :                                                                              null
 
     return (
       <div key={itg.id} style={{
@@ -626,14 +667,22 @@ export default function Integrations() {
             </div>
           )}
 
-          {/* Métriques mesurées en direct — latence + erreurs du ping réel.
+          {/* Métriques mesurées en direct — latence + verdict du ping réel.
               Masqué pour les services sans endpoint public testable (paiements, cache) :
               on n'affiche aucune valeur qui ne soit pas mesurée. */}
           {!itg.noPing && (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:6, marginBottom:10 }}>
               {[
                 { label: lang === 'en' ? 'Latency' : lang === 'es' ? 'Latencia' : lang === 'it' ? 'Latenza' : 'Latence', value: pingLatency[itg.id] ? `${pingLatency[itg.id]}ms` : '—', color: 'var(--text)' },
-                { label: lang === 'en' ? 'Errors' : lang === 'es' ? 'Errores' : lang === 'it' ? 'Errori' : 'Erreurs',   value: errorRate, color: errorRate === '0%' ? 'var(--acc2)' : errorRate === '100%' ? 'var(--danger)' : 'var(--text4)' },
+                {
+                  label: lang === 'en' ? 'Last ping' : lang === 'es' ? 'Último ping' : lang === 'it' ? 'Ultimo ping' : 'Dernier ping',
+                  value: verdictSonde === 'repond'
+                    ? (lang === 'en' ? 'responds' : lang === 'es' ? 'responde' : lang === 'it' ? 'risponde' : 'répond')
+                    : verdictSonde === 'injoignable'
+                    ? (lang === 'en' ? 'unreachable' : lang === 'es' ? 'inaccesible' : lang === 'it' ? 'irraggiungibile' : 'injoignable')
+                    : '—',
+                  color: verdictSonde === 'repond' ? 'var(--acc2)' : verdictSonde === 'injoignable' ? 'var(--danger)' : 'var(--text4)',
+                },
               ].map(stat => (
                 <div key={stat.label} style={{ background:'var(--bg3)', borderRadius:8, padding:'7px 8px', textAlign:'center' }}>
                   <div style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-bold)', color:stat.color, fontFamily:'var(--mono)' }}>{stat.value}</div>
@@ -831,7 +880,8 @@ export default function Integrations() {
         {(() => {
           const pending  = states === null
           const complete = !pending && totalConfigured === displayList.length && displayList.length > 0
-          const tone = pending ? 'var(--text3)' : complete ? 'var(--acc2)' : 'var(--warn)'
+          // ⚠️ Le vert exige « tout configuré ET rien en bac à sable » (cf. `enSandbox`).
+          const tone = pending ? 'var(--text3)' : complete && enSandbox === 0 ? 'var(--acc2)' : 'var(--warn)'
           return (
             <div style={{
               display:'flex', alignItems:'center', gap:8,
@@ -843,7 +893,10 @@ export default function Integrations() {
               <span style={{ fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', color: tone }}>
                 {pending
                   ? (lang === 'en' ? 'Checking…' : lang === 'es' ? 'Verificando…' : lang === 'it' ? 'Verifica…' : 'Vérification…')
-                  : `${totalConfigured}/${displayList.length} ${lang === 'en' ? 'configured' : lang === 'es' ? 'configuradas' : lang === 'it' ? 'configurate' : 'configurées'}`}
+                  : `${totalConfigured}/${displayList.length} ${lang === 'en' ? 'configured' : lang === 'es' ? 'configuradas' : lang === 'it' ? 'configurate' : 'configurées'}`
+                    + (enSandbox > 0
+                      ? ` · ${enSandbox} ${lang === 'en' ? 'in sandbox' : lang === 'es' ? 'en sandbox' : lang === 'it' ? 'in sandbox' : 'en bac à sable'}`
+                      : '')}
               </span>
             </div>
           )
@@ -928,8 +981,8 @@ export default function Integrations() {
             <div style={{
               width:44, height:44, borderRadius:12, flexShrink:0,
               background:'rgba(108,71,255,.12)', border:'1px solid rgba(108,71,255,.3)',
-              display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-2xl)',
-            }}>📧</div>
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}><Mail size={22} style={{ color:'var(--p2)' }} aria-hidden="true" /></div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:'var(--fs-title)', fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
                 Resend — {lang === 'en' ? 'Transactional emails' : lang === 'es' ? 'Emails transaccionales' : lang === 'it' ? 'Email transazionali' : 'Emails transactionnels'}
@@ -938,12 +991,16 @@ export default function Integrations() {
                 {lang === 'en' ? 'Welcome, trial reminders, upgrade confirmations and weekly reports.' : lang === 'es' ? 'Bienvenida, recordatorios de prueba, confirmaciones de upgrade e informes semanales.' : lang === 'it' ? 'Benvenuto, promemoria di prova, conferme di upgrade e report settimanali.' : 'Bienvenue, rappels d\'essai, confirmations d\'upgrade et rapports hebdomadaires.'}
               </div>
             </div>
+            {/* ⚠️ L'effectif se DÉRIVE de la liste rendue juste en dessous : « 6 » était
+                écrit en dur, donc faux au premier flux ajouté — et faux en silence. */}
             <span style={{
+              display:'inline-flex', alignItems:'center', gap:6,
               background:'rgba(0,208,132,.12)', border:'1px solid rgba(0,208,132,.25)',
               color:'var(--acc2)', borderRadius:20, padding:'3px 10px',
               fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', flexShrink:0,
             }}>
-              ✅ {lang === 'en' ? 'Active — 6 emails configured' : lang === 'es' ? 'Activo — 6 emails configurados' : lang === 'it' ? 'Attivo — 6 email configurate' : 'Actif — 6 emails configurés'}
+              <CheckCircle2 size={12} style={{ flexShrink:0 }} aria-hidden="true" />
+              {lang === 'en' ? `Active — ${EMAIL_FLOWS.length} emails configured` : lang === 'es' ? `Activo — ${EMAIL_FLOWS.length} emails configurados` : lang === 'it' ? `Attivo — ${EMAIL_FLOWS.length} email configurate` : `Actif — ${EMAIL_FLOWS.length} emails configurés`}
             </span>
           </div>
 
@@ -966,7 +1023,12 @@ export default function Integrations() {
               <tbody>
                 {EMAIL_FLOWS.map((flow, i) => (
                   <tr key={i} style={{ borderTop:'1px solid var(--border)' }}>
-                    <td style={{ padding:'8px 12px', color:'var(--text2)' }}>{flow.trigger}</td>
+                    <td style={{ padding:'8px 12px', color:'var(--text2)' }}>
+                      <span style={{ display:'inline-flex', alignItems:'center', gap:7 }}>
+                        <flow.Icon size={13} style={{ flexShrink:0, color:'var(--text3)' }} aria-hidden="true" />
+                        {flow.trigger}
+                      </span>
+                    </td>
                     <td style={{ padding:'8px 12px', color:'var(--text)', fontWeight:'var(--fw-regular)' }}>{flow.email}</td>
                     <td style={{ padding:'8px 12px' }}>
                       <span style={{
@@ -978,64 +1040,6 @@ export default function Integrations() {
                 ))}
               </tbody>
             </table>
-          </div>
-
-          {/* Stats Resend */}
-          <div style={{ display:'flex', gap:12, marginTop:12, flexWrap:'wrap' }}>
-            {[
-              { label: lang === 'en' ? 'Free emails/month' : lang === 'es' ? 'Emails/mes gratuitos' : lang === 'it' ? 'Email/mese gratuite' : 'Emails/mois gratuits', value: '3 000' },
-              { label: lang === 'en' ? 'Delivery rate' : lang === 'es' ? 'Tasa de entrega' : lang === 'it' ? 'Tasso di recapito' : 'Taux de délivrabilité',     value: '99.8%' },
-              { label: lang === 'en' ? 'Domain' : lang === 'es' ? 'Dominio' : lang === 'it' ? 'Dominio' : 'Domaine',                          value: 'resend.dev' },
-            ].map(stat => (
-              <div key={stat.label} style={{
-                flex:1, minWidth:140, background:'var(--bg3)',
-                border:'1px solid var(--border)', borderRadius:10,
-                padding:'10px 14px', textAlign:'center',
-              }}>
-                <div style={{ fontSize:'var(--fs-md)', fontWeight:'var(--fw-semibold)', color:'var(--p2)', fontFamily:'var(--mono)' }}>{stat.value}</div>
-                <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)', marginTop:3 }}>{stat.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* ── Monitoring temps réel (accordéon, fermé par défaut) ── */}
-          <div style={{ marginTop:12 }}>
-            <button
-              type="button"
-              onClick={() => setShowResendMonitor(v => !v)}
-              aria-expanded={showResendMonitor}
-              aria-label={lang === 'en' ? 'Toggle real-time monitoring' : lang === 'es' ? 'Mostrar el monitoreo en tiempo real' : lang === 'it' ? 'Mostra il monitoraggio in tempo reale' : 'Afficher le monitoring temps réel'}
-              style={{
-                width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
-                padding:'10px 12px',
-                background: showResendMonitor ? 'rgba(108,71,255,.08)' : 'var(--bg3)',
-                border:`1px solid ${showResendMonitor ? 'rgba(108,71,255,.2)' : 'var(--border)'}`,
-                borderRadius:10, cursor:'pointer', fontFamily:'var(--font)',
-                color:'var(--text2)', fontSize:'var(--fs-label)', fontWeight:'var(--fw-semibold)', transition:'all .15s ease',
-              }}
-            >
-              <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg>
-                {lang === 'en' ? 'Real-time monitoring' : lang === 'es' ? 'Monitoreo en tiempo real' : lang === 'it' ? 'Monitoraggio in tempo reale' : 'Monitoring temps réel'}
-                <span style={{
-                  padding:'1px 7px', borderRadius:99, fontSize:'var(--fs-caption)', fontWeight:'var(--fw-bold)',
-                  background:'rgba(0,208,132,.1)', color:'var(--acc2)',
-                  border:'1px solid rgba(0,208,132,.2)', textTransform:'uppercase', letterSpacing:'.3px',
-                }}>live</span>
-              </div>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                style={{ transform: showResendMonitor ? 'rotate(180deg)' : 'rotate(0)', transition:'transform .2s ease' }}>
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-
-            {showResendMonitor && (
-              <div style={{ marginTop:8, padding:'14px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
-                <ResendMonitor lang={lang} />
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -1050,7 +1054,7 @@ export default function Integrations() {
           <span style={{ color:'var(--p2)', fontWeight:'var(--fw-semibold)' }}>
             {lang === 'en' ? 'Note:' : lang === 'es' ? 'Nota:' : lang === 'it' ? 'Nota:' : 'Note :'}
           </span>
-          {' '}{lang === 'en' ? 'Latency and errors are measured live from real pings; today\'s transactions come from the database. Services without a public testable endpoint (payments, cache) show no latency.' : lang === 'es' ? 'La latencia y los errores se miden en directo con pings reales; las transacciones de hoy provienen de la base de datos. Los servicios sin endpoint público comprobable (pagos, caché) no muestran latencia.' : lang === 'it' ? 'Latenza ed errori sono misurati in tempo reale tramite ping reali; le transazioni di oggi provengono dal database. I servizi senza endpoint pubblico testabile (pagamenti, cache) non mostrano latenza.' : 'La latence et les erreurs sont mesurées en direct via des pings réels ; les transactions du jour proviennent de la base. Les services sans endpoint public testable (paiements, cache) n\'affichent pas de latence.'}
+          {' '}{lang === 'en' ? 'Latency and the ping verdict are measured live; today\'s transactions come from the database. Services without a public testable endpoint (payments, cache) show no latency.' : lang === 'es' ? 'La latencia y el veredicto del ping se miden en directo; las transacciones de hoy provienen de la base de datos. Los servicios sin endpoint público comprobable (pagos, caché) no muestran latencia.' : lang === 'it' ? 'Latenza ed esito del ping sono misurati in tempo reale; le transazioni di oggi provengono dal database. I servizi senza endpoint pubblico testabile (pagamenti, cache) non mostrano latenza.' : 'La latence et le verdict de la sonde sont mesurés en direct ; les transactions du jour proviennent de la base. Les services sans endpoint public testable (paiements, cache) n\'affichent pas de latence.'}
         </div>
       </div>
 

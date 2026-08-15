@@ -650,7 +650,10 @@ Verrou : `adminConsoleTruth.test.tsx`. 📖 *`docs/lessons/chiffres-affiches.md`
 - ⚠️ **On mesure ce que la donnée porte** : `isOnlineNow` → **`loggedInRecently`** — « En ligne » promettait ce qu'aucune donnée ne porte. L'écriture de `lastLoginAt` est en **fail-open tracé**, après les refus : une colonne d'affichage ne refuse pas une authentification. L'absence se dit **« Aucune trace »**, jamais « Jamais » : *un trou de mesure n'est pas un fait sur la personne.*
 - ⚠️ **Un test qui ne peut pas atteindre le chemin fautif ne garde rien** — deux verrous sont restés VERTS sous sabotage ici (`fetch` qui échoue en jsdom, mock `bcrypt.compare` qui ignore le mot de passe).
 
-Verrous : `measuredNotDeclared.test.ts` · `lastLoginWritten.test.ts` · `integrationsRendered.test.tsx` (8, DOM rendu). 📖 *`docs/lessons/chiffres-affiches.md`.*
+- ⚠️ **UN FLUX QUI SE FABRIQUE EST PIRE QU'UN CHIFFRE FIGÉ — le mouvement se lit comme une preuve.** Un panneau « Monitoring temps réel · LIVE » inventait ses données au `Math.random()` toutes les 5 s, adresses de commerçants comprises. Un nombre immobile finit par éveiller le soupçon ; un flux qui défile, non. Verrou : **aucun `Math.random` sous `components/` ni `pages/`** (`noSimulatedData.test.ts`) — calibré par comptage (5 occurrences dans tout le front, 2 légitimes et hors périmètre), pas par principe. Résidu assumé : attrape la fabrication en MOUVEMENT, jamais le littéral immobile.
+- ⚠️ **UN AGRÉGAT NE FOND PAS UNE DISTINCTION QUE LE RESTE DE L'ÉCRAN FAIT.** « 5/5 configurées » en VERT pendant que les trois cartes de paiement disaient « Sandbox » en ambre : aucun encaissement réel n'était possible. Personne n'avait tort localement — un total additionne. **Le haut de page contredisait le bas, et c'est le haut qu'on lit.**
+
+Verrous : `measuredNotDeclared.test.ts` · `lastLoginWritten.test.ts` · `noSimulatedData.test.ts` · `integrationsRendered.test.tsx` (DOM rendu, **cas positif inclus** — un verrou qui n'interdit que le vert est satisfait par une pastille éteinte pour toujours). 📖 *`docs/lessons/chiffres-affiches.md`.*
 
 ### ⚠️ TAILWIND N'ÉMET RIEN — toute classe `sm:`/`lg:` du source est MORTE
 
