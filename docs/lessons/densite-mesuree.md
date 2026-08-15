@@ -108,14 +108,23 @@ affirmation : le `webServer` **démarre** (`> vite`, ready 439 ms — jamais ré
 1232 vs 1223) — rendu de police. **L'assertion porte sur le DÉBORDEMENT et l'enroulement,
 jamais sur un pixel exact** : c'est ce qui la rend portable.
 
-## La boucle de mesure — Nelson EST la session authentifiée
+## La boucle de mesure — ⚠️ CETTE SECTION ÉTAIT VRAIE, ELLE NE L'EST PLUS
 
-1. Claude propose la mise en page avec les **valeurs visées écrites** (largeur max,
-   gouttières, hauteur de tiroir) ;
-2. Nelson envoie une capture de `/admin` à 2560 et 1440 ;
-3. la mesure se fait **sur l'image**, avant et après.
+Elle disait : *« Nelson EST la session authentifiée — il envoie une capture, la mesure se fait
+sur l'image. Un chantier de densité sans les deux captures n'a pas de mesure. »*
 
-Un chantier de densité sans les deux captures n'a pas de mesure, donc pas de résultat.
+**Faux depuis le 2026-08-15.** `e2e/dev/ecrans.ts` amorce la session dans `localStorage`
+(`seedEcran`) et `ouvrirEcran` navigue vers n'importe quel chemin, `/__dev/table` compris. Ces
+écrans se mesurent et se capturent **tout seuls**, à chaque exécution, sur un vrai moteur de
+rendu. La contrainte n'a jamais été technique : elle était **supposée**, écrite une fois, et
+plus jamais réexaminée — pendant ce temps le harnais qui la levait existait déjà dans le dépôt.
+
+*C'est le motif du « commentaire qui invente un repli », appliqué à une limite plutôt qu'à une
+capacité : une affirmation plausible, jamais exécutée, qui a orienté une méthode de travail
+entière.* La leçon opératoire : **une limite déclarée se re-teste comme une garantie déclarée.**
+
+Verrou : `e2e/dev/ecrans-gestion-density.spec.ts` — console Ops, Rapports, RH et Planning à
+2560/1440/390, débordement + enroulement + redondance, avec témoin positif par écran.
 
 ## Le job CI (mesures, 2026-08-07)
 
@@ -123,3 +132,39 @@ Un chantier de densité sans les deux captures n'a pas de mesure, donc pas de r�
 entre Ubuntu et macOS** : c'est pourquoi l'assertion porte sur le DÉBORDEMENT et l'enroulement,
 **jamais sur un pixel exact**. Un seuil en pixels exacts serait vert sur une machine et rouge
 sur l'autre — et c'est le runner qui aurait raison, pas la page.
+
+
+---
+
+## Passe du 2026-08-15 — ce que la mesure autonome a trouvé
+
+Les cinq défauts de 2026-08-06/07 ont été **revérifiés dans le code** : tous corrigés. Ce qui
+suit est ce que la mesure a trouvé EN PLUS, une fois qu'elle a pu tourner seule.
+
+| Écran | Défaut | Nature |
+|---|---|---|
+| Planning | `T.clearTip` rendu **deux fois** (barre du haut + pied) | redondance |
+| RH | libellé « Dept » au-dessus du **vide** | l'absence ne se disait pas |
+| RH | `deptColor` = `'var(--p)'` **concaténé** avec une alpha → fond et bordure DISPARUS | CSS invalide |
+| RH | `depts` embarquait `undefined` → `<option key={undefined}>` | avertissement React à chaque rendu |
+| Rapports | « **1 MODES** » | pluriel qui ne suit pas le compte |
+| Activity | `moduleColor` = `'var(--text3)'` concaténé — **même défaut, autre fichier** | trouvé par le verrou étendu |
+
+⚠️ **Le pied du Planning est le cas le plus instructif.** La correction de 2026-08-07 avait
+retiré la légende des six postes en GARDANT cette astuce, au motif écrit dans le code qu'elle
+était « le seul élément que la barre du haut ne porte pas ». `PlanningFilters.tsx:45` rend
+`{T.assignTip} · {T.clearTip}` — les deux. *Le raisonnement était juste, sa prémisse ne l'était
+pas, et rien ne l'avait vérifiée.*
+
+⚠️ **Et les deux `var(--…)` concaténés étaient un piège DÉJÀ documenté**, avec un verrou
+(`noVarInConcatenatedColor.test.ts`) qui ne voyait que la forme `${objet.champ}NN`. La forme
+`const c = MAP[k] ?? 'var(--x)'` puis `${c}NN` lui échappait — c'est le REPLI qui était fautif,
+pas la table, dont tous les membres sont des `#hex`. Le second axe ajouté ce jour-là a trouvé
+la seconde instance **immédiatement**, dans un fichier que personne ne regardait.
+
+⚠️ **Trois détecteurs de mesure ont été faux avant d'être justes**, ce jour-là encore : la zone
+de contenu ne matchait rien sur `/__dev/table` (trois mesures sur douze ne mesuraient RIEN et se
+lisaient « propre ») ; les « coupables » de débordement comptaient la barre latérale off-canvas ;
+et le détecteur de vide mettait son curseur au bas de page dès le premier conteneur pleine
+hauteur, si bien qu'il ne trouvait **jamais** de trou. *Un détecteur qui rend zéro doit prouver
+qu'il sait rendre autre chose.*

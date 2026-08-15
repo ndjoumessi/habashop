@@ -214,7 +214,10 @@ export default function HR() {
     })
   }
 
-  const depts = useMemo(() => Array.from(new Set(employees.map(e => e.dept))), [employees])
+  // ⚠️ FILTRÉ : un employé sans département faisait entrer `undefined` dans la liste, donc
+  // une `<option key={undefined}>` — React avertissait « unique key prop » à chaque rendu, et
+  // le sélecteur portait une entrée vide. Même cause que le libellé « Dept » orphelin.
+  const depts = useMemo(() => Array.from(new Set(employees.map(e => e.dept).filter(Boolean))), [employees])
 
   const handleConfirmRaise = async (empId: string, newSalaryXOF: number, reason: string) => {
     const emp = employees.find(e => String(e.id) === empId)

@@ -540,7 +540,12 @@ export default function Activity() {
               {paginated.map(log => {
                 const mod         = MODULE_CONFIG[log.module]
                 const sev         = SEVERITY_CONFIG[log.severity]
-                const moduleColor = mod?.color ?? 'var(--text3)'
+                // ⚠️ REPLI EN #HEX LITTÉRAL — `moduleColor` est concaténé avec une alpha
+                // (`${moduleColor}18` / `30`) 45 lignes plus bas. `var(--text3)18` est une
+                // couleur INVALIDE : la pastille perdait fond ET bordure pour tout module
+                // inconnu. `#8E96AA` = la valeur de `--text3`. (Trouvé par le second axe de
+                // `noVarInConcatenatedColor`, ajouté le même jour pour un défaut jumeau.)
+                const moduleColor = mod?.color ?? '#8E96AA'
                 const ActionIcon  = ACTION_ICONS[log.action] ?? mod?.Icon ?? ActivityIcon
                 const labelHuman  = actionLabel(log.action, lang)
                 const detail      = parseDescription(log.rawDescription, log.action)

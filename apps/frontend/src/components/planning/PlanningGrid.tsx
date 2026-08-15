@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Skeleton from '@/components/ui/skeleton'
-import { Users, MousePointer2, Lock, GripVertical } from 'lucide-react'
+import { Users, Lock, GripVertical } from 'lucide-react'
 import { deptLabel, EmpAvatar } from '@/components/hr/hrShared'
 import { SHIFT_TYPES, shiftLabel, getDayLabels, buildT } from './planningShared'
 import { calculerTotaux, formatHeures } from './planningTotals'
@@ -403,23 +403,12 @@ export default function PlanningGrid(props: Props) {
         </table>
       </div>
 
-      {/* Pied — l'ASTUCE DE CLIC, et elle seule.
-          ⚠️ La légende des six types de poste a été RETIRÉE : elle répétait à l'identique la
-          barre « ASSIGNER : » du haut — mêmes six entrées, mêmes couleurs, et jusqu'aux mêmes
-          HORAIRES (`ShiftSelector.tsx:52-56` les affiche déjà). Deux fois la même information
-          sur un écran, c'est deux endroits à maintenir et un lecteur qui cherche la différence
-          entre les deux. On garde le CONTRÔLE en haut, pas la légende en bas.
-          Ce qui reste ici est le seul élément que la barre du haut ne porte pas. */}
-      <div style={{
-        padding:'8px 16px',
-        borderTop:'1px solid var(--border)',
-        background:'var(--bg3)',
-        display:'flex', alignItems:'center', justifyContent:'flex-end',
-      }}>
-        <div style={{fontSize:'var(--fs-caption)',color:'var(--text3)', display:'flex', alignItems:'center', gap:4}}>
-          <MousePointer2 size={9}/> {T.clearTip}
-        </div>
-      </div>
+      {/* ⚠️ PIED SUPPRIMÉ le 2026-08-15 — il répétait `T.clearTip` MOT POUR MOT.
+          La correction précédente avait retiré la légende des six postes en gardant cette
+          astuce, au motif écrit noir sur blanc qu'elle était « le seul élément que la barre
+          du haut ne porte pas ». MESURÉ FAUX : `PlanningFilters.tsx:45` rend
+          `{T.assignTip} · {T.clearTip}` — les DEUX. Le raisonnement était juste, sa prémisse
+          ne l'était pas, et personne ne l'avait vérifiée. Trouvé en REGARDANT l'écran. */}
     </div>
   )
 }

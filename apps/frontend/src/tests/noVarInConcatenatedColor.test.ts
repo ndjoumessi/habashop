@@ -100,6 +100,36 @@ function fieldVarValue(obj: ts.ObjectLiteralExpression, field: string): string |
   return null
 }
 
+/**
+ * ⚠️ SECOND AXE — la VARIABLE LOCALE, ajoutée le 2026-08-15 après un défaut RÉEL.
+ *
+ * Le scanner ne connaissait que la forme `${objet.champ}NN`. Or `HREmployeeGrid` écrivait
+ *   `const deptColor = DEPT_COLORS[emp.dept] ?? 'var(--p)'`   puis   `${deptColor}0D`
+ * — tous les membres de `DEPT_COLORS` sont des `#hex`, c'est le REPLI qui était un `var()`.
+ * Résultat : `var(--p)0D`, couleur invalide, fond ET bordure disparus dès qu'un employé n'a
+ * pas de département. Invisible pour `tsc`, pour la suite, et pour la revue — vu à l'écran.
+ *
+ * On résout donc aussi l'IDENTIFIANT : on cherche sa déclaration dans le même fichier et on
+ * regarde si une chaîne `var(--` s'y trouve, y compris dans un `??` ou un ternaire.
+ */
+function identifierVarValue(name: string, sf: ts.SourceFile): string | null {
+  let trouve: string | null = null
+  const chercheChaine = (n: ts.Node) => {
+    if (trouve) return
+    if (ts.isStringLiteral(n) && n.text.includes('var(--')) { trouve = n.text; return }
+    ts.forEachChild(n, chercheChaine)
+  }
+  const visit = (n: ts.Node) => {
+    if (trouve) return
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === name && n.initializer) {
+      chercheChaine(n.initializer)
+    }
+    ts.forEachChild(n, visit)
+  }
+  visit(sf)
+  return trouve
+}
+
 function scan(file: string): { viol: string[]; sites: number } {
   const src = readFileSync(file, 'utf-8')
   const sf = ts.createSourceFile(file, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
@@ -111,6 +141,14 @@ function scan(file: string): { viol: string[]; sites: number } {
         // `${expr}NN` : le segment qui SUIT l'expression commence par 2 chiffres hexa = ajout d'alpha
         if (/^[0-9A-Fa-f]{2}/.test(span.literal.text)) {
           const expr = span.expression
+          if (ts.isIdentifier(expr)) {
+            sites++
+            const v = identifierVarValue(expr.text, sf)
+            if (v) {
+              const { line } = sf.getLineAndCharacterOfPosition(expr.getStart(sf))
+              viol.add(`${file.slice(file.indexOf('/src/') + 5)}:${line + 1} — ${expr.text} peut valoir '${v}'`)
+            }
+          }
           if (ts.isPropertyAccessExpression(expr) && ts.isIdentifier(expr.expression)) {
             sites++
             const arr = resolveMapArray(expr, expr.expression.text, sf)
@@ -140,6 +178,17 @@ describe('CSS — aucun var(--) dans un champ couleur concaténé avec une alpha
   it('couvre bien des fichiers et des sites de concaténation (garde anti-scan-vide)', () => {
     expect(files.length).toBeGreaterThan(150)
     expect(sites).toBeGreaterThan(60)
+  })
+
+  it('DISCRIMINANT — le second axe résout VRAIMENT un identifiant local', () => {
+    // Sans ce cas, `identifierVarValue` pourrait rendre `null` partout et le verrou
+    // resterait vert en ne gardant que la moitié qu'il gardait déjà.
+    const faux = ts.createSourceFile('t.tsx',
+      "const c = X[k] ?? 'var(--p)'\nconst s = `${c}0D`", ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
+    expect(identifierVarValue('c', faux)).toBe('var(--p)')
+    const bon = ts.createSourceFile('t.tsx',
+      "const c = X[k] ?? '#8E96AA'\nconst s = `${c}0D`", ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
+    expect(identifierVarValue('c', bon)).toBeNull()
   })
 
   it('aucun champ var(--) suffixé d’une alpha hexa (→ CSS invalide, propriété à sa valeur initiale)', () => {

@@ -94,7 +94,16 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                   </div>
                 ))
               ) : pg.paginated.map(emp => {
-                const deptColor = DEPT_COLORS[emp.dept] ?? 'var(--p)'
+                /**
+                 * ⚠️ REPLI EN #HEX LITTÉRAL, JAMAIS `var(--p)` — il est CONCATÉNÉ avec une
+                 * alpha (`${deptColor}0D`) trois lignes plus bas. `var(--p)0D` est une
+                 * couleur INVALIDE : la propriété retombe à sa valeur initiale, donc fond
+                 * ET bordure DISPARAISSENT. Mesuré à l'écran le 2026-08-15 — la boîte
+                 * « Dept » n'avait aucune bordure quand la boîte « Salaire » en avait une,
+                 * et ni `tsc` ni la suite ne pouvaient le voir. `#8E96AA` = `--text3`.
+                 */
+                const deptConnu = !!emp.dept && !!DEPT_COLORS[emp.dept]
+                const deptColor = DEPT_COLORS[emp.dept] ?? '#8E96AA'
                 const isActive  = emp.active
                 return (
                   <div key={emp.id} style={{
@@ -154,7 +163,12 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                         </div>
                         <div style={{ background:`${deptColor}0D`, border:`1px solid ${deptColor}1A`, borderRadius:8, padding:'7px 9px' }}>
                           <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>Dept</div>
-                          <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', color:deptColor, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{deptLabel(emp.dept, lang)}</div>
+                          {/* ⚠️ L'ABSENCE SE DIT — le libellé « Dept » se rendait au-dessus du VIDE
+                              quand l'employé n'a pas de département. Le fichier savait déjà le faire
+                              pour `perf` (« Non évalué », plus bas) ; il ne le faisait pas ici. */}
+                          <div style={{ fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', color:deptColor, fontStyle: deptConnu ? undefined : 'italic', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                            {deptConnu ? deptLabel(emp.dept, lang) : (lang === 'en' ? 'Not assigned' : lang === 'es' ? 'Sin asignar' : lang === 'it' ? 'Non assegnato' : 'Non affecté')}
+                          </div>
                         </div>
                       </div>
                       {/* Footer card */}

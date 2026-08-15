@@ -249,7 +249,10 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                     {paymentData.length}
                   </div>
                   <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.6px' }}>
-                    {lang === 'en' ? 'modes' : lang === 'es' ? 'modos' : lang === 'it' ? 'modalità' : 'modes'}
+                    {/* ⚠️ Le pluriel SUIT le compte : l'écran affichait « 1 MODES ». */}
+                    {paymentData.length === 1
+                      ? (lang === 'en' ? 'mode' : lang === 'es' ? 'modo' : lang === 'it' ? 'modalità' : 'mode')
+                      : (lang === 'en' ? 'modes' : lang === 'es' ? 'modos' : lang === 'it' ? 'modalità' : 'modes')}
                   </div>
                 </div>
               )}
