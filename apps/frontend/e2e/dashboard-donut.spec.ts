@@ -91,7 +91,18 @@ test('Dashboard — donut : tooltip % == légende % (source unique) + cursor hel
   // démonte à la sortie — c'est plus honnête pour un lecteur d'écran (rien d'invisible ne
   // traîne dans l'arbre). On l'exige donc APRÈS un premier survol, pas avant : sinon les 45
   // `evaluate` du balayage expireraient l'un après l'autre sur une absence attendue.
-  await page.mouse.move(cx + 88, cy)
+  // ⚠️ PAS de `locator.hover()` sur un arc : Playwright vise le CENTRE de la boîte
+  // englobante, qui pour un secteur de donut tombe dans le TROU — l'action expire. Le
+  // fichier le disait déjà plus haut ; je l'ai réappris en le refaisant. On balaie donc des
+  // angles sur le rayon jusqu'à en trouver un qui monte l'infobulle, et on EXIGE d'en
+  // trouver un : sinon la boucle de mesure qui suit tournerait dans le vide.
+  let amorce = false
+  for (let d = 0; d < 360 && !amorce; d += 6) {
+    const r = (d * Math.PI) / 180
+    await page.mouse.move(cx + 88 * Math.cos(r), cy + 88 * Math.sin(r))
+    amorce = await tip.count() > 0
+  }
+  expect(amorce, 'aucun angle du rayon 88 px ne monte l’infobulle — le donut ne réagit pas').toBe(true)
   await expect(tip).toBeAttached()
   const seen: Record<string, number> = {}
 
@@ -103,9 +114,18 @@ test('Dashboard — donut : tooltip % == légende % (source unique) + cursor hel
     // le nom et le pourcentage viennent forcément du MÊME état de l'infobulle.
     // La visibilité est décidée ici aussi : la tester par un appel séparé rouvrirait la même
     // fenêtre (visible au test, changée à la lecture), en plus petit.
-    const lu = await tip.evaluate((el) => {
-      const st = getComputedStyle(el as Element)
-      const r = (el as Element).getBoundingClientRect()
+    // ⚠️ `page.evaluate`, PAS `locator.evaluate` — et c'est la correction du 2026-08-15.
+    // `locator.evaluate` ATTEND que l'élément existe : avec recharts le conteneur restait
+    // monté en permanence (`visibility` basculée), donc l'attente aboutissait toujours. La
+    // primitive visx le DÉMONTE hors survol — plus honnête pour un lecteur d'écran, mais les
+    // angles qui tombent dans une gouttière entre deux parts n'ont plus d'infobulle du tout,
+    // et chacun des 45 tours expirait à 10 s. On interroge donc le DOM SANS patienter :
+    // absent ⇒ `null` ⇒ `continue`, ce que la boucle savait déjà traiter.
+    const lu = await page.evaluate(() => {
+      const el = document.querySelector('[data-testid="chart-donut"] [data-testid="chart-tooltip"]')
+      if (!el) return null
+      const st = getComputedStyle(el)
+      const r = el.getBoundingClientRect()
       if (st.visibility === 'hidden' || st.display === 'none' || r.width === 0 || r.height === 0) return null
       const txt = (el.textContent ?? '').trim()
       const m = txt.match(/(\d+)%\s*$/)
