@@ -35,15 +35,10 @@ export default function LandingFooter({ lp }: Props) {
               * clic remontait simplement en haut de page. Un pied de page qui annonce des
               * documents institutionnels sans les servir est une promesse fausse.
               *
-              * ⚠️ « CGU » A ÉTÉ RETIRÉE, pas recâblée : AUCUN document de conditions
-              * générales n'existe dans ce dépôt — ni route (`App.tsx` n'a que `/privacy`),
-              * ni fichier (`legal/` ne contient que `privacy-policy.html`,
-              * `account-deletion.html` et son index). La pointer vers `/privacy` aurait
-              * présenté la politique de confidentialité comme des conditions de service :
-              * deux documents différents, et le lecteur n'aurait pas su qu'il lui en manque
-              * un. Rédiger des CGU est un acte juridique, pas un correctif d'interface.
-              * → À REMETTRE le jour où le document existe. Cf. aussi `SignupStep2`, où le
-              *   commerçant DÉCLARE les accepter à l'inscription.
+              * ⚠️ « CGU » avait été RETIRÉE le 2026-08-15 parce qu'aucun document n'existait
+              * — la pointer vers `/privacy` aurait présenté une politique de confidentialité
+              * comme des conditions de service. Elle est REVENUE le même jour, `/terms` ayant
+              * été rédigée. C'est l'ordre qui compte : on écrit le document, PUIS le lien.
               *
               * ⚠️ La cible n'est plus POSITIONNELLE : les libellés sont traduits, et une
               * langue qui réordonnait ses entrées aurait fait pointer « Contact » vers
@@ -51,6 +46,7 @@ export default function LandingFooter({ lp }: Props) {
               */}
             {([
               { cle: 'privacy' as const, to: '/privacy',  externe: false },
+              { cle: 'terms'   as const, to: '/terms',    externe: false },
               { cle: 'contact' as const, to: 'mailto:contact@habashop.com', externe: true },
             ]).map(({ cle, to, externe }) => {
               const style = {

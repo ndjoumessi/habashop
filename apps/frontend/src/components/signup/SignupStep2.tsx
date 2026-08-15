@@ -173,16 +173,16 @@ export default function SignupStep2({ tx, i, form, setForm, showPwd, setShowPwd,
                     *   lien, ouvert dans un NOUVEL ONGLET pour ne pas perdre le formulaire, et
                     *   `stopPropagation` parce que ce texte vit dans un `<label>` : sans lui, le
                     *   clic décocherait la case au moment même où on va lire ce qu'on accepte.
-                    * · Les CONDITIONS GÉNÉRALES n'existent NULLE PART — ni route, ni fichier dans
-                    *   `legal/`. Elles restent donc du TEXTE, pas un lien : promettre un document
-                    *   qu'on ne peut pas servir est pire que d'admettre qu'il manque.
-                    *   ⚠️ CE N'EST PAS UNE CORRECTION COMPLÈTE, et il ne faut pas la lire comme
-                    *   telle : la phrase demande toujours d'accepter des CGU inexistantes. Le
-                    *   correctif réel est de les RÉDIGER — acte juridique, décision de Nelson.
-                    *   Le lien mort masquait ce trou ; le texte nu le laisse voir.
+                    * · Les CONDITIONS GÉNÉRALES ont été rédigées le 2026-08-15 (`/terms`) et le
+                    *   lien est rétabli. Elles étaient restées du TEXTE tant qu'aucun document
+                    *   n'existait : on n'accroche pas un lien à un document qu'on ne peut pas
+                    *   servir. ⚠️ `/terms` porte encore des mentions À COMPLÉTER et n'a pas été
+                    *   relue par un juriste — c'est écrit en tête du document, pas masqué ici.
                     */}
                   {tx.terms_pre}
-                  <span>{tx.terms_a}</span>
+                  <a href="/terms" target="_blank" rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    style={{ color: D.p3, textDecoration: 'underline' }}>{tx.terms_a}</a>
                   {tx.terms_and}
                   <a href="/privacy" target="_blank" rel="noopener noreferrer"
                     onClick={e => e.stopPropagation()}

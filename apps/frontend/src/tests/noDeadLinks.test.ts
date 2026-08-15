@@ -18,15 +18,14 @@ import { join } from 'node:path'
  * politique de confidentialité y pointent. `Contact` part sur `mailto:contact@habashop.com`,
  * l'adresse que la grille tarifaire utilise déjà — pas une seconde inventée.
  *
- * ⚠️ LES CONDITIONS GÉNÉRALES N'EXISTENT NULLE PART : ni route, ni fichier dans `legal/`
- * (qui ne contient que `privacy-policy.html`, `account-deletion.html` et son index). Elles
- * ont donc été RETIRÉES du pied de page et rendues en TEXTE dans le consentement, jamais
- * recâblées vers `/privacy` — présenter une politique de confidentialité comme des
- * conditions de service aurait caché au lecteur qu'il lui manque un document.
- * ⚠️ Ce n'est PAS une correction complète : la phrase d'inscription demande toujours
- * d'accepter des CGU inexistantes. Le correctif réel est de les RÉDIGER — acte juridique.
- * Le lien mort masquait le trou ; le texte nu le laisse voir. C'est tout ce qu'un correctif
- * d'interface pouvait faire honnêtement.
+ * ⚠️ LES CONDITIONS GÉNÉRALES N'EXISTAIENT NULLE PART le matin du 2026-08-15 : ni route,
+ * ni fichier dans `legal/`. Elles ont donc d'abord été RETIRÉES du pied de page et rendues
+ * en TEXTE dans le consentement, jamais recâblées vers `/privacy` — présenter une politique
+ * de confidentialité comme des conditions de service aurait caché au lecteur qu'il lui
+ * manque un document. Puis `/terms` a été RÉDIGÉE le même jour, et les deux liens sont
+ * revenus. **C'est l'ordre qui compte : on écrit le document, PUIS le lien.**
+ * ⚠️ `/terms` porte encore des mentions À COMPLÉTER (identité légale, droit applicable) et
+ * n'a pas été relue par un juriste — c'est annoncé en tête du document lui-même, pas masqué.
  *
  * ⚠️ LES COMMENTAIRES SONT RETIRÉS AVANT DE CONCLURE. Sans ça ce verrou s'attrape
  * lui-même : les deux fichiers corrigés CITENT `href="#"` pour expliquer ce qu'ils ont
@@ -103,14 +102,32 @@ describe('liens morts', () => {
     expect({ footer: adr(nu) }).toEqual({ footer: adr(pricing) })
   })
 
-  it('⚠️ « CGU » n’est plus annoncée nulle part tant qu’elle n’existe pas', () => {
-    // Le jour où le document est écrit, ce cas rougit — et c'est le signal de remettre le
-    // lien, au pied de page comme dans le consentement.
-    const shared = readFileSync(join(SRC, 'components', 'landing', 'landingShared.ts'), 'utf8')
-    const nu = sansCommentaires(shared)
-    for (const mot of ['CGU', 'Terms', 'Términos', 'Termini']) {
-      expect({ mot, dansFooter: new RegExp(`footer_links[^\\n]*${mot}`).test(nu) })
-        .toEqual({ mot, dansFooter: false })
+  it('⚠️ « CGU » n’est annoncée QUE parce que le document existe', () => {
+    // ⚠️ CE CAS A ÉTÉ INVERSÉ le 2026-08-15. Il exigeait l'ABSENCE de « CGU » tant qu'aucun
+    // document n'existait, et il a rougi le jour où `/terms` a été rédigée — c'était le
+    // signal prévu. Il garde maintenant l'invariant DURABLE, qui est le même dans les deux
+    // sens : on n'annonce un document institutionnel que s'il est servi.
+    const shared = sansCommentaires(readFileSync(join(SRC, 'components', 'landing', 'landingShared.ts'), 'utf8'))
+    const routes = readFileSync(join(SRC, 'App.tsx'), 'utf8')
+    const annonce = /footer_links[^\n]*terms:/.test(shared)
+    const servi = routes.includes('path="/terms"')
+    expect({ annonce, servi }).toEqual({ annonce: true, servi: true })
+
+    // …et les QUATRE langues l'annoncent, pas seulement le français : une entrée manquante
+    // ferait disparaître le lien pour un lecteur anglophone sans que rien ne le dise.
+    const n = [...shared.matchAll(/footer_links[^\n]*terms:/g)].length
+    expect({ langues: n }).toEqual({ langues: 4 })
+  })
+
+  it('le consentement d’inscription pointe sur les DEUX documents', () => {
+    // C'était le défaut le plus grave : le commerçant cochait « j'accepte » deux documents
+    // dont aucun n'était atteignable.
+    const nu = sansCommentaires(readFileSync(join(SRC, 'components', 'signup', 'SignupStep2.tsx'), 'utf8'))
+    for (const cible of ['/terms', '/privacy']) {
+      expect({ cible, lie: nu.includes(`href="${cible}"`) }).toEqual({ cible, lie: true })
     }
+    // ⚠️ Ouverts dans un NOUVEL onglet : sans ça, aller lire ce qu'on accepte fait perdre
+    // le formulaire — et le lecteur renonce à lire.
+    expect((nu.match(/target="_blank"/g) || []).length).toBeGreaterThanOrEqual(2)
   })
 })
