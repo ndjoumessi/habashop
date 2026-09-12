@@ -228,6 +228,20 @@ describe('mentions légales — éditeur, publication, hébergement', () => {
     expect(FIXTURE.hebergeurs.find(h => h.role === 'application web')?.nom).toMatch(/^Vercel/)
   })
 
+  it('⚠️ le téléphone est COMPOSABLE depuis l’étranger — jamais « +33 0… »', () => {
+    // Transmis « +33 0661751923 » : le 0 de tête ne se compose pas après l'indicatif. Les
+    // clients sont au Cameroun et au Sénégal — un numéro injoignable depuis l'étranger est
+    // injoignable pour eux. On juge la fixture ET le `tel:` réellement cliquable des pages.
+    if (FIXTURE.telephone === null) return
+    const e164 = FIXTURE.telephone.replace(/[\s.\-()]/g, '')
+    expect(e164).toMatch(/^\+[1-9]\d{7,14}$/)
+    expect(e164).not.toMatch(/^\+\d{1,3}0/)
+    for (const s of FIXTURE.surfacesMentionsLegales) {
+      const tel = lire(s).match(/href="tel:([^"]+)"/)?.[1]
+      expect({ s, tel }).toEqual({ s, tel: e164 })
+    }
+  })
+
   it('le directeur de la publication est nommé sur les deux surfaces', () => {
     for (const s of FIXTURE.surfacesMentionsLegales) {
       expect({ s, nomme: lire(s).includes(FIXTURE.directeurPublication) }).toEqual({ s, nomme: true })

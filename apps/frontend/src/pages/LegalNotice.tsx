@@ -13,7 +13,7 @@ import { appUrl, appUrlHost } from '@/lib/appUrl'
  * 10/09/2026 ; l'hébergement vient de l'infrastructure RÉELLE (Vercel sert l'application,
  * Railway l'API et la base, GitHub Pages les documents de `legal/`), et chaque adresse
  * d'hébergeur a été lue sur la page légale officielle du prestataire. Le téléphone, que la
- * loi demande et que l'attestation ne porte pas, reste un À COMPLÉTER VISIBLE.
+ * loi demande et que l'attestation ne porte pas, a été fourni par l'éditeur le 2026-09-12.
  *
  * ⚠️ SOURCE UNIQUE : `docs/shared-fixtures/publisher.json`. Cette page et son jumeau statique
  * `legal/mentions-legales.html` portent les valeurs en dur (une page statique ne peut rien
@@ -22,16 +22,6 @@ import { appUrl, appUrlHost } from '@/lib/appUrl'
  * ⚠️ « RNE », JAMAIS « RCS » : l'activité est libérale non réglementée, l'éditeur n'est pas
  * commerçant. Et la date de naissance, présente sur l'attestation, n'a rien à faire ici.
  */
-
-const A_COMPLETER: React.CSSProperties = {
-  background: '#FFF4D6', border: '1px solid #E0B341', borderRadius: 4,
-  padding: '1px 6px', fontWeight: 700, color: '#6B4E00',
-}
-
-/** Marqueur visible d'une mention que seul l'éditeur peut renseigner. */
-function AC({ children }: { children: React.ReactNode }) {
-  return <span style={A_COMPLETER}>[À COMPLÉTER — {children}]</span>
-}
 
 const lien = { color: '#6C47FF' } as const
 
@@ -76,7 +66,7 @@ export default function LegalNotice() {
             E-mail :{' '}
             <a href="mailto:romel.djoumessi@gmail.com" style={lien}>romel.djoumessi@gmail.com</a>
           </li>
-          <li>Téléphone : <AC>numéro de téléphone de l'éditeur</AC></li>
+          <li>Téléphone : <a href="tel:+33661751923" style={lien}>+33 6 61 75 19 23</a></li>
         </ul>
       </section>
 

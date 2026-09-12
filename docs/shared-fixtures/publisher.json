@@ -46,7 +46,12 @@
     "⚠️ `telephone` VAUT null, et c'est volontaire. La loi le demande pour un éditeur personne",
     "physique ; l'attestation RNE n'en porte pas. Les surfaces l'affichent en « À COMPLÉTER »",
     "VISIBLE plutôt que d'en inventer un : un numéro faux sur une page légale est une voie de",
-    "contact qui ment. Le jour où il est connu, c'est ICI qu'on le pose."
+    "contact qui ment. Le jour où il est connu, c'est ICI qu'on le pose.",
+    "",
+    "✅ TÉLÉPHONE RENSEIGNÉ le 2026-09-12 par l'éditeur. ⚠️ Il a été transmis sous la forme",
+    "« +33 0661751923 » : le 0 de tête NE SE COMPOSE PAS après l'indicatif international.",
+    "Publié tel quel, le numéro aurait été injoignable depuis l'étranger — c'est-à-dire depuis",
+    "le Cameroun et le Sénégal, là où sont les clients. Le verrou refuse désormais cette forme."
   ],
   "editeur": "Nelson Djoumessi",
   "contact": "romel.djoumessi@gmail.com",
@@ -71,7 +76,7 @@
     "apps/frontend/src/pages/LegalNotice.tsx"
   ],
   "directeurPublication": "Nelson Djoumessi",
-  "telephone": null,
+  "telephone": "+33 6 61 75 19 23",
   "hebergeurs": [
     {
       "role": "application web",
