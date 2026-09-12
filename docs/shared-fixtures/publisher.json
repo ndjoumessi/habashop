@@ -19,7 +19,21 @@
     "  ses MX, cette fixture est le SEUL endroit à changer. C'est toute sa raison d'être.",
     "",
     "Verrou : `publisherIdentity.test.ts` compare cette fixture aux quatre surfaces, dont",
-    "les deux pages HTML de `legal/` qui vivent hors d'`apps/frontend`."
+    "les deux pages HTML de `legal/` qui vivent hors d'`apps/frontend`.",
+    "",
+    "⚠️ IMMATRICULATION AJOUTÉE le 2026-09-12, depuis l'attestation RNE de l'INPI du",
+    "10/09/2026 — des FAITS tirés d'un document officiel, pas une identité reconstituée.",
+    "L'article 2 des CGU portait « [À COMPLÉTER — forme juridique, numéro d'immatriculation",
+    "et adresse du siège] » : des conditions de vente qui ne disent pas QUI vend n'engagent",
+    "personne de façon vérifiable.",
+    "",
+    "⚠️ « RNE », JAMAIS « RCS ». L'activité est LIBÉRALE NON RÉGLEMENTÉE : l'éditeur n'est",
+    "pas commerçant, il n'a donc aucune immatriculation au registre du commerce. Écrire",
+    "« RCS Marseille » serait une mention FAUSSE sur un document contractuel.",
+    "",
+    "⚠️ LA DATE DE NAISSANCE FIGURE SUR L'ATTESTATION ET N'ENTRE PAS ICI. Les mentions",
+    "légales appellent l'identité de l'éditeur et son siège, pas sa date de naissance :",
+    "on publie ce que la loi demande, pas tout ce que la source contient."
   ],
   "editeur": "Nelson Djoumessi",
   "contact": "romel.djoumessi@gmail.com",
@@ -27,6 +41,16 @@
     "legal/privacy-policy.html",
     "legal/account-deletion.html",
     "apps/frontend/src/pages/Privacy.tsx",
+    "apps/frontend/src/pages/Terms.tsx"
+  ],
+  "formeJuridique": "entrepreneur individuel",
+  "registre": "Registre national des entreprises (RNE)",
+  "siren": "109 761 023",
+  "siret": "109 761 023 00018",
+  "ape": "6201Z",
+  "siege": "71 rue de Rome, 13001 Marseille, France",
+  "surfacesImmatriculation": [
+    "legal/terms.html",
     "apps/frontend/src/pages/Terms.tsx"
   ]
 }

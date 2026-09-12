@@ -100,8 +100,12 @@ export default function Terms() {
         <h2>2. Éditeur</h2>
         <p>
           HabaShop est édité par <strong>Nelson Djoumessi</strong>{' '}
-          (romel.djoumessi@gmail.com) — <AC>forme juridique, numéro d'immatriculation et
-          adresse du siège</AC>.
+          (romel.djoumessi@gmail.com), <strong>entrepreneur individuel</strong>, immatriculé au
+          Registre national des entreprises (RNE) sous le numéro SIREN <strong>109 761 023</strong>{' '}
+          (SIRET 109 761 023 00018, code APE 6201Z).
+        </p>
+        <p>
+          Siège : 71 rue de Rome, 13001 Marseille, France.
         </p>
         <p>
           Contact : romel.djoumessi@gmail.com ·
