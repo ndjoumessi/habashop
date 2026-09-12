@@ -11,8 +11,13 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Installe les dépendances
-RUN npm install
+# Installe les dépendances — `npm ci`, depuis `package-lock.json` (copié par `package*.json`).
+# ⚠️ C'était `npm install` SANS lockfile dans ce contexte : chaque build résolvait les plages contre
+# le registre DU JOUR. Le 2026-09-12, vite 8.3.0 a fait planter npm et bloqué le déploiement, et
+# l'image tournait avec d'autres versions que celles testées par la CI (twilio 6.1.1 vs 6.0.2).
+# Le lockfile est DÉRIVÉ du lockfile racine : `npm run lock:backend` ; `npm ci` refuse de
+# construire s'il ne correspond plus au package.json — un échec BRUYANT au lieu d'une dérive.
+RUN npm ci
 
 # Génère le client Prisma
 RUN npx prisma generate

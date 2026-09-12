@@ -14,7 +14,9 @@
     "test": "npm run test --workspaces",
     "sabotage": "node scripts/sabotage.mjs",
     "sabotage:restore": "node scripts/sabotage.mjs restore",
-    "sabotage:status": "node scripts/sabotage.mjs status"
+    "sabotage:status": "node scripts/sabotage.mjs status",
+    "lock:backend": "node scripts/lockfile-backend.mjs",
+    "lock:backend:check": "node scripts/lockfile-backend.mjs --check"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
