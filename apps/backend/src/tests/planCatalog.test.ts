@@ -4,6 +4,7 @@ import Fastify from 'fastify'
 import { validatorCompiler } from 'fastify-type-provider-zod'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
+const PUBLISHER = JSON.parse(readFileSync(join(__dirname, '..', '..', '..', '..', 'docs', 'shared-fixtures', 'publisher.json'), 'utf8')) as { contact: string }
 
 /**
  * VERROU TARIFAIRE — côté BACKEND (facturation).
@@ -264,7 +265,7 @@ describe('tunnel de paiement — prix AFFICHÉ == prix FACTURÉ, plan par plan, 
       expect(res.statusCode).toBe(422)
       const body = JSON.parse(res.body)
       expect(body.code).toBe('PLAN_QUOTE_ONLY')
-      expect(body.contactEmail).toBeTruthy()
+      expect(body.contactEmail).toBe(PUBLISHER.contact) // jamais une boîte @habashop.com (aucun MX)
       expect(prisma.planRequest.create).not.toHaveBeenCalled()
     })
 

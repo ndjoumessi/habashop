@@ -33,7 +33,20 @@
     "",
     "⚠️ LA DATE DE NAISSANCE FIGURE SUR L'ATTESTATION ET N'ENTRE PAS ICI. Les mentions",
     "légales appellent l'identité de l'éditeur et son siège, pas sa date de naissance :",
-    "on publie ce que la loi demande, pas tout ce que la source contient."
+    "on publie ce que la loi demande, pas tout ce que la source contient.",
+    "",
+    "⚠️ MENTIONS LÉGALES ajoutées le 2026-09-12 — l'application n'en avait AUCUNE. Un site",
+    "professionnel doit identifier son éditeur, son directeur de publication et son hébergeur",
+    "(LCEN, art. 6-III). L'identité et le siège viennent de l'attestation RNE ; l'hébergement",
+    "vient de l'infrastructure RÉELLE du dépôt, et chaque adresse d'hébergeur a été LUE sur la",
+    "page légale officielle du prestataire le jour même (champ `source`), jamais écrite de",
+    "mémoire — pour Railway, deux pages sur trois l'écrivent « PMB 68956 », la troisième",
+    "« Suite 68956 » : on retient la forme majoritaire, la boîte est la même.",
+    "",
+    "⚠️ `telephone` VAUT null, et c'est volontaire. La loi le demande pour un éditeur personne",
+    "physique ; l'attestation RNE n'en porte pas. Les surfaces l'affichent en « À COMPLÉTER »",
+    "VISIBLE plutôt que d'en inventer un : un numéro faux sur une page légale est une voie de",
+    "contact qui ment. Le jour où il est connu, c'est ICI qu'on le pose."
   ],
   "editeur": "Nelson Djoumessi",
   "contact": "romel.djoumessi@gmail.com",
@@ -51,6 +64,36 @@
   "siege": "71 rue de Rome, 13001 Marseille, France",
   "surfacesImmatriculation": [
     "legal/terms.html",
-    "apps/frontend/src/pages/Terms.tsx"
+    "apps/frontend/src/pages/Terms.tsx",
+    "legal/privacy-policy.html",
+    "apps/frontend/src/pages/Privacy.tsx",
+    "legal/mentions-legales.html",
+    "apps/frontend/src/pages/LegalNotice.tsx"
+  ],
+  "directeurPublication": "Nelson Djoumessi",
+  "telephone": null,
+  "hebergeurs": [
+    {
+      "role": "application web",
+      "nom": "Vercel Inc.",
+      "adresse": "440 N Barranca Ave #4133, Covina, CA 91723, États-Unis",
+      "source": "https://vercel.com/legal/terms"
+    },
+    {
+      "role": "API et base de données",
+      "nom": "Railway Corporation",
+      "adresse": "548 Market St PMB 68956, San Francisco, CA 94104, États-Unis",
+      "source": "https://railway.com/legal/privacy"
+    },
+    {
+      "role": "documents légaux publics",
+      "nom": "GitHub, Inc.",
+      "adresse": "88 Colin P. Kelly Jr. St., San Francisco, CA 94107, États-Unis",
+      "source": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+    }
+  ],
+  "surfacesMentionsLegales": [
+    "legal/mentions-legales.html",
+    "apps/frontend/src/pages/LegalNotice.tsx"
   ]
 }

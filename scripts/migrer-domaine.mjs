@@ -92,6 +92,9 @@ const REECRITURES = [
   { f: 'legal/terms.html',
     old: `<a href="${DEPUIS}">${hoteDepuis}</a>`, new: `<a href="${VERS}">${hoteVers}</a>`,
     pourquoi: "CGU — le service est DÉSIGNÉ par cette URL dans un contrat" },
+  { f: 'legal/mentions-legales.html',
+    old: `<a href="${DEPUIS}">${hoteDepuis}</a>`, new: `<a href="${VERS}">${hoteVers}</a>`,
+    pourquoi: "mentions légales — l'adresse du service y est une mention OBLIGATOIRE" },
   { f: 'mobile/assets/feature_graphic.svg',
     old: hoteDepuis, new: hoteVers,
     pourquoi: '⚠️ URL CUITE dans le visuel Play Store 1024×500 — à RE-RENDRE et RE-TÉLÉVERSER' },
@@ -113,6 +116,11 @@ const EXEMPTIONS = [
   [/^(README|CHANGELOG|SETUP)\.md$/, 'documentation racine — à relire à la main, une partie DATE l’hôte historique'],
   [/^docs\//, 'documentation et audits — plusieurs passages DATENT l’hôte historique ; les réécrire les rendrait faux'],
   [/^mobile\/(CLAUDE|README|PLAY_STORE|IOS_BUILD)\.md$/, 'documentation mobile — idem, à relire à la main'],
+  // ⚠️ LE SCRIPT S'ÉPINGLAIT LUI-MÊME. Il porte le littéral dans sa valeur `--from` par défaut ;
+  // tant qu'il n'était pas suivi par git, `git grep` ne le voyait pas, et tous les essais
+  // passaient. Commité, il échouait à CHAQUE exécution. Un scanneur doit survivre à son propre
+  // scan — même leçon que `dockerContextImports.test.ts`.
+  [/^scripts\/migrer-domaine\.mjs$/, "le script lui-même : le littéral y est la valeur `--from` par défaut, pas une surface"],
 ]
 
 // ── Le balayage ─────────────────────────────────────────────────────────────────────────

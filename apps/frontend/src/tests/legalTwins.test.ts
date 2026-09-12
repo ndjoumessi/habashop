@@ -117,7 +117,7 @@ describe('CGU — les deux versions engagent la même chose', () => {
   it('`legal/index.html` propose bien les trois documents', () => {
     // L'asymétrie d'origine était là : l'index ne citait pas les CGU.
     const idx = nu(readFileSync(join(RACINE, 'legal', 'index.html'), 'utf8'))
-    for (const f of ['privacy-policy.html', 'terms.html', 'account-deletion.html']) {
+    for (const f of ['privacy-policy.html', 'terms.html', 'account-deletion.html', 'mentions-legales.html']) {
       expect({ f, cite: idx.includes(`href="${f}"`) }).toEqual({ f, cite: true })
     }
   })
@@ -127,5 +127,25 @@ describe('CGU — les deux versions engagent la même chose', () => {
     expect(titresTsx).toContain('14. Droit applicable et litiges')
     expect([...nu('<h2>A</h2><h2>B</h2>').matchAll(/<h2>([^<]+)<\/h2>/g)].map(m => m[1]))
       .toEqual(['A', 'B'])
+  })
+})
+
+// ── MENTIONS LÉGALES — même contrat que les CGU : deux versions, les mêmes articles ──
+describe('mentions légales — les deux versions disent la même chose', () => {
+  const H = nu(readFileSync(join(RACINE, 'legal', 'mentions-legales.html'), 'utf8'))
+  const T = nu(readFileSync(join(RACINE, 'apps', 'frontend', 'src', 'pages', 'LegalNotice.tsx'), 'utf8'))
+  const titres = (src: string) => [...src.matchAll(/<h2>([^<]+)<\/h2>/g)].map(m => m[1].trim())
+
+  it('COUVERTURE — au moins trois articles lus de chaque côté', () => {
+    expect(titres(H).length).toBeGreaterThanOrEqual(3)
+    expect(titres(T).length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('les MÊMES articles, dans le MÊME ordre', () => {
+    expect(titres(H)).toEqual(titres(T))
+  })
+
+  it('les mentions À COMPLÉTER sont en même NOMBRE des deux côtés', () => {
+    expect((H.match(/class="ac"/g) || []).length).toBe((T.match(/<AC>/g) || []).length)
   })
 })

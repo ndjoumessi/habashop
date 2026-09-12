@@ -15,7 +15,7 @@ import {
 import { sendUpgradeConfirmation } from '../services/email'
 import { appBaseUrl } from '../lib/appUrl'
 import { getPlan, planAmountXOF } from '../lib/plans'
-import { isNotConfigured, notConfiguredBody } from '../lib/payments/providerConfig'
+import { isNotConfigured, notConfiguredBody, PUBLISHER_CONTACT_EMAIL } from '../lib/payments/providerConfig'
 import type { PlanId, BillingPeriod } from '../lib/plans'
 
 // Lecture unique via `lib/appUrl` (adossée à FRONTEND_URL) — plus de repli local dupliqué.
@@ -66,7 +66,7 @@ export function resolveCheckout(rawPlan: unknown, rawPeriod: unknown):
 const QUOTE_ONLY_BODY = {
   error: 'Le plan Enterprise est proposé sur devis : contactez-nous pour une offre adaptée.',
   code: 'PLAN_QUOTE_ONLY',
-  contactEmail: 'contact@habashop.com',
+  contactEmail: PUBLISHER_CONTACT_EMAIL, // jumeau de notConfiguredBody — même adresse, même source
 }
 
 /**

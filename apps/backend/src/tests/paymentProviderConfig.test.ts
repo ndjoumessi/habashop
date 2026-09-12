@@ -6,6 +6,7 @@ import {
   PaymentNotConfiguredError, isNotConfigured, notConfiguredBody,
 } from '../lib/payments/providerConfig'
 import type { ProviderId } from '../lib/payments/providerConfig'
+const PUBLISHER = JSON.parse(readFileSync(join(__dirname, '..', '..', '..', '..', 'docs', 'shared-fixtures', 'publisher.json'), 'utf8')) as { contact: string }
 // ⚠️ Imports STATIQUES : les services lisent leur environnement À L'APPEL, donc une seule
 // instance de module suffit — et on évite les doublons de classe qu'un `import()` sous
 // `vi.resetModules()` fabriquerait (c'est ce qui a fait échouer `instanceof` au 1er tir).
@@ -291,7 +292,9 @@ describe('corps de réponse des routes', () => {
     const b = notConfiguredBody('wave')
     expect(b.code).toBe('PAYMENT_NOT_CONFIGURED')
     expect(b.provider).toBe('wave')
-    expect(b.contactEmail).toBeTruthy()
+    // ⚠️ `toBeTruthy()` ne gardait rien : `contact@habashop.com` est « truthy » et ne reçoit
+    // RIEN (aucun MX). On exige l'adresse de la fixture éditeur, la seule joignable.
+    expect(b.contactEmail).toBe(PUBLISHER.contact)
     expect(b.error).toMatch(/pas encore actif/i)
     expect(b.error).not.toMatch(/API_KEY|undefined|null|500|502/)
   })

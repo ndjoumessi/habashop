@@ -47,6 +47,7 @@ export default function LandingFooter({ lp }: Props) {
             {([
               { cle: 'privacy' as const, to: '/privacy',  externe: false },
               { cle: 'terms'   as const, to: '/terms',    externe: false },
+              { cle: 'legal'   as const, to: '/mentions-legales', externe: false },
               { cle: 'contact' as const, to: 'mailto:romel.djoumessi@gmail.com', externe: true },
             ]).map(({ cle, to, externe }) => {
               const style = {

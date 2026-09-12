@@ -119,6 +119,19 @@ describe('liens morts', () => {
     expect({ langues: n }).toEqual({ langues: 4 })
   })
 
+  it('« Mentions légales » n’est annoncée QUE parce que la page est servie — en 4 langues', () => {
+    // Même invariant que la CGU : on écrit le document, PUIS le lien. Et une langue qui
+    // omettrait l'entrée ferait disparaître le lien pour ses lecteurs sans que rien ne le dise.
+    const shared = sansCommentaires(readFileSync(join(SRC, 'components', 'landing', 'landingShared.ts'), 'utf8'))
+    const routes = readFileSync(join(SRC, 'App.tsx'), 'utf8')
+    const footer = sansCommentaires(readFileSync(join(SRC, 'components', 'landing', 'LandingFooter.tsx'), 'utf8'))
+    expect({
+      langues: [...shared.matchAll(/footer_links[^\n]*legal:/g)].length,
+      lien: footer.includes("to: '/mentions-legales'"),
+      servi: routes.includes('path="/mentions-legales"'),
+    }).toEqual({ langues: 4, lien: true, servi: true })
+  })
+
   it('le consentement d’inscription pointe sur les DEUX documents', () => {
     // C'était le défaut le plus grave : le commerçant cochait « j'accepte » deux documents
     // dont aucun n'était atteignable.

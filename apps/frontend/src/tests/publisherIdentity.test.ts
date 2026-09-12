@@ -42,6 +42,9 @@ const FIXTURE = JSON.parse(
   editeur: string; contact: string; surfaces: string[]
   formeJuridique: string; registre: string; siren: string; siret: string; ape: string
   siege: string; surfacesImmatriculation: string[]
+  directeurPublication: string; telephone: string | null
+  hebergeurs: { role: string; nom: string; adresse: string; source: string }[]
+  surfacesMentionsLegales: string[]
 }
 
 const lire = (rel: string) => readFileSync(join(RACINE, rel), 'utf8')
@@ -180,5 +183,74 @@ describe('immatriculation de l’éditeur — les CGU disent QUI vend, et le dis
     expect(sansEspaces('109 761 023')).toBe('109761023')
     expect(sansEspaces('109\u202f761\u202f023')).toBe('109761023')
     expect(sansEspaces('109 761 024')).not.toBe('109761023')
+  })
+})
+
+// ── LES MENTIONS LÉGALES ─────────────────────────────────────────────────────────────
+//
+// L'application n'en avait AUCUNE jusqu'au 2026-09-12 (LCEN art. 6-III : éditeur, directeur de
+// la publication, hébergeur). Deux surfaces, une fixture — et deux cas qu'un modèle générique
+// rate : l'hébergeur doit être celui qui SERT réellement, et le téléphone manquant doit se VOIR.
+describe('mentions légales — éditeur, publication, hébergement', () => {
+  const sansEspaces = (x: string) => x.replace(/[\s\u00a0\u202f]+/g, '')
+
+  it('COUVERTURE — les deux surfaces existent, et la fixture nomme au moins un hébergeur', () => {
+    expect(FIXTURE.surfacesMentionsLegales.length).toBe(2)
+    for (const s of FIXTURE.surfacesMentionsLegales) {
+      expect({ s, octets: lire(s).length > 200 }).toEqual({ s, octets: true })
+    }
+    expect(FIXTURE.hebergeurs.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('chaque hébergeur de la fixture figure, NOM ET ADRESSE, sur les deux surfaces', () => {
+    const manquants: string[] = []
+    for (const s of FIXTURE.surfacesMentionsLegales) {
+      const nu = sansEspaces(lire(s))
+      for (const h of FIXTURE.hebergeurs) {
+        if (!nu.includes(sansEspaces(h.nom))) manquants.push(`${s} → ${h.nom}`)
+        if (!nu.includes(sansEspaces(h.adresse))) manquants.push(`${s} → adresse ${h.nom}`)
+      }
+    }
+    expect(manquants).toEqual([])
+  })
+
+  it('⚠️ chaque adresse d’hébergeur a une SOURCE officielle — elle n’est pas écrite de mémoire', () => {
+    for (const h of FIXTURE.hebergeurs) {
+      expect({ h: h.nom, source: /^https:\/\/[\w.-]+\//.test(h.source) }).toEqual({ h: h.nom, source: true })
+    }
+  })
+
+  it('⚠️ l’hébergeur de l’APPLICATION est celui que le dépôt déploie réellement (Vercel)', () => {
+    // Un hébergeur recopié d'un modèle (« OVH », « o2switch »…) serait une mention FAUSSE. Le
+    // front est déployé par Vercel : `vercel.json` est la preuve dans le dépôt.
+    const vercelJson = join(RACINE, 'apps', 'frontend', 'vercel.json')
+    expect(() => readFileSync(vercelJson, 'utf8')).not.toThrow()
+    expect(FIXTURE.hebergeurs.find(h => h.role === 'application web')?.nom).toMatch(/^Vercel/)
+  })
+
+  it('le directeur de la publication est nommé sur les deux surfaces', () => {
+    for (const s of FIXTURE.surfacesMentionsLegales) {
+      expect({ s, nomme: lire(s).includes(FIXTURE.directeurPublication) }).toEqual({ s, nomme: true })
+    }
+  })
+
+  it('⚠️ TÉLÉPHONE : absent de la fixture ⇒ À COMPLÉTER VISIBLE ; connu ⇒ affiché, et plus de marqueur', () => {
+    // Deux sens, un seul cas. Tant que `telephone` vaut null, aucune surface ne doit en
+    // afficher un inventé ; le jour où il est posé dans la fixture, ce cas rougit jusqu'à ce
+    // que les DEUX pages le portent — c'est ce qui empêche de le renseigner d'un seul côté.
+    for (const s of FIXTURE.surfacesMentionsLegales) {
+      const src = lire(s)
+      // ⚠️ DEUX FORMES, relues dans les fichiers : le HTML écrit le marqueur en toutes lettres
+      // (`[À COMPLÉTER — numéro…`), la page React écrit `<AC>numéro…</AC>` et le préfixe vient
+      // du composant. La première version ne cherchait que la forme HTML et rougissait sur une
+      // page CORRECTE — un détecteur qui vise une forme absente de la source ne garde rien.
+      const marqueur = /À COMPLÉTER — numéro de téléphone|<AC>numéro de téléphone/.test(src)
+      if (FIXTURE.telephone === null) {
+        expect({ s, marqueur }).toEqual({ s, marqueur: true })
+      } else {
+        expect({ s, marqueur, affiche: sansEspaces(src).includes(sansEspaces(FIXTURE.telephone)) })
+          .toEqual({ s, marqueur: false, affiche: true })
+      }
+    }
   })
 })

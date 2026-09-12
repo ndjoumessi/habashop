@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mentions légales — HabaShop</title>
+<!--
+  ⚠️ JUMEAU STATIQUE de `apps/frontend/src/pages/LegalNotice.tsx` (route `/mentions-legales`).
+
+  `legal/` est le domicile public des documents légaux, servi par GitHub Pages et atteignable
+  SANS l'application. Son `index.html` s'intitulait « Mentions légales » sans en proposer
+  aucune : ajoutée le 2026-09-12.
+
+  ⚠️ SOURCE UNIQUE : `docs/shared-fixtures/publisher.json`. Une page statique ne peut rien
+  importer, donc les valeurs sont en dur ; `publisherIdentity.test.ts` les confronte à la
+  fixture et `legalTwins.test.ts` à la version React. Deux documents qui disent la même chose
+  divergent — c'est déjà arrivé ici, sur l'éditeur lui-même.
+-->
+<style>
+  :root{--violet:#5B4EE8;--ink:#1b1a2e;--muted:#5a5878;--line:#e6e4f2;--bg:#ffffff;--warn-bg:#FFF4D6;--warn-line:#E0B341;--warn-ink:#6B4E00}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Nunito','Segoe UI',system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg);line-height:1.7}
+  .wrap{max-width:820px;margin:0 auto;padding:48px 24px 80px}
+  header{border-bottom:3px solid var(--violet);padding-bottom:20px;margin-bottom:8px}
+  .brand{font-size:30px;font-weight:800;color:var(--violet);letter-spacing:-.5px}
+  h1{font-size:26px;margin:28px 0 6px}
+  .updated{color:var(--muted);font-size:14px;margin-bottom:32px}
+  h2{font-size:20px;margin:36px 0 10px;color:var(--ink);border-left:3px solid var(--violet);padding-left:10px}
+  p,li{font-size:16px;color:#26243a}
+  ul{padding-left:22px}
+  a{color:var(--violet)}
+  .ac{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:4px;padding:1px 6px;font-weight:700;color:var(--warn-ink)}
+  footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="brand">HabaShop</div></header>
+  <h1>Mentions légales</h1>
+  <p class="updated">Dernière mise à jour : 12 septembre 2026</p>
+
+  <h2>1. Éditeur</h2>
+  <p>Le service HabaShop, accessible sur <a href="https://habashop.vercel.app">habashop.vercel.app</a>, est édité par <strong>Nelson Djoumessi</strong>, <strong>entrepreneur individuel</strong>.</p>
+  <ul>
+    <li>Immatriculation : Registre national des entreprises (RNE)</li>
+    <li>SIREN : 109 761 023 — SIRET : 109 761 023 00018</li>
+    <li>Code APE : 6201Z</li>
+    <li>Siège : 71 rue de Rome, 13001 Marseille, France</li>
+    <li>E-mail : <a href="mailto:romel.djoumessi@gmail.com">romel.djoumessi@gmail.com</a></li>
+    <li>Téléphone : <span class="ac">[À COMPLÉTER — numéro de téléphone de l'éditeur]</span></li>
+  </ul>
+
+  <h2>2. Directeur de la publication</h2>
+  <p>Nelson Djoumessi.</p>
+
+  <h2>3. Hébergement</h2>
+  <ul>
+    <li><strong>Application web</strong> — Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis.</li>
+    <li><strong>API et base de données</strong> — Railway Corporation, 548 Market St PMB 68956, San Francisco, CA 94104, États-Unis.</li>
+    <li><strong>Documents légaux publics</strong> — GitHub, Inc., 88 Colin P. Kelly Jr. St., San Francisco, CA 94107, États-Unis.</li>
+  </ul>
+
+  <h2>4. Données personnelles</h2>
+  <p>Le traitement des données personnelles est décrit dans la <a href="privacy-policy.html">politique de confidentialité</a>.</p>
+
+  <h2>5. Conditions d'utilisation</h2>
+  <p>L'accès au service et sa souscription sont régis par les <a href="terms.html">conditions générales d'utilisation et de vente</a>.</p>
+
+  <footer>HabaShop · Mentions légales · Septembre 2026</footer>
+</div>
+</body>
+</html>

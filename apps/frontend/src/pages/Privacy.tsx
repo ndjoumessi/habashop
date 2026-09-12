@@ -37,7 +37,12 @@ export default function Privacy() {
         <h2>1. Qui sommes-nous ?</h2>
         <p>
           HabaShop est un logiciel SaaS de gestion commerciale
-          édité par Nelson Djoumessi (romel.djoumessi@gmail.com).
+          édité par Nelson Djoumessi (romel.djoumessi@gmail.com), entrepreneur individuel
+          immatriculé au Registre national des entreprises (RNE) sous le SIREN 109 761 023
+          (SIRET 109 761 023 00018, code APE 6201Z),
+          dont le siège est situé 71 rue de Rome, 13001 Marseille, France. Il est le
+          responsable du traitement des données décrites ci-dessous
+          (voir les <a href="/mentions-legales" style={{ color: '#6C47FF' }}>mentions légales</a>).
           L'application est accessible sur{' '}
           <a href={appUrl()}
             style={{ color: '#6C47FF' }}>

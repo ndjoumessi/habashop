@@ -8,10 +8,12 @@ import { PLANS, YEARLY_MONTHS } from '@/lib/plans'
  * ⚠️ CE DOCUMENT N'A PAS ÉTÉ RELU PAR UN JURISTE. Il a été rédigé à partir de ce que le
  * produit FAIT réellement (mesuré dans le code le 2026-08-15), pas d'un modèle générique :
  * essai de 14 jours (`routes/auth.ts`), tarifs de `lib/plans.ts`, statuts d'abonnement de
- * `spendGuard.ts`, suppression de compte de `services/accountDeletion.ts`. Les points qu'un
- * commerçant ne peut pas déduire du code — forme juridique, immatriculation, droit
- * applicable — sont marqués À COMPLÉTER et RENDUS VISIBLES : un document qui invente une
- * identité légale est pire que pas de document.
+ * `spendGuard.ts`, suppression de compte de `services/accountDeletion.ts`. Les points qu'on
+ * ne peut pas déduire du code sont marqués À COMPLÉTER et RENDUS VISIBLES : un document qui
+ * invente une identité légale est pire que pas de document. L'identité de l'éditeur (forme,
+ * immatriculation, siège) est renseignée depuis le 2026-09-12 à partir de l'attestation RNE ;
+ * ce qui reste à compléter est de l'ordre de la DÉCISION (TVA, délais, responsabilité, droit
+ * applicable), pas du fait.
  *
  * ⚠️ LES TARIFS NE SONT PAS RECOPIÉS ICI. Ils sont LUS dans `lib/plans.ts`, la source
  * unique — un prix écrit à la main dans des conditions de vente se périme au premier

@@ -165,13 +165,28 @@ export function isNotConfigured(err: unknown): err is PaymentNotConfiguredError 
   )
 }
 
+/**
+ * Adresse de contact PUBLIQUE de l'éditeur, renvoyée au commerçant dans les refus de paiement.
+ *
+ * ⚠️ C'était `contact@habashop.com` ICI et dans `routes/payments.ts` (jumeau) : le domaine
+ * n'a AUCUN enregistrement MX, la boîte ne reçoit rien. Un refus « contactez-nous » qui
+ * donne une adresse morte envoie le commerçant qui VEUT payer dans le vide — au moment
+ * précis où il tente de le faire.
+ *
+ * ⚠️ Littéral et non lecture de `docs/shared-fixtures/publisher.json` : le contexte Docker
+ * est `apps/backend` seul, la fixture n'existe pas dans l'image. L'égalité avec la fixture est
+ * verrouillée par les tests qui exercent les deux corps de réponse (`paymentProviderConfig`,
+ * `planCatalog`) — ils lisent la fixture à l'exécution, là où elle existe.
+ */
+export const PUBLISHER_CONTACT_EMAIL = 'romel.djoumessi@gmail.com'
+
 /** Corps de réponse unique des routes — même forme que QUOTE_ONLY_BODY. */
 export function notConfiguredBody(provider: ProviderId) {
   return {
     error: "Le paiement en ligne n'est pas encore actif pour ce moyen de paiement. Contactez-nous pour finaliser votre abonnement.",
     code: 'PAYMENT_NOT_CONFIGURED' as const,
     provider,
-    contactEmail: 'contact@habashop.com',
+    contactEmail: PUBLISHER_CONTACT_EMAIL,
   }
 }
 

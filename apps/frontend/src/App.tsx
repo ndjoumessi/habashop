@@ -40,6 +40,7 @@ const UpgradePlan    = lazy(() => import('@/pages/UpgradePlan'))
 const PaymentCallback = lazy(() => import('@/pages/PaymentCallback'))
 const Privacy        = lazy(() => import('@/pages/Privacy'))
 const Terms          = lazy(() => import('@/pages/Terms'))
+const LegalNotice    = lazy(() => import('@/pages/LegalNotice'))
 const PublicCatalog  = lazy(() => import('@/pages/PublicCatalog'))
 
 /**
@@ -176,6 +177,7 @@ export default function App() {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
+      <Route path="/mentions-legales" element={<LegalNotice />} />
       <Route path="/c/:slug" element={<PublicCatalog />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/select-shop" element={<ProtectedSelectShop />} />

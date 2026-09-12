@@ -1084,8 +1084,10 @@ Ce qui mord depuis l'EXTÉRIEUR, donc reste ici :
 
 📖 **À CONSULTER dès qu'on pose, lit ou renomme une variable — inventaire complet par plateforme (Railway, Vercel, EAS) : `docs/env-vars.md`.**
 ⚠️ **MIGRATION vers un domaine propre : `docs/handoff/2026-08-12-migration-domaine.md`** —
-inventaire MESURÉ (51 occurrences), ordre contraint par le **CORS en dur** de `server.ts`, et les
-4 plateformes hors dépôt. À lire AVANT de toucher une seule de ces variables.
+⚠️ `habashop.com` est PRIS (tiers, depuis 2001) : la phase 0 est un CHOIX de nom. Bascule du dépôt
+par `node scripts/migrer-domaine.mjs --to …` (périmètre dérivé, ancres assertées, échoue sur un
+fichier non classé) ; le CORS n'est plus en dur (`CORS_EXTRA_ORIGINS`). À lire AVANT de toucher
+une seule de ces variables.
 
 Ce qui mord depuis l'EXTÉRIEUR, donc reste ici :
 
