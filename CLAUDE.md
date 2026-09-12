@@ -1091,6 +1091,13 @@ Ce qui mord depuis l'EXTÉRIEUR, donc reste ici :
 
 - ⚠️ **`FRONTEND_URL` est la SOURCE UNIQUE de l'URL de l'app côté backend** (`lib/appUrl.ts`).
   **NE PAS créer un second nom type `APP_URL`** : `FRONTEND_URL` sert aussi la liste CORS.
+  ⚠️ **`CORS_EXTRA_ORIGINS` n'est PAS ce second nom — ne pas la « fondre » dans `FRONTEND_URL` :**
+  elle répond à « qui a le droit d'appeler l'API », pas « où vit l'app », et elle existe pour
+  qu'on autorise une origine **avant** de basculer `FRONTEND_URL`, sans redéploiement. Source
+  unique `lib/corsOrigins.ts`, qui **normalise comme `appBaseUrl`** : les deux lecteurs de
+  `FRONTEND_URL` divergeaient, et une barre oblique finale donnait des e-mails justes avec une
+  **application morte** (aucune correspondance d'`Origin`, tout refusé, écran vide sans erreur).
+  ⚠️ **Aucun joker** — `*.vercel.app` ouvrirait l'API au site de n'importe quel utilisateur de Vercel.
   **QUATRE lectures, UNE valeur** — `FRONTEND_URL` (Railway) · `VITE_APP_URL` (Vercel) ·
   `EXPO_PUBLIC_APP_URL` (EAS) · `src/lib/appUrl.ts` (front applicatif). Chaque plateforme a son
   environnement d'exécution ; les méta-tests verrouillent l'**ÉGALITÉ des défauts**.

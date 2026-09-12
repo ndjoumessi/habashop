@@ -36,12 +36,18 @@ describe('appUrl — la normalisation', () => {
     expect(appUrlHost()).not.toMatch(/^https?:/)
   })
 
-  it('sans EXPO_PUBLIC_APP_URL posée, l’app rend exactement l’ancien littéral', () => {
+  it('sans EXPO_PUBLIC_APP_URL posée, l’app rend le défaut du module — et RIEN d’autre', () => {
     // Neutralité : tant que la variable n'est pas posée dans l'environnement EAS, les tickets
-    // impriment ce qu'ils imprimaient hier. La centralisation ne change rien aujourd'hui ;
-    // elle rend le changement POSSIBLE demain, en un seul endroit.
-    expect(appUrl()).toBe('https://habashop.vercel.app')
-    expect(appUrlHost()).toBe('habashop.vercel.app')
+    // impriment ce qu'ils imprimaient hier.
+    //
+    // ⚠️ L'assertion DÉRIVE de `DEFAULT_APP_URL`, elle ne fige plus le littéral. Elle l'a figé,
+    // et c'est un défaut qui ne se voit que le jour où la valeur doit changer : au premier
+    // domaine propre, ce test rougissait en désignant le CHANGEMENT comme la faute. Ce qu'il a
+    // à garder, c'est « env absente ⇒ repli sur le défaut », pas la valeur du jour.
+    // La valeur, elle, est verrouillée ailleurs, et mieux : le méta-test ci-dessous la compare
+    // aux défauts du front et du backend — une valeur, quatre lectures.
+    expect(appUrl()).toBe(DEFAULT_APP_URL)
+    expect(appUrlHost()).toBe(DEFAULT_APP_URL.replace(/^https?:\/\//, ''))
   })
 })
 

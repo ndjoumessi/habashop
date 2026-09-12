@@ -9,6 +9,7 @@ import rateLimit from '@fastify/rate-limit'
 import { validatorCompiler } from 'fastify-type-provider-zod'
 import { errorHandler } from './lib/errorHandler'
 import { initTenantStore } from './lib/tenantContext'
+import { buildAllowedOrigins, isOriginAllowed } from './lib/corsOrigins'
 import { getAppVersion } from './lib/version'
 import * as Sentry from '@sentry/node'
 import { prisma } from './db'
@@ -118,17 +119,20 @@ async function start() {
   app.addHook('onRequest', (_req, _reply, done) => { initTenantStore(); done() })
 
   // ─── CORS ───────────────────────────────
-  const allowedOrigins = [
-    'https://habashop.vercel.app',
-    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
-  ]
-  // Localhost on any port is always allowed (dev only)
-  const isLocalhost = (origin: string) =>
-    /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/.test(origin)
+  // Liste construite par `lib/corsOrigins` : elle NORMALISE comme `appBaseUrl` (une
+  // `FRONTEND_URL` avec barre oblique finale ne matchait aucun en-tête `Origin` → écran
+  // vide), et `CORS_EXTRA_ORIGINS` permet d'autoriser une nouvelle origine AVANT de
+  // basculer `FRONTEND_URL`, sans redéploiement.
+  const { origins: allowedOrigins, rejected } = buildAllowedOrigins()
+  if (rejected.length) {
+    // Une entrée malformée produit le MÊME écran vide qu'un oubli : elle se dit, fort.
+    app.log.warn({ rejected }, 'CORS: entrees ignorees (origine invalide: schema manquant, chemin, ou joker)')
+  }
+  app.log.info({ allowedOrigins }, 'CORS: origines autorisees')
   await app.register(cors, {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true)
-      if (isLocalhost(origin) || allowedOrigins.includes(origin)) return cb(null, true)
+      if (isOriginAllowed(origin, allowedOrigins)) return cb(null, true)
       cb(new Error('CORS not allowed'), false)
     },
     credentials: true,
