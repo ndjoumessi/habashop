@@ -93,6 +93,32 @@ export function seedEcran(page: Page) {
       supplier: '', supplierId: null, barcode: '',
     }))
 
+    /**
+     * ⚠️ DATES D'ACTIVITÉ RELATIVES À AUJOURD'HUI — jamais un jour du calendrier écrit en dur.
+     *
+     * Ce harnais datait ses ventes du 8 au 14 AOÛT 2026. L'écran Rapports ouvre sur les
+     * « 30 derniers jours » (`PRESET_DEFAUT`, `lib/dateRange.ts`) : vers le 8 septembre, toutes
+     * les ventes sont SORTIES de la fenêtre, l'écran a rendu son état vide, et le workflow
+     * densité a rougi (« anneau non monté ») sur un commit qui ne touchait à aucun graphique.
+     * Le code n'avait pas bougé ; c'est le CALENDRIER qui avait avancé.
+     *
+     * Une fixture datée en dur est une bombe à retardement : elle décrit « récemment » un jour
+     * qui ne l'est plus. Le dépôt interdit déjà le littéral `new Date('…')` dans le produit
+     * (« Date now : param injectable ») ; la même règle vaut pour les données de test qui
+     * alimentent un écran filtré par période. Les dates qui ne SONT PAS de l'activité (embauches
+     * 2025, promotion en 2099, horodatage de mesure Resend) restent fixes : aucune fenêtre ne
+     * les juge.
+     *
+     * Défini ICI, dans la fonction passée à `addInitScript` : elle est sérialisée dans la page,
+     * aucune variable du fichier n'y survit.
+     */
+    const ilYa = (jours: number, heure = 10, minute = 0, seconde = 0) => {
+      const d = new Date()
+      d.setDate(d.getDate() - jours)
+      d.setHours(heure, minute, seconde, 0)
+      return d.toISOString()
+    }
+
     // ── 2. Le réseau. Réponse par DÉFAUT = liste vide, jamais une erreur.
     const vrai = window.fetch.bind(window)
     window.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
@@ -137,7 +163,7 @@ export function seedEcran(page: Page) {
         return json(Array.from({ length: 12 }, (_, k) => ({
           id: `c-${k + 1}`, name: `Cliente témoin ${k + 1}`, phone: `+2376${String(10000000 + k)}`,
           email: null, address: 'Quartier témoin', points: k * 37, totalSpent: k * 12500,
-          visits: k + 1, createdAt: new Date(2026, 6, 1 + k).toISOString(), lastVisit: new Date(2026, 7, 1).toISOString(),
+          visits: k + 1, createdAt: ilYa(60 - k), lastVisit: ilYa(3),
         })))
       }
       if (url.includes('/api/suppliers')) {
@@ -153,7 +179,7 @@ export function seedEcran(page: Page) {
           supplier: { id: 'f-1', name: 'Fournisseur témoin 1', categories: 'Épicerie', leadTime: 3 },
           status: ['pending', 'confirmed', 'received'][k % 3], total: (k + 1) * 45000,
           items: [{ productId: 'p-1', productName: 'Produit témoin 001 800g', quantity: 4, unitPrice: 1200 }],
-          createdAt: new Date(2026, 7, 1 + k).toISOString(), expectedAt: null,
+          createdAt: ilYa(9 - k), expectedAt: null,
         })))
       }
       if (url.includes('/api/employees')) {
@@ -167,7 +193,7 @@ export function seedEcran(page: Page) {
       if (url.includes('/api/expenses')) {
         return json(Array.from({ length: 10 }, (_, k) => ({
           id: `d-${k + 1}`, label: `Dépense témoin ${k + 1}`, category: 'Loyer',
-          amount: (k + 1) * 15000, date: new Date(2026, 7, 1 + k).toISOString(),
+          amount: (k + 1) * 15000, date: ilYa(k),
           supplier: null, notes: null, recurring: false,
         })))
       }
@@ -175,14 +201,14 @@ export function seedEcran(page: Page) {
         return json(Array.from({ length: 4 }, (_, k) => ({
           id: `g-${k + 1}`, label: `Objectif témoin ${k + 1}`, target: 500000 * (k + 1),
           current: 200000 * (k + 1), period: 'month', kind: 'revenue',
-          createdAt: new Date(2026, 7, 1).toISOString(),
+          createdAt: ilYa(20),
         })))
       }
       if (url.includes('/api/sales')) {
         return json(Array.from({ length: 15 }, (_, k) => ({
           id: `v-${k + 1}`, total: (k + 1) * 3200, payMode: ['cash', 'wave', 'card', 'orange', 'mtn'][k % 5],
           items: [{ productId: 'p-1', productName: 'Produit témoin 001 800g', quantity: 2, unitPrice: 1200 }],
-          createdAt: new Date(2026, 7, 10, 8 + (k % 10)).toISOString(), status: 'completed',
+          createdAt: ilYa(2, 8 + (k % 10)), status: 'completed',
           customerId: null, discount: 0, priceDivergence: false,
         })))
       }
@@ -212,7 +238,7 @@ export function seedEcran(page: Page) {
        * l'absence d'écran.
        */
       if (url.includes('/api/reports/sales')) {
-        const jour = (k: number) => new Date(2026, 7, 8 + k).toISOString()
+        const jour = (k: number) => ilYa(6 - k) // les 7 derniers jours — toujours dans la fenêtre par défaut
         return json({
           sales: Array.from({ length: 7 }, (_, k) => ({
             id: `v-${k + 1}`, createdAt: jour(k), total: 90_000 + k * 15_000,
@@ -264,7 +290,7 @@ export function seedEcran(page: Page) {
               description: neuve?.description ?? JSON.stringify({ currency: { avant: 'XOF', apres: 'XAF' } }),
               severity: k % 25 === 0 ? 'danger' : 'info',
               ip: '127.0.0.1',
-              createdAt: new Date(2026, 7, 12, 9, 0, k).toISOString(),
+              createdAt: ilYa(1, 9, 0, k),
               user: { name: 'Témoin' },
             }
           }),
@@ -294,7 +320,7 @@ export function seedEcran(page: Page) {
       if (url.includes('/api/account/security-activity')) {
         return json([
           { id: 'sec-1', action: 'PASSWORD_CHANGE', description: 'Mot de passe modifié',
-            ip: '127.0.0.1', severity: 'info', createdAt: new Date(2026, 7, 11, 8, 30).toISOString() },
+            ip: '127.0.0.1', severity: 'info', createdAt: ilYa(2, 8, 30) },
         ])
       }
       if (url.includes('/api/billing/status')) {
