@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, useAbbrevAmount, useAppStore, convertFromXOF, t } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
@@ -16,11 +16,13 @@ import Pagination from '@/components/ui/Pagination'
 import Skeleton from '@/components/ui/skeleton'
 import { usePagination } from '@/hooks/usePagination'
 
-import CustomerMap from '@/components/customers/CustomerMap'
+import { geocoderAdresses } from '@/lib/geo'
+// ⚠️ PARESSEUSE : Leaflet (tuiles, CSS) n'entre dans le bundle que pour l'onglet Carte.
+const CustomerMap = lazy(() => import('@/components/customers/CustomerMap'))
 import CustomersList from '@/components/customers/CustomersList'
 import CustomersStats from '@/components/customers/CustomersStats'
 import CustomersModals from '@/components/customers/CustomersModals'
-import { type ClientType, type Customer, type CustomerForm, type EditCustomerForm, mapApiCustomer, clientTypeToValue, useGoogleMaps, GMAPS_KEY, AmountCur } from '@/components/customers/customersShared'
+import { type ClientType, type Customer, type CustomerForm, type EditCustomerForm, mapApiCustomer, clientTypeToValue, AmountCur } from '@/components/customers/customersShared'
 
 export default function Customers() {
   const { lang } = useConfig()
@@ -90,40 +92,51 @@ export default function Customers() {
   const [geoPositions, setGeoPositions] = useState<Record<string, { lat: number; lng: number }>>({})
   const [geocoding, setGeocoding]       = useState(false)
 
-  const { loaded: mapsLoaded } = useGoogleMaps(GMAPS_KEY)
-
+  /**
+   * GÉOCODAGE DES FICHES — OpenStreetMap (Photon), via `lib/geo.ts`.
+   *
+   * ⚠️ L'ANCIEN CODE ÉTAIT UNE RAFALE : cinq requêtes Google en parallèle, 300 ms de pause,
+   * AUCUN cache, rejouées à CHAQUE ouverture de l'onglet et à chaque changement de la liste.
+   * Chez Google cela coûtait en silence ; chez un fournisseur communautaire, les règles
+   * d'usage le disent sans détour — « Results must be cached on your side. Clients sending
+   * repeatedly the same query may be classified as faulty and blocked. »
+   * Désormais : cache persistant (une adresse connue ne coûte aucune requête), une requête
+   * réseau par seconde au plus, résultats PROGRESSIFS (un marqueur apparaît dès qu'il est
+   * trouvé, au lieu d'un écran bloqué jusqu'à la fin), et la passe précédente est ANNULÉE
+   * quand on quitte l'onglet ou qu'une nouvelle passe démarre.
+   */
+  const passeGeo = useRef<AbortController | null>(null)
   const geocodeCustomers = useCallback(async (customerList: any[]) => {
-    const google = (window as any).google
-    if (!google?.maps?.Geocoder) return
+    passeGeo.current?.abort()
+    const ctrl = new AbortController()
+    passeGeo.current = ctrl
+    const aTraiter = customerList
+      .filter(c => (c.address ?? '').trim().length > 3)
+      .map(c => ({ id: String(c.id), adresse: String(c.address) }))
+    if (aTraiter.length === 0) return
     setGeocoding(true)
-    const geocoder = new google.maps.Geocoder()
-    const results: Record<string, { lat: number; lng: number }> = {}
-    const withAddress = customerList.filter(c => c.address && c.address.trim().length > 3)
-    const batchSize = 5
-    for (let i = 0; i < withAddress.length; i += batchSize) {
-      const batch = withAddress.slice(i, i + batchSize)
-      await Promise.all(batch.map(async (c) => {
-        try {
-          const res = await new Promise<any>((resolve, reject) => {
-            geocoder.geocode({ address: c.address }, (r: any[], status: string) => {
-              if (status === 'OK' && r[0]) resolve(r[0])
-              else reject(new Error(status))
-            })
+    try {
+      await geocoderAdresses(aTraiter, {
+        lang, signal: ctrl.signal,
+        onProgres: (id, r) => {
+          if (ctrl.signal.aborted) return
+          setGeoPositions(prev => {
+            if (r.etat === 'trouve') return { ...prev, [id]: r.pos }
+            if (!(id in prev)) return prev
+            const { [id]: _retire, ...reste } = prev
+            return reste
           })
-          results[c.id] = { lat: res.geometry.location.lat(), lng: res.geometry.location.lng() }
-        } catch {}
-      }))
-      if (i + batchSize < withAddress.length) await new Promise(r => setTimeout(r, 300))
+        },
+      })
+    } finally {
+      if (passeGeo.current === ctrl) { passeGeo.current = null; setGeocoding(false) }
     }
-    setGeoPositions(results)
-    setGeocoding(false)
-  }, [])
+  }, [lang])
 
   useEffect(() => {
-    if (mapsLoaded && customers.length > 0 && customersTab === 'map') {
-      geocodeCustomers(customers)
-    }
-  }, [mapsLoaded, customers, customersTab, geocodeCustomers])
+    if (customers.length > 0 && customersTab === 'map') geocodeCustomers(customers)
+    return () => { passeGeo.current?.abort() }
+  }, [customers, customersTab, geocodeCustomers])
 
   const filtered = customers.filter(c =>
     (!search || c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search)) &&
@@ -381,7 +394,7 @@ export default function Customers() {
         />
       )}
 
-      {/* ── Onglet Carte — Google Maps ── */}
+      {/* ── Onglet Carte — OpenStreetMap ── */}
       {customersTab === 'map' && (
         <div className="animate-in">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
@@ -399,44 +412,60 @@ export default function Customers() {
             </div>
             <button
               onClick={() => geocodeCustomers(customers)}
-              disabled={geocoding || !mapsLoaded}
+              disabled={geocoding}
               style={{
                 padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border)',
                 background: 'var(--bg3)', color: 'var(--text2)', fontSize: 'var(--fs-label)', fontWeight: 'var(--fw-semibold)',
-                cursor: geocoding || !mapsLoaded ? 'not-allowed' : 'pointer',
+                cursor: geocoding ? 'not-allowed' : 'pointer',
                 fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 6,
-                opacity: geocoding || !mapsLoaded ? .6 : 1, transition: 'opacity .15s',
+                opacity: geocoding ? .6 : 1, transition: 'opacity .15s',
               }}>
               <MapPin size={12} />
               {geocoding ? i('Localisation…', 'Locating…', 'Localizando…', 'Localizzazione…') : i('Actualiser', 'Refresh', 'Actualizar', 'Aggiorna')}
             </button>
           </div>
 
-          <CustomerMap
-            customers={customers}
-            geoPositions={geoPositions}
-            geocoding={geocoding}
-            mapsLoaded={mapsLoaded}
-            fmt={fmt}
-            lang={lang}
-            navigate={navigate}
-            onOpenDetail={c => { setDetailCustomer(c); setShowDetailModal(true) }}
-          />
+          <Suspense fallback={<div style={{ height: 640, borderRadius: 20, border: '1px solid var(--border)', background: 'var(--bg2)' }} />}>
+            <CustomerMap
+              customers={customers}
+              geoPositions={geoPositions}
+              geocoding={geocoding}
+              fmt={fmt}
+              lang={lang}
+              navigate={navigate}
+              onOpenDetail={c => { setDetailCustomer(c); setShowDetailModal(true) }}
+            />
+          </Suspense>
 
-          {customers.filter(c => !geoPositions[c.id]).length > 0 && (
-            <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <AlertTriangle size={13} style={{flexShrink:0}} /> {i('Clients sans adresse', 'Customers without address', 'Clientes sin dirección', 'Clienti senza indirizzo')} ({customers.filter(c => !geoPositions[c.id]).length}) — {i('non affichés sur la carte', 'not shown on the map', 'no mostrados en el mapa', 'non mostrati sulla mappa')}
+          {/* ⚠️ DEUX listes, jamais une. « Clients sans adresse » rangeait là TOUT client absent
+              de la carte — y compris ceux dont l'adresse existe mais n'a pas été trouvée. Le
+              geste attendu du commerçant n'est pas le même : SAISIR une adresse, ou la PRÉCISER. */}
+          {(() => {
+            const sansAdresse = customers.filter(c => !(c.address ?? '').trim())
+            const nonTrouves  = geocoding ? [] : customers.filter(c => (c.address ?? '').trim() && !geoPositions[c.id])
+            const bloc = (liste: any[], titre: string, suite: string) => liste.length === 0 ? null : (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <AlertTriangle size={13} style={{flexShrink:0}} /> {titre} ({liste.length}) — {suite}
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {liste.map(c => (
+                    <span key={c.id} style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', padding: '4px 10px', borderRadius: 99, background: 'rgba(255,184,0,.08)', border: '1px solid rgba(255,184,0,.2)', color: 'var(--warn)' }}>
+                      {c.name}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {customers.filter(c => !geoPositions[c.id]).map(c => (
-                  <span key={c.id} style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', padding: '4px 10px', borderRadius: 99, background: 'rgba(255,184,0,.08)', border: '1px solid rgba(255,184,0,.2)', color: 'var(--warn)' }}>
-                    {c.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+            )
+            return (
+              <>
+                {bloc(sansAdresse, i('Clients sans adresse', 'Customers without address', 'Clientes sin dirección', 'Clienti senza indirizzo'),
+                  i('non affichés sur la carte', 'not shown on the map', 'no mostrados en el mapa', 'non mostrati sulla mappa'))}
+                {bloc(nonTrouves, i('Adresse introuvable sur la carte', 'Address not found on the map', 'Dirección no encontrada en el mapa', 'Indirizzo non trovato sulla mappa'),
+                  i('à préciser (rue, quartier, ville)', 'add detail (street, district, city)', 'precisar (calle, barrio, ciudad)', 'da precisare (via, quartiere, città)'))}
+              </>
+            )
+          })()}
         </div>
       )}
 

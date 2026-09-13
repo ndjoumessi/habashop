@@ -801,25 +801,48 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
   .settings-grid { grid-template-columns:1fr !important }
 }
 
-/* ── Popup carte clients (Google Maps InfoWindow) — style HabaShop sombre ──
-   On neutralise la bulle blanche par défaut de Google ; le contenu (div sombre
-   injecté par CustomerMap) fournit tout le style. */
-.gm-style .gm-style-iw-c {
-  padding: 0 !important;
-  background: transparent !important;
-  box-shadow: 0 20px 60px rgba(0,0,0,.6) !important;
-  border-radius: 14px !important;
-  max-width: none !important;
+/* ── Carte clients — OpenStreetMap / Leaflet (remplace Google Maps, 2026-09-13) ──
+   ⚠️ ÉCRIT À LA MAIN : tailwind n'émet rien ici (cf. SÉLECTEURS DE DATE ci-dessous). */
+.hs-map.leaflet-container { font-family: var(--font), system-ui, sans-serif; }
+
+/* THÈME SOMBRE — les tuiles OSM ne se restylent pas comme le JSON de Google : on filtre le
+   SEUL panneau de tuiles. Marqueurs, popups et attribution vivent dans d'autres panneaux et
+   gardent leurs vraies couleurs. ⚠️ Ne pas élargir le sélecteur à `.leaflet-container` : les
+   marqueurs s'inverseraient, et un violet de palier deviendrait un vert. */
+.hs-map-dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.9) contrast(.9); }
+
+/* ATTRIBUTION — OBLIGATOIRE (licence ODbL) : lisible dans les deux thèmes, jamais masquée.
+   ⚠️ SPÉCIFICITÉ RELEVÉE (`.hs-map.leaflet-container …`), et c'est mesuré à l'écran :
+   `leaflet.css` est chargé APRÈS `index.css` (il vit dans le chunk paresseux), et à
+   spécificité égale c'est l'ORDRE qui gagne. La première version, `.hs-map-dark
+   .leaflet-control-attribution`, était donc ÉCRASÉE : bande blanche, texte pâle, attribution
+   quasi illisible — alors que la politique exige de l'afficher « clearly ». La source était
+   juste, l'artefact ne l'appliquait pas. */
+.hs-map.leaflet-container .leaflet-control-attribution { font-size: 11px; background: rgba(255,255,255,.92); color: #1F2433; }
+.hs-map.leaflet-container .leaflet-control-attribution a { color: #3B2BC4; }
+.hs-map.hs-map-dark.leaflet-container .leaflet-control-attribution { background: rgba(10,12,20,.88); color: #D5D9E6; }
+.hs-map.hs-map-dark.leaflet-container .leaflet-control-attribution a { color: #B9A8FF; }
+
+/* Marqueur : `divIcon` sans le cadre blanc par défaut de Leaflet. */
+.hs-marker { background: transparent; border: none; }
+.hs-marker img { display: block; }
+@keyframes hs-rebond { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } }
+/* ⚠️ L'animation porte sur l'<img> INTÉRIEURE : Leaflet positionne le marqueur par
+   `transform` sur l'élément extérieur — animer celui-là le téléporterait. */
+.hs-marker-rebond { animation: hs-rebond .4s ease; }
+@media (prefers-reduced-motion: reduce) { .hs-marker-rebond { animation: none; } }
+
+/* Popup : le contenu (div injecté par CustomerMap) fournit tout le style. */
+.hs-map-popup .leaflet-popup-content-wrapper {
+  padding: 0; background: transparent; border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
 }
-.gm-style .gm-style-iw-d {
-  overflow: hidden !important;
-  padding: 0 !important;
-  max-width: none !important;
-}
-/* Masque la pointe blanche et la croix de fermeture par défaut
-   (fermeture via clic sur la carte ou ouverture d'un autre marqueur). */
-.gm-style .gm-style-iw-tc { display: none !important; }
-.gm-style .gm-style-iw-c button.gm-ui-hover-effect { display: none !important; }
+.hs-map-popup .leaflet-popup-content { margin: 0; line-height: normal; }
+.hs-map-popup .leaflet-popup-tip-container { display: none; }
+/* La croix de fermeture est CONSERVÉE (Google la masquait) : c'est le seul moyen de fermer
+   le popup au clavier. Blanche, sur l'en-tête coloré. */
+/* ⚠️ Même piège d'ordre : `leaflet.css` porte `.leaflet-container a.leaflet-popup-close-button`. */
+.leaflet-container .hs-map-popup a.leaflet-popup-close-button { color: #fff; top: 6px; right: 6px; font-size: 18px; }
 
 /* ══════════════════════════════════════════════════════════════════════════════
    SÉLECTEURS DE DATE (components/ui/DatePicker.tsx)

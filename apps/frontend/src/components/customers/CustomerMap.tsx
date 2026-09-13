@@ -1,14 +1,38 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { Search, Eye, X, ShoppingCart, MapPin, Navigation2, Globe, Flame } from 'lucide-react'
-import { type GeoCustomer, getMapStyle, MAP_BG, createMarkerIcon, getMapCfg, typeLabel, GMAPS_KEY } from '@/components/customers/customersShared'
-import { useAppStore } from '@/stores/appStore'
+import { type GeoCustomer, MAP_BG, markerIconSvg, getMapCfg, typeLabel } from '@/components/customers/customersShared'
+import { useAppStore, isThemeLight } from '@/stores/appStore'
 import { escHtml } from '@/lib/html'
+import { TILE_URL, TILE_ATTRIBUTION, lienCarte } from '@/lib/geo'
 
-// Couleurs (hex) par type — utilisées dans le HTML du popup InfoWindow,
-// où les `var(--…)` ne peuvent pas servir au calcul d'alpha (`${color}40`).
-const POPUP_HEX: Record<string, string> = {
-  Grossiste: '#6C47FF', 'Semi-gros': '#00B8FF', 'Fidèle': '#00D084', 'Détail': '#FF9500',
-}
+/**
+ * CARTE DES CLIENTS — OpenStreetMap via Leaflet (remplace Google Maps le 2026-09-13).
+ *
+ * ⚠️ CHARGÉE PARESSEUSEMENT par `Customers.tsx` : Leaflet n'entre dans le bundle que pour
+ * l'onglet Carte. Google chargeait son script à CHAQUE ouverture de la page Clients.
+ *
+ * ⚠️ Ce qui change par nature, pas par choix :
+ *   · THÈME — les tuiles OSM ne se restylent pas comme le JSON de Google. Le sombre est un
+ *     filtre CSS sur le SEUL panneau de tuiles (`.hs-map-dark .leaflet-tile-pane`) : marqueurs
+ *     et popups gardent leurs vraies couleurs. Plus aucune réinitialisation au changement de
+ *     thème — le compteur `mapVersion` qui détruisait et recréait la carte disparaît.
+ *   · CARTE DE CHALEUR — `HeatmapLayer` était une bibliothèque Google. Le seul équivalent
+ *     Leaflet (`leaflet.heat`) n'est plus maintenu depuis 2015 et patche l'objet global : on
+ *     rend la densité par des cercles translucides superposés — plus foncé là où les clients
+ *     se concentrent. Honnête, sans dépendance, mais ce n'est pas un dégradé flouté.
+ *   · ATTRIBUTION — OBLIGATOIRE (licence ODbL), en bas à droite, jamais sous un contrôle.
+ */
+
+/**
+ * Centre de repli quand aucun client n'est localisé. ⚠️ C'est DAKAR, repris tel quel de
+ * l'implémentation Google : le marché par défaut du produit est désormais le Cameroun
+ * (`defaultMarket.ts`). Laissé en l'état pour ne changer QU'UNE chose dans cette migration —
+ * à dériver du pays de la boutique, dette écrite plutôt que masquée.
+ */
+const CENTRE_REPLI: [number, number] = [14.6928, -17.4467]
+
 // Échappe le contenu utilisateur injecté dans le HTML du popup (anti-XSS).
 // ⚠️ CETTE COPIE ÉTAIT LA DIVERGENTE : elle couvrait `& < > "` mais PAS l'apostrophe,
 // celle qui permet de sortir d'un attribut en guillemets simples. Sept copies de la
@@ -16,12 +40,11 @@ const POPUP_HEX: Record<string, string> = {
 const esc = escHtml
 
 export default function CustomerMap({
-  customers, geoPositions, geocoding, mapsLoaded, fmt, lang, navigate, onOpenDetail,
+  customers, geoPositions, geocoding, fmt, lang, navigate, onOpenDetail,
 }: {
   customers:    any[]
   geoPositions: Record<string, { lat: number; lng: number }>
   geocoding:    boolean
-  mapsLoaded:   boolean
   fmt:          (v: number) => string
   lang:         string
   navigate:     any
@@ -29,37 +52,55 @@ export default function CustomerMap({
 }) {
   const theme       = useAppStore(s => s.theme)
   const mapRef      = useRef<HTMLDivElement>(null)
-  const mapObj      = useRef<any>(null)
-  const markersRef  = useRef<any[]>([])
-  const heatLayer   = useRef<any>(null)
-  const infoWin     = useRef<any>(null)
+  const mapObj      = useRef<L.Map | null>(null)
+  const marqueurs   = useRef<L.LayerGroup | null>(null)
+  const chaleur     = useRef<L.LayerGroup | null>(null)
+  // ⚠️ Par IDENTIFIANT. L'ancien code retrouvait le marqueur par `getTitle() === customer.name` :
+  // deux clients homonymes, et le clic sur le second ouvrait la fiche du premier.
+  const parId       = useRef(new Map<string, L.Marker>())
+  // Dernier `onOpenDetail` : le bouton du popup est câblé une fois, la prop peut changer.
+  const ouvrirFiche = useRef(onOpenDetail)
+  ouvrirFiche.current = onOpenDetail
   const [mapReady,  setMapReady]  = useState(false)
   const [selected,  setSelected]  = useState<any>(null)
   const [filter,    setFilter]    = useState('all')
   const [search,    setSearch]    = useState('')
   const [showHeat,  setShowHeat]  = useState(false)
-  const [mapVersion, setMapVersion] = useState(0)
 
-  const geoCustomers: GeoCustomer[] = customers
+  /**
+   * ⚠️ MÉMORISÉES — et c'est un défaut vu à l'ÉCRAN, pas en relisant.
+   * `visibleList` était recalculée à chaque rendu (un tableau NEUF), donc l'effet qui place les
+   * marqueurs, qui en dépend, se REJOUAIT à chaque rendu. Cliquer un marqueur appelle
+   * `setSelected` → nouveau rendu → tous les marqueurs détruits et recréés → le popup tout juste
+   * ouvert se FERMAIT et la vue se recadrait. Le test d'écran passait pourtant : il lisait le
+   * popup dans la milliseconde qui précédait ce rendu. C'est la capture qui l'a montré.
+   */
+  const geoCustomers: GeoCustomer[] = useMemo(() => customers
     .filter(c => geoPositions[c.id])
-    .map(c => ({ customer: c, pos: geoPositions[c.id] }))
+    .map(c => ({ customer: c, pos: geoPositions[c.id] })), [customers, geoPositions])
 
-  const visibleList = geoCustomers.filter(gc => {
+  const visibleList = useMemo(() => geoCustomers.filter(gc => {
     const matchType   = filter === 'all' || gc.customer.type === filter
     const matchSearch = !search || (gc.customer.name ?? '').toLowerCase().includes(search.toLowerCase())
     return matchType && matchSearch
-  })
+  }), [geoCustomers, filter, search])
 
-  const L = (fr: string, en: string, es: string, it: string) =>
+  // ⚠️ `tr`, PAS `L` : ce nom local masquait l'import Leaflet (tsc l'a signalé).
+  const tr = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
 
-  // HTML du popup premium (InfoWindow Google Maps) au clic sur un marqueur.
+  // HTML du popup premium au clic sur un marqueur (popup Leaflet, DOM de la page).
   const buildPopupHtml = (c: any): string => {
-    const color    = POPUP_HEX[c.type] ?? '#6C47FF'
+    // ⚠️ La couleur du popup est CELLE DU MARQUEUR, lue dans la source unique des paliers.
+    // Une table `POPUP_HEX` à part divergeait sur DEUX paliers sur quatre (Détail orange au
+    // popup, bleu au marqueur ; Semi-gros bleu contre ambre) : on cliquait une punaise bleue et
+    // un encart orange s'ouvrait. Vu sur une capture, le 2026-09-13. `CouleurTier` garantit un
+    // #hex, donc l'alpha concaténée (`${color}40`) reste une couleur VALIDE.
+    const color    = getMapCfg(c.type ?? 'Détail').color
     const initials = (c.name ?? '?').split(' ').map((n: string) => n[0] ?? '').join('').slice(0, 2).toUpperCase()
     const totalCA  = Number(c.totalRevenue ?? c.totalCA ?? 0)
     const loyalty  = Number(c.loyaltyPoints ?? 0)
-    const mapsUrl  = `https://maps.google.com/maps?q=${encodeURIComponent(c.address ?? '')}`
+    const mapsUrl  = lienCarte(c.address ?? '')
     return `
   <div style="font-family:var(--font),-apple-system,BlinkMacSystemFont,sans-serif;background:var(--card);border:1px solid ${color}40;border-radius:14px;min-width:240px;max-width:280px;overflow:hidden;">
     <div style="background:linear-gradient(135deg,${color},${color}CC);padding:14px 16px;display:flex;align-items:center;gap:10px;">
@@ -77,11 +118,11 @@ export default function CustomerMap({
       </div>` : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;">
-          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">${L('CA Total', 'Total rev.', 'Ing. total', 'Fatt. tot.')}</div>
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">${tr('CA Total', 'Total rev.', 'Ing. total', 'Fatt. tot.')}</div>
           <div style="font-size:13px;font-weight:var(--fw-semibold);color:#FF9500;font-family:var(--mono),monospace;">${esc(fmt(totalCA))}</div>
         </div>
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;">
-          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">${L('Fidélité', 'Loyalty', 'Fidelidad', 'Fedeltà')}</div>
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">${tr('Fidélité', 'Loyalty', 'Fidelidad', 'Fedeltà')}</div>
           <div style="font-size:13px;font-weight:var(--fw-semibold);color:#00D084;font-family:var(--mono),monospace;">${loyalty} pts</div>
         </div>
       </div>
@@ -92,128 +133,118 @@ export default function CustomerMap({
       <div style="display:flex;gap:6px;">
         <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:${color}20;border:1px solid ${color}40;border-radius:8px;font-size:11px;font-weight:var(--fw-regular);color:${color};text-decoration:none;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          Google Maps
+          OpenStreetMap
         </a>
-        <button id="iw-detail-${esc(c.id)}" type="button" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:${color};border:none;border-radius:8px;font-size:11px;font-weight:var(--fw-semibold);color:#fff;cursor:pointer;">
+        <button data-iw-detail type="button" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:${color};border:none;border-radius:8px;font-size:11px;font-weight:var(--fw-semibold);color:#fff;cursor:pointer;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-          ${L('Voir fiche', 'View', 'Ver', 'Vedi')}
+          ${tr('Voir fiche', 'View', 'Ver', 'Vedi')}
         </button>
       </div>
     </div>
   </div>`
   }
 
-  // Ouvre le popup premium sur un marqueur + relie le bouton "Voir fiche".
-  const openInfoWindow = (customer: any, marker: any) => {
-    const google = (window as any).google
-    if (!google?.maps) return
-    if (!infoWin.current) infoWin.current = new google.maps.InfoWindow()
-    infoWin.current.setContent(buildPopupHtml(customer))
-    infoWin.current.open({ map: mapObj.current, anchor: marker })
-    google.maps.event.addListenerOnce(infoWin.current, 'domready', () => {
-      const btn = document.getElementById(`iw-detail-${customer.id}`)
-      if (btn) (btn as HTMLElement).onclick = () => { infoWin.current?.close(); onOpenDetail(customer) }
-    })
+  const rebond = (m: L.Marker, ms: number) => {
+    const img = m.getElement()?.querySelector('img')
+    if (!img) return
+    img.classList.remove('hs-marker-rebond'); void img.offsetWidth
+    img.classList.add('hs-marker-rebond')
+    setTimeout(() => img.classList.remove('hs-marker-rebond'), ms)
   }
 
-  // Init map
-  useEffect(() => {
-    if (!mapsLoaded || !mapRef.current || mapObj.current) return
-    const google = (window as any).google
-    if (!google?.maps) return
-    const map = new google.maps.Map(mapRef.current, {
-      zoom: 6, center: { lat: 14.6928, lng: -17.4467 },
-      mapTypeId: 'roadmap', styles: getMapStyle(theme),
-      disableDefaultUI: true, zoomControl: true, fullscreenControl: true,
-      backgroundColor: MAP_BG(theme),
+  // Ouvre le popup premium sur un marqueur + relie le bouton "Voir fiche".
+  const openInfoWindow = (customer: any, marker: L.Marker) => {
+    marker.unbindPopup()
+    marker.bindPopup(buildPopupHtml(customer), {
+      className: 'hs-map-popup', minWidth: 240, maxWidth: 300, closeButton: true,
+      autoPanPaddingTopLeft: L.point(20, 20),
     })
-    mapObj.current = map
-    map.addListener('click', () => { setSelected(null); infoWin.current?.close() })
-    setMapReady(true)
-  }, [mapsLoaded, mapVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+    marker.openPopup()
+    // Le DOM du popup existe dès `openPopup` : câblage synchrone, pas d'événement à attendre.
+    const btn = marker.getPopup()?.getElement()?.querySelector<HTMLButtonElement>('[data-iw-detail]')
+    if (btn) btn.onclick = () => { mapObj.current?.closePopup(); ouvrirFiche.current(customer) }
+  }
 
-  // setOptions({ styles }) n'est pas fiable pour changer les tuiles → réinitialisation complète.
+  // Init carte — UNE fois. Plus de réinitialisation au changement de thème (cf. en-tête).
   useEffect(() => {
-    if (!mapObj.current) return
-    markersRef.current.forEach(m => m.setMap(null))
-    markersRef.current = []
-    heatLayer.current?.setMap(null)
-    infoWin.current?.close()
-    infoWin.current = null
-    mapObj.current = null
-    setMapReady(false)
-    setMapVersion(v => v + 1)
-  }, [theme])
+    if (!mapRef.current || mapObj.current) return
+    const map = L.map(mapRef.current, { center: CENTRE_REPLI, zoom: 6, zoomControl: true, attributionControl: true })
+    L.tileLayer(TILE_URL, { maxZoom: 19, attribution: TILE_ATTRIBUTION }).addTo(map)
+    map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener noreferrer">Leaflet</a>')
+    marqueurs.current = L.layerGroup().addTo(map)
+    chaleur.current   = L.layerGroup().addTo(map)
+    map.on('click', () => { setSelected(null); map.closePopup() })
+    mapObj.current = map
+    // Le conteneur peut être mesuré avant la fin de la mise en page de l'onglet.
+    const t = setTimeout(() => map.invalidateSize(), 0)
+    setMapReady(true)
+    return () => { clearTimeout(t); map.remove(); mapObj.current = null; setMapReady(false) }
+  }, [])
 
   // Place markers
   useEffect(() => {
-    if (!mapReady || !mapObj.current) return
-    const google = (window as any).google
-    if (!google?.maps) return
+    const map = mapObj.current
+    if (!mapReady || !map || !marqueurs.current || !chaleur.current) return
+    marqueurs.current.clearLayers()
+    chaleur.current.clearLayers()
+    parId.current.clear()
 
-    markersRef.current.forEach(m => m.setMap(null))
-    markersRef.current = []
-
-    const bounds = new google.maps.LatLngBounds()
-    let hasAny = false
-
+    const bounds = L.latLngBounds([])
     visibleList.forEach(({ customer, pos }) => {
       const cfg     = getMapCfg(customer.type ?? 'Détail')
       const totalCA = Number(customer.totalRevenue ?? customer.totalCA ?? 0)
       const isVIP   = totalCA >= 1_000_000
       const size    = isVIP ? 46 : totalCA > 500_000 ? 38 : 30
       const initials = (customer.name ?? '?').split(' ').map((n: string) => n[0] ?? '').join('').slice(0, 2).toUpperCase()
-      const icon = createMarkerIcon(google, cfg.color, size, initials)
-
-      const marker = new google.maps.Marker({
-        position: pos, map: mapObj.current, icon,
-        title: customer.name,
-        zIndex: isVIP ? 20 : totalCA > 500_000 ? 10 : 1,
+      const ic = markerIconSvg(cfg.color, size, initials)
+      // ⚠️ `ic.url` est une data-URI déjà encodée par `encodeURIComponent` : elle ne peut
+      // contenir ni guillemet ni chevron, donc l'attribut `src` ne peut pas être rompu.
+      const icon = L.divIcon({
+        className: 'hs-marker',
+        html: `<img src="${ic.url}" width="${ic.width}" height="${ic.height}" alt="" draggable="false">`,
+        iconSize: [ic.width, ic.height], iconAnchor: [ic.width / 2, ic.height], popupAnchor: [0, -ic.height],
       })
-
-      marker.addListener('mouseover', () => {
-        marker.setAnimation(google.maps.Animation.BOUNCE)
-        setTimeout(() => marker.setAnimation(null), 400)
+      const marker = L.marker([pos.lat, pos.lng], {
+        icon, title: customer.name ?? '', alt: customer.name ?? '', keyboard: true,
+        zIndexOffset: isVIP ? 2000 : totalCA > 500_000 ? 1000 : 0,
       })
-
-      marker.addListener('click', () => {
+      marker.on('mouseover', () => rebond(marker, 400))
+      marker.on('click', () => {
         setSelected(customer)
-        marker.setAnimation(google.maps.Animation.BOUNCE)
-        setTimeout(() => marker.setAnimation(null), 600)
-        mapObj.current.panTo(pos)
-        mapObj.current.panBy(160, 0)
+        rebond(marker, 600)
         openInfoWindow(customer, marker)
       })
-
-      markersRef.current.push(marker)
-      bounds.extend(pos)
-      hasAny = true
+      marker.addTo(marqueurs.current!)
+      parId.current.set(customer.id, marker)
+      bounds.extend([pos.lat, pos.lng])
     })
 
-    // Heatmap
-    heatLayer.current?.setMap(null)
-    if (showHeat && (window as any).google?.maps?.visualization) {
-      heatLayer.current = new google.maps.visualization.HeatmapLayer({
-        data: visibleList.map(({ pos }) => new google.maps.LatLng(pos.lat, pos.lng)),
-        map: mapObj.current, radius: 50, opacity: 0.7,
-        gradient: ['rgba(0,0,0,0)', 'rgba(108,71,255,.3)', 'rgba(108,71,255,.6)', 'rgba(139,111,255,.8)', 'rgba(169,145,255,1)'],
+    // Densité : cercles translucides superposés (cf. en-tête — ce n'est pas un dégradé flouté).
+    if (showHeat) {
+      visibleList.forEach(({ pos }) => {
+        L.circleMarker([pos.lat, pos.lng], {
+          radius: 28, stroke: false, fillColor: '#6C47FF', fillOpacity: 0.18, interactive: false,
+        }).addTo(chaleur.current!)
       })
     }
 
-    if (hasAny && visibleList.length > 1) {
-      mapObj.current.fitBounds(bounds, { top: 60, right: 60, bottom: 60, left: 340 })
+    if (bounds.isValid() && visibleList.length > 1) {
+      map.fitBounds(bounds, { paddingTopLeft: [340, 60], paddingBottomRight: [60, 60] })
     }
   }, [mapReady, visibleList, showHeat]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const centerOnMe = () => {
     if (!navigator.geolocation || !mapObj.current) return
     navigator.geolocation.getCurrentPosition(p => {
-      mapObj.current.panTo({ lat: p.coords.latitude, lng: p.coords.longitude })
-      mapObj.current.setZoom(12)
+      mapObj.current?.setView([p.coords.latitude, p.coords.longitude], 12)
     })
   }
 
-  const noAddr = customers.filter(c => !geoPositions[c.id]).length
+  // ⚠️ DEUX populations, jamais une. « Sans adresse » comptait tout client absent de la carte —
+  // y compris ceux dont l'adresse EXISTE mais n'a pas été trouvée ou est encore en cours. Un
+  // commerçant lisait « sans adresse » sur une fiche qu'il venait de remplir.
+  const noAddr    = customers.filter(c => !(c.address ?? '').trim()).length
+  const nonLocalis = customers.filter(c => (c.address ?? '').trim() && !geoPositions[c.id]).length
   const vipCount = customers.filter(c => Number(c.totalRevenue ?? c.totalCA ?? 0) >= 1_000_000).length
 
   return (
@@ -271,10 +302,9 @@ export default function CustomerMap({
                 setSelected(customer)
                 const pos = geoPositions[customer.id]
                 if (pos && mapObj.current) {
-                  mapObj.current.panTo(pos); mapObj.current.setZoom(14); mapObj.current.panBy(160, 0)
-                  const google = (window as any).google
-                  const mk = markersRef.current.find(m => m.getTitle?.() === customer.name)
-                  if (mk) { mk.setAnimation(google.maps.Animation.BOUNCE); setTimeout(() => mk.setAnimation(null), 600); openInfoWindow(customer, mk) }
+                  mapObj.current.setView([pos.lat, pos.lng], 14)
+                  const mk = parId.current.get(customer.id)
+                  if (mk) { rebond(mk, 600); openInfoWindow(customer, mk) }
                 }
               }}
                 onMouseEnter={e => { if (!isSel) (e.currentTarget as HTMLElement).style.background = 'var(--bg3)' }}
@@ -322,7 +352,7 @@ export default function CustomerMap({
                     <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{selected.name}</div>
                     <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.5px', padding: '2px 8px', borderRadius: 99, background: cfg.soft, color: cfg.color, border: `1px solid ${cfg.color}33`, display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {typeLabel(selected.type, lang)}</span>
                   </div>
-                  <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} type="button" onClick={() => { setSelected(null); infoWin.current?.close() }} style={{ width: 24, height: 24, borderRadius: 7, background: 'var(--bg3)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text3)', fontSize: 'var(--fs-caption)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={11} /></button>
+                  <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} type="button" onClick={() => { setSelected(null); mapObj.current?.closePopup() }} style={{ width: 24, height: 24, borderRadius: 7, background: 'var(--bg3)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text3)', fontSize: 'var(--fs-caption)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={11} /></button>
                 </div>
                 {/* KPIs */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5, marginBottom: 10 }}>
@@ -378,6 +408,7 @@ export default function CustomerMap({
             {[
               { l: lang === 'en' ? 'Located' : lang === 'es' ? 'Localizados' : lang === 'it' ? 'Localizzati' : 'Localisés',    v: `${geoCustomers.length}/${customers.length}`, c: 'var(--acc2)' },
               { l: lang === 'en' ? 'No address' : lang === 'es' ? 'Sin dirección' : lang === 'it' ? 'Senza indirizzo' : 'Sans adresse', v: String(noAddr),                                c: 'var(--warn)' },
+              { l: lang === 'en' ? 'Not located' : lang === 'es' ? 'No localizados' : lang === 'it' ? 'Non localizzati' : 'Non localisés', v: String(nonLocalis), c: 'var(--text3)' },
               { l: 'VIP',          v: String(vipCount),                              c: 'var(--warn)'      },
             ].map((s, i) => (
               <div key={s.l} style={{ flex: 1, textAlign: 'center', paddingLeft: i > 0 ? 0 : 0, borderLeft: i > 0 ? '1px solid var(--border)' : 'none' }}>
@@ -391,13 +422,15 @@ export default function CustomerMap({
 
       {/* ══ MAP ══ */}
       <div style={{ flex: 1, position: 'relative' }}>
-        <div key={mapVersion} ref={mapRef} style={{ width: '100%', height: '100%', background: MAP_BG(theme) }} />
+        <div ref={mapRef} data-testid="customer-map"
+          className={isThemeLight(theme) ? 'hs-map' : 'hs-map hs-map-dark'}
+          style={{ width: '100%', height: '100%', background: MAP_BG(theme) }} />
 
         {/* Overlay controls */}
-        <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
+        <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 1100 }}>
           {[
             { icon: <Navigation2 size={16} />, title: lang === 'en' ? 'My location' : lang === 'es' ? 'Mi ubicación' : lang === 'it' ? 'La mia posizione' : 'Ma position',  fn: centerOnMe },
-            { icon: <Globe size={16} />, title: lang === 'en' ? 'Global view' : lang === 'es' ? 'Vista global' : lang === 'it' ? 'Vista globale' : 'Vue globale',  fn: () => { if (mapObj.current) { mapObj.current.setCenter({ lat: 14.6928, lng: -17.4467 }); mapObj.current.setZoom(6) } } },
+            { icon: <Globe size={16} />, title: lang === 'en' ? 'Global view' : lang === 'es' ? 'Vista global' : lang === 'it' ? 'Vista globale' : 'Vue globale',  fn: () => { mapObj.current?.setView(CENTRE_REPLI, 6) } },
           ].map(btn => (
             <button key={btn.title} type="button" onClick={btn.fn} title={btn.title}
               style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--card)', border: '1px solid var(--border2)', cursor: 'pointer', color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: 'var(--sh-sm)', transition: 'background .15s' }}
@@ -412,21 +445,20 @@ export default function CustomerMap({
           </button>
         </div>
 
-        {/* Loading overlay */}
-        {(!mapsLoaded || geocoding) && (
-          <div style={{ position: 'absolute', inset: 0, background: 'var(--bg2)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, zIndex: 20 }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(108,71,255,.2)', borderTopColor: 'var(--p)', animation: 'spin 1s linear infinite' }} />
-            <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-regular)', color: 'var(--text2)' }}>{!mapsLoaded ? (lang === 'en' ? 'Loading Google Maps…' : lang === 'es' ? 'Cargando Google Maps…' : lang === 'it' ? 'Caricamento Google Maps…' : 'Chargement Google Maps…') : (lang === 'en' ? 'Locating customers…' : lang === 'es' ? 'Localizando clientes…' : lang === 'it' ? 'Localizzazione clienti…' : 'Localisation des clients…')}</div>
-          </div>
-        )}
-
-        {/* No key overlay */}
-        {!GMAPS_KEY && (
-          <div style={{ position: 'absolute', inset: 0, background: 'var(--bg2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, zIndex: 20 }}>
-            <MapPin size={44} style={{ color: 'var(--p2)' }} />
-            <div style={{ fontSize: 'var(--fs-title)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{lang === 'en' ? 'Google Maps not configured' : lang === 'es' ? 'Google Maps no configurado' : lang === 'it' ? 'Google Maps non configurato' : 'Google Maps non configuré'}</div>
-            <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', textAlign: 'center', maxWidth: 260 }}>{lang === 'en' ? 'Add VITE_GOOGLE_MAPS_KEY in Vercel → Settings → Env Variables' : lang === 'es' ? 'Agregue VITE_GOOGLE_MAPS_KEY en Vercel → Settings → Env Variables' : lang === 'it' ? 'Aggiungi VITE_GOOGLE_MAPS_KEY in Vercel → Settings → Env Variables' : 'Ajoutez VITE_GOOGLE_MAPS_KEY dans Vercel → Settings → Env Variables'}</div>
-          </div>
+        {/* Localisation en cours — NON bloquante dès qu'un client est placé : les marqueurs
+            apparaissent au fil des réponses, un par seconde au plus (règles d'usage OSM). */}
+        {geocoding && (
+          Object.keys(geoPositions).length === 0 ? (
+            <div style={{ position: 'absolute', inset: 0, background: 'var(--bg2)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, zIndex: 1200 }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(108,71,255,.2)', borderTopColor: 'var(--p)', animation: 'spin 1s linear infinite' }} />
+              <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-regular)', color: 'var(--text2)' }}>{lang === 'en' ? 'Locating customers…' : lang === 'es' ? 'Localizando clientes…' : lang === 'it' ? 'Localizzazione clienti…' : 'Localisation des clients…'}</div>
+            </div>
+          ) : (
+            <div role="status" style={{ position: 'absolute', bottom: 14, left: 14, zIndex: 1100, display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 99, background: 'var(--card)', border: '1px solid var(--border)', boxShadow: 'var(--sh-sm)', fontSize: 'var(--fs-caption)', color: 'var(--text2)' }}>
+              <span aria-hidden="true" style={{ width: 11, height: 11, borderRadius: '50%', border: '2px solid var(--border)', borderTopColor: 'var(--p2)', animation: 'spin 1s linear infinite' }} />
+              {lang === 'en' ? 'Locating…' : lang === 'es' ? 'Localizando…' : lang === 'it' ? 'Localizzazione…' : 'Localisation…'}
+            </div>
+          )
         )}
       </div>
     </div>

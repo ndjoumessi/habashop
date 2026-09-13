@@ -26,7 +26,7 @@ vi.mock('@/lib/confirm', () => ({ confirm: vi.fn().mockResolvedValue(true) }))
 vi.mock('@/utils/export', () => ({ exportCSV: vi.fn(), openPDF: vi.fn(), htmlTable: vi.fn(() => '') }))
 vi.mock('react-hot-toast', () => ({ default: { success: vi.fn(), error: vi.fn() } }))
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
-// inputs lourds (Google Maps / picker pays) → stubs simples
+// inputs lourds (suggestions d'adresse OSM / picker pays) → stubs simples
 vi.mock('@/components/ui/AddressAutocompleteInput', () => ({ default: (p: any) => <input aria-label="address" value={p.value} onChange={e => p.onChange(e.target.value)} /> }))
 vi.mock('@/components/ui/PhoneInputWithCountry', () => ({ default: (p: any) => <input aria-label="phone" value={p.value} onChange={e => p.onChange(e.target.value)} /> }))
 // store : lang fr + currency XOF, en gardant les vraies fns (t/useFormatAmount/useI18n ont besoin de useAppStore)

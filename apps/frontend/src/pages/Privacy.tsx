@@ -109,6 +109,14 @@ export default function Privacy() {
             <strong>Expo (EAS)</strong> — livraison des mises à jour
             et notifications push mobiles
           </li>
+          {/* ⚠️ Ajouté avec la sortie de Google Maps (2026-09-13). Google n'avait JAMAIS figuré
+              ici, alors que les adresses des clients lui étaient envoyées pour être localisées.
+              Même formulation que legal/privacy-policy.html. */}
+          <li>
+            <strong>OpenStreetMap Foundation et komoot (Photon)</strong> — carte des clients et
+            suggestions d'adresses : les adresses saisies ou enregistrées sont transmises au
+            géocodeur pour être localisées, et l'adresse IP est visible lors du chargement de la carte
+          </li>
         </ul>
         <p>
           Ces prestataires sont soumis à des obligations de

@@ -14,7 +14,7 @@ import { TYPE_CFG, TYPE_CFG_MAP, getMapCfg } from '@/components/customers/custom
  *
  * ── Défaut 2, plus grave : la couleur ne s'affichait pas du tout ────────────────────────
  * `TYPE_CFG_MAP.color` valait `'var(--p)'`. MESURÉ dans un vrai moteur le 2026-08-15 :
- *   · injectée dans le SVG data-URI de `createMarkerIcon`, elle rend un pixel
+ *   · injectée dans le SVG data-URI de `markerIconSvg`, elle rend un pixel
  *     rgba(0,0,0,249) — NOIR (témoin `#6C47FF` → rgba(108,71,255,249)). Le SVG chargé comme
  *     image est un document isolé : la variable CSS de la page n'y existe pas. TOUS les
  *     marqueurs de la carte Clients étaient noirs — le code couleur ne codait rien.

@@ -1,3 +1,4 @@
+import { escHtml } from '@/lib/html'
 import { useState, useEffect } from 'react'
 import { Building2, ShoppingBag, Star, ShoppingCart } from 'lucide-react'
 import { useAppStore, isThemeLight, useCurrencyInfo, useConvertFromXOF } from '@/stores/appStore'
@@ -334,32 +335,6 @@ export function mapApiCustomer(c: any): Customer {
   }
 }
 
-export const GMAPS_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_KEY as string
-
-export function useGoogleMaps(apiKey: string) {
-  const [loaded, setLoaded] = useState(false)
-  const [error,  setError]  = useState(false)
-  useEffect(() => {
-    if (!apiKey) { setError(true); return }
-    if ((window as any).google?.maps) { setLoaded(true); return }
-    if (document.querySelector('[data-gm]')) {
-      const check = setInterval(() => {
-        if ((window as any).google?.maps) { setLoaded(true); clearInterval(check) }
-      }, 100)
-      return () => clearInterval(check)
-    }
-    const script = document.createElement('script')
-    script.setAttribute('data-gm', '1')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry,visualization&language=fr`
-    script.async = true
-    script.defer = true
-    script.onload  = () => setLoaded(true)
-    script.onerror = () => setError(true)
-    document.head.appendChild(script)
-  }, [apiKey])
-  return { loaded, error }
-}
-
 export interface GeoCustomer {
   customer: any
   pos:      { lat: number; lng: number }
@@ -393,63 +368,23 @@ export const typeLabel = (t: string | undefined, lang: string) => TYPE_LABELS[t 
 
 export const getMapCfg = (tp: string) => TYPE_CFG_MAP[tp] ?? TYPE_CFG_MAP.Détail
 
-export const DARK_STYLE = [
-  { elementType: 'geometry',                                                        stylers: [{ color: '#0A0A16' }] },
-  { elementType: 'labels.text.stroke',                                              stylers: [{ color: '#0A0A16' }] },
-  { elementType: 'labels.text.fill',                                                stylers: [{ color: '#6666AA' }] },
-  { featureType: 'administrative',          elementType: 'geometry.stroke',         stylers: [{ color: '#1A1A38' }] },
-  { featureType: 'administrative.locality', elementType: 'labels.text.fill',        stylers: [{ color: '#8888CC' }] },
-  { featureType: 'administrative.country',  elementType: 'labels.text.fill',        stylers: [{ color: 'var(--p3)' }] },
-  { featureType: 'poi',                     elementType: 'geometry',                stylers: [{ color: '#0D0D20' }] },
-  { featureType: 'poi',                     elementType: 'labels.text.fill',        stylers: [{ color: '#4A4A70' }] },
-  { featureType: 'poi.park',                elementType: 'geometry',                stylers: [{ color: '#0D0D1C' }] },
-  { featureType: 'road',                    elementType: 'geometry',                stylers: [{ color: '#1A1A38' }] },
-  { featureType: 'road',                    elementType: 'geometry.stroke',         stylers: [{ color: '#0D0D24' }] },
-  { featureType: 'road',                    elementType: 'labels.text.fill',        stylers: [{ color: '#5A5A8A' }] },
-  { featureType: 'road.highway',            elementType: 'geometry',                stylers: [{ color: '#222244' }] },
-  { featureType: 'road.highway',            elementType: 'geometry.stroke',         stylers: [{ color: '#1A1A38' }] },
-  { featureType: 'road.highway',            elementType: 'labels.text.fill',        stylers: [{ color: '#7777AA' }] },
-  { featureType: 'transit',                 elementType: 'geometry',                stylers: [{ color: '#0D0D1C' }] },
-  { featureType: 'water',                   elementType: 'geometry',                stylers: [{ color: '#050510' }] },
-  { featureType: 'water',                   elementType: 'labels.text.fill',        stylers: [{ color: '#2A2A5A' }] },
-]
-
-// Style clair assorti à la charte (teintes violet/lilas) — utilisé quand le thème
-// est en mode clair, sinon DARK_STYLE. Cf. getMapStyle() ci-dessous.
-export const LIGHT_STYLE = [
-  { elementType: 'geometry',                                                        stylers: [{ color: '#F4F5FF' }] },
-  { elementType: 'labels.text.stroke',                                              stylers: [{ color: '#FFFFFF' }] },
-  { elementType: 'labels.text.fill',                                                stylers: [{ color: '#6B7280' }] },
-  { featureType: 'administrative',          elementType: 'geometry.stroke',         stylers: [{ color: '#D8D6F0' }] },
-  { featureType: 'administrative.locality', elementType: 'labels.text.fill',        stylers: [{ color: '#5B4BD8' }] },
-  { featureType: 'administrative.country',  elementType: 'labels.text.fill',        stylers: [{ color: '#6C47FF' }] },
-  { featureType: 'poi',                     elementType: 'geometry',                stylers: [{ color: '#ECEAFE' }] },
-  { featureType: 'poi',                     elementType: 'labels.text.fill',        stylers: [{ color: '#9893C4' }] },
-  { featureType: 'poi.park',                elementType: 'geometry',                stylers: [{ color: '#E2F5EA' }] },
-  { featureType: 'road',                    elementType: 'geometry',                stylers: [{ color: '#FFFFFF' }] },
-  { featureType: 'road',                    elementType: 'geometry.stroke',         stylers: [{ color: '#E8EBFF' }] },
-  { featureType: 'road',                    elementType: 'labels.text.fill',        stylers: [{ color: '#8E8AAE' }] },
-  { featureType: 'road.highway',            elementType: 'geometry',                stylers: [{ color: '#EAE6FF' }] },
-  { featureType: 'road.highway',            elementType: 'geometry.stroke',         stylers: [{ color: '#D5D0F5' }] },
-  { featureType: 'road.highway',            elementType: 'labels.text.fill',        stylers: [{ color: '#6C5FB0' }] },
-  { featureType: 'transit',                 elementType: 'geometry',                stylers: [{ color: '#ECEAFE' }] },
-  { featureType: 'water',                   elementType: 'geometry',                stylers: [{ color: '#DCE4FF' }] },
-  { featureType: 'water',                   elementType: 'labels.text.fill',        stylers: [{ color: '#8B6FFF' }] },
-]
-
 // Couleur de fond du conteneur carte selon le thème (affichée pendant le chargement des tuiles).
 // isThemeLight résout aussi « system » (préférence OS) → carte claire/sombre cohérente.
 export const MAP_BG = (theme: string) => (isThemeLight(theme) ? '#F4F5FF' : '#0A0A16')
-// Sélectionne le style Google Maps selon le thème actif.
-export const getMapStyle = (theme: string) => (isThemeLight(theme) ? LIGHT_STYLE : DARK_STYLE)
 
 /**
  * ⚠️ `color: CouleurTier`, PAS `string`. Le SVG produit ici est chargé comme IMAGE via une
  * data-URI : c'est un document isolé, sans accès aux variables CSS de la page. Un `var(--p)`
  * y rend du NOIR (mesuré : pixel rgba(0,0,0,249) contre rgba(108,71,255,249) avec un hex).
  * Le type rend l'erreur inexprimable au lieu de la laisser à un scanneur qui peut la rater.
+ *
+ * ⚠️ `text` est ÉCHAPPÉ (corrigé le 2026-09-13, pendant la sortie de Google Maps). Les
+ * initiales partaient brutes dans le SVG : un client nommé « &Co » ou « <Boutique> » donnait
+ * un document XML invalide, donc une image qui ne se dessine pas — un marqueur INVISIBLE,
+ * sans erreur. Une `data:` chargée comme image n'exécute aucun script : le risque était
+ * l'effacement silencieux, pas l'injection.
  */
-export function createMarkerIcon(google: any, color: CouleurTier, size: number, text: string) {
+export function markerIconSvg(color: CouleurTier, size: number, text: string) {
   const s = size
   const svg = `<svg width="${s}" height="${s + 10}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -462,12 +397,9 @@ export function createMarkerIcon(google: any, color: CouleurTier, size: number, 
       </radialGradient>
     </defs>
     <circle cx="${s / 2}" cy="${s / 2}" r="${s / 2 - 2}" fill="url(#gr${s})" stroke="white" stroke-width="2" filter="url(#sh${s})"/>
-    <text x="${s / 2}" y="${s / 2 + 4}" text-anchor="middle" font-family="system-ui" font-size="${Math.round(s / 3)}" font-weight="900" fill="white">${text}</text>
+    <text x="${s / 2}" y="${s / 2 + 4}" text-anchor="middle" font-family="system-ui" font-size="${Math.round(s / 3)}" font-weight="900" fill="white">${escHtml(text)}</text>
     <polygon points="${s / 2 - 5},${s - 3} ${s / 2 + 5},${s - 3} ${s / 2},${s + 8}" fill="${color}" opacity="0.9"/>
   </svg>`
-  return {
-    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-    scaledSize: new google.maps.Size(s, s + 10),
-    anchor:     new google.maps.Point(s / 2, s + 10),
-  }
+  // Ne dépend d'AUCUN fournisseur : la carte en fait une icône Leaflet (taille, ancre = pointe).
+  return { url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg), width: s, height: s + 10 }
 }

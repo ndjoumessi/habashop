@@ -1,3 +1,4 @@
+import { lienCarte } from '@/lib/geo'
 import { useEffect, useState } from 'react'
 import { Search, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, FileText, Phone, MapPin, Star, Trash2, ExternalLink, Tag, CreditCard, Users, MoreHorizontal } from 'lucide-react'
 import { t } from '@/stores/appStore'
@@ -262,11 +263,11 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                         <MapPin size={10} style={{ color: tc.h, flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0, fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-regular)', color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.address}</div>
                         <a
-                          href={`https://maps.google.com/maps?q=${encodeURIComponent(c.address)}`}
+                          href={lienCarte(c.address)}
                           target="_blank" rel="noopener noreferrer"
                           onClick={e => e.stopPropagation()}
-                          title={i('Ouvrir dans Google Maps', 'Open in Google Maps', 'Abrir en Google Maps', 'Apri in Google Maps')}
-                          aria-label={i('Ouvrir dans Google Maps', 'Open in Google Maps', 'Abrir en Google Maps', 'Apri in Google Maps')}
+                          title={i('Ouvrir dans OpenStreetMap', 'Open in OpenStreetMap', 'Abrir en OpenStreetMap', 'Apri in OpenStreetMap')}
+                          aria-label={i('Ouvrir dans OpenStreetMap', 'Open in OpenStreetMap', 'Abrir en OpenStreetMap', 'Apri in OpenStreetMap')}
                           style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6, background: `rgba(${tc.rgb},.12)`, border: `1px solid rgba(${tc.rgb},.2)`, color: tc.h, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
                         >
                           <ExternalLink size={11} />

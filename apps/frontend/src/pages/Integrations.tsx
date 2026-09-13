@@ -72,13 +72,13 @@ export const CATEGORY_OF: Record<string, string> = {
   twilio: 'notifications', resend: 'notifications',
   prisma: 'database', redis: 'database',
   railway: 'hosting', vercel: 'hosting',
-  sentry: 'monitoring', anthropic: 'monitoring', googlemaps: 'monitoring',
+  sentry: 'monitoring', anthropic: 'monitoring', openstreetmap: 'monitoring',
 }
 
 // Version d'API exposée (facteur de confiance, affichée dans le bandeau endpoint)
 export const API_VERSION: Record<string, string> = {
   anthropic: 'Claude API', twilio: 'API 2010-04-01', resend: 'API v1',
-  googlemaps: 'JS API v3', railway: 'Platform', vercel: 'Platform', prisma: 'Prisma 5',
+  openstreetmap: 'Leaflet 1.9 · Photon', railway: 'Platform', vercel: 'Platform', prisma: 'Prisma 5',
   mtnmomo: 'MoMo API v1.0', campay: 'API v2', paydunya: 'API v1',
   sentry: 'SDK 8.x', redis: 'Redis 7',
 }
@@ -113,9 +113,9 @@ const IconTwilioSvg = () => (
   </svg>
 )
 
-const IconGoogleMapsSvg = () => (
+const IconOpenStreetMapSvg = () => (
   <svg viewBox="0 0 24 24" width="22" height="22">
-    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#4285F4"/>
+    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#7EBC6F"/>
   </svg>
 )
 
@@ -206,13 +206,16 @@ export const INTEGRATIONS_LIST: Integration[] = [
     IconSvg: IconResendSvg,
   },
   {
-    id:'googlemaps', name:'Google Maps',
-    desc:'Autocomplete adresses et carte clients',
-    color:'#4285F4', declared:'configured',
-    endpoint:'maps.googleapis.com',
-    docs:'https://developers.google.com/maps', pingUrl:'https://maps.googleapis.com',
-    features:['Autocomplete d\'adresses', 'Géocodage des clients', 'Carte interactive'],
-    IconSvg: IconGoogleMapsSvg,
+    // ⚠️ AUCUNE CLÉ : tuiles et géocodage publics, sous règles d'usage (cf. `lib/geo.ts`).
+    // `declared:'configured'` reste une DÉCLARATION, pas une sonde — et l'accès aux tuiles
+    // OSM peut être retiré sans préavis à un service commercial.
+    id:'openstreetmap', name:'OpenStreetMap',
+    desc:'Carte clients et suggestions d\'adresses',
+    color:'#7EBC6F', declared:'configured',
+    endpoint:'tile.openstreetmap.org · photon.komoot.io',
+    docs:'https://operations.osmfoundation.org/policies/tiles/', pingUrl:'https://photon.komoot.io',
+    features:['Suggestions d\'adresses (Photon)', 'Géocodage des clients, mis en cache', 'Carte interactive (Leaflet)'],
+    IconSvg: IconOpenStreetMapSvg,
   },
   {
     id:'railway', name:'Railway',
@@ -304,7 +307,7 @@ const INTEGRATION_DESC_T: Record<string, Record<string, string>> = {
   anthropic:  { fr:'Assistant IA et analyses intelligentes',             en:'AI assistant and smart analytics',                es:'Asistente IA y análisis inteligentes',               it:'Assistente IA e analisi intelligenti' },
   twilio:     { fr:'Envoi de tickets et marketing WhatsApp',             en:'WhatsApp receipts and marketing',                 es:'Tickets y marketing por WhatsApp',                   it:'Ticket e marketing WhatsApp' },
   resend:     { fr:'Emails transactionnels — bienvenue, rappels, rapports', en:'Transactional emails — welcome, reminders, reports', es:'Emails transaccionales — bienvenida, recordatorios, informes', it:'Email transazionali — benvenuto, promemoria, report' },
-  googlemaps: { fr:'Autocomplete adresses et carte clients',             en:'Address autocomplete and customer map',           es:'Autocompletado de direcciones y mapa clientes',      it:'Completamento indirizzi e mappa clienti' },
+  openstreetmap: { fr:'Carte clients et suggestions d\'adresses',        en:'Customer map and address suggestions',            es:'Mapa de clientes y sugerencias de dirección',        it:'Mappa clienti e suggerimenti di indirizzo' },
   railway:    { fr:'Hébergement backend PostgreSQL + Node.js',           en:'Backend hosting PostgreSQL + Node.js',            es:'Alojamiento backend PostgreSQL + Node.js',           it:'Hosting backend PostgreSQL + Node.js' },
   vercel:     { fr:'Déploiement frontend React + CDN global',            en:'Frontend deployment React + global CDN',          es:'Despliegue frontend React + CDN global',             it:'Deploy frontend React + CDN globale' },
   prisma:     { fr:'Accès base de données PostgreSQL',                   en:'PostgreSQL database access',                      es:'Acceso base de datos PostgreSQL',                    it:'Accesso database PostgreSQL' },

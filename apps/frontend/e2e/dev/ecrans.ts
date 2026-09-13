@@ -130,6 +130,25 @@ export function seedEcran(page: Page) {
       // `.catch(() => logout())`. Une réponse générique y dégrade l'utilisateur (le
       // `role` disparaît) et peut renvoyer sur `/login` — l'écran mesuré serait alors
       // la page de connexion, « complète » et parfaitement hors sujet.
+      // ── Géocodeur Photon (OpenStreetMap) ────────────────────────────────
+      // ⚠️ L'URL Photon CONTIENT `/api/` : sans cette branche en tête, elle tomberait sur le
+      // repli générique (liste vide) et AUCUN client ne serait placé — une carte vide qui se
+      // lirait « rien à afficher ». Le COMPTEUR permet de vérifier à l'écran que le cache
+      // épargne les adresses répétées. Jamais d'appel réel au service depuis la CI.
+      if (url.includes('photon.komoot.io')) {
+        const w = window as unknown as { __photonAppels?: number }
+        w.__photonAppels = (w.__photonAppels ?? 0) + 1
+        const q = (new URL(url).searchParams.get('q') ?? '').toLowerCase()
+        const lieux: Record<string, [number, number, string]> = {
+          akwa: [9.7043, 4.0506, 'Douala'], bonapriso: [9.6934, 4.0269, 'Douala'], bastos: [11.5159, 3.8960, 'Yaoundé'],
+        }
+        const cle = Object.keys(lieux).find(k => q.includes(k))
+        return json({
+          type: 'FeatureCollection',
+          // Ordre GeoJSON : [LONGITUDE, LATITUDE], comme le vrai service.
+          features: cle ? [{ geometry: { type: 'Point', coordinates: [lieux[cle][0], lieux[cle][1]] }, properties: { name: cle, city: lieux[cle][2], country: 'Cameroun' } }] : [],
+        })
+      }
       if (url.includes('/api/auth/me')) {
         return json({ id: 'u-1', name: 'Témoin', email: 'temoin@habashop.test', role: 'SUPER_ADMIN', tenantId: 'boutique-a', isPlatformAdmin: false })
       }
@@ -162,7 +181,12 @@ export function seedEcran(page: Page) {
       if (url.includes('/api/customers')) {
         return json(Array.from({ length: 12 }, (_, k) => ({
           id: `c-${k + 1}`, name: `Cliente témoin ${k + 1}`, phone: `+2376${String(10000000 + k)}`,
-          email: null, address: 'Quartier témoin', points: k * 37, totalSpent: k * 12500,
+          // ⚠️ Adresses VARIÉES depuis la sortie de Google Maps (2026-09-13) : trois quartiers
+          // qui se répètent (le cache doit servir les doublons sans requête), un client SANS
+          // adresse et une adresse INTROUVABLE — les deux listes que l'écran distingue.
+          email: null,
+          address: k === 10 ? '' : k === 11 ? 'Lieu introuvable témoin' : ['Akwa, Douala', 'Bonapriso, Douala', 'Bastos, Yaoundé'][k % 3],
+          points: k * 37, totalSpent: k * 12500,
           visits: k + 1, createdAt: ilYa(60 - k), lastVisit: ilYa(3),
         })))
       }

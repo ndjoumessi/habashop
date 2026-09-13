@@ -49,9 +49,9 @@ export default defineConfig(({ mode }) => {
         // Handlers Web Push injectés dans le SW généré (workbox n'accepte pas de listeners
         // dans sa config) → script séparé public/push-sw.js chargé via importScripts.
         importScripts: ['/push-sw.js'],
-        // Gros chunks lazy (recharts, @zxing/jsbarcode/qrcode, html2canvas, jspdf) : exclus
+        // Gros chunks lazy (visx, @zxing/jsbarcode/qrcode, html2canvas, jspdf, leaflet) : exclus
         // du precache (ils plombaient ~1 Mo) — servis à la demande via runtimeCaching ci-dessous.
-        globIgnores: ['**/assets/charts-*.js', '**/assets/barcode-*.js', '**/assets/canvas-*.js', '**/assets/pdf-*.js', '**/push-sw.js'],
+        globIgnores: ['**/assets/charts-*.js', '**/assets/barcode-*.js', '**/assets/canvas-*.js', '**/assets/pdf-*.js', '**/assets/maps-*.js', '**/push-sw.js'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
@@ -63,7 +63,10 @@ export default defineConfig(({ mode }) => {
           {
             // Chunks lazy hors precache (cf. globIgnores) : noms hashés → immuables,
             // CacheFirst = 1 seul fetch réseau puis servi depuis le cache (offline inclus).
-            urlPattern: /\/assets\/(charts|barcode|canvas|pdf)-[^/]+\.js$/,
+            // ⚠️ Ce motif ne vise QUE nos chunks JS hashés. Les TUILES OpenStreetMap ne doivent
+            // JAMAIS être mises en cache ici : « Offline use is not permitted on
+            // tile.openstreetmap.org » (politique d'usage, citée dans `src/lib/geo.ts`).
+            urlPattern: /\/assets\/(charts|barcode|canvas|pdf|maps)-[^/]+\.js$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'lazy-chunks-cache',
@@ -154,6 +157,11 @@ export default defineConfig(({ mode }) => {
           // du cache `lazy-chunks-cache` sans que rien ne le signale.
           if (id.includes('@visx') || id.includes('node_modules/d3-')) {
             return 'charts'
+          }
+          // ⚠️ Leaflet (carte clients, 2026-09-13) — lazy via l'onglet Carte uniquement.
+          // Même câblage que `charts` : `globIgnores` ET `urlPattern` ci-dessus, dans le même diff.
+          if (id.includes('node_modules/leaflet')) {
+            return 'maps'
           }
           // UI helpers
           if (id.includes('lucide-react') || id.includes('react-hot-toast')) {
