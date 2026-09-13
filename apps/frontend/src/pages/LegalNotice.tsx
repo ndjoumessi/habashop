@@ -23,30 +23,27 @@ import { appUrl, appUrlHost } from '@/lib/appUrl'
  * commerçant. Et la date de naissance, présente sur l'attestation, n'a rien à faire ici.
  */
 
-const lien = { color: '#6C47FF' } as const
-
 export default function LegalNotice() {
   useEffect(() => {
     document.title = 'Mentions légales — HabaShop'
   }, [])
 
   return (
-    <div style={{
+    <div className="legal-doc" style={{
       maxWidth: 800,
       margin: '0 auto',
       padding: '40px 24px',
       fontFamily: 'system-ui, sans-serif',
-      color: '#1a1a2e',
       lineHeight: 1.7,
     }}>
       <div style={{ marginBottom: 40 }}>
-        <a href="/" style={{ color: '#6C47FF', textDecoration: 'none', fontSize: 'var(--fs-body)' }}>
+        <a href="/" style={{ textDecoration: 'none', fontSize: 'var(--fs-body)' }}>
           ← Retour à HabaShop
         </a>
       </div>
 
-      <h1 style={{ color: '#6C47FF', marginBottom: 8 }}>Mentions légales</h1>
-      <p style={{ color: '#666', marginBottom: 40 }}>
+      <h1 style={{ marginBottom: 8 }}>Mentions légales</h1>
+      <p className="legal-muted" style={{ marginBottom: 40 }}>
         Dernière mise à jour : 12 septembre 2026
       </p>
 
@@ -54,7 +51,7 @@ export default function LegalNotice() {
         <h2>1. Éditeur</h2>
         <p>
           Le service HabaShop, accessible sur{' '}
-          <a href={appUrl()} style={lien}>{appUrlHost()}</a>, est édité par{' '}
+          <a href={appUrl()}>{appUrlHost()}</a>, est édité par{' '}
           <strong>Nelson Djoumessi</strong>, <strong>entrepreneur individuel</strong>.
         </p>
         <ul>
@@ -64,9 +61,9 @@ export default function LegalNotice() {
           <li>Siège : 71 rue de Rome, 13001 Marseille, France</li>
           <li>
             E-mail :{' '}
-            <a href="mailto:romel.djoumessi@gmail.com" style={lien}>romel.djoumessi@gmail.com</a>
+            <a href="mailto:romel.djoumessi@gmail.com">romel.djoumessi@gmail.com</a>
           </li>
-          <li>Téléphone : <a href="tel:+33661751923" style={lien}>+33 6 61 75 19 23</a></li>
+          <li>Téléphone : <a href="tel:+33661751923">+33 6 61 75 19 23</a></li>
         </ul>
       </section>
 
@@ -97,7 +94,7 @@ export default function LegalNotice() {
         <h2>4. Données personnelles</h2>
         <p>
           Le traitement des données personnelles est décrit dans la{' '}
-          <a href="/privacy" style={lien}>politique de confidentialité</a>.
+          <a href="/privacy">politique de confidentialité</a>.
         </p>
       </section>
 
@@ -105,7 +102,7 @@ export default function LegalNotice() {
         <h2>5. Conditions d'utilisation</h2>
         <p>
           L'accès au service et sa souscription sont régis par les{' '}
-          <a href="/terms" style={lien}>conditions générales d'utilisation et de vente</a>.
+          <a href="/terms">conditions générales d'utilisation et de vente</a>.
         </p>
       </section>
     </div>

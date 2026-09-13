@@ -801,6 +801,20 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
   .settings-grid { grid-template-columns:1fr !important }
 }
 
+/* ── Pages légales publiques — /privacy, /terms, /mentions-legales ──
+   ⚠️ Elles écrivaient en encre pour PAPIER BLANC (#1a1a2e, #666) sans poser de fond : sur le
+   fond sombre NKONI (défaut de l'app), le texte tombait à ~1,1:1. Le texte suit donc le
+   thème. ⚠️ Les liens et le titre ne suivent PAS l'accent (--p2/--p3) : ACCENT_PAIRS les
+   réécrit pour le sombre, et l'ambre #FDE68A sur fond clair serait illisible. Violet de
+   marque éclairci en sombre (#A991FF ≈ 7,6:1), plein en clair (#6C47FF ≈ 5:1).
+   L'encart « validation juridique » et les mentions [À COMPLÉTER] gardent leur fond ambre
+   propre : lisibles dans les deux thèmes. Verrou : e2e/dev/pages-legales-contraste.spec.ts. */
+.legal-doc { color: var(--text); }
+.legal-doc .legal-muted { color: var(--text3); }
+.legal-doc h1, .legal-doc a { color: #A991FF; }
+.theme-light .legal-doc h1, .theme-light .legal-doc a { color: #6C47FF; }
+.legal-doc hr { border: none; border-top: 1px solid var(--border); }
+
 /* ── Carte clients — OpenStreetMap / Leaflet (remplace Google Maps, 2026-09-13) ──
    ⚠️ ÉCRIT À LA MAIN : tailwind n'émet rien ici (cf. SÉLECTEURS DE DATE ci-dessous). */
 .hs-map.leaflet-container { font-family: var(--font), system-ui, sans-serif; }

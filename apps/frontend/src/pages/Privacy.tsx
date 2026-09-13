@@ -8,17 +8,15 @@ export default function Privacy() {
   }, [])
 
   return (
-    <div style={{
+    <div className="legal-doc" style={{
       maxWidth: 800,
       margin: '0 auto',
       padding: '40px 24px',
       fontFamily: 'system-ui, sans-serif',
-      color: '#1a1a2e',
       lineHeight: 1.7,
     }}>
       <div style={{ marginBottom: 40 }}>
         <a href="/" style={{
-          color: '#6C47FF',
           textDecoration: 'none',
           fontSize: 'var(--fs-body)',
         }}>
@@ -26,10 +24,10 @@ export default function Privacy() {
         </a>
       </div>
 
-      <h1 style={{ color: '#6C47FF', marginBottom: 8 }}>
+      <h1 style={{ marginBottom: 8 }}>
         Politique de confidentialité
       </h1>
-      <p style={{ color: '#666', marginBottom: 40 }}>
+      <p className="legal-muted" style={{ marginBottom: 40 }}>
         Dernière mise à jour : 27 mai 2026
       </p>
 
@@ -42,10 +40,9 @@ export default function Privacy() {
           (SIRET 109 761 023 00018, code APE 6201Z),
           dont le siège est situé 71 rue de Rome, 13001 Marseille, France. Il est le
           responsable du traitement des données décrites ci-dessous
-          (voir les <a href="/mentions-legales" style={{ color: '#6C47FF' }}>mentions légales</a>).
+          (voir les <a href="/mentions-legales">mentions légales</a>).
           L'application est accessible sur{' '}
-          <a href={appUrl()}
-            style={{ color: '#6C47FF' }}>
+          <a href={appUrl()}>
             {appUrlHost()}
           </a>{' '}
           et sur mobile (Android / iOS).
@@ -179,8 +176,7 @@ export default function Privacy() {
         </ul>
         <p>
           Pour exercer ces droits, contactez-nous à :{' '}
-          <a href="mailto:romel.djoumessi@gmail.com"
-            style={{ color: '#6C47FF' }}>
+          <a href="mailto:romel.djoumessi@gmail.com">
             romel.djoumessi@gmail.com
           </a>
         </p>
@@ -235,24 +231,18 @@ export default function Privacy() {
         <p>
           <strong>Nelson Djoumessi</strong><br/>
           E-mail :{' '}
-          <a href="mailto:romel.djoumessi@gmail.com"
-            style={{ color: '#6C47FF' }}>
+          <a href="mailto:romel.djoumessi@gmail.com">
             romel.djoumessi@gmail.com
           </a><br/>
           Site :{' '}
-          <a href={appUrl()}
-            style={{ color: '#6C47FF' }}>
+          <a href={appUrl()}>
             {appUrlHost()}
           </a>
         </p>
       </section>
 
-      <hr style={{
-        border: 'none',
-        borderTop: '1px solid #eee',
-        margin: '40px 0'
-      }}/>
-      <p style={{ color: '#999', fontSize: 'var(--fs-sm)' }}>
+      <hr style={{ margin: '40px 0' }}/>
+      <p className="legal-muted" style={{ fontSize: 'var(--fs-sm)' }}>
         {copyrightLine()}. Tous droits réservés.
       </p>
     </div>

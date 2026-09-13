@@ -53,24 +53,23 @@ export default function Terms() {
   const surDevis  = PLANS.filter(p => p.monthly === null)
 
   return (
-    <div style={{
+    <div className="legal-doc" style={{
       maxWidth: 800,
       margin: '0 auto',
       padding: '40px 24px',
       fontFamily: 'system-ui, sans-serif',
-      color: '#1a1a2e',
       lineHeight: 1.7,
     }}>
       <div style={{ marginBottom: 40 }}>
-        <a href="/" style={{ color: '#6C47FF', textDecoration: 'none', fontSize: 'var(--fs-body)' }}>
+        <a href="/" style={{ textDecoration: 'none', fontSize: 'var(--fs-body)' }}>
           ← Retour à HabaShop
         </a>
       </div>
 
-      <h1 style={{ color: '#6C47FF', marginBottom: 8 }}>
+      <h1 style={{ marginBottom: 8 }}>
         Conditions générales d'utilisation et de vente
       </h1>
-      <p style={{ color: '#666', marginBottom: 24 }}>
+      <p className="legal-muted" style={{ marginBottom: 24 }}>
         Dernière mise à jour : 15 août 2026
       </p>
 
@@ -89,7 +88,7 @@ export default function Terms() {
         <p>
           Les présentes conditions régissent l'accès et l'utilisation de HabaShop, logiciel
           de gestion commerciale accessible sur{' '}
-          <a href={appUrl()} style={{ color: '#6C47FF' }}>{appUrlHost()}</a>. Elles forment
+          <a href={appUrl()}>{appUrlHost()}</a>. Elles forment
           un contrat entre l'éditeur et le commerçant qui souscrit un compte (« le Client »).
         </p>
         <p>
@@ -112,7 +111,7 @@ export default function Terms() {
         <p>
           Contact : romel.djoumessi@gmail.com ·
           Données personnelles : voir la{' '}
-          <a href="/privacy" style={{ color: '#6C47FF' }}>politique de confidentialité</a>.
+          <a href="/privacy">politique de confidentialité</a>.
         </p>
       </section>
 
@@ -233,7 +232,7 @@ export default function Terms() {
         <h2>8. Données personnelles</h2>
         <p>
           Le traitement des données personnelles est décrit dans la{' '}
-          <a href="/privacy" style={{ color: '#6C47FF' }}>politique de confidentialité</a>,
+          <a href="/privacy">politique de confidentialité</a>,
           qui fait partie intégrante des présentes conditions.
         </p>
       </section>
@@ -323,7 +322,7 @@ export default function Terms() {
         <h2>15. Contact</h2>
         <p>
           Toute question relative aux présentes conditions peut être adressée à{' '}
-          <a href="mailto:romel.djoumessi@gmail.com" style={{ color: '#6C47FF' }}>
+          <a href="mailto:romel.djoumessi@gmail.com">
             romel.djoumessi@gmail.com
           </a>.
         </p>
