@@ -71,6 +71,16 @@ fournisseur communautaire, c'était un blocage d'IP assuré. Le verrou d'écran 
   unissait TOUTES les tuiles demandées (vue initiale + préchargement) et mesurait autre chose
   que l'écran ; elle lit désormais la tuile sous chaque coin — par rectangle, car Leaflet pose
   `pointer-events: none` sur les tuiles et `elementsFromPoint` les ignore.
+- **« Adresse introuvable » se MESURE, il ne se DÉDUIT pas — CLOS le 2026-09-14.** La liste
+  valait « adresse présente ET aucune position » : avant la première requête, les 11 fiches y
+  figuraient (mesuré : affichées à 3 ms, recherche partie à 272 ms), et une PANNE réseau s'y
+  rangeait aussi, sous « à préciser », alors que l'adresse était peut-être juste. Désormais la
+  liste ne porte que ce que le géocodeur a RÉPONDU (`introuvable`, liée à l'adresse jugée), une
+  panne a sa propre liste « Localisation interrompue », et une adresse de ≤ 3 caractères —
+  jamais envoyée — reste « à préciser ». ⚠️ Un état transitoire faux ne se voit PAS à l'état
+  final : le verrou (`carte-osm.spec.ts`) enregistre par `MutationObserver` le PLUS GRAND
+  effectif jamais affiché. Sabotages : page de HEAD → « 11 fiches » ; panne rangée sous
+  introuvable → rouge.
 - **Un seul client placé** est désormais cadré (l'ancien `length > 1` le laissait hors champ),
   avec `maxZoom: 14` quand tous partagent un point.
 - **Carte de chaleur** : cercles translucides superposés, pas un dégradé flouté (`leaflet.heat`

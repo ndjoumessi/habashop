@@ -91,6 +91,14 @@ export default function Customers() {
   const [mapTypeFilter, setMapTypeFilter]     = useState<ClientType | ''>('')
   const [geoPositions, setGeoPositions] = useState<Record<string, { lat: number; lng: number }>>({})
   const [geocoding, setGeocoding]       = useState(false)
+  /**
+   * Échecs RAPPORTÉS par le géocodeur, avec l'adresse qu'ils jugeaient. ⚠️ « Introuvable » se
+   * MESURE, il ne se DÉDUIT pas : la liste était calculée comme « adresse présente et pas de
+   * position », donc chaque client passait pour introuvable avant la première requête (mesuré :
+   * 11 affichés à 3 ms, recherche partie à 272 ms) — et une panne réseau s'y rangeait aussi,
+   * sous « à préciser », alors que l'adresse était peut-être juste.
+   */
+  const [geoEchecs, setGeoEchecs] = useState<Record<string, { etat: 'introuvable' | 'erreur'; adresse: string }>>({})
 
   /**
    * GÉOCODAGE DES FICHES — OpenStreetMap (Photon), via `lib/geo.ts`.
@@ -114,12 +122,21 @@ export default function Customers() {
       .filter(c => (c.address ?? '').trim().length > 3)
       .map(c => ({ id: String(c.id), adresse: String(c.address) }))
     if (aTraiter.length === 0) return
+    const adresseDe = new Map(aTraiter.map(a => [a.id, a.adresse]))
     setGeocoding(true)
     try {
       await geocoderAdresses(aTraiter, {
         lang, signal: ctrl.signal,
         onProgres: (id, r) => {
           if (ctrl.signal.aborted) return
+          setGeoEchecs(prev => {
+            if (r.etat === 'trouve') {
+              if (!(id in prev)) return prev
+              const { [id]: _ok, ...reste } = prev
+              return reste
+            }
+            return { ...prev, [id]: { etat: r.etat, adresse: adresseDe.get(id) ?? '' } }
+          })
           setGeoPositions(prev => {
             if (r.etat === 'trouve') return { ...prev, [id]: r.pos }
             if (!(id in prev)) return prev
@@ -442,7 +459,15 @@ export default function Customers() {
               geste attendu du commerçant n'est pas le même : SAISIR une adresse, ou la PRÉCISER. */}
           {(() => {
             const sansAdresse = customers.filter(c => !(c.address ?? '').trim())
-            const nonTrouves  = geocoding ? [] : customers.filter(c => (c.address ?? '').trim() && !geoPositions[c.id])
+            // Un échec ne vaut que pour l'adresse qu'il a jugée : une fiche corrigée depuis n'y figure plus.
+            const echec = (c: any, etat: 'introuvable' | 'erreur') => {
+              const e = geoEchecs[String(c.id)]
+              return !geoPositions[c.id] && e?.etat === etat && e.adresse === String(c.address ?? '')
+            }
+            // Trop courte pour être cherchée (≤ 3 caractères) : jamais envoyée, donc à préciser.
+            const tropCourte = (c: any) => { const a = (c.address ?? '').trim(); return a.length > 0 && a.length <= 3 }
+            const nonTrouves  = customers.filter(c => tropCourte(c) || echec(c, 'introuvable'))
+            const enErreur    = customers.filter(c => echec(c, 'erreur'))
             const bloc = (liste: any[], titre: string, suite: string) => liste.length === 0 ? null : (
               <div style={{ marginTop: 14 }}>
                 <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
@@ -463,6 +488,8 @@ export default function Customers() {
                   i('non affichés sur la carte', 'not shown on the map', 'no mostrados en el mapa', 'non mostrati sulla mappa'))}
                 {bloc(nonTrouves, i('Adresse introuvable sur la carte', 'Address not found on the map', 'Dirección no encontrada en el mapa', 'Indirizzo non trovato sulla mappa'),
                   i('à préciser (rue, quartier, ville)', 'add detail (street, district, city)', 'precisar (calle, barrio, ciudad)', 'da precisare (via, quartiere, città)'))}
+                {bloc(enErreur, i('Localisation interrompue', 'Locating interrupted', 'Localización interrumpida', 'Localizzazione interrotta'),
+                  i('service de carte injoignable, réessayer avec « Actualiser »', 'map service unreachable, retry with “Refresh”', 'servicio de mapas inaccesible, reintentar con «Actualizar»', 'servizio mappe irraggiungibile, riprovare con «Aggiorna»'))}
               </>
             )
           })()}

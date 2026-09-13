@@ -17,6 +17,19 @@ async function ouvrirCarte(page: import('@playwright/test').Page, w = 1440, avan
   page.on('request', r => { if (/google(apis)?\.com\/maps|maps\.googleapis/.test(r.url())) google.push(r.url()) })
   await seedEcran(page)
   await avantOuverture?.()
+  // ⚠️ Le PLUS GRAND effectif jamais affiché par chaque liste d'échec. Un état transitoire faux
+  // ne se voit pas à l'état final : « introuvable (11) » vivait ~250 ms, avant la 1re requête.
+  await page.addInitScript(() => {
+    const w = window as unknown as { __maxListe?: Record<string, number> }
+    w.__maxListe = {}
+    const lire = () => {
+      for (const [cle, re] of [['introuvable', /Adresse introuvable sur la carte \((\d+)\)/], ['erreur', /Localisation interrompue \((\d+)\)/]] as const) {
+        const m = re.exec(document.body?.innerText ?? '')
+        if (m) w.__maxListe![cle] = Math.max(w.__maxListe![cle] ?? 0, Number(m[1]))
+      }
+    }
+    new MutationObserver(lire).observe(document, { childList: true, subtree: true, characterData: true })
+  })
   await ouvrirEcran(page, '/app/customers', w, 1100)
   await expect(page.locator('body')).toContainText(/Clients|Customers/)
   await page.getByRole('button', { name: /^Carte$/ }).first().click()
@@ -73,6 +86,11 @@ test('la carte OSM se dessine, place les clients, et respecte les règles d’us
   // ⚠️ DEUX listes, jamais une : sans adresse ≠ adresse introuvable.
   await expect(page.getByText(/Clients sans adresse \(1\)/)).toBeVisible()
   await expect(page.getByText(/Adresse introuvable sur la carte \(1\)/)).toBeVisible()
+  // ⚠️ DISCRIMINANT : jamais plus d'UN introuvable affiché, même une frame. L'ancienne liste,
+  // déduite de l'absence de position, montrait les 11 fiches avant la première requête.
+  const max = await page.evaluate(() => (window as unknown as { __maxListe: Record<string, number> }).__maxListe)
+  expect(max.introuvable, `« introuvable » a affiché ${max.introuvable} fiches`).toBe(1)
+  expect(max.erreur ?? 0, 'aucune panne réseau simulée ici').toBe(0)
 
   // Le popup s'ouvre au clic et nomme OpenStreetMap, pas Google.
   // ⚠️ On clique un marqueur RÉELLEMENT au premier plan. Des clients à la même adresse
@@ -146,8 +164,8 @@ test('aucun client placé : la carte cadre le PAYS DE LA BOUTIQUE, plus Dakar en
       return avant(entree as RequestInfo, init)
     }) as typeof window.fetch
   }))
-  // ⚠️ Attendre la FIN du géocodage, pas le libellé « introuvable » : l'écran l'affiche dès la
-  // première frame, AVANT la première requête (mesuré : visible à 3 ms, voile à 272 ms).
+  // ⚠️ Attendre la FIN du géocodage : c'est lui qui PRODUIT la liste « introuvable ». Jusqu'au
+  // 2026-09-14 elle s'affichait dès la première frame, avant toute requête (cf. premier test).
   await expect(page.getByText('Localisation des clients…')).toBeVisible({ timeout: 10_000 })
   await expect(page.getByText('Localisation des clients…')).toBeHidden({ timeout: 20_000 })
   await expect(page.getByText(/Adresse introuvable sur la carte \(11\)/).first()).toBeVisible()
@@ -185,4 +203,25 @@ test('aucun client placé : la carte cadre le PAYS DE LA BOUTIQUE, plus Dakar en
   expect(dedans(5.36, -4.01), `Abidjan hors de la vue (${vue})`).toBe(true)
   expect(dedans(14.69, -17.45), `Dakar dans la vue (${vue}) — l'ancien centre en dur`).toBe(false)
   expect(dedans(4.05, 9.70), `Douala dans la vue (${vue}) — le pays de la boutique est ignoré`).toBe(false)
+})
+
+test('panne du géocodeur : « Localisation interrompue », JAMAIS « adresse introuvable »', async ({ page }) => {
+  // Une erreur réseau ne dit rien de l'adresse : la ranger sous « à préciser » enverrait le
+  // commerçant corriger une fiche juste. Réponse HTTP 503 pour toute recherche.
+  await ouvrirCarte(page, 1440, () => page.addInitScript(() => {
+    const avant = window.fetch
+    window.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(typeof entree === 'string' ? entree : entree instanceof URL ? entree.href : entree.url)
+      if (url.includes('photon.komoot.io')) return new Response('indisponible', { status: 503 })
+      return avant(entree as RequestInfo, init)
+    }) as typeof window.fetch
+  }))
+  await expect(page.getByText('Localisation des clients…')).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByText('Localisation des clients…')).toBeHidden({ timeout: 30_000 })
+  // 11 fiches portent une adresse (10 connues + 1 témoin) : toutes interrompues, aucune « introuvable ».
+  // L'erreur n'est pas mise en cache : 11 requêtes à 1,1 s d'écart, d'où le délai.
+  await expect(page.getByText(/Localisation interrompue \(11\)/)).toBeVisible()
+  await expect(page.getByText(/Clients sans adresse \(1\)/)).toBeVisible()
+  const max = await page.evaluate(() => (window as unknown as { __maxListe: Record<string, number> }).__maxListe)
+  expect(max.introuvable ?? 0, `« introuvable » a affiché ${max.introuvable} fiches pendant une panne`).toBe(0)
 })
