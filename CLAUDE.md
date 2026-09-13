@@ -396,16 +396,16 @@ les règles **transverses** : celles qu'on enfreint sans même travailler sur le
 - **SVG + `var()`** : `fill="var(--…)"` ne résout pas → `style={{color}}` + `fill="currentColor"`.
 - **`var(--)` + alpha concaténée = MORT ⚠️** : `` `${x.hex}28` `` avec `x.hex='var(--p)'` rend `var(--p)28` = couleur INVALIDE → la propriété retombe à sa valeur initiale (`border:none`, fond transparent), **invisible à tsc ET aux tests**. Un champ couleur concaténé avec une alpha reste un **`#hex` littéral** (8-chiffres, PAS `color-mix` — compat WebView Android), jamais tokenisé en `var(--…)`. Verrou AST : `noVarInConcatenatedColor.test.ts` (résout `${obj.champ}NN` → tableau `.map` → échoue si `champ` y vaut une chaîne `var(--`). Bug trouvé à l'écran, pas par les gates (2026-08-01, #211/#212).
 - **Polling** : closure stale → `useRef` pour valeur courante. Logique succès dans `useEffect([status])` séparé.
-- **Carte — OpenStreetMap, SOURCE UNIQUE `lib/geo.ts`** ⚠️ (remplace Google Maps, 2026-09-13). Les RÈGLES D'USAGE sont des contraintes d'architecture, citées dans le fichier : ⚠️ **Nominatim INTERDIT l'autocomplétion côté client** → saisie d'adresse sur **Photon** ; ⚠️ **géocodage = cache PERSISTANT + ≤ 1 requête réseau/s**, sinon blocage (l'ancien code géocodait tout, sans cache, à chaque ouverture) ; ⚠️ **attribution OSM obligatoire et LISIBLE** (contraste AA mesuré à l'écran) ; ⚠️ **aucune tuile dans le cache du service worker** (usage hors-ligne interdit). Deux pièges MESURÉS sur l'API : `coordinates` = **[lon, lat]**, et `lang=es`/`it` → **HTTP 400** (`photonLang`). ⚠️ **`leaflet.css` est chargé APRÈS `index.css`** : à spécificité égale il gagne — tout habillage Leaflet se préfixe `.hs-map.leaflet-container` (la 1re version mesurait 1,11:1). Verrous : `geo.test.ts` · `e2e/dev/carte-osm.spec.ts` (4 sabotages). 📖 *`docs/lessons/carte-openstreetmap.md`.*
+- **Carte — OpenStreetMap, SOURCE UNIQUE `lib/geo.ts`** ⚠️ (remplace Google Maps, 2026-09-13). Les RÈGLES D'USAGE sont des contraintes d'architecture, citées dans le fichier : ⚠️ **Nominatim INTERDIT l'autocomplétion côté client** → saisie d'adresse sur **Photon** ; ⚠️ **géocodage = cache PERSISTANT + ≤ 1 requête réseau/s**, sinon blocage (l'ancien code géocodait tout, sans cache, à chaque ouverture) ; ⚠️ **attribution OSM obligatoire et LISIBLE** (contraste AA mesuré à l'écran) ; ⚠️ **aucune tuile dans le cache du service worker** (usage hors-ligne interdit). Sans client placé, la carte cadre le **pays de la boutique** (`vueDuPays`, emprises MESURÉES — jamais une ville en dur ; FR/US/NL exceptés, leur emprise inclut l'outre-mer). Deux pièges MESURÉS sur l'API : `coordinates` = **[lon, lat]**, et `lang=es`/`it` → **HTTP 400** (`photonLang`). ⚠️ **`leaflet.css` est chargé APRÈS `index.css`** : à spécificité égale il gagne — tout habillage Leaflet se préfixe `.hs-map.leaflet-container` (la 1re version mesurait 1,11:1). Verrous : `geo.test.ts` · `e2e/dev/carte-osm.spec.ts` (4 sabotages). 📖 *`docs/lessons/carte-openstreetmap.md`.*
 - **IDs employés** : cuid string — jamais `Number(id)`.
-- **% recharts** : `p.percent` undefined au survol → UNE source de vérité dans les données. Palette : `% COLORS.length`.
+- **Pourcentage d'un secteur** : l'infobulle d'`Anneau` (`components/charts/primitives.tsx`, contrat `{active, payload}`) ne porte **AUCUN `percent`** → UNE source de vérité dans les données. Palette : `colors[i % colors.length]`.
 - **Découpe composant** : test ancrage d'abord (rendu + interactions), puis découpe identique.
 
 ### E2E Playwright
 - SW PWA court-circuite `page.route()` → `serviceWorkers: 'block'`.
 - Caméra @zxing : `--use-fake-device-for-media-stream` + `--use-fake-ui-for-media-stream`.
 - Pas de `page.reload()` (→ logout). Seeder via `page.addInitScript`.
-- Tooltip donut recharts : `page.mouse.move` sur rayon inner/outerRadius.
+- Infobulle d'anneau (visx) : `page.mouse.move` sur un rayon entre inner/outerRadius (cf. `e2e/dev/verif-tooltip.spec.ts`).
 
 ### Backend
 - **Crons** : `setInterval` + garde fenêtre-temps + marqueur idempotent en base. Les boucles de notification vivent dans **`services/notificationCrons.ts`** — extraites de `server.ts` (qui appelle `start()` au chargement, donc était INTESTABLE : c'est ce qui a laissé #154 s'installer sans être vu).
@@ -697,7 +697,7 @@ absence du bundle est **vérifiée** par `verify:demo-flag` (marqueur
 **Cause unique : une liste de modes RÉÉNUMÉRÉE en dur**, fausse dans les deux sens — un mode rendu que le serveur n'écrit **jamais**, deux modes écrits et **avalés**. *Tant que rien ne manque, les dénominateurs coïncident et le défaut dort.*
 
 **Ce qui est en place** — `components/reports/paymentBreakdown.ts` :
-- **UNE série d'entiers**, et c'est elle que recharts reçoit en `dataKey`. L'angle vaut alors
+- **UNE série d'entiers**, et c'est elle qu'`Anneau` reçoit en `dataKey`. L'angle vaut alors
   `pct/100` : géométrie et libellé sont le même nombre **par construction**, pas par chance.
   ⚠️ Ne PAS revenir à un compte brut en `dataKey` — cela recrée le second dénominateur.
 - **Arrondi DISTRIBUÉ** (plus forts restes) : Σ == 100 exactement, aucune part à plus d'un

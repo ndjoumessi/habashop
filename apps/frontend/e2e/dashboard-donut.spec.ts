@@ -51,7 +51,7 @@ test('Dashboard — donut : tooltip % == légende % (source unique) + cursor hel
   expect(Object.keys(legend).length, 'la légende doit lister des catégories').toBeGreaterThan(0)
 
   // Balayage de l'anneau du donut (innerR 68 / outerR 108 → r≈88 px) : le survol d'un point
-  // SUR l'arc déclenche le tooltip recharts (un hover() centré sur la bbox d'un secteur
+  // SUR l'arc déclenche l'infobulle d'`Anneau` (visx) (un hover() centré sur la bbox d'un secteur
   // tomberait dans le trou central → pas de tooltip). On collecte name -> pct vus.
   //
   // ─── ⚠️ POURQUOI LA LECTURE EST ATOMIQUE — un faux rouge du 2026-08-07 ───────────

@@ -1,8 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   photonLang, lirePhoton, libellePhoton, rechercherAdresses, geocoderAdresses, cleAdresse,
-  lienCarte, INTERVALLE_MS, TILE_ATTRIBUTION, type Stockage,
+  lienCarte, INTERVALLE_MS, TILE_ATTRIBUTION, vueDuPays, type Stockage, type VueCarte,
 } from '@/lib/geo'
+import { DEFAULT_MARKET } from '@/lib/defaultMarket'
 
 /**
  * OPENSTREETMAP — les pièges MESURÉS sur l'API réelle le 2026-09-13, et la politesse que les
@@ -157,5 +160,74 @@ describe('obligations de licence et liens sortants', () => {
     expect(u.startsWith('https://www.openstreetmap.org/search?query=')).toBe(true)
     expect(u).not.toMatch(/google/i)
     expect(u).toContain(encodeURIComponent('&'))
+  })
+})
+
+describe('vue de repli — le pays de la boutique, plus Dakar en dur', () => {
+  /** Périmètre DÉRIVÉ : les pays que le serveur accepte, lus dans sa source — pas une liste recopiée. */
+  const supportes = (() => {
+    const src = readFileSync(join(__dirname, '../../../backend/src/lib/country.ts'), 'utf8')
+    const bloc = src.slice(src.indexOf('export const SUPPORTED_COUNTRIES'), src.indexOf('] as const'))
+    return [...bloc.matchAll(/'([A-Z]{2})'/g)].map(m => m[1])
+  })()
+  const contient = (v: VueCarte, lat: number, lng: number) => 'bornes' in v
+    && lat >= v.bornes[0][0] && lat <= v.bornes[1][0] && lng >= v.bornes[0][1] && lng <= v.bornes[1][1]
+
+  it('couverture : le périmètre lu n’est pas vide', () => {
+    expect(supportes.length).toBeGreaterThanOrEqual(30)
+    expect(supportes).toContain('CM')
+  })
+
+  it('chaque pays supporté a SA vue — aucun ne retombe en silence sur le marché par défaut', () => {
+    const sansVue = supportes.filter(iso => iso !== DEFAULT_MARKET.country && vueDuPays(iso).pays !== iso)
+    expect(sansVue).toEqual([])
+  })
+
+  it('⚠️ DISCRIMINANT — une boutique camerounaise ne s’ouvre plus sur Dakar', () => {
+    const cm = vueDuPays('CM')
+    expect(contient(cm, 4.05, 9.70), 'Douala dans la vue').toBe(true)
+    expect(contient(cm, 3.87, 11.52), 'Yaoundé dans la vue').toBe(true)
+    expect(contient(cm, 14.69, -17.45), 'Dakar HORS de la vue').toBe(false)
+    expect(contient(vueDuPays('sn'), 14.69, -17.45), 'Dakar dans la vue du Sénégal').toBe(true)
+  })
+
+  it('pays absent, inconnu ou non chaîne → marché par défaut', () => {
+    for (const x of [undefined, null, '', 'XX', 42, { iso: 'SN' }]) expect(vueDuPays(x).pays).toBe(DEFAULT_MARKET.country)
+  })
+
+  it('⚠️ chaque vue est la MESURE Photon, retranscrite dans l’ordre Leaflet — confrontée à la réponse brute', () => {
+    // La réponse brute est versionnée TELLE QUE RELEVÉE : `extent` = [ouest, nord, est, sud] et
+    // `point` = [lon, lat], l'ordre GeoJSON. Un contrôle « sud < nord » seul ne voit pas une
+    // inversion lat/lng sur un pays dont les deux restent plausibles (sabotage sur TD : vert).
+    const brut = JSON.parse(readFileSync(join(__dirname, 'fixtures/emprises-photon-2026-09-13.json'), 'utf8')) as
+      Record<string, { extent: [number, number, number, number]; point: [number, number] }>
+    const r2 = (x: number) => Math.round(x * 100) / 100
+    expect(Object.keys(brut).sort()).toEqual([...supportes].sort())
+    for (const iso of supportes) {
+      const v = vueDuPays(iso), { extent: [o, n, e, s], point: [lon, lat] } = brut[iso]
+      if ('bornes' in v) expect(v.bornes, iso).toEqual([[r2(s), r2(o)], [r2(n), r2(e)]])
+      else expect(v.centre, iso).toEqual([r2(lat), r2(lon)])
+    }
+  })
+
+  it('⚠️ bornes en ordre LEAFLET [lat, lng], sud < nord, ouest < est — jamais l’ordre Photon', () => {
+    for (const iso of supportes) {
+      const v = vueDuPays(iso)
+      if (!('bornes' in v)) continue
+      const [[s, o], [n, e]] = v.bornes
+      expect(s < n && o < e, `${iso} : bornes inversées`).toBe(true)
+      expect(Math.abs(s) <= 90 && Math.abs(n) <= 90, `${iso} : latitude hors bornes (ordre lon/lat ?)`).toBe(true)
+    }
+  })
+
+  it('⚠️ aucune emprise d’outre-mer qui cadrerait le globe (FR, US, NL mesurés ainsi sur Photon)', () => {
+    // Seuil 60° : l'emprise brute des Pays-Bas en fait 77,5 (Caraïbes). EXCEPTION NOMMÉE : le
+    // Canada fait RÉELLEMENT 88,7° de large (mesuré), sans outre-mer.
+    for (const iso of supportes.filter(i => i !== 'CA')) {
+      const v = vueDuPays(iso)
+      if ('bornes' in v) expect(v.bornes[1][1] - v.bornes[0][1], `${iso} : ${v.bornes[1][1] - v.bornes[0][1]}° de large`).toBeLessThan(60)
+    }
+    const fr = vueDuPays('FR')
+    expect('centre' in fr && fr.centre[0] > 41 && fr.centre[0] < 51 && fr.centre[1] > -5 && fr.centre[1] < 9, 'FR centrée sur la métropole').toBe(true)
   })
 })

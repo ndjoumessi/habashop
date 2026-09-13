@@ -59,7 +59,20 @@ fournisseur communautaire, c'était un blocage d'IP assuré. Le verrou d'écran 
 - **Empilement** : des clients géocodés au même point (adresse au niveau du quartier — fréquent
   dans les marchés visés) forment une seule punaise cliquable. Déjà vrai sous Google. Parade
   future : regroupement (`leaflet.markercluster`), non livré.
-- **Centre de repli = Dakar**, repris tel quel ; le marché par défaut est le Cameroun.
+- ~~Centre de repli = Dakar~~ — **CLOS le 2026-09-13** : sans client placé, la carte cadre le
+  **pays de la boutique** (`vueDuPays`, `lib/geo.ts`). Emprises MESURÉES sur Photon pour les 32
+  pays de `SUPPORTED_COUNTRIES`, réponse brute versionnée (`tests/fixtures/emprises-photon-2026-09-13.json`)
+  et confrontée entrée par entrée. ⚠️ Piège mesuré : l'emprise OSM de **FR, US et NL inclut
+  l'outre-mer** (FR et US couvrent le globe) — point du pays + zoom choisi à la place.
+  ⚠️ Un contrôle « sud < nord, ouest < est » NE VOIT PAS une inversion lat/lng sur un pays dont
+  les deux valeurs restent plausibles (sabotage sur le Tchad : vert) — d'où la confrontation à
+  la mesure brute. À l'écran (`carte-osm.spec.ts`), boutique IVOIRIENNE : seul pays qui fait
+  échouer à la fois l'ancien Dakar et un repli qui ignorerait la boutique. ⚠️ La première sonde
+  unissait TOUTES les tuiles demandées (vue initiale + préchargement) et mesurait autre chose
+  que l'écran ; elle lit désormais la tuile sous chaque coin — par rectangle, car Leaflet pose
+  `pointer-events: none` sur les tuiles et `elementsFromPoint` les ignore.
+- **Un seul client placé** est désormais cadré (l'ancien `length > 1` le laissait hors champ),
+  avec `maxZoom: 14` quand tous partagent un point.
 - **Carte de chaleur** : cercles translucides superposés, pas un dégradé flouté (`leaflet.heat`
   n'est plus maintenu depuis 2015 et patche l'objet global).
 - **Photon public = « fair use », sans garantie** : `VITE_GEOCODER_URL` pour une instance dédiée.

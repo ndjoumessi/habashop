@@ -10,12 +10,13 @@ import { seedEcran, ouvrirEcran } from './ecrans'
  */
 const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAMAASsJTYQAAAAASUVORK5CYII=', 'base64')
 
-async function ouvrirCarte(page: import('@playwright/test').Page, w = 1440) {
+async function ouvrirCarte(page: import('@playwright/test').Page, w = 1440, avantOuverture?: () => Promise<void>) {
   const tuiles: string[] = []
   const google: string[] = []
   await page.route('**/tile.openstreetmap.org/**', r => { tuiles.push(r.request().url()); return r.fulfill({ status: 200, contentType: 'image/png', body: PIXEL }) })
   page.on('request', r => { if (/google(apis)?\.com\/maps|maps\.googleapis/.test(r.url())) google.push(r.url()) })
   await seedEcran(page)
+  await avantOuverture?.()
   await ouvrirEcran(page, '/app/customers', w, 1100)
   await expect(page.locator('body')).toContainText(/Clients|Customers/)
   await page.getByRole('button', { name: /^Carte$/ }).first().click()
@@ -126,4 +127,62 @@ test('thème sombre : SEULES les tuiles sont inversées, jamais les marqueurs', 
   expect(f.tuiles).toMatch(/invert/)
   // Un violet de palier inversé deviendrait un vert : les marqueurs ne sont JAMAIS filtrés.
   expect(f.marqueurs).toBe('none')
+})
+
+test('aucun client placé : la carte cadre le PAYS DE LA BOUTIQUE, plus Dakar en dur', async ({ page }) => {
+  // ⚠️ Boutique IVOIRIENNE, choisie pour être DISCRIMINANTE dans les deux sens : l'ancien
+  // centre (Dakar) échoue, et un repli qui ignorerait la boutique (marché par défaut,
+  // Cameroun) échoue aussi. Géocodeur vidé : aucun client ne peut être placé.
+  const { tuiles } = await ouvrirCarte(page, 1440, () => page.addInitScript(() => {
+    const avant = window.fetch
+    window.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(typeof entree === 'string' ? entree : entree instanceof URL ? entree.href : entree.url)
+      const json = (d: unknown) => new Response(JSON.stringify(d), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (url.includes('photon.komoot.io')) return json({ type: 'FeatureCollection', features: [] })
+      if (/\/api\/tenant(\?|$)/.test(url)) {
+        const t = await (await avant(entree as RequestInfo, init)).json()
+        return json({ ...t, country: 'CI' })
+      }
+      return avant(entree as RequestInfo, init)
+    }) as typeof window.fetch
+  }))
+  // ⚠️ Attendre la FIN du géocodage, pas le libellé « introuvable » : l'écran l'affiche dès la
+  // première frame, AVANT la première requête (mesuré : visible à 3 ms, voile à 272 ms).
+  await expect(page.getByText('Localisation des clients…')).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByText('Localisation des clients…')).toBeHidden({ timeout: 20_000 })
+  await expect(page.getByText(/Adresse introuvable sur la carte \(11\)/).first()).toBeVisible()
+  await expect(page.locator('.hs-marker')).toHaveCount(0)
+  // Témoin : le store a bien reçu le pays — sinon on mesurerait le repli par défaut.
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('habashop-config') ?? '{}')?.state?.tenant?.country)).toBe('CI')
+  expect(tuiles.length, 'aucune tuile demandée').toBeGreaterThan(0)
+  await page.waitForTimeout(1000)
+
+  // ⚠️ La VUE AFFICHÉE, pas l'union des tuiles demandées (elle cumule la vue initiale et la
+  // marge de préchargement de Leaflet — première version fausse pour cette raison). On lit
+  // la tuile SOUS chaque coin de la zone visible, et la position du point dans cette tuile.
+  const e = await page.evaluate(() => {
+    const carte = document.querySelector('[data-testid="customer-map"]')!.getBoundingClientRect()
+    const panneau = 340 // la liste recouvre la carte à gauche (cf. `MARGES`)
+    const geo = (px: number, py: number) => {
+      // ⚠️ Pas `elementsFromPoint` : Leaflet pose `pointer-events: none` sur les tuiles, qui en
+      // sont exclues. On cherche la tuile CHARGÉE dont le rectangle contient le point, au plus
+      // grand zoom présent (un niveau précédent peut rester sous le nouveau).
+      const img = ([...document.querySelectorAll('img.leaflet-tile-loaded')] as HTMLImageElement[])
+        .filter(t => { const r = t.getBoundingClientRect(); return px >= r.left && px < r.right && py >= r.top && py < r.bottom })
+        .sort((a, b) => Number(b.src.match(/\/(\d+)\/\d+\/\d+\.png/)?.[1]) - Number(a.src.match(/\/(\d+)\/\d+\/\d+\.png/)?.[1]))[0]
+      const m = img?.src.match(/\/(\d+)\/(\d+)\/(\d+)\.png/)
+      if (!img || !m) return null
+      const [z, x, y] = m.slice(1).map(Number), r = img.getBoundingClientRect(), n = 2 ** z
+      const tx = x + (px - r.left) / r.width, ty = y + (py - r.top) / r.height
+      return { lat: (Math.atan(Math.sinh(Math.PI * (1 - (2 * ty) / n))) * 180) / Math.PI, lng: (tx / n) * 360 - 180 }
+    }
+    const no = geo(carte.left + panneau + 4, carte.top + 4), se = geo(carte.right - 4, carte.bottom - 4)
+    return no && se ? { nord: no.lat, ouest: no.lng, sud: se.lat, est: se.lng } : null
+  })
+  expect(e, 'aucune tuile sous les coins de la carte').not.toBeNull()
+  const dedans = (la: number, lo: number) => la >= e!.sud && la <= e!.nord && lo >= e!.ouest && lo <= e!.est
+  const vue = `${e!.sud.toFixed(1)}…${e!.nord.toFixed(1)} N · ${e!.ouest.toFixed(1)}…${e!.est.toFixed(1)} E`
+  expect(dedans(5.36, -4.01), `Abidjan hors de la vue (${vue})`).toBe(true)
+  expect(dedans(14.69, -17.45), `Dakar dans la vue (${vue}) — l'ancien centre en dur`).toBe(false)
+  expect(dedans(4.05, 9.70), `Douala dans la vue (${vue}) — le pays de la boutique est ignoré`).toBe(false)
 })

@@ -20,7 +20,7 @@ import {
   noSalesInPeriodLabel, noSalesThisMonthLabel, salesChartTitle, periodOptionLabel,
   isChartPeriod, buildSalesSeries, salesPointLabel, pickAxisTicks, CHART_PERIODS, type ChartPeriod,
 } from '@/components/dashboard/dashboardShared'
-// Charts isolés dans le chunk `charts` (recharts) → lazy pour ne pas bloquer le rendu des KPIs
+// Charts isolés dans le chunk `charts` (visx) → lazy pour ne pas bloquer le rendu des KPIs
 const DashSalesArea = lazy(() => import('@/components/charts/DashSalesArea'))
 const DashCategoryDonut = lazy(() => import('@/components/charts/DashCategoryDonut'))
 
@@ -50,7 +50,7 @@ export function autresLabel(count: number, lang: string): string {
 }
 
 // Label du donut : utilise les MÊMES pourcentages que la légende (catPcts, somme garantie
-// = 100 %), repérés par `index`, plutôt que le `percent` brut de recharts → aucun décalage
+// = 100 %), repérés par `index`, plutôt qu'un `percent` calculé par la bibliothèque → aucun décalage
 // possible donut/légende (ex. dernier slice corrigé, cas sub-5 %). Les slices < 5 % restent
 // masqués sur le donut (lisibilité) ; la légende, elle, les liste toujours.
 const makeDonutLabel = (pcts: number[]) => ({ cx, cy, midAngle, innerRadius, outerRadius, index }: any) => {
@@ -73,7 +73,7 @@ const CatTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null
   const p = payload[0]
   // % = catPcts embarqué dans la ligne de données (`pct`) → SOURCE UNIQUE partagée avec la
-  // légende et le label du donut. NE PAS recalculer (value/total ou p.percent recharts)
+  // légende et le label du donut. NE PAS recalculer (value/total ou un `percent` de bibliothèque)
   // sinon le dernier slice (corrigé à 100−Σ) divergerait entre tooltip et légende.
   const pct = Number(p.payload?.pct ?? 0)
   const color = p.payload?.color ?? DONUT_COLORS[0]

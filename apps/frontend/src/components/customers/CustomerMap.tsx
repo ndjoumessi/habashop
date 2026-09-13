@@ -5,7 +5,8 @@ import { Search, Eye, X, ShoppingCart, MapPin, Navigation2, Globe, Flame } from 
 import { type GeoCustomer, MAP_BG, markerIconSvg, getMapCfg, typeLabel } from '@/components/customers/customersShared'
 import { useAppStore, isThemeLight } from '@/stores/appStore'
 import { escHtml } from '@/lib/html'
-import { TILE_URL, TILE_ATTRIBUTION, lienCarte } from '@/lib/geo'
+import { TILE_URL, TILE_ATTRIBUTION, lienCarte, vueDuPays } from '@/lib/geo'
+import { useTenantCountry } from '@/hooks/useTenantDialCode'
 
 /**
  * CARTE DES CLIENTS — OpenStreetMap via Leaflet (remplace Google Maps le 2026-09-13).
@@ -25,13 +26,8 @@ import { TILE_URL, TILE_ATTRIBUTION, lienCarte } from '@/lib/geo'
  *   · ATTRIBUTION — OBLIGATOIRE (licence ODbL), en bas à droite, jamais sous un contrôle.
  */
 
-/**
- * Centre de repli quand aucun client n'est localisé. ⚠️ C'est DAKAR, repris tel quel de
- * l'implémentation Google : le marché par défaut du produit est désormais le Cameroun
- * (`defaultMarket.ts`). Laissé en l'état pour ne changer QU'UNE chose dans cette migration —
- * à dériver du pays de la boutique, dette écrite plutôt que masquée.
- */
-const CENTRE_REPLI: [number, number] = [14.6928, -17.4467]
+/** Marge du cadrage : le panneau de liste recouvre la carte sur 340 px à gauche. */
+const MARGES = { paddingTopLeft: L.point(340, 60), paddingBottomRight: L.point(60, 60) }
 
 // Échappe le contenu utilisateur injecté dans le HTML du popup (anti-XSS).
 // ⚠️ CETTE COPIE ÉTAIT LA DIVERGENTE : elle couvrait `& < > "` mais PAS l'apostrophe,
@@ -51,6 +47,8 @@ export default function CustomerMap({
   onOpenDetail: (c: any) => void
 }) {
   const theme       = useAppStore(s => s.theme)
+  // ⚠️ La vue de repli vient du pays de la BOUTIQUE (`vueDuPays`) — plus de Dakar en dur.
+  const pays        = useTenantCountry()
   const mapRef      = useRef<HTMLDivElement>(null)
   const mapObj      = useRef<L.Map | null>(null)
   const marqueurs   = useRef<L.LayerGroup | null>(null)
@@ -165,10 +163,29 @@ export default function CustomerMap({
     if (btn) btn.onclick = () => { mapObj.current?.closePopup(); ouvrirFiche.current(customer) }
   }
 
+  /**
+   * Cadrage : les clients placés s'il y en a, sinon le pays de la boutique.
+   * ⚠️ UN seul client est cadré aussi : l'ancien test `visibleList.length > 1` laissait la
+   * carte sur la vue de repli, marqueur hors champ. `maxZoom` borne le cas où tous les
+   * clients partagent un même point — sans lui, Leaflet plongeait au niveau de la rue.
+   */
+  const cadrer = (map: L.Map) => {
+    if (visibleList.length > 0) {
+      map.fitBounds(L.latLngBounds(visibleList.map(({ pos }) => [pos.lat, pos.lng] as [number, number])), { ...MARGES, maxZoom: 14 })
+      return
+    }
+    // Des clients placés mais tous FILTRÉS (recherche, type) : on ne bouge pas la carte.
+    if (geoCustomers.length > 0) return
+    const vue = vueDuPays(pays)
+    if ('bornes' in vue) map.fitBounds(vue.bornes, MARGES)
+    else map.setView(vue.centre, vue.zoom)
+  }
+
   // Init carte — UNE fois. Plus de réinitialisation au changement de thème (cf. en-tête).
   useEffect(() => {
     if (!mapRef.current || mapObj.current) return
-    const map = L.map(mapRef.current, { center: CENTRE_REPLI, zoom: 6, zoomControl: true, attributionControl: true })
+    // Sans vue initiale : l'effet des marqueurs CADRE dès `mapReady` (clients, sinon pays).
+    const map = L.map(mapRef.current, { zoomControl: true, attributionControl: true })
     L.tileLayer(TILE_URL, { maxZoom: 19, attribution: TILE_ATTRIBUTION }).addTo(map)
     map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener noreferrer">Leaflet</a>')
     marqueurs.current = L.layerGroup().addTo(map)
@@ -189,7 +206,6 @@ export default function CustomerMap({
     chaleur.current.clearLayers()
     parId.current.clear()
 
-    const bounds = L.latLngBounds([])
     visibleList.forEach(({ customer, pos }) => {
       const cfg     = getMapCfg(customer.type ?? 'Détail')
       const totalCA = Number(customer.totalRevenue ?? customer.totalCA ?? 0)
@@ -216,7 +232,6 @@ export default function CustomerMap({
       })
       marker.addTo(marqueurs.current!)
       parId.current.set(customer.id, marker)
-      bounds.extend([pos.lat, pos.lng])
     })
 
     // Densité : cercles translucides superposés (cf. en-tête — ce n'est pas un dégradé flouté).
@@ -228,10 +243,8 @@ export default function CustomerMap({
       })
     }
 
-    if (bounds.isValid() && visibleList.length > 1) {
-      map.fitBounds(bounds, { paddingTopLeft: [340, 60], paddingBottomRight: [60, 60] })
-    }
-  }, [mapReady, visibleList, showHeat]) // eslint-disable-line react-hooks/exhaustive-deps
+    cadrer(map)
+  }, [mapReady, visibleList, showHeat, pays]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const centerOnMe = () => {
     if (!navigator.geolocation || !mapObj.current) return
@@ -430,7 +443,7 @@ export default function CustomerMap({
         <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 1100 }}>
           {[
             { icon: <Navigation2 size={16} />, title: lang === 'en' ? 'My location' : lang === 'es' ? 'Mi ubicación' : lang === 'it' ? 'La mia posizione' : 'Ma position',  fn: centerOnMe },
-            { icon: <Globe size={16} />, title: lang === 'en' ? 'Global view' : lang === 'es' ? 'Vista global' : lang === 'it' ? 'Vista globale' : 'Vue globale',  fn: () => { mapObj.current?.setView(CENTRE_REPLI, 6) } },
+            { icon: <Globe size={16} />, title: lang === 'en' ? 'Global view' : lang === 'es' ? 'Vista global' : lang === 'it' ? 'Vista globale' : 'Vue globale',  fn: () => { if (mapObj.current) cadrer(mapObj.current) } },
           ].map(btn => (
             <button key={btn.title} type="button" onClick={btn.fn} title={btn.title}
               style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--card)', border: '1px solid var(--border2)', cursor: 'pointer', color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: 'var(--sh-sm)', transition: 'background .15s' }}

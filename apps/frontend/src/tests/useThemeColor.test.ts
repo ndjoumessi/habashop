@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { resolveThemeColor } from '@/hooks/useThemeColor'
 
-// Résolution JS d'une couleur de thème (pour attribut SVG recharts). On mocke
+// Résolution JS d'une couleur de thème (pour un attribut SVG de graphique). On mocke
 // getComputedStyle → getPropertyValue pour des assertions déterministes.
 const mockVar = (value: string) => {
   vi.spyOn(window, 'getComputedStyle').mockReturnValue({

@@ -99,7 +99,7 @@ describe('① un seul dénominateur', () => {
   })
 
   it('la géométrie du donut et le libellé lisent le MÊME nombre', () => {
-    // recharts calcule l'angle par `value / Σ(values)`. En lui donnant `pct` — dont on
+    // `Anneau` (visx `pieValue`) calcule l'angle par `value / Σ(values)`. En lui donnant `pct` — dont on
     // vient de prouver que Σ == 100 — l'angle vaut `pct/100` : identique au libellé.
     // C'est ce qui rend l'égalité vraie PAR CONSTRUCTION et non par coïncidence.
     const parts = buildPaymentBreakdown(ventesReelles(), 'fr')
@@ -107,9 +107,9 @@ describe('① un seul dénominateur', () => {
     for (const p of parts) expect(Math.round((p.pct / somme) * 100)).toBe(p.pct)
   })
 
-  it('RÈGLE STRUCTURELLE : le donut ne lit pas le `percent` de recharts', () => {
+  it('RÈGLE STRUCTURELLE : le donut ne lit aucun `percent` fabriqué par la bibliothèque', () => {
     // C'est le second dénominateur, et il est invisible à la lecture : il n'apparaît nulle
-    // part dans nos données, recharts le fabrique. Le bannir du panneau de paiement est la
+    // part dans nos données, la bibliothèque le fabriquait (recharts, retiré le 2026-08-15). Le bannir du panneau de paiement est la
     // seule façon d'empêcher la divergence de revenir par ce bout.
     const src = readFileSync(join(RACINE, 'components/reports/ReportsTabs.tsx'), 'utf8')
     const zonePaiement = src.slice(src.indexOf('renderActiveShape'), src.indexOf('const CustomPayTooltip'))
@@ -169,7 +169,7 @@ describe('② une catégorie présente dans les données est rendue', () => {
    ② bis — SUR LE DOM RENDU, pas sur la source
    ══════════════════════════════════════════════════════════════════════════════ */
 describe('② bis — le rendu réel du panneau', () => {
-  // recharts appelle `ResizeObserver`, absent de jsdom. Le stub ne simule aucune géométrie :
+  // `useLargeur` (`charts/primitives.tsx`) appelle `ResizeObserver`, absent de jsdom. Le stub ne simule aucune géométrie :
   // ⚠️ ce bloc prouve ce qui est ÉCRIT (légende, sous-titre, compteur), jamais la mise en
   // page. jsdom ne mesure rien — c'est la même limite assumée que la table dense.
   beforeAll(() => {
