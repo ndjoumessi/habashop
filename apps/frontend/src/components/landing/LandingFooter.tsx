@@ -45,6 +45,7 @@ export default function LandingFooter({ lp }: Props) {
               * `/privacy` sans que rien ne rougisse. Clé stable → cible.
               */}
             {([
+              { cle: 'guide'   as const, to: '/guide',    externe: false },
               { cle: 'privacy' as const, to: '/privacy',  externe: false },
               { cle: 'terms'   as const, to: '/terms',    externe: false },
               { cle: 'legal'   as const, to: '/mentions-legales', externe: false },
