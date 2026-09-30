@@ -1,10 +1,13 @@
 import type { GuideSection } from './types'
 import { caisse } from './caisse'
+import { stock } from './stock'
+import { codesBarres } from './codesBarres'
+import { clients } from './clients'
 
 /**
  * ORDRE DU MANUEL — source unique. Le sommaire ET les sections en dérivent tous les deux :
  * deux listes divergeraient, et c'est le sommaire qui mentirait.
  */
-export const GUIDE_SECTIONS: readonly GuideSection[] = [caisse]
+export const GUIDE_SECTIONS: readonly GuideSection[] = [caisse, stock, codesBarres, clients]
 
 export type { GuideSection, GuideLang, Traduit } from './types'
