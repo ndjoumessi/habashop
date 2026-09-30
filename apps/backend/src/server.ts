@@ -52,6 +52,7 @@ import { leaveRequestRoutes } from './routes/leaveRequests'
 import { subscriptionRoutes } from './routes/subscriptions'
 import { integrationRoutes }  from './routes/integrations'
 import { publicRoutes }       from './routes/public'
+import { demoRoutes }         from './routes/demo'
 import { sendWeeklyReport } from './services/email'
 import { runMonthlyPayrollReports } from './services/payrollReport'
 import { payrollRoutes } from './routes/payroll'
@@ -312,6 +313,9 @@ async function start() {
   await app.register(subscriptionRoutes)
   await app.register(integrationRoutes)
   await app.register(publicRoutes) // routes publiques (sans authentification) — /api/public/*
+  // Démo jetable en libre-service : publique par conception, bornée par un plafond global
+  // et un plafond par IP volontairement généreux (CGNAT ouest-africain).
+  await app.register(demoRoutes)
 
   // ─── CRONS EMAIL (rappels essai + rapport hebdo) ──
   // Rappels d'essai — toutes les heures
