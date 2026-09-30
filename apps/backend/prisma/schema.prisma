@@ -17,6 +17,13 @@ model Tenant {
   // (403 DEMO_TENANT_FORBIDDEN, cf. middleware/demoTenant.ts) — la seule protection qui
   // résiste à un curl, le mot de passe démo étant public. Défaut false.
   isDemo     Boolean @default(false)
+  /// Échéance d'une démo JETABLE (libre-service). `null` = pas une démo jetable.
+  /// ⚠️ La purge ne supprime QUE les tenants dont cette colonne est non nulle et dépassée :
+  /// `demo-tenant-001/002` et `e2e-tenant` portent `null`, donc sont impurgeables par
+  /// construction — protégés par une propriété, pas par une liste de noms qui vieillirait.
+  /// ⚠️ NE PAS réutiliser `trialEnds` pour cela : c'est un champ de FACTURATION, lu par les
+  /// relances d'essai et le garde de dépense.
+  demoExpiresAt DateTime?
   id         String  @id @default(cuid())
   name       String
   currency   String  @default("XOF")
@@ -118,6 +125,7 @@ model Tenant {
   transfersTo     StockTransfer[]      @relation("TransferTo")
 
   @@index([deletedAt])
+  @@index([demoExpiresAt])
 }
 
 model PlanRequest {
