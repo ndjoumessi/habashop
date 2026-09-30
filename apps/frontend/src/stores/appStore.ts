@@ -336,6 +336,15 @@ export interface Tenant {
    * la même distinction que pour le raccourci de connexion démo.
    */
   isDemo?: boolean
+  /**
+   * Échéance d'une démo JETABLE (libre-service). `null`/absent = pas une démo jetable —
+   * les démos PERMANENTES (`demo-tenant-001/002`) portent `isDemo` sans échéance.
+   *
+   * ⚠️ Valeur du SERVEUR, jamais recalculée côté client. Un « +7 jours » local serait un
+   * champ déclaré : il ne pourrait pas être faux, donc ne prouverait rien, et mentirait dès
+   * que le délai serveur changerait.
+   */
+  demoExpiresAt?: string | null
   address?: string | null
   phone?: string | null
   email?: string | null

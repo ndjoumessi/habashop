@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger'
+import { isDemoSession, clearDemoSession } from '@/lib/demoSession'
 import type { ApiSupplier, SupplierCreate, SupplierWrite } from '@/components/suppliers/suppliersShared'
 import type { ApiOrder, OrderWrite } from '@/components/orders/ordersShared'
 import type { ApiCustomer, ApiCustomerSearchHit, ApiCustomerSale, CustomerWrite } from '@/components/customers/customersShared'
@@ -99,9 +100,18 @@ async function request<T>(
     })
 
     if (res.status === 401) {
-      console.warn('Token expiré → login')
+      logger.warn('Token expiré → sortie de session')
       localStorage.removeItem('habashop_token')
       localStorage.removeItem('habashop-auth')
+      // ⚠️ Un visiteur de DÉMO n'a PAS de compte : l'envoyer sur /login après l'expiration
+      // de sa démo lui présente un formulaire qu'il ne peut pas remplir. Le backend rend un
+      // 401 propre dans ce cas (`authenticate` → `isUserActive` ne trouve plus l'utilisateur
+      // purgé), donc c'est bien ici, et seulement ici, que la destination se décide.
+      if (isDemoSession()) {
+        clearDemoSession()
+        if (window.location.pathname !== '/') window.location.href = '/?demo=expiree'
+        throw new Error('Votre démonstration a expiré')
+      }
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login'
       }
@@ -156,6 +166,14 @@ export interface AccessibleTenant {
   logo: string | null
   address: string | null
   role: string
+}
+
+/**
+ * Démo jetable en libre-service. Aucun paramètre : le visiteur ne saisit rien, donc aucune
+ * donnée personnelle n'est collectée.
+ */
+export const demoApi = {
+  start: () => api.post<{ token: string; user: ApiSessionUser; tenant: ApiTenant }>('/api/demo/start', {}),
 }
 
 export const authApi = {

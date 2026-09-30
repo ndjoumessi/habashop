@@ -26,9 +26,15 @@ const MAINTENANT = new Date('2026-10-20T03:00:00.000Z')
 
 interface TenantSimule { id: string; demoExpiresAt: Date | null; isDemo: boolean }
 
+/** La forme du `where` que le service envoie — c'est elle qu'on met à l'épreuve. */
+interface WhereSimule {
+  isDemo?: boolean
+  demoExpiresAt?: { not?: null; lt?: Date }
+}
+
 /** Base simulée : le `findMany` APPLIQUE réellement le filtre reçu. */
 function seed(tenants: TenantSimule[]) {
-  db.tenant.findMany.mockImplementation(async (args: { where: Record<string, any> }) => {
+  db.tenant.findMany.mockImplementation(async (args: { where: WhereSimule }) => {
     const where = args.where
     return tenants.filter(t => {
       if (where.isDemo !== undefined && t.isDemo !== where.isDemo) return false
@@ -127,7 +133,7 @@ describe('runDemoPurge', () => {
       { id: 'demo-tenant-001', demoExpiresAt: null, isDemo: true },
       { id: 'demo-tmp-echue', demoExpiresAt: new Date('2026-10-01T00:00:00Z'), isDemo: true },
     ]
-    db.tenant.findMany.mockImplementation(async (args: { where: Record<string, any> }) => {
+    db.tenant.findMany.mockImplementation(async (args: { where: WhereSimule }) => {
       const where = args.where
       return tenants.filter(t => {
         if (where.isDemo !== undefined && t.isDemo !== where.isDemo) return false
@@ -135,7 +141,7 @@ describe('runDemoPurge', () => {
         // La clause de nullité est HONORÉE — c'est elle qu'on met à l'épreuve.
         if (cond?.not === null && t.demoExpiresAt === null) return false
         // ⚠️ Comparaison NAÏVE, sans garde : `null < Date` est TRUE en JS.
-        if (cond?.lt !== undefined && !((t.demoExpiresAt as unknown as number) < cond.lt)) return false
+        if (cond?.lt !== undefined && !((t.demoExpiresAt as unknown as number) < (cond.lt as unknown as number))) return false
         return true
       }).map(t => ({ id: t.id }))
     })

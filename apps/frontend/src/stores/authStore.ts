@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { authApi, type AccessibleTenant } from '@/lib/api'
+import { authApi, demoApi, type AccessibleTenant } from '@/lib/api'
+import { markDemoSession, clearDemoSession } from '@/lib/demoSession'
 import { useAppStore } from '@/stores/appStore'
 
 export const USER_ROLES = ['ADMIN', 'MANAGER', 'CASHIER', 'ACCOUNTANT', 'HR', 'SUPER_ADMIN', 'admin', 'manager', 'cashier', 'accountant', 'hr'] as const
@@ -88,6 +89,15 @@ interface AuthState {
   activeTenantId: string | null        // null = aucune boutique sélectionnée (sélecteur requis)
   login: (email: string, password: string) => Promise<void>
   register: (data: any) => Promise<void>
+  /** Ouvre une démo jetable en libre-service (aucune saisie du visiteur). */
+  startDemo: () => Promise<void>
+  /**
+   * Adopte une session fraîchement émise par le serveur.
+   * ⚠️ `register` ET `startDemo` passent par ICI. Deux copies divergeraient sur la
+   * normalisation du rôle, et c'est elle qui empêche un rôle inconnu de devenir un rôle
+   * deviné — le seul risque réel de ce typage.
+   */
+  adoptSession: (token: string, user: any, tenant: any) => void
   switchTenant: (tenantId: string) => Promise<void>
   logout: () => void
   updateUser: (data: Partial<User>) => void
@@ -132,22 +142,44 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      /**
+       * Prise de session commune à `register` et `startDemo`.
+       * ⚠️ Une SEULE implémentation : deux copies divergeraient sur la normalisation du rôle.
+       */
+      adoptSession: (token, user, tenant) => {
+        localStorage.setItem('habashop_token', token)
+        useAppStore.getState().setTenant(tenant ?? null)
+        set({
+          // ⚠️ `role` arrive en CHAÎNE LIBRE du serveur — même garde que le chemin de
+          // rafraîchissement (`App.tsx`) : un rôle inconnu retombe sur le MOINS privilégié,
+          // jamais sur un rôle deviné. Décider de droits d'accès sur une valeur non
+          // vérifiée est le seul risque réel de ce typage.
+          user: { ...user, role: isKnownRole(user.role) ? user.role : 'CASHIER' },
+          token, isAuthenticated: true, isLoading: false,
+          tenants: tenant ? [{ id: tenant.id, name: tenant.name, currency: tenant.currency, plan: tenant.plan, logo: tenant.logo ?? null, address: tenant.address ?? null, role: 'ADMIN' }] : [],
+          activeTenantId: tenant?.id ?? null,
+        })
+      },
+
       register: async (data) => {
         set({ isLoading: true, error: null })
         try {
           const { token, user, tenant } = await authApi.register(data)
-          localStorage.setItem('habashop_token', token)
-          useAppStore.getState().setTenant(tenant ?? null)
-          set({
-            // ⚠️ `role` arrive en CHAÎNE LIBRE du serveur — même garde que le chemin de
-            // rafraîchissement (`App.tsx`) : un rôle inconnu retombe sur le MOINS privilégié,
-            // jamais sur un rôle deviné. Décider de droits d'accès sur une valeur non
-            // vérifiée est le seul risque réel de ce typage.
-            user: { ...user, role: isKnownRole(user.role) ? user.role : 'CASHIER' },
-            token, isAuthenticated: true, isLoading: false,
-            tenants: tenant ? [{ id: tenant.id, name: tenant.name, currency: tenant.currency, plan: tenant.plan, logo: tenant.logo ?? null, address: tenant.address ?? null, role: 'ADMIN' }] : [],
-            activeTenantId: tenant?.id ?? null,
-          })
+          useAuthStore.getState().adoptSession(token, user, tenant)
+        } catch (err: any) {
+          set({ error: err.message, isLoading: false })
+          throw err
+        }
+      },
+
+      startDemo: async () => {
+        set({ isLoading: true, error: null })
+        try {
+          const { token, user, tenant } = await demoApi.start()
+          useAuthStore.getState().adoptSession(token, user, tenant)
+          // ⚠️ APRÈS l'adoption : si celle-ci lève, on ne veut pas d'un marquage orphelin
+          // qui enverrait une session NORMALE vers la vitrine au premier 401.
+          markDemoSession()
         } catch (err: any) {
           set({ error: err.message, isLoading: false })
           throw err
@@ -171,6 +203,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         localStorage.removeItem('habashop_token')
+        clearDemoSession() // une session normale ne doit pas hériter du marquage d'une démo
         useAppStore.getState().clearTenant()
         useAppStore.getState().resetCashierSession()
         useAppStore.getState().clearCart() // panier vide — pas hérité d'une session précédente
