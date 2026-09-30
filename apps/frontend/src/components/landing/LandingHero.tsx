@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Store, WifiOff, RefreshCw } from 'lucide-react'
+import { ArrowRight, Check, Store, WifiOff, RefreshCw, Play } from 'lucide-react'
 import { scrollTo } from './landingShared'
 import type { LandingT } from './landingShared'
 
@@ -6,6 +6,13 @@ interface Props {
   lp: LandingT
   i: (fr: string, en: string, es: string, it: string) => string
   navigate: (to: string) => void
+  /**
+   * Ouvre une démo jetable. Fournie par `LandingPage` — le hero n'appelle pas le store :
+   * les composants de la vitrine reçoivent leurs actions en props (motif du dossier).
+   */
+  onDemo: () => void
+  /** Requête en vol : le bouton s'éteint le temps de l'aller-retour (anti double-soumission). */
+  demoEnCours: boolean
 }
 
 /**
@@ -24,7 +31,7 @@ interface Props {
  * Densité : plus de `minHeight: 100vh` — le hero occupait un écran entier pour trois
  * lignes de texte, ce qui repoussait tout le reste sous la ligne de flottaison.
  */
-export default function LandingHero({ lp, i, navigate }: Props) {
+export default function LandingHero({ lp, i, navigate, onDemo, demoEnCours }: Props) {
   return (
     <section style={{
       padding: '112px clamp(16px,4vw,64px) 64px',
@@ -89,6 +96,32 @@ export default function LandingHero({ lp, i, navigate }: Props) {
               onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--card)'; el.style.borderColor = 'var(--border2)' }}
             >
               {lp.cta2}
+            </button>
+            {/* Démo jetable — SECOND rang visuel : là où le visiteur décide, sans
+                concurrencer l'inscription qui reste l'objectif.
+
+                ⚠️ `disabled` UNIQUEMENT pendant la requête en vol (anti double-soumission) —
+                exemption nommée de `landingClaims.test.ts`. Aucune validation ne gouverne ce
+                bouton : il n'a aucun champ à remplir, et un bouton éteint par la validation
+                gronde avant l'erreur sans dire ce qui manque, et n'affiche aucune infobulle
+                au toucher. */}
+            <button type="button" onClick={onDemo}
+              disabled={demoEnCours}
+              aria-busy={demoEnCours}
+              style={{
+                padding: '14px 24px', borderRadius: 14, background: 'transparent',
+                border: '1px solid var(--border2)', color: 'var(--text2)',
+                fontSize: 'var(--fs-title)', fontWeight: 700, fontFamily: 'var(--font)',
+                cursor: demoEnCours ? 'wait' : 'pointer',
+                opacity: demoEnCours ? 0.6 : 1,
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                transition: 'background .2s, border-color .2s, opacity .2s',
+              }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--card2)'; el.style.color = 'var(--text)' }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'transparent'; el.style.color = 'var(--text2)' }}
+            >
+              <Play size={16} strokeWidth={2.6} aria-hidden="true"/>
+              {demoEnCours ? i('Ouverture…', 'Opening…', 'Abriendo…', 'Apertura…') : lp.cta_demo}
             </button>
           </div>
 

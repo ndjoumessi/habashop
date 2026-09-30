@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
+import { useAuthStore } from '@/stores/authStore'
 import { useAppStore } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { D, FONT, LANDING_TRANSLATIONS } from '@/components/landing/landingShared'
@@ -34,11 +37,40 @@ export default function LandingPage() {
   const { lang, setLang, currency, setCurrency } = useAppStore()
   const { i } = useI18n()
   const lp = (LANDING_TRANSLATIONS as Record<string, typeof LANDING_TRANSLATIONS.fr>)[lang] ?? LANDING_TRANSLATIONS.fr
+  const [demoEnCours, setDemoEnCours] = useState(false)
+
+  /**
+   * Ouvre une démo jetable et y entre.
+   *
+   * ⚠️ On ne remet PAS `demoEnCours` à false en cas de succès : la navigation démonte le
+   * composant, et le remettre avant ferait clignoter le bouton.
+   *
+   * ⚠️ Un échec se DIT. Un bouton qui ne répond pas laisse le visiteur sans information, et
+   * le repli nommé (créer sa boutique) est ce qu'on a de mieux à lui proposer.
+   */
+  const ouvrirDemo = async () => {
+    setDemoEnCours(true)
+    try {
+      await useAuthStore.getState().startDemo()
+      navigate('/app/dashboard')
+    } catch (err: unknown) {
+      const message = err instanceof Error && err.message
+        ? err.message
+        : i(
+          'Impossible d’ouvrir la démonstration. Créez votre boutique — l’essai est gratuit.',
+          'Could not open the demo. Create your shop — the trial is free.',
+          'No se pudo abrir la demostración. Cree su tienda: la prueba es gratuita.',
+          'Impossibile aprire la dimostrazione. Crea il tuo negozio: la prova è gratuita.',
+        )
+      toast.error(message)
+      setDemoEnCours(false)
+    }
+  }
 
   return (
     <div className="public-scope" style={{ minHeight: '100vh', background: D.bg, color: D.text, fontFamily: FONT, overflowX: 'hidden' }}>
       <LandingNav lp={lp} navigate={navigate} lang={lang as Lang} setLang={setLang} currency={currency as Currency} setCurrency={setCurrency} />
-      <LandingHero lp={lp} i={i} navigate={navigate} />
+      <LandingHero lp={lp} i={i} navigate={navigate} onDemo={ouvrirDemo} demoEnCours={demoEnCours} />
       <LandingFeatures lp={lp} i={i} />
       <LandingHowItWorks lp={lp} />
       <LandingCurrencies lp={lp} i={i} lang={lang as Lang} setLang={setLang} />
