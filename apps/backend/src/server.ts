@@ -57,6 +57,7 @@ import { sendWeeklyReport } from './services/email'
 import { runMonthlyPayrollReports } from './services/payrollReport'
 import { payrollRoutes } from './routes/payroll'
 import { runTrialReminders, runDailyStockAlerts, runDemoPiiSweep } from './services/notificationCrons'
+import { runDemoPurge } from './services/demoPurge'
 import { isR2Configured } from './lib/spend/r2Client'
 
 // ─── Validation des variables d'environnement obligatoires ───
@@ -351,6 +352,22 @@ async function start() {
     if (now.getDate() !== 1 || now.getHours() !== 8 || now.getMinutes() > 5) return
     runMonthlyPayrollReports().catch(err => console.error('❌ Cron récap paie:', err))
   }, 60 * 60 * 1000)
+
+  // Purge des démos jetables — quotidien 3h.
+  //
+  // ⚠️ PAS DE 5 MINUTES, pas une heure comme les crons voisins, et c'est MESURÉ : un
+  // `setInterval` HORAIRE déclenche toujours à la minute de démarrage du conteneur. Avec la
+  // garde `getMinutes() > 5`, un conteneur démarré à la minute 37 ne verrait JAMAIS la
+  // fenêtre s'ouvrir, et la purge ne tournerait jamais sans que rien ne le signale. Un pas
+  // de 5 minutes touche forcément [0,5] puisque 5 divise 60.
+  //
+  // ⚠️ Deux ticks peuvent tomber dans la fenêtre (minutes 0 et 5) : sans effet, la passe est
+  // idempotente par construction (elle sélectionne sur l'échéance).
+  setInterval(() => {
+    const now = new Date()
+    if (now.getHours() !== 3 || now.getMinutes() > 5) return
+    runDemoPurge().catch(err => console.error('❌ Cron purge démos:', err))
+  }, 5 * 60 * 1000)
 
   // ─── DÉMARRAGE ──────────────────────────
   try {
