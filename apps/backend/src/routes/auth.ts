@@ -11,6 +11,7 @@ import { DEFAULT_PLAN_ON_SIGNUP } from '../lib/plans'
 import { isCurrencyZoneConflict, currencyZoneError } from '../lib/currencyZone'
 import { DEFAULT_MARKET } from '../lib/defaultMarket'
 import { vatRateOrZero } from '../lib/vatRate'
+import { signActiveToken, signNoTenantToken } from '../lib/authToken'
 
 // ── Schémas de validation (item 6) ──────────────────────────────────────────
 // Login : PERMISSIF (présence seule) — la vérif des identifiants reste un 401 générique.
@@ -75,11 +76,14 @@ export async function accessibleTenants(userId: string, fallbackTenantId?: strin
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   // Jeton avec boutique active (single tenant ou après switch). role = rôle PAR boutique.
   // isPlatformAdmin = statut super-admin SaaS (per-user, hors rôle tenant), signé serveur.
+  // ⚠️ La FORME du payload vit dans `lib/authToken.ts` — source unique. Ces closures ne sont
+  // plus que des adaptateurs d'arité pour les 3 sites d'appel existants : recopier la forme
+  // ici ferait un jumeau, et un jumeau de payload d'authentification divergerait en silence.
   const signActive = (userId: string, role: string, tenantId: string, isPlatformAdmin = false) =>
-    app.jwt.sign({ userId, role, tenantId, activeTenantId: tenantId, isPlatformAdmin }, { expiresIn: '7d' })
+    signActiveToken(app, { userId, role, tenantId, isPlatformAdmin })
   // Jeton SANS boutique active (multi-boutiques : sélection requise avant d'entrer).
   const signNoTenant = (userId: string, role: string, isPlatformAdmin = false) =>
-    app.jwt.sign({ userId, role, tenantId: null, activeTenantId: null, isPlatformAdmin }, { expiresIn: '7d' })
+    signNoTenantToken(app, { userId, role, isPlatformAdmin })
   app.post('/api/auth/login', {
     config: {
       rateLimit: {
