@@ -8,12 +8,15 @@ import { useEffect, useState, Suspense } from 'react'
 import PWAInstallButton from '@/components/ui/PWAInstallButton'
 import BillingBanner from '@/components/ui/BillingBanner'
 import OfflineBanner from '@/components/ui/OfflineBanner'
+import DemoBanner from './DemoBanner'
 import { useI18n } from '@/hooks/useI18n'
 import { setAnnounceRegion } from '@/lib/announce'
 import GlobalSearch from '@/components/GlobalSearch'
 
 export default function AppLayout() {
   const { theme } = useAppStore()
+  // L'échéance de démo vient du tenant SERVEUR — jamais recalculée ici.
+  const demoExpiresAt = useAppStore(s => s.tenant?.demoExpiresAt ?? null)
   const { i } = useI18n()
   const token = useAuthStore(s => s.token)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -57,6 +60,7 @@ export default function AppLayout() {
       <div className="main-content">
         <Header />
         <BillingBanner />
+        <DemoBanner demoExpiresAt={demoExpiresAt} />
         <OfflineBanner />
         <main id="main-content" tabIndex={-1} className="page-content">
           <Suspense fallback={<div style={{ padding: 40, color: 'var(--text3)', fontFamily: 'var(--font)' }}>Chargement…</div>}>
