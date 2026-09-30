@@ -26,6 +26,7 @@ const Activity       = lazy(() => import('@/pages/Activity'))
 const Notifications  = lazy(() => import('@/pages/Notifications'))
 const Settings       = lazy(() => import('@/pages/Settings'))
 const SignupPage     = lazy(() => import('@/pages/SignupPage'))
+const Guide          = lazy(() => import('@/pages/Guide'))
 const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'))
 const Marketing      = lazy(() => import('@/pages/Marketing'))
 const AIAssistant    = lazy(() => import('@/pages/AIAssistant'))
@@ -175,6 +176,8 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/pricing" element={<Pricing />} />
+      {/* Manuel d'utilisation — PUBLIC par conception : destiné à être partagé et indexé. */}
+      <Route path="/guide" element={<Guide />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/mentions-legales" element={<LegalNotice />} />
