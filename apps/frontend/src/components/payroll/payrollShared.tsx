@@ -1,4 +1,5 @@
 import { useAppStore, formatAmount, formatInCurrency, convertFromXOF, CURRENCY_DECIMALS, t } from '@/stores/appStore'
+import { roleLabel } from '@/components/hr/hrShared'
 import { openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
 
 export type PayStatus = 'PAYÉ' | 'EN ATTENTE' | 'SUSPENDU' | 'GÉNÉRÉ'
@@ -107,21 +108,26 @@ export const monthLabel = (m: string, lang: string) => {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-// Libellés des postes employés (traduits à l'affichage, valeurs custom passent inchangées)
-const ROLE_T: Record<string, Record<string, string>> = {
-  'Caissier':   { fr:'Caissier',   en:'Cashier',     es:'Cajero',     it:'Cassiere'     },
-  'Caissière':  { fr:'Caissière',  en:'Cashier',     es:'Cajera',     it:'Cassiera'     },
-  'Vendeur':    { fr:'Vendeur',    en:'Sales rep',   es:'Vendedor',   it:'Venditore'    },
-  'Vendeuse':   { fr:'Vendeuse',   en:'Sales rep',   es:'Vendedora',  it:'Venditrice'   },
-  'Manager':    { fr:'Manager',    en:'Manager',     es:'Gerente',    it:'Manager'      },
-  'Directeur':  { fr:'Directeur',  en:'Director',    es:'Director',   it:'Direttore'    },
-  'Comptable':  { fr:'Comptable',  en:'Accountant',  es:'Contable',   it:'Contabile'    },
-  'Magasinier': { fr:'Magasinier', en:'Storekeeper', es:'Almacenero', it:'Magazziniere' },
-  'Livreur':    { fr:'Livreur',    en:'Delivery',    es:'Repartidor', it:'Fattorino'    },
-  'Sécurité':   { fr:'Sécurité',   en:'Security',    es:'Seguridad',  it:'Sicurezza'    },
-  'Employé':    { fr:'Employé',    en:'Employee',    es:'Empleado',   it:'Dipendente'   },
-}
-export const roleLabel = (r: string, lang: string) => ROLE_T[r]?.[lang] ?? r
+/**
+ * ⚠️ PLUS DE TABLE DE RÔLES ICI — elle est RÉ-EXPORTÉE depuis `hrShared`.
+ *
+ * Ce module portait son propre `ROLE_T`, **sous-ensemble strict** de `ROLE_LABELS` : 11 clés
+ * contre 16. Manquaient `Directrice`, `Magasinière`, `Responsable`, `RH`, `Admin` — dont les
+ * deux formes FÉMININES, quand les masculines y étaient. `roleLabel` repliant en `?? r`, le
+ * poste s'affichait en FRANÇAIS dans les quatre langues, y compris sur le BULLETIN IMPRIMÉ
+ * (`printBulletin`, plus bas) : le document qu'on remet à l'employée.
+ *
+ * ⚠️ Recopier les 5 clés manquantes aurait rendu les tables égales AUJOURD'HUI et les aurait
+ * laissées diverger demain. *Un jumeau rend la divergence bruyante ; une source unique la rend
+ * impossible* — et on n'en crée un que lorsque les deux côtés doivent CALCULER. Ici les deux
+ * ne font que LIRE.
+ *
+ * ⚠️ Trouvé par le verrou des SEEDS, pas par une relecture : j'avais déclaré ces seeds
+ * « mesurés corrects » en ne regardant qu'une des deux tables.
+ *
+ * ⚠️ Aucun cycle : `hrShared` n'importe que React — vérifié, pas supposé.
+ */
+export { roleLabel }
 
 export const STATUS_CFG: Record<PayStatus, { cls: string; label: string }> = {
   'PAYÉ':       { cls:'badge-green',  label:'PAYÉ'       },

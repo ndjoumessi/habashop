@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { EXPENSE_CATEGORIES } from '../lib/expenseCategories'
 
 // Schémas de validation (item 6, lot 4B) — employees / expenses / goals /
 // subscriptions / stockTransfers. Les règles métier (champs requis avec message
@@ -121,7 +122,26 @@ const EXPENSE_FIELDS = {
   // donc c'est ce schéma — et lui seul — qui décide de ce qui atteint la base.
   date:      DATE_REQUISE,
   label:     z.string().optional(),
-  category:  z.string().optional(),
+  /**
+   * ⚠️ LE DOMAINE EST IMPOSÉ ICI, ET SEULEMENT ICI. `routes/expenses.ts` passe le corps
+   * ENTIER à Prisma : il n'existe aucune seconde garde dans le handler. Une colonne `String`
+   * sans contrainte avait laissé entrer « Charges », qui faisait tomber l'écran Dépenses
+   * (2.24.11) — un `Record` figé indexé par une donnée libre est un `undefined` qui attend.
+   *
+   * ⚠️ J'AVAIS REFUSÉ DE POSER CE DOMAINE, et c'est une MESURE qui a levé l'objection : elle
+   * était qu'un enum refuserait en 400 des catégories déjà utilisées par des commerçants.
+   * Compté en production le 2026-10-01 — 7 valeurs distinctes, la seule hors domaine
+   * (« Charges », 24 lignes) appartenant à deux démos jetables de mon propre jeu. Aucun
+   * commerçant réel n'en utilise. *Une objection plausible se tranche en comptant.*
+   *
+   * ⚠️ `.optional()` RESTE : le champ n'est pas requis, il est CONTRAINT. Le rendre requis
+   * casserait les écritures partielles du `PATCH`, qui est un tout autre sujet.
+   *
+   * ⚠️ Fermer la porte n'efface pas ce qui est entré : `styleCategorie()` continue de rendre
+   * un style NEUTRE sur une valeur inconnue, et doit le rester — les 24 lignes existent, et
+   * une colonne `String` restera atteignable par un import ou un script.
+   */
+  category:  z.enum(EXPENSE_CATEGORIES).optional(),
   amountHT:  z.coerce.number().optional(),
   vat:       z.coerce.number().optional(),
   amountTTC: z.coerce.number().optional(),

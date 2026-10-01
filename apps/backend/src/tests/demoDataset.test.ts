@@ -529,7 +529,6 @@ const HR_SHARED = join(FRONT, 'components', 'hr', 'hrShared.tsx')
  * le bulletin de paie. L'ancien `'Gérant'` manquait aux DEUX — c'est ce qui l'a rendu invisible.
  * Le verrou exige donc l'INTERSECTION, pas la première table trouvée.
  */
-const PAYROLL_SHARED = join(FRONT, 'components', 'payroll', 'payrollShared.tsx')
 
 /**
  * Clés d'une table `Record<string, Record<string, string>>` du front, extraites de la SOURCE.
@@ -584,15 +583,12 @@ describe("équipe de démonstration — personnes nommées, rôles traduisibles"
     const roles = clesDeTable(src, 'ROLE_LABELS')
     const depts = clesDeTable(src, 'DEPT_LABELS')
     const couleurs = clesDeTable(src, 'DEPT_COLORS')
-    const rolesPaie = clesDeTable(readFileSync(PAYROLL_SHARED, 'utf-8'), 'ROLE_T')
-    expect(rolesPaie.size, 'ROLE_T doit être lue').toBeGreaterThanOrEqual(8)
 
     const { tx, ecrit } = fauxTx()
     await buildDemoDataset(tx, options)
 
     for (const e of ecrit.employee) {
       expect(roles.has(String(e.role)), `rôle « ${e.role} » hors de ROLE_LABELS`).toBe(true)
-      expect(rolesPaie.has(String(e.role)), `rôle « ${e.role} » hors du ROLE_T de la paie`).toBe(true)
       expect(depts.has(String(e.dept)), `département « ${e.dept} » hors de DEPT_LABELS`).toBe(true)
       // Une pastille sans couleur se distingue de rien : le département doit aussi en avoir une.
       expect(couleurs.has(String(e.dept)), `département « ${e.dept} » hors de DEPT_COLORS`).toBe(true)
