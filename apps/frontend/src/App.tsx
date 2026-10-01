@@ -1,56 +1,65 @@
-import { useEffect, lazy, Suspense } from 'react'
+import { useEffect, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore, canAccess, getLandingForRole, landingFor, isKnownRole } from '@/stores/authStore'
 import { authApi, tenantApi } from '@/lib/api'
 import { useAppStore } from '@/stores/appStore'
 import AppLayout from '@/components/layout/AppLayout'
 import { ConfirmHost } from '@/lib/confirm'
+import { lazyRoute } from '@/lib/lazyRoute'
 
-// Pages chargées à la demande (code-splitting par route) → réduit le bundle initial
-const LandingPage    = lazy(() => import('@/pages/LandingPage'))
-const LoginPage      = lazy(() => import('@/pages/LoginPage'))
-const Dashboard      = lazy(() => import('@/pages/Dashboard'))
-const POS            = lazy(() => import('@/pages/POS'))
-const Stock          = lazy(() => import('@/pages/Stock'))
-const Orders         = lazy(() => import('@/pages/Orders'))
-const Suppliers      = lazy(() => import('@/pages/Suppliers'))
-const Customers      = lazy(() => import('@/pages/Customers'))
-const Reports        = lazy(() => import('@/pages/Reports'))
-const HR             = lazy(() => import('@/pages/HR'))
-const Planning       = lazy(() => import('@/pages/Planning'))
-const Payroll        = lazy(() => import('@/pages/Payroll'))
-const Expenses       = lazy(() => import('@/pages/Expenses'))
-const Forecasts      = lazy(() => import('@/pages/Forecasts'))
-const Users          = lazy(() => import('@/pages/Users'))
-const Activity       = lazy(() => import('@/pages/Activity'))
-const Notifications  = lazy(() => import('@/pages/Notifications'))
-const Settings       = lazy(() => import('@/pages/Settings'))
-const SignupPage     = lazy(() => import('@/pages/SignupPage'))
-const Guide          = lazy(() => import('@/pages/Guide'))
-const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'))
-const Marketing      = lazy(() => import('@/pages/Marketing'))
-const AIAssistant    = lazy(() => import('@/pages/AIAssistant'))
-const Goals          = lazy(() => import('@/pages/Goals'))
-const Subscriptions  = lazy(() => import('@/pages/Subscriptions'))
-const APIDocs        = lazy(() => import('@/pages/APIDocs'))
-const Integrations   = lazy(() => import('@/pages/Integrations'))
-const Onboarding     = lazy(() => import('@/pages/Onboarding'))
-const SelectShop     = lazy(() => import('@/pages/SelectShop'))
-const Pricing        = lazy(() => import('@/pages/Pricing'))
-const UpgradePlan    = lazy(() => import('@/pages/UpgradePlan'))
-const PaymentCallback = lazy(() => import('@/pages/PaymentCallback'))
-const Privacy        = lazy(() => import('@/pages/Privacy'))
-const Terms          = lazy(() => import('@/pages/Terms'))
-const LegalNotice    = lazy(() => import('@/pages/LegalNotice'))
-const PublicCatalog  = lazy(() => import('@/pages/PublicCatalog'))
+/**
+ * Pages chargées à la demande (code-splitting par route) → réduit le bundle initial.
+ *
+ * ⚠️ `lazyRoute`, PAS `lazy` : les chunks portent un nom HASHÉ, et un déploiement rend 404 ceux
+ * que l'onglet déjà ouvert d'un commerçant référence encore. Un `lazy` nu laisse ce rejet
+ * remonter jusqu'à `Sentry.ErrorBoundary`, qui enveloppe TOUTE l'application — barre latérale
+ * et panier compris. `lazyRoute` le résout en écran de reprise et ne recharge jamais seul.
+ * `chunkDeploiement.test.tsx` échoue s'il reste un `lazy(` nu ici.
+ */
+const LandingPage    = lazyRoute(() => import('@/pages/LandingPage'))
+const LoginPage      = lazyRoute(() => import('@/pages/LoginPage'))
+const Dashboard      = lazyRoute(() => import('@/pages/Dashboard'))
+const POS            = lazyRoute(() => import('@/pages/POS'))
+const Stock          = lazyRoute(() => import('@/pages/Stock'))
+const Orders         = lazyRoute(() => import('@/pages/Orders'))
+const Suppliers      = lazyRoute(() => import('@/pages/Suppliers'))
+const Customers      = lazyRoute(() => import('@/pages/Customers'))
+const Reports        = lazyRoute(() => import('@/pages/Reports'))
+const HR             = lazyRoute(() => import('@/pages/HR'))
+const Planning       = lazyRoute(() => import('@/pages/Planning'))
+const Payroll        = lazyRoute(() => import('@/pages/Payroll'))
+const Expenses       = lazyRoute(() => import('@/pages/Expenses'))
+const Forecasts      = lazyRoute(() => import('@/pages/Forecasts'))
+const Users          = lazyRoute(() => import('@/pages/Users'))
+const Activity       = lazyRoute(() => import('@/pages/Activity'))
+const Notifications  = lazyRoute(() => import('@/pages/Notifications'))
+const Settings       = lazyRoute(() => import('@/pages/Settings'))
+const SignupPage     = lazyRoute(() => import('@/pages/SignupPage'))
+const Guide          = lazyRoute(() => import('@/pages/Guide'))
+const AdminDashboard = lazyRoute(() => import('@/pages/AdminDashboard'))
+const Marketing      = lazyRoute(() => import('@/pages/Marketing'))
+const AIAssistant    = lazyRoute(() => import('@/pages/AIAssistant'))
+const Goals          = lazyRoute(() => import('@/pages/Goals'))
+const Subscriptions  = lazyRoute(() => import('@/pages/Subscriptions'))
+const APIDocs        = lazyRoute(() => import('@/pages/APIDocs'))
+const Integrations   = lazyRoute(() => import('@/pages/Integrations'))
+const Onboarding     = lazyRoute(() => import('@/pages/Onboarding'))
+const SelectShop     = lazyRoute(() => import('@/pages/SelectShop'))
+const Pricing        = lazyRoute(() => import('@/pages/Pricing'))
+const UpgradePlan    = lazyRoute(() => import('@/pages/UpgradePlan'))
+const PaymentCallback = lazyRoute(() => import('@/pages/PaymentCallback'))
+const Privacy        = lazyRoute(() => import('@/pages/Privacy'))
+const Terms          = lazyRoute(() => import('@/pages/Terms'))
+const LegalNotice    = lazyRoute(() => import('@/pages/LegalNotice'))
+const PublicCatalog  = lazyRoute(() => import('@/pages/PublicCatalog'))
 
 /**
  * HARNAIS DE MESURE — DÉV UNIQUEMENT (`/__dev/table`).
- * ⚠️ Le `import()` DOIT rester DANS la branche : un `lazy()` inconditionnel laisserait Rollup
+ * ⚠️ Le `import()` DOIT rester DANS la branche : un `lazyRoute()` inconditionnel laisserait Rollup
  * émettre le chunk, exactement le défaut qui avait livré `demo1234` en production. L'absence
  * du bundle livré est VÉRIFIÉE par `npm run verify:demo-flag`, pas affirmée par ce ternaire.
  */
-const DevTableHarness = import.meta.env.DEV ? lazy(() => import('@/pages/DevTableHarness')) : null
+const DevTableHarness = import.meta.env.DEV ? lazyRoute(() => import('@/pages/DevTableHarness')) : null
 
 function RouteFallback() {
   return (
@@ -148,7 +157,7 @@ export default function App() {
     }
     // Mise à jour des taux de change au démarrage
     useAppStore.getState().fetchExchangeRates()
-    // Préchauffage des routes critiques (mêmes spécifieurs que les lazy() → même chunk) :
+    // Préchauffage des routes critiques (mêmes spécifieurs que les lazyRoute() → même chunk) :
     // dès que le thread est libre, Dashboard et POS sont déjà en cache au 1er clic.
     if (token) {
       const warm = () => { import('@/pages/Dashboard'); import('@/pages/POS') }

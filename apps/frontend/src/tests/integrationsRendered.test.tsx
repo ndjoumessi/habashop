@@ -119,7 +119,15 @@ describe('① le vocabulaire dit ce qui est mesuré', () => {
       states: { twilio: 'live', resend: 'live', mtnmomo: 'sandbox', campay: 'sandbox', paydunya: 'sandbox' },
     })
     const { container } = render(<Integrations />)
-    await waitFor(() => expect(container.textContent).toMatch(/configurées/i))
+    /**
+     * ⚠️ ON ATTEND LA CONDITION QU'ON VA ASSERTER, pas un fragment d'elle. Ce `waitFor`
+     * cherchait « configurées » puis exigeait « 5/5 configurées » : l'état INTERMÉDIAIRE
+     * (« — / 5 configurées », avant que la sonde ait répondu) satisfait le premier et pas le
+     * second. Le test rougissait donc au hasard, sous la charge de la suite complète — vu
+     * 1 fois sur 3 passages le 2026-10-02. *Un verrou instable finit par être ignoré, et il
+     * emporte avec lui la confiance dans les verrous voisins.*
+     */
+    await waitFor(() => expect(container.textContent).toMatch(/5\/5\s*configurées/))
 
     // Le compte reste honnête — les cinq ONT bien leurs secrets…
     expect(container.textContent).toMatch(/5\/5\s*configurées/)

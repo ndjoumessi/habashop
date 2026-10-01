@@ -82,9 +82,17 @@ export function publicRoutes(source = readFileSync(APP, 'utf8')): PublicRoute[] 
   return out
 }
 
-/** Fichier source d'un composant de route (import statique OU `lazy(() => import(…))`). */
+/**
+ * Fichier source d'un composant de route (import statique OU chargement paresseux).
+ *
+ * ⚠️ `lazyRoute?` — depuis le 2026-10-02, `App.tsx` déclare ses routes via `lazyRoute`, qui
+ * survit à un chunk disparu après déploiement. Le `?` garde la forme ANCIENNE reconnue : ce
+ * motif dérive un PÉRIMÈTRE, et un périmètre qui cesse de matcher ne rend pas une erreur, il
+ * rend le VIDE. C'est l'assertion de couverture de ce fichier qui l'a signalé — sans elle, tout
+ * le scan de la vitrine serait passé au vert sur zéro fichier lu.
+ */
 export function componentFile(name: string, source = readFileSync(APP, 'utf8')): string | null {
-  const lazyRe = new RegExp(`const\\s+${name}\\s*=\\s*lazy\\(\\s*\\(\\)\\s*=>\\s*import\\(['"]([^'"]+)['"]\\)`)
+  const lazyRe = new RegExp(`const\\s+${name}\\s*=\\s*lazy(?:Route)?\\(\\s*\\(\\)\\s*=>\\s*import\\(['"]([^'"]+)['"]\\)`)
   const staticRe = new RegExp(`import\\s+${name}\\s+from\\s+['"]([^'"]+)['"]`)
   const spec = (lazyRe.exec(source) ?? staticRe.exec(source))?.[1]
   return spec ? resolveSpec(spec, APP) : null
