@@ -943,11 +943,38 @@ déclenché par `POST /api/sales` (le plus gros poste Twilio) et les crons 20h/8
   donc AVANT `authenticate` (`request.tenantId` absent, et un JWT non vérifié laisserait
   l'attaquant choisir sa clé). Surtout, le **CGNAT ouest-africain** fait partager une IP à des
   boutiques sans lien et les caisses d'un magasin sortent par la même adresse.
+- ⚠️ **ET UN PLAFOND PAR IP N'EST PAS UN PLAFOND ICI** : Fastify tourne en **`trustProxy: true`**
+  (`server.ts`, pour que `request.ip` soit le vrai client derrière Railway). Avec `trust`
+  inconditionnel, `proxy-addr` retient l'entrée **la plus à gauche de `X-Forwarded-For`**, que
+  l'appelant fournit entièrement : une boucle qui fait varier cet en-tête obtient une clé
+  différente à chaque requête et n'atteint **jamais** le plafond. Un plafond par IP borne un
+  client honnête, pas un attaquant.
+  ⚠️ **Corollaire, et c'est lui qui coûte** : **aucun fail-open ne peut citer un plafond par IP
+  comme repli.** Deux gardes qui se désignent mutuellement comme filet, et aucun des deux ne
+  tient seul : c'est la famille du `notify-failure` sortant en `exit 0`. Mesuré le 2026-10-01 —
+  le plafond global de `POST /api/demo/start` était fail-OPEN « puisque le plafond par IP tient
+  toujours » ; sans Redis, la création de tenants depuis l'internet public n'était bornée par
+  RIEN. Il est désormais **fail-CLOSED**, avec un code de refus DISTINCT
+  (`DEMO_QUOTA_UNAVAILABLE` ≠ `DEMO_QUOTA_EXCEEDED` : « je ne peux pas compter » n'est pas
+  « trop de démos aujourd'hui »). ⚠️ `REDIS_URL` est donc **load-bearing** pour cette route.
 - **Exemptions volontaires, à ne pas « corriger »** : les e-mails de CYCLE DE VIE
   (bienvenue, relances, essai expiré, confirmation) passent par `sendPlatformEmail` et
   **échappent au garde** — les gater bloquerait l'e-mail « votre essai est terminé » au moment
   précis où le tenant devient échu/suspendu. Seuls les e-mails OPÉRATIONNELS (invitation,
   alerte stock, rapport hebdo, récap paie) sont gardés (`sendTenantEmail`, kind `email`).
+  ⚠️ **CONSÉQUENCE : TOUT TENANT QU'ON FABRIQUE ENTRE DANS CE FLUX EXEMPTÉ.** Poser
+  `status: 'trial'` **et** `trialEnds` suffit : `runTrialReminders` sélectionne la fenêtre
+  « J+7 ± 30 min » **toutes les heures et sans garde de minute**, donc un tenant créé avec
+  `trialEnds = maintenant + 7 j` y tombe **au moment même de sa création**. Le garde de dépense
+  ne peut rien y faire — c'est précisément l'exemption ci-dessus. Mesuré le 2026-10-01 : chaque
+  démo jetable expédiait trois e-mails de cycle de vie vers `demo-<uuid>@demo.local`, un TLD
+  inexistant, soit un **rejet dur** par envoi (≈300/jour au plafond), qui abîme la réputation
+  d'expédition du domaine. ⚠️ Et `sendTrialExpired` **mute** le tenant (`status: 'suspended'`).
+  **Règle : un tenant technique (démo, fixture, essai interne) s'exclut NOMMÉMENT des sélections
+  de cycle de vie** — `isDemo: false` dans le `where`, **et** un `continue` au point d'envoi, qui
+  est ici légitime parce qu'il porte sur le TENANT et couvre donc tous ses canaux (à ne pas
+  confondre avec la garde par CANAL, qui reste locale — #154). Verrou :
+  `demoNoLifecycleEmail.test.ts`.
 - **Invalidation du cache** : `invalidateTenantSpendInfo()` est appelée sur les 4 sites qui
   changent l'état (billing suspension, admin activation de plan, webhook paiement, script
   démo). Sans elle, une boutique basculée en démo dépense encore jusqu'à 60 s.
