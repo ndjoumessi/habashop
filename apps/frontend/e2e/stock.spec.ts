@@ -9,7 +9,7 @@ async function login(page: import('@playwright/test').Page) {
   void page
 }
 
-test('Stock — page renders, product/label/category modals open', async ({ page }) => {
+test('Stock — page renders, product/label modals open', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', e => errors.push(String(e)))
 
@@ -18,7 +18,9 @@ test('Stock — page renders, product/label/category modals open', async ({ page
 
   // Header action + categories panel (kept inline) render
   await expect(page.getByRole('button', { name: /Nouveau produit|New product/ })).toBeVisible({ timeout: 12000 })
-  await expect(page.getByText(/Gestion des catégories/).first()).toBeVisible({ timeout: 5000 })
+  // ⚠️ Le panneau MONTRE les catégories, il ne les « gère » plus : il affichait six
+  // catégories écrites en dur avec des effectifs littéraux, et son CRUD n'était pas persisté.
+  await expect(page.getByText(/Catégories du catalogue|Categories in stock/).first()).toBeVisible({ timeout: 5000 })
 
   // Product modal (StockModals) — tabs render
   await page.getByRole('button', { name: /Nouveau produit|New product/ }).first().click()
@@ -32,10 +34,12 @@ test('Stock — page renders, product/label/category modals open', async ({ page
   await page.getByRole('button', { name: /^Annuler$|^Cancel$/ }).first().click()
   await expect(page.locator('[role="dialog"]')).toHaveCount(0, { timeout: 5000 })
 
-  // Category modal (StockModals) — from inline categories panel button
-  await page.getByRole('button', { name: /Nouvelle catégorie|New category/ }).first().click()
-  await expect(page.getByText(/Nom de la catégorie/).first()).toBeVisible({ timeout: 5000 })
-  await page.getByRole('button', { name: /^Annuler$|^Cancel$/ }).first().click()
+  // ⚠️ La modale « catégorie » a été SUPPRIMÉE : elle collectait couleur, icône et
+  // description — trois champs qu'aucun modèle ne stocke — et écrivait dans un `useState`,
+  // si bien que la catégorie créée disparaissait au rechargement. Une catégorie naît
+  // désormais en saisissant son nom sur un produit. Ce test l'épinglait ; il épingle
+  // maintenant son ABSENCE, pour qu'une réintroduction se remarque.
+  await expect(page.getByRole('button', { name: /Nouvelle catégorie|New category/ })).toHaveCount(0)
 
   expect(errors, `page errors:\n${errors.join('\n')}`).toEqual([])
 })
