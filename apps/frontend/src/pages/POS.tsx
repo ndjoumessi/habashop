@@ -25,7 +25,7 @@ import TicketZModal from '@/components/pos/TicketZModal'
 import POSSuccessModal from '@/components/pos/POSSuccessModal'
 import POSPaydunyaOverlay from '@/components/pos/POSPaydunyaOverlay'
 import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
-import { type PosProduct, type DiscountForm, CASHIER_TEXTS, computePosVat, toPosProduct } from '@/components/pos/posShared'
+import { type PosProduct, type DiscountForm, CASHIER_TEXTS, computePosVat, toPosProduct, categoriesDuCatalogue } from '@/components/pos/posShared'
 import { reconcileSaleTotal, authoritativeTotal, detectCartPriceDrift, toSaleItemPayload } from '@/components/pos/saleReconcile'
 import { resolveScannedCode } from '@/components/pos/scanResolve'
 import { looksLikeScannedInput, looksLikeScannerBurst, typingElapsed, WEDGE_IDLE_MS } from '@/components/pos/wedgeScan'
@@ -387,6 +387,9 @@ export default function POS() {
   const getPrice = (p: PosProduct) => computePriceForItem(p, 1).price
 
   // Filtrage produits — mémoïsé : recalculé seulement quand produits/catégorie/recherche changent
+  /** Les catégories que la boutique porte RÉELLEMENT — source des puces de filtre. */
+  const categoriesPresentes = useMemo(() => categoriesDuCatalogue(posProducts), [posProducts])
+
   const filtered = useMemo(() => posProducts.filter(p =>
     (activeCat === 'all' || p.cat === activeCat) &&
     // Recherche : nom + SKU (imprimé sur les étiquettes) + code-barres (règle canonique)
@@ -1223,7 +1226,7 @@ export default function POS() {
         <POSProductGrid
           posTab={posTab}
           lang={lang}
-          activeCat={activeCat} setActiveCat={setActiveCat}
+          activeCat={activeCat} setActiveCat={setActiveCat} categories={categoriesPresentes}
           clientType={clientType} setClientType={setClientType}
           fmt={fmt}
           amountLabel={n => fromXOF(n).toLocaleString(locale, { maximumFractionDigits: 2 })}

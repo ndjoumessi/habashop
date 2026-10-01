@@ -26,28 +26,39 @@ export function showStrikePrice(referencePrice: number, effectivePrice: number):
   return referencePrice > effectivePrice
 }
 
-export const CATS = [
-  { id: 'all',     label: 'Tous' },
-  { id: 'cereals', label: 'Céréales' },
-  { id: 'fat',     label: 'Corps gras' },
-  { id: 'grocery', label: 'Épicerie' },
-  { id: 'hygiene', label: 'Hygiène' },
-  { id: 'dairy',   label: 'Laitiers' },
-  { id: 'canned',  label: 'Conserves' },
-]
-
-// ─── Libellés catégories i18n (par id) ──────
-export const CAT_LABELS: Record<string, Record<string, string>> = {
-  all:     { fr: 'Tous',       en: 'All',         es: 'Todo',        it: 'Tutto'     },
-  cereals: { fr: 'Céréales',   en: 'Cereals',     es: 'Cereales',    it: 'Cereali'   },
-  fat:     { fr: 'Corps gras', en: 'Oils & Fats', es: 'Grasas',      it: 'Grassi'    },
-  grocery: { fr: 'Épicerie',   en: 'Grocery',     es: 'Comestibles', it: 'Drogheria' },
-  hygiene: { fr: 'Hygiène',    en: 'Hygiene',     es: 'Higiene',     it: 'Igiene'    },
-  dairy:   { fr: 'Laitiers',   en: 'Dairy',       es: 'Lácteos',     it: 'Latticini' },
-  canned:  { fr: 'Conserves',  en: 'Canned',      es: 'Conservas',   it: 'Conserve'  },
+/**
+ * LES CATÉGORIES DE LA BOUTIQUE — DÉRIVÉES DU CATALOGUE, jamais écrites d'avance.
+ *
+ * ⚠️ MESURÉ EN PRODUCTION le 2026-10-01 : il y avait ici une liste de SEPT entrées
+ * (`cereals`, `fat`, `grocery`, `hygiene`, `dairy`, `canned`) dont les identifiants étaient
+ * comparés à un SLUG fabriqué par `toPosProduct`. Les deux ne coïncidaient presque jamais :
+ * sur les onze catégories réelles du jeu de démonstration, **deux puces sur sept** pouvaient
+ * montrer quelque chose — « Hygiène » par coïncidence lexicale, et « Épicerie » qui ne
+ * montrait QUE les produits SANS catégorie, via l'ancien repli `|| 'grocery'`. Cliquer
+ * « Corps gras » rendait « Aucun produit trouvé », sur l'écran le plus utilisé en boutique.
+ *
+ * ⚠️ `Product.category` est un champ TEXTE LIBRE : il n'existe ni modèle `Category` ni route
+ * `/api/categories`. La seule définition honnête de « les catégories de cette boutique » est
+ * donc l'ensemble des valeurs distinctes portées par ses produits — c'est déjà ce que fait
+ * le filtre de l'écran Stock (`Stock.tsx`), et le POS était le seul à diverger.
+ *
+ * Tri alphabétique LOCALISÉ : un ordre dépendant de l'insertion ferait danser les puces à
+ * chaque rechargement.
+ */
+export function categoriesDuCatalogue(produits: readonly { cat?: string | null }[]): string[] {
+  const vues = new Set<string>()
+  for (const p of produits) {
+    const c = (p.cat ?? '').trim()
+    if (c) vues.add(c)
+  }
+  return [...vues].sort((a, b) => a.localeCompare(b, 'fr'))
 }
-export const catLabel = (id: string, lang: string) =>
-  CAT_LABELS[id]?.[lang] ?? CAT_LABELS[id]?.fr ?? id
+
+// ⚠️ Il y avait ici `CAT_LABELS` + `catLabel`, indexés par un identifiant interne
+// (`fat`, `dairy`…) qui n'existe nulle part ailleurs dans le produit. La traduction des NOMS
+// de catégorie vit dans `stockShared.stockCatLabel` — table unique, avec repli sur le nom
+// brut pour une catégorie saisie par le commerçant. En garder une seconde ici serait le
+// motif du jumeau, sur une table qui avait déjà divergé.
 
 export const PRODUCTS = [
   { id:1,  name:'Riz parfumé 5kg',        price:4500,  priceWholesale:3800, priceSemiWholesale:4100, cat:'cereals', emoji:'🌾', stock:120, promotion:false, promotionPrice:0,    promotionEnd:'' },
@@ -133,7 +144,13 @@ export function toPosProduct(p: Record<string, any>): PosProduct {
     price: p.sellPrice ?? 0,
     priceWholesale: p.wholesalePrice ?? p.sellPrice ?? 0,
     priceSemiWholesale: p.semiWholesalePrice ?? p.sellPrice ?? 0,
-    cat: (p.category || 'grocery').toLowerCase().replace(/[éè]/g, 'e').replace(/\s+/g, ''),
+    // ⚠️ LA CATÉGORIE PASSE TELLE QUELLE. Il y avait ici un slug
+    // (`toLowerCase().replace(/[éè]/g,'e')…`) comparé aux identifiants d'une liste écrite
+    // d'avance : « Céréales » devenait `cereales` et ne retrouvait jamais la puce `cereals`.
+    // ⚠️ Et le repli `|| 'grocery'` rangeait les produits SANS catégorie sous « Épicerie » —
+    // une absence assimilée à une valeur réelle, la famille du `?? 'cash'`. L'absence est
+    // désormais sa propre valeur : la chaîne vide, qui n'ouvre aucune puce.
+    cat: typeof p.category === 'string' ? p.category.trim() : '',
     emoji: p.emoji || '📦',
     // ⚠️ `?? null` et non `|| null` : une chaîne vide reste une absence, mais on ne veut
     // pas qu'un `0` ou un `false` venu d'une API malformée devienne une URL.

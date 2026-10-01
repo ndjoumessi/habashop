@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import POSProductGrid from '@/components/pos/POSProductGrid'
+import { categoriesDuCatalogue } from '@/components/pos/posShared'
 import NewOrderModal from '@/components/orders/NewOrderModal'
 import SubscriptionModal from '@/components/subscriptions/SubscriptionModal'
 import ProductPhotoField from '@/components/stock/ProductPhotoField'
@@ -131,7 +132,7 @@ export default function DevSurfacesHarness() {
     <div data-testid={SURFACES_MARKER} className="page-content">
       <Surface nom="pos-grid">
         <POSProductGrid
-          posTab="pos" lang="fr" activeCat="" setActiveCat={RIEN}
+          posTab="pos" lang="fr" activeCat="" categories={categoriesDuCatalogue(PRODUITS as never)} setActiveCat={RIEN}
           clientType="retail" setClientType={RIEN}
           fmt={(n: number) => `${n} FCFA`} amountLabel={(n: number) => String(n)} curSuffix="FCFA"
           filtered={PRODUITS as never} cart={[]} addItem={RIEN} getPrice={() => 1200}

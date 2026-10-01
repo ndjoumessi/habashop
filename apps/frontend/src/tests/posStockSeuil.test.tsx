@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import POSProductGrid from '@/components/pos/POSProductGrid'
-import { niveauStock, toPosProduct } from '@/components/pos/posShared'
+import { niveauStock, toPosProduct, categoriesDuCatalogue } from '@/components/pos/posShared'
 import { statusOf } from '@/components/stock/stockShared'
 
 /**
@@ -21,7 +21,7 @@ const noop = () => undefined
 function monter(products: unknown[]) {
   return render(
     <POSProductGrid
-      posTab="pos" lang="fr" activeCat="" setActiveCat={noop}
+      posTab="pos" lang="fr" activeCat="" categories={categoriesDuCatalogue(products as never)} setActiveCat={noop}
       clientType="retail" setClientType={noop}
       fmt={(n: number) => `${n} F`} amountLabel={(n: number) => String(n)} curSuffix="F"
       filtered={products as never} cart={[]} addItem={noop} getPrice={(p: { price: number }) => p.price}

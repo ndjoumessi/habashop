@@ -26,6 +26,7 @@ vi.mock('@/hooks/useThemeColor', () => ({ useThemeColor: () => '#888' }))
 vi.mock('@/lib/api', () => ({ salesApi: { list: vi.fn().mockResolvedValue([]) } }))
 
 import POSProductGrid from '@/components/pos/POSProductGrid'
+import { categoriesDuCatalogue } from '@/components/pos/posShared'
 
 const P = (over: Record<string, unknown> = {}) => ({
   id: 1, name: 'Riz 5kg', sku: 'R1', barcode: '', price: 1000,
@@ -37,7 +38,7 @@ const noop = () => undefined
 function grid(clientType: 'retail' | 'wholesale' | 'semi', products: Record<string, unknown>[]) {
   return render(
     <POSProductGrid
-      posTab="pos" lang="fr" activeCat="" setActiveCat={noop}
+      posTab="pos" lang="fr" activeCat="" categories={categoriesDuCatalogue(products as never)} setActiveCat={noop}
       clientType={clientType} setClientType={noop}
       fmt={(n: number) => `${n} F`} amountLabel={(n: number) => String(n)} curSuffix="F"
       filtered={products as never} cart={[]} addItem={noop} getPrice={(p: any) => p.price}

@@ -4,7 +4,11 @@ import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
 import { salesApi } from '@/lib/api'
-import { CATS, catLabel, payModeLabel, showStrikePrice, niveauStock, type PosProduct, type CartItem } from '@/components/pos/posShared'
+import { payModeLabel, showStrikePrice, niveauStock, type PosProduct, type CartItem } from '@/components/pos/posShared'
+// ⚠️ La traduction des NOMS de catégorie vit dans `stockShared` — table unique, avec repli
+// sur le nom brut pour une catégorie saisie par le commerçant. En écrire une seconde ici
+// serait le motif du jumeau, sur une table qui avait déjà divergé.
+import { stockCatLabel } from '@/components/stock/stockShared'
 import { isPromotionActive } from '@/lib/pricing'
 import ProductThumb from '@/components/ui/ProductThumb'
 
@@ -12,6 +16,8 @@ interface POSProductGridProps {
   posTab: 'pos' | 'history'
   lang: string
   activeCat: string; setActiveCat: (v: string) => void
+  /** Catégories RÉELLES du catalogue — `categoriesDuCatalogue(posProducts)`. */
+  categories: readonly string[]
   clientType: 'retail' | 'wholesale' | 'semi'; setClientType: (v: any) => void
   fmt: (n: number) => string
   // Prix tuile façon maquette : montant (devise d'affichage, sans symbole) + suffixe discret
@@ -321,7 +327,9 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
   )
 })
 
-export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, clientType, setClientType, fmt, amountLabel, curSuffix, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canAuditPrices, divergenceOnly, onToggleDivergence, gapFilter: gapFilterProp, onGapFilterChange, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
+const TOUS: Record<string, string> = { fr: 'Tous', en: 'All', es: 'Todo', it: 'Tutto' }
+
+export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, categories, clientType, setClientType, fmt, amountLabel, curSuffix, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canAuditPrices, divergenceOnly, onToggleDivergence, gapFilter: gapFilterProp, onGapFilterChange, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
   // Audit écarts (ADMIN) : « à regarder » = filtre CLIENT sur la liste chargée (le filtre
   // serveur `divergenceOnly` renvoie TOUS les écarts ; on affine ici).
   // ⚠️ Ce sous-filtre ne garde QUE les écarts que le serveur n'a pas su expliquer. Il visait
@@ -381,9 +389,13 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                 scrollbarWidth: 'thin',
                 WebkitOverflowScrolling: 'touch',
               }}>
-                {CATS.map(c => (
+                {/* ⚠️ Les puces viennent du CATALOGUE, jamais d'une liste écrite d'avance —
+                    cf. `categoriesDuCatalogue`. `data-categorie` porte la valeur comparée au
+                    produit : le verrou lit CE qui filtre, pas le libellé traduit. */}
+                {[{ id: 'all', label: TOUS[lang] ?? TOUS.fr }, ...categories.map(c => ({ id: c, label: stockCatLabel(c, lang) }))].map(c => (
                   <button
                     key={c.id}
+                    data-categorie={c.id}
                     onClick={() => setActiveCat(c.id)}
                     aria-pressed={activeCat === c.id}
                     style={{
@@ -401,7 +413,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                       border: `1px solid ${activeCat === c.id ? 'var(--p)' : 'var(--border2)'}`,
                       color: activeCat === c.id ? '#fff' : 'var(--text2)',
                     }}
-                  >{catLabel(c.id, lang)}</button>
+                  >{c.label}</button>
                 ))}
               </div>
               {/* Indicateur d'overflow : voile dégradé côté droit (décoratif) */}
