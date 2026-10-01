@@ -94,8 +94,8 @@ function alea(graine: number): () => number {
  * l'ancienne densité) et ne garantit RIEN sur le jour courant.
  */
 const JOURS_D_HISTORIQUE = 60
-const VENTES_PAR_JOUR_MIN = 8
-const VENTES_PAR_JOUR_MAX = 14
+const VENTES_PAR_JOUR_MIN = 14
+const VENTES_PAR_JOUR_MAX = 20
 const PRODUITS_PAR_CATEGORIE = 4
 /**
  * Heures d'ouverture, en heure LOCALE du serveur (Railway = UTC = heure de Dakar), la même
@@ -108,15 +108,64 @@ const PRODUITS_PAR_CATEGORIE = 4
  */
 const OUVERTURE_H = 8
 const FERMETURE_H = 21
+
 /**
- * ⚠️ PLANCHER DU JOUR COURANT — exemption NOMMÉE, et elle est assumée.
+ * ⚠️ FORME INTRA-JOURNALIÈRE — poids par heure, de `OUVERTURE_H` à `FERMETURE_H − 1`.
  *
- * Le jour courant est tronqué par `now` : au prorata des heures écoulées, une démo ouverte
- * à 10 h le 1ᵉʳ du mois montrerait deux ventes, soit le défaut qu'on corrige. On pose donc
- * un plancher : le prospect voit une matinée de boutique. Au-dessus du plancher, c'est le
- * prorata qui décide — on ne compresse jamais une journée entière dans une heure.
+ * MESURÉ EN PRODUCTION LE 2026-10-01, SUR LE BADGE : le tableau de bord de démo affichait
+ * « VENTES DU JOUR **+1005,3 %** ». Le produit avait raison — il compare le jour courant à
+ * la veille sur la MÊME plage horaire écoulée. C'était le JEU qui était asymétrique : le
+ * plancher ci-dessous mettait une matinée de ventes dans l'intervalle écoulé, alors que la
+ * veille, étalée UNIFORMÉMENT de 08 h à 21 h, n'avait presque rien avant 10 h.
+ *
+ * Un étalement uniforme est donc faux deux fois : il fabrique un écart jour/veille absurde,
+ * ET il rend des horodatages invraisemblables — « activité récente » affiche l'heure des
+ * cinq dernières ventes. Une boutique de quartier ouest-africaine a deux pointes : le matin
+ * avant le travail et l'école, puis la fin d'après-midi au retour. Le creux est l'après-midi,
+ * pas la nuit.
+ *
+ * ⚠️ La courbe n'est pas de la décoration : c'est elle qui rend le PLANCHER presque inutile,
+ * parce que la part de journée déjà écoulée à 9 h n'est plus 1/13 mais près d'un cinquième.
+ * Verrou : `demoDataset.test.ts` exerce le rapport jour/veille à 09 h, 12 h, 15 h et 19 h —
+ * et exige en plus que la courbe EXISTE, sinon on aurait corrigé l'écart en laissant une
+ * boutique dont l'activité est plate de l'ouverture à la fermeture.
  */
-const VENTES_PLANCHER_JOUR_COURANT = 6
+const POIDS_HORAIRES = [20, 17, 13, 9, 7, 5, 4, 4, 5, 7, 9, 7, 4]
+const POIDS_TOTAL = POIDS_HORAIRES.reduce((a, b) => a + b, 0)
+const HEURE_MS = 3_600_000
+
+/**
+ * Décalage depuis l'ouverture, en millisecondes, pour un tirage `u` dans l'échelle des
+ * POIDS (et non des heures). Interpolation linéaire DANS l'heure retenue : sans elle, toutes
+ * les ventes d'une heure tomberaient à la même minute.
+ */
+function decalageSelonForme(u: number): number {
+  let reste = u
+  for (let h = 0; h < POIDS_HORAIRES.length; h++) {
+    if (reste < POIDS_HORAIRES[h]) return (h + reste / POIDS_HORAIRES[h]) * HEURE_MS
+    reste -= POIDS_HORAIRES[h]
+  }
+  return POIDS_HORAIRES.length * HEURE_MS
+}
+
+/** Poids CUMULÉ sur les `ms` écoulées depuis l'ouverture — la part de journée déjà faite. */
+function poidsEcoule(ms: number): number {
+  const heures = ms / HEURE_MS
+  let acc = 0
+  for (let h = 0; h < POIDS_HORAIRES.length && heures > h; h++) {
+    acc += POIDS_HORAIRES[h] * Math.min(1, heures - h)
+  }
+  return acc
+}
+
+/**
+ * ⚠️ PLANCHER DU JOUR COURANT — exemption NOMMÉE, et volontairement BASSE.
+ *
+ * Le jour courant est tronqué par `now`. Avec la courbe ci-dessus, la part de journée écoulée
+ * suffit presque toujours : le plancher ne mord qu'à l'ouverture, et c'est exactement ce
+ * qu'on veut — plus il mord, plus il creuse l'écart avec la veille, qui n'en a pas.
+ */
+const VENTES_PLANCHER_JOUR_COURANT = 5
 const MODES = ['cash', 'mobile_money', 'card', 'mtn_momo'] as const
 /** ⚠️ TVA sénégalaise. Le taux du TENANT est dérivé du pays par la route, pas ici. */
 const TVA_DEMO = 18
@@ -204,29 +253,34 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
     const parJour = VENTES_PAR_JOUR_MIN
       + Math.floor(r() * (VENTES_PAR_JOUR_MAX - VENTES_PAR_JOUR_MIN + 1))
 
-    // Bornes de placement. Le jour COURANT est tronqué par `now` : jamais une vente dans
-    // l'avenir, et le nombre suit le prorata des heures ouvrées écoulées — avec le
-    // plancher ci-dessus pour que le premier écran ne soit pas désert.
-    let debut = ouverture.getTime()
-    let fin = fermeture.getTime()
+    // Placement. Le jour COURANT est tronqué par `now` : jamais une vente dans l'avenir, et
+    // le nombre suit la part de journée écoulée SELON LA COURBE — pas au prorata des heures,
+    // qui sous-estimait la matinée et creusait l'écart avec la veille.
+    const ouvertureMs = ouverture.getTime()
+    // `poidsMax` borne le tirage : plein pour un jour complet, tronqué pour aujourd'hui.
+    let poidsMax = POIDS_TOTAL
     let nb = parJour
+    /** Repli UNIFORME, utilisé seulement avant l'ouverture (la courbe n'y a pas de sens). */
+    let plageAvantOuverture: { debut: number; fin: number } | null = null
+
     if (j === 0) {
-      fin = Math.min(o.now.getTime(), fin)
-      if (fin <= debut) {
+      const finMs = Math.min(o.now.getTime(), fermeture.getTime())
+      if (finMs <= ouvertureMs) {
         // `now` précède l'ouverture. Une boutique ne vend pas à 3 h du matin — mais un
         // tableau de bord VIDE à 3 h du matin le 1ᵉʳ du mois perd le prospect, et c'est le
         // seul écran qu'il regarde. On place le plancher dans l'heure qui précède `now`.
-        debut = Math.max(minuit.getTime(), o.now.getTime() - 3_600_000)
-        fin = o.now.getTime()
+        plageAvantOuverture = { debut: Math.max(minuit.getTime(), o.now.getTime() - HEURE_MS), fin: o.now.getTime() }
         nb = VENTES_PLANCHER_JOUR_COURANT
       } else {
-        const prorata = (fin - debut) / (fermeture.getTime() - ouverture.getTime())
-        nb = Math.max(VENTES_PLANCHER_JOUR_COURANT, Math.round(parJour * prorata))
+        poidsMax = poidsEcoule(finMs - ouvertureMs)
+        nb = Math.max(VENTES_PLANCHER_JOUR_COURANT, Math.round(parJour * (poidsMax / POIDS_TOTAL)))
       }
     }
 
     for (let v = 0; v < nb; v++) {
-      const createdAt = new Date(debut + Math.floor(r() * Math.max(1, fin - debut)))
+      const createdAt = plageAvantOuverture
+        ? new Date(plageAvantOuverture.debut + Math.floor(r() * Math.max(1, plageAvantOuverture.fin - plageAvantOuverture.debut)))
+        : new Date(ouvertureMs + Math.floor(decalageSelonForme(r() * poidsMax)))
       const nbLignes = 1 + Math.floor(r() * 4)
       const saleId = randomUUID()
       let total = 0

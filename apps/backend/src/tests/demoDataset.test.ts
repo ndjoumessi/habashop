@@ -289,6 +289,66 @@ describe('buildDemoDataset', () => {
     }
   })
 
+  /**
+   * ⚠️ FORME INTRA-JOURNALIÈRE — MESURÉE EN PRODUCTION LE 2026-10-01, SUR LE BADGE.
+   *
+   * Le tableau de bord de démo affichait « VENTES DU JOUR **+1005,3 %** ». Le produit avait
+   * raison : il comparait le jour courant à la veille sur la MÊME plage horaire écoulée.
+   * C'était le JEU qui était asymétrique — le plancher du jour courant mettait une matinée
+   * de ventes dans l'intervalle écoulé, alors que la veille, étalée uniformément de 08 h à
+   * 21 h, n'avait presque rien à la même heure.
+   *
+   * Un étalement uniforme sur la journée est donc faux deux fois : il rend des horodatages
+   * invraisemblables ET il fabrique un écart jour/veille absurde. Les ventes suivent
+   * désormais une courbe horaire — pointe du matin, creux de l'après-midi, pointe du soir —
+   * et c'est CETTE propriété que les deux tests ci-dessous verrouillent.
+   */
+  it.each([
+    ['09 h', new Date(2026, 9, 1, 9, 0, 0)],
+    ['12 h', new Date(2026, 9, 1, 12, 0, 0)],
+    ['15 h', new Date(2026, 9, 1, 15, 0, 0)],
+    ['19 h', new Date(2026, 9, 1, 19, 0, 0)],
+  ])('⚠️ DÉCISIF : à %s, le jour courant est COMPARABLE à la veille sur la même plage', async (_l, now) => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, { ...options, now })
+    const minuit = minuitLocal(now).getTime()
+    const ecoule = now.getTime() - minuit
+    const dans = (debut: number, fin: number) =>
+      ecrit.sale.filter(s => {
+        const t = (s.createdAt as Date).getTime()
+        return t >= debut && t < fin
+      }).length
+
+    const aujourdhui = dans(minuit, now.getTime())
+    const veille = dans(minuit - 86_400_000, minuit - 86_400_000 + ecoule)
+    expect(veille, 'la veille ne porte RIEN sur cette plage → tout écart est absurde').toBeGreaterThan(0)
+    const rapport = aujourdhui / veille
+    expect(rapport, `jour=${aujourdhui} veille=${veille} → ${Math.round((rapport - 1) * 100)} %`).toBeLessThan(3)
+    expect(rapport).toBeGreaterThan(0.34)
+  })
+
+  /**
+   * ⚠️ ET LA COURBE DOIT EXISTER. Sans cette assertion, un étalement uniforme satisferait le
+   * test ci-dessus dès que le volume monte assez — on aurait corrigé le symptôme (l'écart) en
+   * manquant la cause (une boutique dont l'activité est plate de 08 h à 21 h, et dont
+   * « activité récente » affiche des heures tirées au hasard).
+   */
+  it('⚠️ l’activité n’est pas PLATE : l’heure de pointe pèse au moins 1,8× l’heure creuse', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const minuit = minuitLocal(options.now).getTime()
+    const parHeure = new Map<number, number>()
+    for (const s of ecrit.sale) {
+      const d = s.createdAt as Date
+      if (d.getTime() >= minuit) continue          // jour courant tronqué → exclu
+      parHeure.set(d.getHours(), (parHeure.get(d.getHours()) ?? 0) + 1)
+    }
+    expect(parHeure.size, 'toutes les heures d’ouverture doivent être couvertes').toBe(13)
+    const comptes = [...parHeure.values()]
+    const pointe = Math.max(...comptes), creux = Math.min(...comptes)
+    expect(pointe / creux, `pointe=${pointe} creux=${creux}`).toBeGreaterThan(1.8)
+  })
+
   it('⚠️ aucune coordonnée personnelle : téléphone et e-mail nuls partout', async () => {
     const { tx, ecrit } = fauxTx()
     await buildDemoDataset(tx, options)
