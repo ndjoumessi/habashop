@@ -70,3 +70,15 @@ apps/frontend/test-results/
 # dépôt — le committer ferait croire que ces tenants existent encore.
 apps/frontend/e2e/capture/tenants-crees.txt
 apps/frontend/e2e/capture/videos/
+
+# Artefacts d'éditeur et d'OS.
+# ⚠️ `mobile/src/components/pos/.BarcodeScanner.tsx.swp` avait été COMMITTÉ — 16 Ko de binaire
+# hérité de l'ex-dépôt `habashop-mobile` (son en-tête nomme encore l'ancien chemin). Il portait
+# 9 831 octets NUL sous `src/`, là où un scan de sources ne s'attend qu'à du texte. On ferme la
+# cause, pas seulement l'instance.
+*.swp
+*.swo
+*.swn
+*~
+*.orig
+*.rej
