@@ -100,13 +100,17 @@ export type StockForm = {
 }
 
 // Formulaire de catégorie (modale Stock) + config d'étiquettes (impression) + catégorie.
-export type CatForm = { name: string; color: string; icon: string; description: string }
+// ⚠️ `CatForm` a été SUPPRIMÉ. Il portait `color`, `icon` et `description` — trois champs
+// qu'aucun modèle ne stocke : la modale les collectait, les affichait, et les perdait au
+// rechargement. Une catégorie naît désormais là où elle existe vraiment : en saisissant son
+// nom sur un produit.
 export type LabelConfig = {
   size: 'small' | 'medium' | 'large'
   showPrice: boolean; showSku: boolean; showBarcode: boolean; copies: number
   averyPreset: 'L7160' | 'L7163' | 'L7165' | 'L7651' | 'CUSTOM' | 'THERMAL_40x30'
 }
-export type Category = { id: number; name: string; color: string; icon: string; productsCount: number; description: string }
+/** Une catégorie telle qu'elle EXISTE : un nom porté par des produits, et leur nombre. */
+export type Category = { name: string; productsCount: number }
 
 // Un produit a-t-il une promotion EFFECTIVE (activée + non expirée) ? Source unique pour
 // le badge PROMO de la liste ET le filtre « En promotion » → les deux ne peuvent pas
@@ -114,14 +118,47 @@ export type Category = { id: number; name: string; color: string; icon: string; 
 export const isActivePromo = (p: ProductItem, now: Date = new Date()): boolean =>
   isPromotionActive(p.hasPromotion, p.promotionEnd, now)
 
-export const CATEGORIES_INIT = [
-  { id:1, name:'Céréales',   color:'#818CF8', icon:'🌾', productsCount:3, description:'Riz, farine, semoule...'     },
-  { id:2, name:'Corps gras', color:'#F59E0B', icon:'🫙', productsCount:2, description:'Huiles, beurre de karité...' },
-  { id:3, name:'Épicerie',   color:'#34D399', icon:'🍚', productsCount:2, description:'Sucre, café, condiments...'  },
-  { id:4, name:'Hygiène',    color:'#F472B6', icon:'🧼', productsCount:2, description:'Savons, détergents...'       },
-  { id:5, name:'Laitiers',   color:'#60A5FA', icon:'🥛', productsCount:2, description:'Lait, fromage, yaourt...'   },
-  { id:6, name:'Conserves',  color:'#A78BFA', icon:'🍅', productsCount:2, description:'Tomates, sardines, thon...' },
-]
+/**
+ * LES CATÉGORIES DE LA BOUTIQUE — DÉRIVÉES DU CATALOGUE, avec leur effectif RÉEL.
+ *
+ * ⚠️ MESURÉ À L'ÉCRAN le 2026-10-01 : il y avait ici `CATEGORIES_INIT`, six entrées écrites
+ * en dur avec des `productsCount` LITTÉRAUX (3, 2, 2, 2, 2, 2). Le panneau « Gestion des
+ * catégories » les affichait à tout commerçant — y compris « Corps gras » et « Laitiers »
+ * sur une boutique qui n'en vendait pas — et `setCategories` n'était appelé que par une
+ * édition LOCALE : rien ne chargeait jamais les vraies catégories, et une création
+ * disparaissait au rechargement.
+ *
+ * ⚠️ Il n'existe ni modèle `Category` ni route `/api/categories` : `Product.category` est un
+ * champ TEXTE LIBRE. Une catégorie de cette boutique est donc, par définition, une valeur
+ * portée par au moins un de ses produits — et son effectif se COMPTE.
+ *
+ * Tri par effectif décroissant, puis alphabétique LOCALISÉ à égalité : un ordre dépendant
+ * de l'insertion ferait danser les tuiles à chaque rechargement.
+ */
+export function categoriesAvecEffectif(
+  produits: readonly { category?: string | null }[],
+): { name: string; productsCount: number }[] {
+  const compte = new Map<string, number>()
+  for (const p of produits) {
+    const nom = (p.category ?? '').trim()
+    if (nom) compte.set(nom, (compte.get(nom) ?? 0) + 1)
+  }
+  return [...compte.entries()]
+    .map(([name, productsCount]) => ({ name, productsCount }))
+    .sort((a, b) => b.productsCount - a.productsCount || a.name.localeCompare(b.name, 'fr'))
+}
+
+/**
+ * Couleur de la pastille, DÉRIVÉE du nom — une clé visuelle stable, jamais un choix que le
+ * commerçant aurait fait. L'ancienne liste portait une couleur, une icône et une description
+ * par catégorie : trois champs qu'aucun modèle ne stocke, donc trois affirmations.
+ */
+export const COULEURS_CATEGORIE = ['#818CF8', '#F59E0B', '#34D399', '#F472B6', '#60A5FA', '#A78BFA', '#FB7185', '#2DD4BF'] as const
+export function couleurCategorie(nom: string): string {
+  let h = 0
+  for (let i = 0; i < nom.length; i++) h = (h * 31 + nom.charCodeAt(i)) >>> 0
+  return COULEURS_CATEGORIE[h % COULEURS_CATEGORIE.length]
+}
 
 // ─── Libellés catégories statiques i18n ─────
 // Traduit UNIQUEMENT les catégories prédéfinies de l'interface.

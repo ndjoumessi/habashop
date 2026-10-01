@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t, useAppStore } from '@/stores/appStore'
 import { hydratePricesFromApi, dehydratePricesForApi } from '@/lib/productCurrency'
-import { Search, Download, Plus, AlertTriangle, List, Gem, FolderOpen, Tag, Printer, Camera, Pencil, Package, X, Eye, Trash2, LayoutGrid, AlignJustify, ArrowLeftRight } from 'lucide-react'
+import { Search, Download, Plus, AlertTriangle, List, Gem, FolderOpen, Tag, Printer, Camera, Package, X, Eye, LayoutGrid, AlignJustify, ArrowLeftRight } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import StockTransfers from '@/components/stock/StockTransfers'
 import ViewField from '@/components/ui/ViewField'
@@ -19,8 +19,7 @@ import StockModals from '@/components/stock/StockModals'
 import EmptyState from '@/components/ui/EmptyState'
 import Skeleton from '@/components/ui/skeleton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
-import IconButton from '@/components/ui/IconButton'
-import { type ProductItem, type StockForm, type CatForm, type LabelConfig, type Category, CATEGORIES_INIT, statusOf, stockCatLabel, stockCatDesc, isActivePromo } from '@/components/stock/stockShared'
+import { type ProductItem, type StockForm, type LabelConfig, categoriesAvecEffectif, couleurCategorie, statusOf, stockCatLabel, isActivePromo } from '@/components/stock/stockShared'
 import { normalizeBarcode, isValidBarcode, isAcceptableBarcode, barcodeMatches } from '@/lib/barcode'
 import StockBackfill from '@/components/stock/StockBackfill'
 import { saved } from '@/lib/saved'
@@ -69,8 +68,7 @@ export default function Stock() {
     image: '📦', notes: '',
     priceTiers: [] as { minQty: number; price: number; label?: string }[],
   })
-  const [categories, setCategories] = useState<Category[]>(CATEGORIES_INIT)
-  const [showCatModal, setShowCatModal] = useState(false)
+
   const [showLabelModal, setShowLabelModal] = useState(false)
   const [stockView, setStockView] = useState<'grid'|'list'>('list')
   const [labelConfig, setLabelConfig] = useState<LabelConfig>({
@@ -91,8 +89,6 @@ export default function Stock() {
     })
   }
   const clearSelection = () => setSelectedSkus(new Set())
-  const [editCat, setEditCat] = useState<typeof CATEGORIES_INIT[0] | null>(null)
-  const [catForm, setCatForm] = useState<CatForm>({ name:'', color:'#818CF8', icon:'📦', description:'' })
 
   // ── Rattrapage codes-barres (PR5) : produits sans code valide.
   const [showBackfill, setShowBackfill] = useState(false)
@@ -131,6 +127,9 @@ export default function Stock() {
   }
 
   const cats     = ['', ...Array.from(new Set(products.map(p => p.category)))]
+  /** ⚠️ Les catégories de la boutique se DÉRIVENT du catalogue — cf. `categoriesAvecEffectif`. */
+  const categories = useMemo(() => categoriesAvecEffectif(products), [products])
+  const maxEffectifCategorie = Math.max(1, ...categories.map(c => c.productsCount))
   const ruptures = products.filter(p => p.stock <= p.threshold)
   const totalValue = products.reduce((s, p) => s + p.stock * p.sell, 0)
 
@@ -544,10 +543,15 @@ export default function Stock() {
       {/* ── Panel Catégories ── */}
       <div className="panel">
         <div className="panel-head">
-          <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Tag size={14} /> {lang === 'en' ? 'Manage categories' : lang === 'es' ? 'Gestionar categorías' : lang === 'it' ? 'Gestisci categorie' : 'Gestion des catégories'}</span>
-          <button className="topbar-btn" onClick={() => { setEditCat(null); setCatForm({ name:'', color:'#818CF8', icon:'📦', description:'' }); setShowCatModal(true) }}>
-            + {lang === 'en' ? 'New category' : lang === 'es' ? 'Nueva categoría' : lang === 'it' ? 'Nuova categoria' : 'Nouvelle catégorie'}
-          </button>
+          {/* ⚠️ Titre au PRÉSENT de ce que fait l'écran : il MONTRE les catégories, il ne les
+              gère pas. Le bouton « + Nouvelle catégorie » a été retiré avec la modale qui
+              collectait couleur, icône et description — trois champs qu'aucun modèle ne
+              stocke, et qu'un rechargement effaçait. Une catégorie naît en saisissant son
+              nom sur un produit, qui est la seule chose que la base retienne. */}
+          <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Tag size={14} /> {lang === 'en' ? 'Categories in stock' : lang === 'es' ? 'Categorías en stock' : lang === 'it' ? 'Categorie in stock' : 'Catégories du catalogue'}</span>
+          <span style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>
+            {categories.length} {lang === 'en' ? 'categories' : lang === 'es' ? 'categorías' : lang === 'it' ? 'categorie' : 'catégories'}
+          </span>
         </div>
         {/* ⚠️ `mode="fill"` — grille d'ARTICLES à effectif variable, dont la tuile a une
           taille DESSINÉE. Sans lui, `auto-fit` effondre les colonnes vides et les
@@ -555,47 +559,30 @@ export default function Stock() {
           dessous de 4 éléments sur un conteneur de 918 px). Ne PAS le mettre sur
           un formulaire, où un champ DOIT remplir sa colonne. */}
         <ResponsiveGrid min={220} mode="fill">
-          {[...categories].sort((a, b) => b.productsCount - a.productsCount).map(cat => (
-            <div key={cat.id} style={{
+          {categories.map(cat => {
+            const couleur = couleurCategorie(cat.name)
+            // ⚠️ La barre est relative à la PLUS GROSSE catégorie. L'ancienne divisait par 10
+            // en dur : au-delà de dix produits elle restait pleine, et elle ne comparait rien.
+            const part = Math.round((cat.productsCount / maxEffectifCategorie) * 100)
+            return (
+            <div key={cat.name} style={{
               background:'var(--bg3)', border:'1px solid var(--border)',
-              borderRadius:12, padding:16, borderLeft:`4px solid ${cat.color}`,
-              display:'flex', flexDirection:'column', gap:8, transition:'all .2s',
-            }}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = `0 6px 20px ${cat.color}33` }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.boxShadow = 'none' }}
-            >
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <div style={{ width:36, height:36, borderRadius:10, background:`${cat.color}22`, border:`1px solid ${cat.color}44`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-lg)' }}>{cat.icon}</div>
-                  <div>
-                    <div style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{stockCatLabel(cat.name, lang)}</div>
-                    <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{cat.productsCount} {lang === 'en' ? 'products' : lang === 'es' ? 'productos' : lang === 'it' ? 'prodotti' : 'produits'}</div>
-                  </div>
-                </div>
-                <div style={{ display:'flex', gap:4 }}>
-                  <IconButton
-                    label={lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
-                    icon={<Pencil size={14} />}
-                    onClick={() => { setEditCat(cat); setCatForm({ name:cat.name, color:cat.color, icon:cat.icon, description:cat.description }); setShowCatModal(true) }}
-                  />
-                  <IconButton
-                    label={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
-                    icon={<Trash2 size={14} />}
-                    danger
-                    onClick={() => {
-                      if (cat.productsCount > 0) { toast.error(lang === 'en' ? 'Category not empty!' : lang === 'es' ? '¡Categoría no vacía!' : lang === 'it' ? 'Categoria non vuota!' : 'Catégorie non vide !'); return }
-                      setCategories(prev => prev.filter(c => c.id !== cat.id))
-                      toast.success(lang === 'en' ? 'Category deleted' : lang === 'es' ? 'Categoría eliminada' : lang === 'it' ? 'Categoria eliminata' : 'Catégorie supprimée')
-                    }}
-                  />
+              borderRadius:12, padding:16, borderLeft:`4px solid ${couleur}`,
+              display:'flex', flexDirection:'column', gap:8,
+            }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <div style={{ width:36, height:36, borderRadius:10, background:`${couleur}22`, border:`1px solid ${couleur}44`, display:'flex', alignItems:'center', justifyContent:'center' }}><Tag size={16} style={{ color: couleur }} /></div>
+                <div>
+                  <div style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{stockCatLabel(cat.name, lang)}</div>
+                  <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{cat.productsCount} {lang === 'en' ? 'products' : lang === 'es' ? 'productos' : lang === 'it' ? 'prodotti' : 'produits'}</div>
                 </div>
               </div>
-              <div style={{ fontSize:'var(--fs-label)', color:'var(--text2)' }}>{stockCatDesc(cat.description, lang)}</div>
               <div style={{ height:4, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
-                <div style={{ height:'100%', borderRadius:99, width:`${Math.min(100,(cat.productsCount/10)*100)}%`, background:cat.color, transition:'width .3s' }} />
+                <div style={{ height:'100%', borderRadius:99, width:`${part}%`, background:couleur }} />
               </div>
             </div>
-          ))}
+            )
+          })}
         </ResponsiveGrid>
       </div>
       </>)}
@@ -610,11 +597,9 @@ export default function Stock() {
         form={form} setForm={setForm}
         productEditMode={productEditMode} setProductEditMode={setProductEditMode}
         modalTab={modalTab} setModalTab={setModalTab}
-        categories={categories} setCategories={setCategories}
+        categories={categories}
         showScanner={showScanner} setShowScanner={setShowScanner}
         fmt={fmt} products={products} saveProduct={saveProduct}
-        showCatModal={showCatModal} setShowCatModal={setShowCatModal}
-        editCat={editCat} catForm={catForm} setCatForm={setCatForm}
         showLabelModal={showLabelModal} setShowLabelModal={(b: boolean) => { setShowLabelModal(b); if (!b) setLabelModalFromSelection(false) }}
         lang={lang} labelConfig={labelConfig} setLabelConfig={setLabelConfig}
         selectedForLabel={selectedForLabel} setSelectedForLabel={setSelectedForLabel}

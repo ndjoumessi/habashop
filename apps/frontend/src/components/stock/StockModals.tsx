@@ -7,7 +7,7 @@ import { printProductLabels } from '@/utils/export'
 import { printThermalLabels } from '@/utils/thermalLabel'
 import ViewField from '@/components/ui/ViewField'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
-import { type ProductItem, type StockForm, type CatForm, type LabelConfig, type Category, stockCatLabel } from '@/components/stock/stockShared'
+import { type ProductItem, type StockForm, type LabelConfig, type Category, stockCatLabel } from '@/components/stock/stockShared'
 import { lookupProductByEan } from '@/lib/productLookup'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { normalizeBarcode, isValidBarcode, barcodeFormat, generateEAN13, quietZonePx } from '@/lib/barcode'
@@ -24,14 +24,12 @@ interface StockModalsProps {
   form: StockForm; setForm: Dispatch<SetStateAction<StockForm>>
   productEditMode: boolean; setProductEditMode: (b: boolean) => void
   modalTab: 'general' | 'prix' | 'avance'; setModalTab: (v: 'general' | 'prix' | 'avance') => void
-  categories: Category[]; setCategories: Dispatch<SetStateAction<Category[]>>
+  /** Catégories RÉELLES du catalogue — suggestions de saisie, jamais une liste imposée. */
+  categories: readonly Category[]
   showScanner: boolean; setShowScanner: (b: boolean) => void
   fmt: (n: number) => string
   products: ProductItem[]
   saveProduct: () => void
-  showCatModal: boolean; setShowCatModal: (b: boolean) => void
-  editCat: any
-  catForm: CatForm; setCatForm: Dispatch<SetStateAction<CatForm>>
   showLabelModal: boolean; setShowLabelModal: (b: boolean) => void
   lang: string
   labelConfig: LabelConfig; setLabelConfig: Dispatch<SetStateAction<LabelConfig>>
@@ -121,12 +119,11 @@ export function BarcodeVignette({ value, lang }: { value: string; lang: string }
   )
 }
 
-export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection, onOpenBackfill, editingId, photo, setPhoto, setPhotoEnAttente }: StockModalsProps) {
+export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, showScanner, setShowScanner, fmt, products, saveProduct, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection, onOpenBackfill, editingId, photo, setPhoto, setPhotoEnAttente }: StockModalsProps) {
   const [supSearch, setSupSearch] = useState('')
   const [supOpen, setSupOpen] = useState(false)
   // Pièges à focus des 3 modales (focus initial + Tab bouclé + restauration)
   const productBoxRef = useModalFocus<HTMLDivElement>(showModal)
-  const catBoxRef     = useModalFocus<HTMLDivElement>(showCatModal)
   const labelBoxRef   = useModalFocus<HTMLDivElement>(showLabelModal)
   const filteredSuppliers = useMemo(() => {
     const q = supSearch.trim().toLowerCase()
@@ -329,9 +326,21 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     />
                   </ViewField>
                   <ViewField label={lang === 'en' ? 'Category' : lang === 'es' ? 'Categoría' : lang === 'it' ? 'Categoria' : 'Catégorie'} value={stockCatLabel(form.category, lang)} editing={productEditMode} emptyLabel={emptyLabel}>
-                    <select className="input text-sm" value={form.category} onChange={e => setForm(f => ({...f, category:e.target.value}))}>
-                      {categories.map(c => <option key={c.id} value={c.name}>{c.icon} {stockCatLabel(c.name, lang)}</option>)}
-                    </select>
+                    {/* ⚠️ SAISIE LIBRE AVEC SUGGESTIONS, pas un `<select>`. Le menu déroulant
+                        n'offrait que six catégories écrites en dur : un produit rangé dans
+                        « Boissons » n'y retrouvait pas sa valeur, et l'enregistrer le
+                        reclassait en silence. `Product.category` est un champ texte — le
+                        champ le dit maintenant, et les suggestions viennent du catalogue. */}
+                    <input
+                      className="input text-sm"
+                      list="categories-du-catalogue"
+                      value={form.category}
+                      onChange={e => setForm(f => ({...f, category:e.target.value}))}
+                      placeholder={lang === 'en' ? 'Ex: Drinks' : lang === 'es' ? 'Ej: Bebidas' : lang === 'it' ? 'Es: Bevande' : 'Ex : Boissons'}
+                    />
+                    <datalist id="categories-du-catalogue">
+                      {categories.map(c => <option key={c.name} value={c.name}>{stockCatLabel(c.name, lang)}</option>)}
+                    </datalist>
                   </ViewField>
                 </div>
 
@@ -735,82 +744,12 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
       )}
 
       {/* ── Modal Catégorie ── */}
-      {showCatModal && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true"
-          aria-label={editCat
-            ? i('Modifier la catégorie', 'Edit category', 'Editar categoría', 'Modifica categoria')
-            : i('Nouvelle catégorie', 'New category', 'Nueva categoría', 'Nuova categoria')}
-          onClick={e => e.target === e.currentTarget && setShowCatModal(false)}>
-          <div ref={catBoxRef} className="modal-box" style={{ maxWidth:440 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
-              <h3 style={{ fontSize:'var(--fs-title)', fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
-                {editCat
-                  ? i('Modifier la catégorie', 'Edit category', 'Editar categoría', 'Modifica categoria')
-                  : i('Nouvelle catégorie', 'New category', 'Nueva categoría', 'Nuova categoria')}
-              </h3>
-              <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="mini-btn" onClick={() => setShowCatModal(false)}><X size={14} /></button>
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Category name' : lang === 'es' ? 'Nombre de la categoría' : lang === 'it' ? 'Nome categoria' : 'Nom de la catégorie'}</label>
-                <input aria-label={lang === 'en' ? 'Category name' : lang === 'es' ? 'Nombre de la categoría' : lang === 'it' ? 'Nome categoria' : 'Nom de la catégorie'} className="input" value={catForm.name} onChange={e => setCatForm(f => ({...f, name:e.target.value}))} placeholder={lang === 'en' ? 'Ex: Cereals' : lang === 'es' ? 'Ej: Cereales' : lang === 'it' ? 'Es: Cereali' : 'Ex: Céréales'} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Icon (emoji)' : lang === 'es' ? 'Icono (emoji)' : lang === 'it' ? 'Icona (emoji)' : 'Icône (emoji)'}</label>
-                <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
-                  {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','🥤','🍫','🌽','🫚'].map(emoji => (
-                    <button key={emoji} aria-label={`${i("Choisir l'icône", 'Choose icon', 'Elegir icono', "Scegli l'icona")} ${emoji}`} aria-pressed={catForm.icon === emoji} onClick={() => setCatForm(f => ({...f, icon:emoji}))} style={{
-                      width:36, height:36, borderRadius:8, fontSize:'var(--fs-lg)', cursor:'pointer',
-                      background: catForm.icon === emoji ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
-                      border:`1.5px solid ${catForm.icon === emoji ? 'var(--p2)' : 'var(--border)'}`,
-                    }}>{emoji}</button>
-                  ))}
-                </div>
-                <input className="input" value={catForm.icon} onChange={e => setCatForm(f => ({...f, icon:e.target.value}))} placeholder={i('Ou tapez un emoji...', 'Or type an emoji...', 'O escribe un emoji...', 'O digita un emoji...')} style={{ fontSize:'var(--fs-xl)' }} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{i('Couleur', 'Color', 'Color', 'Colore')}</label>
-                <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:8 }}>
-                  {['#818CF8','#F59E0B','#34D399','#F472B6','#60A5FA','#A78BFA','#EF4444','#14B8A6','#F97316','#84CC16'].map(color => (
-                    <button key={color} aria-label={`${i('Choisir la couleur', 'Choose color', 'Elegir color', 'Scegli il colore')} ${color}`} aria-pressed={catForm.color === color} onClick={() => setCatForm(f => ({...f, color}))} style={{
-                      width:28, height:28, borderRadius:'50%', background:color, border:'none', cursor:'pointer',
-                      boxShadow: catForm.color === color ? `0 0 0 3px white, 0 0 0 5px ${color}` : 'none', transition:'box-shadow .15s',
-                    }} />
-                  ))}
-                </div>
-                <input type="color" value={catForm.color} onChange={e => setCatForm(f => ({...f, color:e.target.value}))}
-                  style={{ width:'100%', height:36, borderRadius:8, border:'1px solid var(--border)', cursor:'pointer', background:'none' }} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{i('Description', 'Description', 'Descripción', 'Descrizione')}</label>
-                <textarea aria-label={i('Description', 'Description', 'Descripción', 'Descrizione')} className="input" rows={2} value={catForm.description} onChange={e => setCatForm(f => ({...f, description:e.target.value}))} placeholder={i('Description courte...', 'Short description...', 'Descripción corta...', 'Descrizione breve...')} />
-              </div>
-              {/* Preview */}
-              <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:10, background:'var(--bg3)', border:'1px solid var(--border)', borderLeft:`4px solid ${catForm.color}` }}>
-                <div style={{ width:36, height:36, borderRadius:10, background:`${catForm.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'var(--fs-xl)' }}>{catForm.icon}</div>
-                <div>
-                  <div style={{ fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{catForm.name || i('Nom catégorie', 'Category name', 'Nombre categoría', 'Nome categoria')}</div>
-                  <div style={{ fontSize:'var(--fs-caption)', color:'var(--text3)' }}>{catForm.description || i('Description...', 'Description...', 'Descripción...', 'Descrizione...')}</div>
-                </div>
-              </div>
-            </div>
-            <div style={{ display:'flex', gap:8, marginTop:20 }}>
-              <button className="topbar-btn" style={{ flex:1, justifyContent:'center' }} onClick={() => {
-                if (!catForm.name) { toast.error(i('Nom requis', 'Name required', 'Nombre requerido', 'Nome richiesto')); return }
-                if (editCat) {
-                  setCategories(prev => prev.map(c => c.id === editCat.id ? {...c, ...catForm} : c))
-                  toast.success(`${i('Catégorie', 'Category', 'Categoría', 'Categoria')} "${catForm.name}" ${i('modifiée', 'updated', 'actualizada', 'aggiornata')}`)
-                } else {
-                  setCategories(prev => [...prev, { id:Date.now(), ...catForm, productsCount:0 }])
-                  toast.success(`${i('Catégorie', 'Category', 'Categoría', 'Categoria')} "${catForm.name}" ${i('créée', 'created', 'creada', 'creata')}`)
-                }
-                setShowCatModal(false)
-              }}>{editCat ? i('Modifier', 'Edit', 'Editar', 'Modifica') : i('Créer', 'Create', 'Crear', 'Crea')}</button>
-              <button className="mini-btn" style={{ padding:'10px 16px' }} onClick={() => setShowCatModal(false)}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ⚠️ La modale « catégorie » vivait ici. Elle collectait un nom, une COULEUR, une
+          ICÔNE et une DESCRIPTION, affichait un aperçu, puis écrivait dans un `useState` :
+          aucun de ces quatre champs n'existe en base, et la catégorie créée disparaissait au
+          rechargement. Un formulaire qui promet une persistance qu'il n'a pas vaut moins que
+          pas de formulaire du tout. */}
+
 
       {/* ══ Modal Étiquettes ══ */}
       {showLabelModal && (
