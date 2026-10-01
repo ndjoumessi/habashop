@@ -747,3 +747,68 @@ describe('dépenses de démonstration — règlement et budgets', () => {
       .toBeGreaterThan(0)
   })
 })
+
+/**
+ * LE CATALOGUE — DES PRODUITS, PAS DES NUMÉROS.
+ *
+ * ⚠️ VU EN FILMANT LE PARCOURS DE DÉMONSTRATION le 2026-10-01 : la caisse affichait
+ * « Boissons — article 1 », « Céréales — article 2 »… C'est la MÊME forme que le `name:
+ * 'Caissier 1'` des employés, corrigé le matin même — une catégorie suivie d'un rang, dans le
+ * champ d'un NOM.
+ *
+ * ⚠️ ET LA VITRINE PROMETTAIT L'INVERSE. La vignette produit du hero nomme « Riz local 25 kg »,
+ * « Huile végétale 1 L », « Savon de Marseille ». Un prospect qui clique « Essayer la démo »
+ * depuis cette page tombait sur un catalogue qui se lit comme un jeu d'essai non terminé — la
+ * démonstration CONTREDISAIT l'argumentaire qui l'avait amené là.
+ *
+ * ⚠️ UN NOM DE PRODUIT N'EST PAS UNE CLÉ : contrairement à `category`, `role` ou `dept`, rien ne
+ * l'indexe et rien ne le traduit. C'est de la donnée commerçant, et c'est précisément pourquoi
+ * elle doit RESSEMBLER à de la donnée commerçant.
+ *
+ * Le verrou juge la FORME — un nom ne porte pas sa catégorie suivie d'un rang — et il assert la
+ * COUVERTURE : sans elle, un catalogue vide le satisferait sans rien garder.
+ */
+describe('catalogue de démonstration — des produits nommés', () => {
+  it('⚠️ aucun nom ne porte sa catégorie suivie d’un rang', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+
+    expect(ecrit.product.length, 'couverture : le catalogue doit être peuplé').toBeGreaterThan(20)
+    for (const p of ecrit.product) {
+      const nom = String(p.name), cat = String(p.category)
+      expect(nom, `« ${nom} » est un rang, pas un produit`).not.toMatch(/\barticle\s*\d+/i)
+      expect(nom.startsWith(cat), `« ${nom} » commence par sa catégorie`).toBe(false)
+      expect(nom, 'un nom ne peut pas être sa propre catégorie').not.toBe(cat)
+    }
+  })
+
+  it('⚠️ les noms sont tous DISTINCTS — deux articles homonymes sont indiscernables en caisse', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const noms = ecrit.product.map(p => String(p.name))
+    expect(new Set(noms).size, 'doublon de nom de produit').toBe(noms.length)
+  })
+
+  it('⚠️ chaque catégorie porte le MÊME effectif — sinon le camembert penche par construction', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const parCat = new Map<string, number>()
+    for (const p of ecrit.product) {
+      const c = String(p.category)
+      parCat.set(c, (parCat.get(c) ?? 0) + 1)
+    }
+    expect(parCat.size, 'toutes les catégories doivent être représentées').toBe(DEMO_CATEGORIES.length)
+    const effectifs = [...parCat.values()]
+    expect(new Set(effectifs).size, `effectifs inégaux : ${[...parCat].map(([c, n]) => `${c}=${n}`).join(', ')}`).toBe(1)
+  })
+
+  it('⚠️ les clients ne sont pas des lettres d’alphabet non plus', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    expect(ecrit.customer.length).toBeGreaterThan(0)
+    for (const c of ecrit.customer) {
+      // « Cliente A », « Client B », « Boutique C » : un rang déguisé en nom.
+      expect(String(c.name), `« ${c.name} » est un rang`).not.toMatch(/^(Client|Cliente|Boutique|Restaurant)\s+[A-Z]$/)
+    }
+  })
+})

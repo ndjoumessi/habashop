@@ -98,6 +98,39 @@ function alea(graine: number): () => number {
 const JOURS_D_HISTORIQUE = 60
 const VENTES_PAR_JOUR_MIN = 14
 const VENTES_PAR_JOUR_MAX = 20
+/**
+ * LE CATALOGUE — des produits NOMMÉS, un par ligne de la grille de caisse.
+ *
+ * ⚠️ VU EN FILMANT LE PARCOURS le 2026-10-01 : la caisse affichait « Boissons — article 1 ».
+ * Même forme que le `name: 'Caissier 1'` des employés corrigé le matin même — une catégorie
+ * suivie d'un rang, dans le champ d'un NOM. Et la vitrine promettait l'INVERSE : la vignette du
+ * hero nomme « Riz local 25 kg », « Huile végétale 1 L », « Savon de Marseille ». Un prospect
+ * venu de cette page tombait sur un catalogue qui se lit comme un jeu d'essai non terminé.
+ *
+ * ⚠️ `Record<(typeof DEMO_CATEGORIES)[number], …>` DÉLIBÉRÉMENT, pas un tableau de tableaux :
+ * `tsc` refuse d'ajouter une catégorie sans la décrire ici. C'est la parade du dépôt contre
+ * l'arité — le compilateur rougit là où aucun test ne le ferait.
+ *
+ * ⚠️ LONGUEURS VOLONTAIREMENT INÉGALES (« Eau minérale 1,5 L » contre « Pâte d'arachide
+ * 500 g ») : des noms de longueur uniforme s'enroulent tous pareil, et un défaut d'alignement
+ * des prix passerait au vert sur du code fautif — c'est MESURÉ, les deux sabotages de
+ * l'alignement en caisse étaient restés verts sur un jeu à longueur constante.
+ *
+ * ⚠️ Aucune marque réelle : ce sont des dénominations génériques de superette, pas des produits
+ * de commerçants identifiables.
+ */
+const CATALOGUE: Record<(typeof DEMO_CATEGORIES)[number], readonly [string, string, string, string]> = {
+  'Boissons':  ['Eau minérale 1,5 L', 'Jus de bissap 1 L', 'Soda cola 33 cl', 'Lait concentré sucré'],
+  'Épicerie': ['Riz parfumé 25 kg', 'Huile végétale 1 L', 'Sucre en poudre 1 kg', 'Pâte d’arachide 500 g'],
+  'Hygiène':  ['Savon de Marseille', 'Dentifrice 75 ml', 'Papier hygiénique ×4', 'Gel douche 250 ml'],
+  'Entretien': ['Eau de Javel 1 L', 'Lessive en poudre 1 kg', 'Éponge grattante ×3', 'Désodorisant 300 ml'],
+  'Céréales':  ['Mil décortiqué 5 kg', 'Maïs concassé 2 kg', 'Farine de blé 1 kg', 'Semoule de couscous 1 kg'],
+  'Conserves': ['Tomate concentrée 800 g', 'Sardines à l’huile', 'Haricots rouges 400 g', 'Maïs doux 300 g'],
+  'Frais':     ['Œufs ×30', 'Lait frais 1 L', 'Yaourt nature ×4', 'Beurre doux 250 g'],
+  'Snacks':    ['Biscuits fourrés 200 g', 'Cacahuètes grillées 150 g', 'Chips de plantain', 'Bonbons assortis'],
+  'Papeterie': ['Cahier 100 pages', 'Stylos bille ×10', 'Ramette A4 500 f.', 'Crayons de couleur ×12'],
+}
+
 const PRODUITS_PAR_CATEGORIE = 4
 /**
  * Heures d'ouverture, en heure LOCALE du serveur (Railway = UTC = heure de Dakar), la même
@@ -236,7 +269,7 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
         id,
         tenantId: o.tenantId,
         sku: `DEMO-${String(ic + 1).padStart(2, '0')}-${String(k + 1).padStart(2, '0')}`,
-        name: `${categorie} — article ${k + 1}`,
+        name: CATALOGUE[categorie][k],
         category: categorie,
         buyPrice, sellPrice,
         stockQty: STOCKS_EN_ALERTE[produits.length] ?? stockTire,
@@ -252,7 +285,12 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
   // ── Clients ────────────────────────────────────────────────────────────────
   const clients: string[] = []
   const lignesClients: Prisma.CustomerUncheckedCreateInput[] = []
-  for (const nom of ['Cliente A', 'Client B', 'Boutique C', 'Restaurant D', 'Cliente E']) {
+  // ⚠️ MÊME FAMILLE que les produits et les employés : « Cliente A », « Boutique C » étaient des
+  // rangs déguisés en noms. Un fichier client qui s'ouvre sur l'alphabet ne ressemble à aucune
+  // boutique. Noms de FANTAISIE, et téléphone/e-mail restent NULS (§ Comptes démo).
+  for (const nom of [
+    'Boutique Keur Massar', 'Restaurant Teranga', 'Kiosque Liberté 6', 'Mme Ndiaye', 'M. Camara',
+  ]) {
     const id = randomUUID()
     lignesClients.push({
       id, tenantId: o.tenantId, name: nom, type: r() > 0.6 ? 'wholesale' : 'retail', phone: null, email: null,
