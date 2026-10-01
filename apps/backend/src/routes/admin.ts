@@ -36,7 +36,19 @@ const ADMIN_CREATE_TENANT = z.object({
 export async function adminRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/admin/tenants', { preHandler: authenticateAdmin }, async () => {
     const tenants = await prisma.tenant.findMany({
-      where: { isPlatform: false }, // exclure les tenants INTERNES plateforme (staff)
+      where: {
+        isPlatform: false, // exclure les tenants INTERNES plateforme (staff)
+        // ⚠️ EXCLURE les démos JETABLES (libre-service). En régime établi — 200/jour sur 7
+        // jours de rétention — elles afficheraient jusqu'à 1400 lignes TOUTES nommées
+        // « Boutique de démonstration », en tête du tri par date de création, au-dessus des
+        // quelques clients réels. La recherche par nom ne les distingue pas.
+        //
+        // ⚠️ Les démos PERMANENTES (`demo-tenant-001/002`) RESTENT visibles : un opérateur
+        // doit pouvoir ouvrir la démonstration, et le § Console Ops exige qu'une fixture
+        // soit MARQUÉE dans la liste plutôt que masquée. La distinction est `demoExpiresAt` :
+        // une démo qui ne survivra pas à la semaine n'est pas une fixture qu'on inspecte.
+        demoExpiresAt: null,
+      },
       include: { _count: { select: { users: true, products: true, sales: true } } },
       orderBy: { createdAt: 'desc' },
     })

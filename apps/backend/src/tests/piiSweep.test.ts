@@ -122,3 +122,32 @@ describe('périmètre du balayage', () => {
     expect(rapporter([])).toMatch(/aucune coordonnée hors fixture/i)
   })
 })
+
+/**
+ * ⚠️ L'ADRESSE DES DÉMOS JETABLES N'EST PAS DE LA PII.
+ *
+ * Défaut trouvé en revue. `routes/demo.ts` crée un compte par visiteur avec une adresse
+ * synthétique et non routable `demo-<uuid>@demo.local`. Ce domaine n'était pas dans
+ * `DOMAINES_FIXTURE`, donc CHAQUE démo vivante produisait un signalement : à 200 démos/jour
+ * sur 7 jours de rétention, jusqu'à 1400 lignes par passe.
+ *
+ * Une vraie fuite sur `demo-tenant-001` — un nom réel, un mobile personnel et une adresse
+ * postale exposés pendant trois semaines, le défaut qui a justifié l'écriture de ce module —
+ * serait devenue UNE ligne parmi 1400. C'est la règle « une alerte qui crie toujours n'alerte
+ * plus quand elle devient vraie ».
+ */
+describe('adresses des démos jetables', () => {
+  it('⚠️ `demo.local` est un domaine de FIXTURE — pas un signalement', () => {
+    expect(mailHorsFixture('demo-3f2b8c1a@demo.local')).toBe(false)
+    expect(mailHorsFixture('visiteur@demo.local')).toBe(false)
+  })
+
+  it('TÉMOIN POSITIF : une adresse réelle reste signalée', () => {
+    expect(mailHorsFixture('nelson.djoumessi@gmail.com')).toBe(true)
+  })
+
+  it('⚠️ un domaine qui RESSEMBLE à demo.local n’est pas exempté', () => {
+    expect(mailHorsFixture('x@demo.local.example.com')).toBe(true)
+    expect(mailHorsFixture('x@notdemo.local')).toBe(true)
+  })
+})

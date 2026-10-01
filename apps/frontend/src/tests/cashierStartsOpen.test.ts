@@ -91,7 +91,9 @@ describe('CÂBLAGE — l’authentification n’a pas le droit de FERMER la cais
     expect(utiles.filter(l => l.includes('closeCashier('))).toEqual([])
     // COUVERTURE : sans ce compte, un fichier vide ou déplacé rendrait la règle vraie
     // sur du néant.
-    expect(utiles.filter(l => l.includes('resetCashierSession(')).length).toBe(3)
+    // 4 depuis le 2026-10-01 : `adoptSession` (partagée par `register` et `startDemo`) en
+    // ajoute un — une session neuve ne part pas avec la session de caisse de la précédente.
+    expect(utiles.filter(l => l.includes('resetCashierSession(')).length).toBe(4)
   })
 
   it('et le geste EXPLICITE reste câblé, côté modale de caisse', () => {

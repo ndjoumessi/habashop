@@ -45,7 +45,21 @@ export interface PurgeStep {
 
 /** Le minimum exigé d'un client de transaction — indexable, pour rester mockable. */
 export type PurgeTx = Record<string, { deleteMany(a: { where: object }): Promise<{ count: number }> }> & {
-  tenant: { delete(a: { where: { id: string } }): Promise<unknown> }
+  tenant: {
+    delete(a: { where: { id: string } }): Promise<unknown>
+    /** Lu par la GARDE : ce tenant est-il bien une démo jetable ? */
+    findUnique(a: { where: { id: string }; select: { demoExpiresAt: true } }): Promise<{ demoExpiresAt: Date | null } | null>
+  }
+}
+
+/** Échappatoire explicite et NOMMÉE pour une suppression dure hors démo jetable. */
+export interface HardDeleteOptions {
+  /**
+   * ⚠️ N'employer qu'en connaissance de cause. Une suppression DURE efface les écritures
+   * comptables, que `services/accountDeletion.ts` conserve délibérément. Le nom est long
+   * exprès : il doit se lire dans la revue de l'appelant.
+   */
+  jeSaisQueCeNestPasUneDemo?: boolean
 }
 
 interface Lien { champ: string; cible: string; fks: string[] }
@@ -142,9 +156,37 @@ export function purgePlan(): PurgeStep[] {
 
 /**
  * Supprime DUREMENT toutes les lignes d'un tenant, puis le tenant.
+ *
+ * ⚠️ GARDE AU POINT DE DESTRUCTION : refuse tout tenant qui ne porte pas `demoExpiresAt`.
+ * Cette fonction est exportée et générique ; sans garde ici, sa seule protection vivrait dans
+ * le `where` de son appelant, et un futur endpoint admin « supprimer une boutique » effacerait
+ * irréversiblement les ventes, la paie, les écritures et le journal d'audit d'un commerçant
+ * payant. C'est la règle que ce dépôt a déjà payée deux fois : *la garde vit au point de
+ * dépense, jamais sur la route*.
+ *
+ * ⚠️ Un tenant INTROUVABLE est refusé, pas supposé absent : une lecture qui ne rend rien
+ * pendant un incident ne doit pas autoriser une destruction.
+ *
  * @returns le nombre de lignes supprimées par modèle — un ménage se MESURE, il ne s'affirme pas.
  */
-export async function hardDeleteTenant(tx: PurgeTx, tenantId: string): Promise<Record<string, number>> {
+export async function hardDeleteTenant(
+  tx: PurgeTx,
+  tenantId: string,
+  options: HardDeleteOptions = {},
+): Promise<Record<string, number>> {
+  if (!options.jeSaisQueCeNestPasUneDemo) {
+    const cible = await tx.tenant.findUnique({ where: { id: tenantId }, select: { demoExpiresAt: true } })
+    if (!cible) {
+      throw new Error(`[tenantPurge] tenant introuvable : ${tenantId} — on ne détruit pas sur une lecture vide`)
+    }
+    if (cible.demoExpiresAt === null) {
+      throw new Error(
+        `[tenantPurge] ${tenantId} n'est pas une démo jetable (aucune \`demoExpiresAt\`) — suppression dure refusée. ` +
+        `Pour un compte client, c'est \`services/accountDeletion.ts\` qui s'applique : il CONSERVE les écritures comptables.`,
+      )
+    }
+  }
+
   const compte: Record<string, number> = {}
   for (const etape of purgePlan()) {
     const delegue = tx[etape.delegate]

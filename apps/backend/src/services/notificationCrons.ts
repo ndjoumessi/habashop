@@ -55,10 +55,19 @@ export async function runTrialReminders(): Promise<void> {
 
   // Essai expirant dans ~7 jours
   const remind7 = await prisma.tenant.findMany({
-    where: { status: 'trial', trialEnds: { gte: new Date(in7days.getTime() - window30), lte: new Date(in7days.getTime() + window30) } },
+    where: { status: 'trial', isDemo: false, trialEnds: { gte: new Date(in7days.getTime() - window30), lte: new Date(in7days.getTime() + window30) } },
     include: { users: { where: { role: 'ADMIN' }, take: 1 } },
   })
   for (const tenant of remind7) {
+    // ⚠️ SECOND GARDE, au point d'ENVOI. Le `where` exclut déjà les démos ; celui-ci est le
+    // filet, parce que ces messages passent par `sendPlatformEmail`, EXEMPTÉ du garde de
+    // dépense — rien d'autre ne les arrêterait. L'adresse d'une démo jetable est
+    // `demo-<uuid>@demo.local`, un TLD inexistant : chaque envoi serait un rejet dur, et les
+    // rejets durs abîment la réputation d'expédition du domaine.
+    // ⚠️ Ce `continue` porte sur le TENANT et couvre donc TOUS ses canaux — il est légitime
+    // avant les dispatches, contrairement à une garde par CANAL, qui doit rester locale à son
+    // canal (#154). Une démo ne doit recevoir ni e-mail, ni push, ni suspension.
+    if (tenant.isDemo) continue
     const admin = tenant.users[0]
     if (!admin?.email) continue
     const sales = await prisma.sale.aggregate({ where: { tenantId: tenant.id }, _sum: { total: true }, _count: { id: true } })
@@ -70,10 +79,19 @@ export async function runTrialReminders(): Promise<void> {
 
   // Essai expirant dans ~3 jours
   const remind3 = await prisma.tenant.findMany({
-    where: { status: 'trial', trialEnds: { gte: new Date(in3days.getTime() - window30), lte: new Date(in3days.getTime() + window30) } },
+    where: { status: 'trial', isDemo: false, trialEnds: { gte: new Date(in3days.getTime() - window30), lte: new Date(in3days.getTime() + window30) } },
     include: { users: { where: { role: 'ADMIN' }, take: 1 } },
   })
   for (const tenant of remind3) {
+    // ⚠️ SECOND GARDE, au point d'ENVOI. Le `where` exclut déjà les démos ; celui-ci est le
+    // filet, parce que ces messages passent par `sendPlatformEmail`, EXEMPTÉ du garde de
+    // dépense — rien d'autre ne les arrêterait. L'adresse d'une démo jetable est
+    // `demo-<uuid>@demo.local`, un TLD inexistant : chaque envoi serait un rejet dur, et les
+    // rejets durs abîment la réputation d'expédition du domaine.
+    // ⚠️ Ce `continue` porte sur le TENANT et couvre donc TOUS ses canaux — il est légitime
+    // avant les dispatches, contrairement à une garde par CANAL, qui doit rester locale à son
+    // canal (#154). Une démo ne doit recevoir ni e-mail, ni push, ni suspension.
+    if (tenant.isDemo) continue
     const admin = tenant.users[0]
     // Même règle que les alertes stock : le garde e-mail reste LOCAL à l'e-mail, sinon il
     // emporte le push (#154 — `sendTrialExpiring` a été ajouté sous ce `continue` en juin).
@@ -85,10 +103,19 @@ export async function runTrialReminders(): Promise<void> {
 
   // Essai venant d'expirer (dernière fenêtre) → suspension + email
   const expired = await prisma.tenant.findMany({
-    where: { status: 'trial', trialEnds: { gte: new Date(now.getTime() - window30), lte: now } },
+    where: { status: 'trial', isDemo: false, trialEnds: { gte: new Date(now.getTime() - window30), lte: now } },
     include: { users: { where: { role: 'ADMIN' }, take: 1 } },
   })
   for (const tenant of expired) {
+    // ⚠️ SECOND GARDE, au point d'ENVOI. Le `where` exclut déjà les démos ; celui-ci est le
+    // filet, parce que ces messages passent par `sendPlatformEmail`, EXEMPTÉ du garde de
+    // dépense — rien d'autre ne les arrêterait. L'adresse d'une démo jetable est
+    // `demo-<uuid>@demo.local`, un TLD inexistant : chaque envoi serait un rejet dur, et les
+    // rejets durs abîment la réputation d'expédition du domaine.
+    // ⚠️ Ce `continue` porte sur le TENANT et couvre donc TOUS ses canaux — il est légitime
+    // avant les dispatches, contrairement à une garde par CANAL, qui doit rester locale à son
+    // canal (#154). Une démo ne doit recevoir ni e-mail, ni push, ni suspension.
+    if (tenant.isDemo) continue
     await prisma.tenant.update({ where: { id: tenant.id }, data: { status: 'suspended', isActive: false, suspendedAt: new Date(), suspendReason: 'trial_expired' } }).catch(() => {})
     const admin = tenant.users[0]
     if (!admin?.email) continue

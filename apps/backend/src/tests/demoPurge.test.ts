@@ -152,6 +152,42 @@ describe('runDemoPurge', () => {
     expect(detruits).toEqual(['demo-tmp-echue'])
   })
 
+  /**
+   * ⚠️ PURGES CONCURRENTES — deux replicas Railway, ou une passe encore en cours au tick
+   * suivant.
+   *
+   * Les deux `findMany` rendent la même liste. Le premier exécutant supprime ; le second voit
+   * ses `deleteMany` rendre 0 puis `tenant.delete` lever **P2025** (enregistrement
+   * introuvable). Sans traitement, l'instance perdante comptait 200 ÉCHECS, écrivait 200
+   * `console.error` et envoyait 200 exceptions Sentry — alors que la purge avait parfaitement
+   * réussi. Le module se réclame d'un ménage qui « s'ASSERTE sur le COMPTE » : ce compte était
+   * faux dès qu'il y avait deux exécutants.
+   */
+  it('⚠️ un tenant déjà purgé par une autre passe compte comme SUPPRIMÉ, pas comme un échec', async () => {
+    seed([{ id: 'demo-tmp-conc', demoExpiresAt: new Date('2026-10-01T00:00:00Z'), isDemo: true }])
+    const p2025 = Object.assign(new Error('Record to delete does not exist.'), { code: 'P2025' })
+    purge.hardDeleteTenant.mockRejectedValueOnce(p2025)
+    const r = await runDemoPurge(MAINTENANT)
+    expect(r.echecs, 'une course gagnée par l’autre instance n’est pas un échec').toBe(0)
+    expect(r.supprimes).toBe(1)
+  })
+
+  it('⚠️ et un tel cas ne réveille PAS Sentry — sinon l’alarme crie sur un succès', async () => {
+    seed([{ id: 'demo-tmp-conc2', demoExpiresAt: new Date('2026-10-01T00:00:00Z'), isDemo: true }])
+    const p2025 = Object.assign(new Error('Record to delete does not exist.'), { code: 'P2025' })
+    purge.hardDeleteTenant.mockRejectedValueOnce(p2025)
+    await runDemoPurge(MAINTENANT)
+    expect(sentry.captureException).not.toHaveBeenCalled()
+  })
+
+  it('un échec RÉEL (autre que P2025) reste un échec et réveille Sentry', async () => {
+    seed([{ id: 'demo-tmp-vrai', demoExpiresAt: new Date('2026-10-01T00:00:00Z'), isDemo: true }])
+    purge.hardDeleteTenant.mockRejectedValueOnce(Object.assign(new Error('FK violation'), { code: 'P2003' }))
+    const r = await runDemoPurge(MAINTENANT)
+    expect(r.echecs).toBe(1)
+    expect(sentry.captureException).toHaveBeenCalled()
+  })
+
   it('⚠️ une seconde passe APRÈS succès ne trouve plus rien — idempotence dans l’autre sens', async () => {
     const restants: TenantSimule[] = [{ id: 'demo-tmp-v', demoExpiresAt: new Date('2026-10-01T00:00:00Z'), isDemo: true }]
     seed(restants)

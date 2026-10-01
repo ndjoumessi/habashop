@@ -7,6 +7,7 @@ import { useI18n } from '@/hooks/useI18n'
 import { D, FONT, LANDING_TRANSLATIONS } from '@/components/landing/landingShared'
 import type { Lang, Currency } from '@/components/landing/landingShared'
 import LandingNav from '@/components/landing/LandingNav'
+import DemoExpiredNotice from '@/components/landing/DemoExpiredNotice'
 import LandingHero from '@/components/landing/LandingHero'
 import LandingFeatures from '@/components/landing/LandingFeatures'
 import LandingHowItWorks from '@/components/landing/LandingHowItWorks'
@@ -70,6 +71,7 @@ export default function LandingPage() {
   return (
     <div className="public-scope" style={{ minHeight: '100vh', background: D.bg, color: D.text, fontFamily: FONT, overflowX: 'hidden' }}>
       <LandingNav lp={lp} navigate={navigate} lang={lang as Lang} setLang={setLang} currency={currency as Currency} setCurrency={setCurrency} />
+      <DemoExpiredNotice />
       <LandingHero lp={lp} i={i} navigate={navigate} onDemo={ouvrirDemo} demoEnCours={demoEnCours} />
       <LandingFeatures lp={lp} i={i} />
       <LandingHowItWorks lp={lp} />

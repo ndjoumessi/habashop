@@ -30,6 +30,13 @@ export const INDICATIFS_FIXTURE = ['+221', '+225', '+237'] as const
 export const DOMAINES_FIXTURE = [
   'habashop.com', 'habashop.sn', 'demo.sn', 'demo.ci', 'shop.com',
   'vivriers.ci', 'corpsgras.ci', 'kone-alim.ci', 'e2e.test', 'e2e.habashop.com',
+  // ⚠️ `demo.local` — adresse synthétique et NON ROUTABLE des comptes de démo jetable
+  // (`routes/demo.ts`). Sans cette entrée, chaque démo vivante produisait un signalement :
+  // à 200 démos/jour sur 7 jours de rétention, jusqu'à 1400 lignes par passe. Une vraie
+  // fuite sur `demo-tenant-001` — le défaut qui a justifié l'écriture de ce module — serait
+  // devenue UNE ligne parmi 1400. Une alerte qui crie toujours n'alerte plus quand elle
+  // devient vraie.
+  'demo.local',
 ] as const
 
 export type Signalement = {

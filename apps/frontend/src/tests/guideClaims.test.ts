@@ -62,7 +62,11 @@ const texteDuManuel = GUIDE_SECTIONS.flatMap(s => [
 describe('guideClaims', () => {
   it('COUVERTURE : le scan trouve des capacités non atteignables dans le CDC', () => {
     // Un parseur cassé rendrait une liste vide, donc un vert qui ne garde rien.
-    expect(capacitesNonAtteignables().length).toBeGreaterThanOrEqual(5)
+    // ⚠️ Seuil à 1, pas à 5 : un seuil haut ferait rougir ce test le jour où DEUX capacités
+    // passent à ✅ — une bonne nouvelle qui accuserait le parseur. Ce que ce test garde,
+    // c'est que le scan LIT quelque chose ; le témoin positif ci-dessous garde qu'il lit
+    // les BONNES choses.
+    expect(capacitesNonAtteignables().length).toBeGreaterThanOrEqual(1)
   })
 
   it('TÉMOIN POSITIF : le scan voit bien les capacités inertes connues', () => {
@@ -87,6 +91,31 @@ describe('guideClaims', () => {
   it('⚠️ ni les canaux inertes faute de clés (SMS, push)', () => {
     expect(texteDuManuel).not.toMatch(/\bpar sms\b/)
     expect(texteDuManuel).not.toMatch(/notification[s]? push/)
+  })
+
+  /**
+   * ⚠️ CE TEST EXISTE PARCE QUE LE PRÉCÉDENT NE SUFFIT PAS, et la revue l'a prouvé.
+   *
+   * L'assertion sur les libellés du CDC compare des LIBELLÉS ENTIERS de cellule
+   * (« Vente hors-ligne »). Or un manuel ne rédige jamais « vente hors-ligne » en prose : il
+   * écrit « sans réseau », « sans connexion », « offline ». Le verrou était donc aveugle à la
+   * SEULE FORME sous laquelle la faute se produit — et elle s'est produite : l'intro de la
+   * section Caisse affirmait, dans les quatre langues, que la caisse encaisse « même si elle
+   * a travaillé un moment sans réseau ». Un commerçant qui le croit encaisse une journée
+   * dans le vide.
+   *
+   * Les formulations sont donc listées EXPLICITEMENT, par langue. C'est une liste écrite à la
+   * main, et c'est assumé : le CDC ne peut pas fournir les tournures d'une prose.
+   */
+  it('⚠️ le manuel ne promet PAS d’encaisser sans réseau — dans aucune des quatre langues', () => {
+    const tournures = [
+      /sans r[eé]seau/i, /sans connexion/i, /hors[- ]ligne/i, /hors[- ]connexion/i,
+      /without a connection/i, /without network/i, /offline/i, /no connection/i,
+      /sin conexi[oó]n/i, /sin red/i,
+      /senza rete/i, /senza connessione/i,
+    ]
+    const fautes = tournures.filter(t => t.test(texteDuManuel)).map(t => String(t))
+    expect(fautes, `le manuel promet un fonctionnement sans réseau : ${fautes.join(', ')}`).toEqual([])
   })
 
   it('les HUIT sections attendues sont présentes', () => {

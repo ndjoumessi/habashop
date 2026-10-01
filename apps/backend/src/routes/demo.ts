@@ -5,7 +5,7 @@ import { prisma } from '../db'
 import { signActiveToken } from '../lib/authToken'
 import { newDemoTenantId, demoExpiryFrom } from '../lib/demoLifetime'
 import { buildDemoDataset, type DemoTx } from '../lib/demoDataset'
-import { reserveDemoSlot, DEMO_QUOTA_EXCEEDED } from '../lib/demoQuota'
+import { reserveDemoSlot, releaseDemoSlot, DEMO_QUOTA_EXCEEDED, DEMO_QUOTA_UNAVAILABLE } from '../lib/demoQuota'
 import { vatRateOrZero } from '../lib/vatRate'
 import { DEFAULT_PLAN_ON_SIGNUP } from '../lib/plans'
 
@@ -49,6 +49,15 @@ export async function demoRoutes(app: FastifyInstance): Promise<void> {
   }, async (_request, reply) => {
     const creneau = await reserveDemoSlot()
     if (!creneau.ok) {
+      // ⚠️ DEUX refus DISTINCTS. « Le compteur est indisponible » n'est pas « trop de démos
+      // aujourd'hui » : les fondre dirait au visiteur une chose fausse, et priverait
+      // l'exploitant du signal qui distingue un incident d'un afflux.
+      if (creneau.failClosed) {
+        return reply.code(503).send({
+          error: 'La démonstration est momentanément indisponible. Créez votre boutique — l’essai est gratuit.',
+          code: DEMO_QUOTA_UNAVAILABLE,
+        })
+      }
       return reply.code(429).send({
         error: 'Le nombre de démonstrations ouvertes aujourd’hui est atteint. Créez votre boutique — l’essai est gratuit.',
         code: DEMO_QUOTA_EXCEEDED,
@@ -59,7 +68,12 @@ export async function demoRoutes(app: FastifyInstance): Promise<void> {
     const tenantId = newDemoTenantId()
     const echeance = demoExpiryFrom(now)
 
-    const { tenant, user } = await prisma.$transaction(async (tx) => {
+    // ⚠️ Le créneau réservé est RENDU si la création échoue : sans cela le compteur mesure
+    // les TENTATIVES et non les démos existantes, et le bouton finit par annoncer « plafond
+    // atteint » alors qu'aucune démo n'existe.
+    let cree: { tenant: { id: string; name: string; demoExpiresAt: Date | null }; user: { id: string; name: string | null; email: string; role: string } }
+    try {
+      cree = await prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
         data: {
           id: tenantId,
@@ -95,8 +109,13 @@ export async function demoRoutes(app: FastifyInstance): Promise<void> {
       // Le pont de type restreint la surface du client à ce que le générateur utilise ;
       // il ne RÉTRÉCIT aucun domaine de valeurs.
       await buildDemoDataset(tx as unknown as DemoTx, { tenantId: tenant.id, cashierId: user.id, now })
-      return { tenant, user }
-    }, { timeout: 30_000 })
+        return { tenant, user }
+      }, { timeout: 30_000, maxWait: 10_000 })
+    } catch (e) {
+      await releaseDemoSlot(now)
+      throw e
+    }
+    const { tenant, user } = cree
 
     const token = signActiveToken(app, { userId: user.id, role: user.role, tenantId: tenant.id })
 

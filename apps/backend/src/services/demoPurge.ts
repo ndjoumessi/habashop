@@ -19,6 +19,15 @@ import * as Sentry from '@sentry/node'
  * examinés / supprimés / échecs, et les échecs partent en Sentry (un `console.error` seul
  * est un signal que personne ne reçoit).
  */
+/**
+ * Cette erreur dit-elle « quelqu'un d'autre l'a déjà supprimé » ?
+ * ⚠️ On teste le CODE Prisma (`P2025`), jamais le message : un message est traduit, reformulé
+ * et change de version en version.
+ */
+function estDejaPurge(e: unknown): boolean {
+  return typeof e === 'object' && e !== null && (e as { code?: unknown }).code === 'P2025'
+}
+
 export async function runDemoPurge(now = new Date()): Promise<{ examines: number; supprimes: number; echecs: number }> {
   const expirees = await prisma.tenant.findMany({
     where: {
@@ -40,8 +49,16 @@ export async function runDemoPurge(now = new Date()): Promise<{ examines: number
       )
       supprimes++
     } catch (e) {
+      // ⚠️ P2025 = « enregistrement introuvable » : une AUTRE passe a gagné la course. Ce
+      // n'est pas un échec, c'est le résultat voulu, obtenu par quelqu'un d'autre.
+      //
+      // Sans cette distinction, deux replicas Railway (ou une passe encore en cours au tick
+      // suivant) faisaient compter 200 ÉCHECS à l'instance perdante, avec 200 exceptions
+      // Sentry et un avertissement annonçant une purge ratée — alors qu'elle avait
+      // parfaitement réussi. Une alarme qui crie sur un succès cesse d'être une alarme.
+      if (estDejaPurge(e)) { supprimes++; continue }
       echecs++
-      // ⚠️ On continue : un échec sur une démo ne doit pas bloquer les autres.
+      // ⚠️ On continue : un échec réel sur une démo ne doit pas bloquer les autres.
       console.error(`[demo-purge] échec sur ${t.id}:`, e)
       Sentry.captureException(e, { extra: { tenantId: t.id, etape: 'demo-purge' } })
     }

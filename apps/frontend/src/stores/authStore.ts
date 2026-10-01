@@ -120,6 +120,10 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { token, user, tenant, tenants, activeTenantId } = await authApi.login(email, password)
           localStorage.setItem('habashop_token', token)
+          // ⚠️ Une vraie connexion sur un navigateur qui a servi à une démo ne doit pas
+          // hériter du marquage : au premier 401, il serait renvoyé sur la vitrine avec
+          // « votre démonstration a expiré » au lieu de la page de connexion.
+          clearDemoSession()
           // 1 boutique → tenant fourni ; >1 → tenant null (sélecteur affiché avant l'entrée).
           useAppStore.getState().setTenant(tenant ?? null)
           useAppStore.getState().resetCashierSession() // pas de session caisse héritée — mais la caisse n'est pas « fermée » pour autant
@@ -148,7 +152,19 @@ export const useAuthStore = create<AuthState>()(
        */
       adoptSession: (token, user, tenant) => {
         localStorage.setItem('habashop_token', token)
+        // ⚠️ Le marquage de démo est effacé ICI, donc pour `register` comme pour `startDemo`
+        // (qui le repose juste après). Sans cela il survivait à l'inscription — c'est
+        // exactement le parcours de conversion visé : ouvrir la démo, puis créer sa boutique.
+        // Le commerçant devenu client se faisait ensuite annoncer « votre démonstration a
+        // expiré » et renvoyer sur la vitrine, alors que sa boutique était intacte.
+        clearDemoSession()
         useAppStore.getState().setTenant(tenant ?? null)
+        // ⚠️ Même hygiène que `login` : une session neuve ne part pas avec le panier ni la
+        // session de caisse de la précédente. `cart` porte des `productId` du tenant
+        // PRÉCÉDENT ; les emporter fait refuser la vente en 400 `UNKNOWN_PRODUCT`, et le
+        // visiteur voit un produit cassé.
+        useAppStore.getState().resetCashierSession()
+        useAppStore.getState().clearCart()
         set({
           // ⚠️ `role` arrive en CHAÎNE LIBRE du serveur — même garde que le chemin de
           // rafraîchissement (`App.tsx`) : un rôle inconnu retombe sur le MOINS privilégié,

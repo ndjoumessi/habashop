@@ -83,10 +83,16 @@ describe('purgePlan', () => {
   })
 })
 
-/** Faux client : un délégué `deleteMany` par modèle du plan, plus `tenant.delete`. */
-function fauxTx(onDelete: (model: string, where: object) => void, count = 0): PurgeTx {
+/**
+ * Faux client : un délégué `deleteMany` par modèle du plan, plus `tenant.delete` et
+ * `tenant.findUnique` — ce dernier est ce que la GARDE lit.
+ */
+function fauxTx(onDelete: (model: string, where: object) => void, count = 0, demoExpiresAt: Date | null = new Date('2026-10-01')): PurgeTx {
   const tx: Record<string, unknown> = {
-    tenant: { delete: vi.fn(async () => { onDelete(TENANT_ROOT, {}); return {} }) },
+    tenant: {
+      delete: vi.fn(async () => { onDelete(TENANT_ROOT, {}); return {} }),
+      findUnique: vi.fn(async () => ({ demoExpiresAt })),
+    },
   }
   for (const e of plan) {
     tx[e.delegate] = {
@@ -122,6 +128,39 @@ describe('hardDeleteTenant', () => {
     const compte = await hardDeleteTenant(fauxTx(() => {}, 2), 'T1')
     expect(Object.keys(compte).length).toBe(plan.length)
     expect(Object.values(compte).every(n => n === 2)).toBe(true)
+  })
+
+  /**
+   * ⚠️ GARDE AU POINT DE DESTRUCTION.
+   *
+   * Défaut trouvé en revue : la fonction est exportée, générique, et effaçait DUREMENT 28
+   * modèles sur le seul argument `tenantId`. Sa seule protection vivait dans le `where` de
+   * son unique appelant. C'est l'inverse de la règle que ce dépôt a déjà payée deux fois :
+   * « la garde vit au POINT DE DÉPENSE, jamais sur la route ».
+   *
+   * Scénario : un futur endpoint admin « supprimer une boutique » importe `hardDeleteTenant`
+   * et lui passe l'id d'un commerçant payant. Toutes ses ventes, sa paie, ses écritures et
+   * son journal d'audit disparaissent irréversiblement — exactement ce qu'`accountDeletion`
+   * conserve délibérément pour les obligations comptables.
+   */
+  it('⚠️ REFUSE un tenant qui ne porte PAS d’échéance de démo — rien n’est supprimé', async () => {
+    const appels: string[] = []
+    await expect(
+      hardDeleteTenant(fauxTx(m => appels.push(m), 0, null), 'T-CLIENT-REEL'),
+    ).rejects.toThrow(/pas une démo jetable/)
+    expect(appels, 'aucune suppression ne doit avoir eu lieu').toEqual([])
+  })
+
+  it('⚠️ REFUSE un tenant introuvable plutôt que de supposer', async () => {
+    const tx = fauxTx(() => {}) as unknown as Record<string, { findUnique: unknown }>
+    tx.tenant.findUnique = vi.fn(async () => null)
+    await expect(hardDeleteTenant(tx as unknown as PurgeTx, 'T-FANTOME')).rejects.toThrow(/introuvable/)
+  })
+
+  it('l’échappatoire explicite permet une suppression hors démo — et elle se NOMME', async () => {
+    const appels: string[] = []
+    await hardDeleteTenant(fauxTx(m => appels.push(m), 0, null), 'T-CLIENT-REEL', { jeSaisQueCeNestPasUneDemo: true })
+    expect(appels.at(-1)).toBe(TENANT_ROOT)
   })
 
   it('⚠️ un délégué Prisma absent lève BRUYAMMENT — jamais une purge partielle muette', async () => {

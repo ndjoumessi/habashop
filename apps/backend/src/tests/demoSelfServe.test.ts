@@ -17,7 +17,10 @@ const { db, quota, signer, dataset } = vi.hoisted(() => ({
     user: { create: vi.fn() },
     userTenant: { create: vi.fn() },
   },
-  quota: { reserveDemoSlot: vi.fn(), DEMO_QUOTA_EXCEEDED: 'DEMO_QUOTA_EXCEEDED' },
+  quota: {
+    reserveDemoSlot: vi.fn(), releaseDemoSlot: vi.fn(),
+    DEMO_QUOTA_EXCEEDED: 'DEMO_QUOTA_EXCEEDED', DEMO_QUOTA_UNAVAILABLE: 'DEMO_QUOTA_UNAVAILABLE',
+  },
   // ⚠️ Paramètres TYPÉS : un `vi.fn(() => …)` sans paramètres donne un `mock.calls` de
   // type tuple VIDE, et `calls[0][1]` ne compile pas sous le `strict: true` du dépôt —
   // vitest, lui, passerait au vert. Test vert, CI rouge.
@@ -65,7 +68,7 @@ async function app() {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  quota.reserveDemoSlot.mockResolvedValue({ ok: true, failOpen: false })
+  quota.reserveDemoSlot.mockResolvedValue({ ok: true, failClosed: false })
   signer.signActiveToken.mockReturnValue('JETON-DEMO')
   dataset.buildDemoDataset.mockResolvedValue(undefined)
   // La transaction exécute réellement le callback avec le client mocké.
@@ -141,17 +144,41 @@ describe('POST /api/demo/start', () => {
   })
 
   it('plafond atteint → 429 avec un code explicite, jamais un 500', async () => {
-    quota.reserveDemoSlot.mockResolvedValue({ ok: false, failOpen: false })
+    quota.reserveDemoSlot.mockResolvedValue({ ok: false, failClosed: false })
     const r = await (await app()).inject({ method: 'POST', url: '/api/demo/start' })
     expect(r.statusCode).toBe(429)
     expect(r.json().code).toBe('DEMO_QUOTA_EXCEEDED')
     expect(db.tenant.create).not.toHaveBeenCalled()
   })
 
-  it('⚠️ Redis KO → fail-OPEN : la démo passe (le plafond par IP borne toujours)', async () => {
-    quota.reserveDemoSlot.mockResolvedValue({ ok: true, failOpen: true })
+  /**
+   * ⚠️ Redis indisponible → REFUS, et un refus DISTINCT du plafond atteint.
+   *
+   * La première version passait (fail-open), sur le raisonnement « le plafond par IP borne
+   * toujours ». Faux : `trustProxy: true` rend la clé de rate-limit contrôlable par
+   * l'appelant. Sans Redis, rien ne bornait la création de tenants en production.
+   *
+   * ⚠️ Et le code de refus est DIFFÉRENT : « le compteur est indisponible » n'est pas « trop
+   * de démos aujourd'hui ». Les fondre dirait au visiteur une chose fausse, et priverait
+   * l'exploitant du signal qui distingue un incident d'un afflux.
+   */
+  it('⚠️ Redis KO → 503 DEMO_QUOTA_UNAVAILABLE, distinct du 429, et rien n’est écrit', async () => {
+    quota.reserveDemoSlot.mockResolvedValue({ ok: false, failClosed: true })
     const r = await (await app()).inject({ method: 'POST', url: '/api/demo/start' })
-    expect(r.statusCode).toBe(201)
+    expect(r.statusCode).toBe(503)
+    expect(r.json().code).toBe('DEMO_QUOTA_UNAVAILABLE')
+    expect(db.tenant.create).not.toHaveBeenCalled()
+  })
+
+  it('⚠️ une création qui ÉCHOUE rend son créneau — sinon le compteur mesure les tentatives', async () => {
+    dataset.buildDemoDataset.mockRejectedValueOnce(new Error('disque plein'))
+    await (await app()).inject({ method: 'POST', url: '/api/demo/start' })
+    expect(quota.releaseDemoSlot).toHaveBeenCalledTimes(1)
+  })
+
+  it('une création RÉUSSIE ne rend pas son créneau', async () => {
+    await (await app()).inject({ method: 'POST', url: '/api/demo/start' })
+    expect(quota.releaseDemoSlot).not.toHaveBeenCalled()
   })
 
   it('⚠️ le jeton est signé pour LE tenant créé — pas pour un autre', async () => {

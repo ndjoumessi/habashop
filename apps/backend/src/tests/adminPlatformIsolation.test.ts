@@ -179,8 +179,18 @@ describe('P0 — /api/admin/* gate sur isPlatformAdmin, jamais sur le rôle tena
    */
   it('exclut les fixtures — interne plateforme, démo ET E2E — des listings et des totaux', async () => {
     await app.inject({ method: 'GET', url: '/api/admin/tenants', headers: { authorization: `Bearer ${platformAdminToken}` } })
-    // La LISTE garde les fixtures (un opérateur doit pouvoir ouvrir la démo) mais les MARQUE.
-    expect(db.tenant.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { isPlatform: false } }))
+    // La LISTE garde les fixtures PERMANENTES (un opérateur doit pouvoir ouvrir la démo) mais
+    // les MARQUE — décision du § Console Ops, inchangée.
+    //
+    // ⚠️ DISTINCTION AJOUTÉE le 2026-10-01 : les démos JETABLES (libre-service,
+    // `demoExpiresAt` non nul) sortent de la liste. Ce n'est pas un relâchement de la règle
+    // ci-dessus, c'est sa limite : une démo qui ne survivra pas à la semaine n'est pas une
+    // fixture qu'on inspecte. Sans cela, 200 créations/jour × 7 jours de rétention
+    // afficheraient jusqu'à 1400 lignes toutes nommées « Boutique de démonstration », en tête
+    // du tri par date, au-dessus des quelques clients réels.
+    expect(db.tenant.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { isPlatform: false, demoExpiresAt: null },
+    }))
 
     await app.inject({ method: 'GET', url: '/api/admin/stats', headers: { authorization: `Bearer ${platformAdminToken}` } })
     // Les AGRÉGATS, eux, ne comptent que les clients.

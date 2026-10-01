@@ -18,10 +18,16 @@ export const caisse: GuideSection = {
     it: 'Incassare una vendita',
   },
   intro: {
-    fr: 'L’écran Caisse sert à encaisser. Vous ajoutez des articles, vous choisissez le mode de paiement, vous imprimez ou envoyez le ticket. Le prix facturé est toujours celui du catalogue : le serveur recalcule le total, même si la caisse a travaillé un moment sans réseau.',
-    en: 'The POS screen is where you take payment. You add items, pick a payment method, then print or send the receipt. The price charged is always the catalogue price: the server recalculates the total, even if the till spent a while without a connection.',
-    es: 'La pantalla TPV sirve para cobrar. Añade artículos, elige el método de pago e imprime o envía el recibo. El precio cobrado es siempre el del catálogo: el servidor recalcula el total, incluso si la caja estuvo un rato sin conexión.',
-    it: 'La schermata Cassa serve a incassare. Aggiungi gli articoli, scegli il metodo di pagamento, poi stampi o invii la ricevuta. Il prezzo applicato è sempre quello del catalogo: il server ricalcola il totale, anche se la cassa è rimasta un po’ senza rete.',
+    // ⚠️ CETTE INTRO A PORTÉ UNE AFFIRMATION FAUSSE, dans les quatre langues : « le serveur
+    // recalcule le total, même si la caisse a travaillé un moment sans réseau ». La caisse
+    // web ne travaille PAS sans réseau — elle avorte la vente. Un commerçant qui l'avait cru
+    // aurait encaissé une journée dans le vide. Ce que le serveur garantit est autre chose,
+    // et c'est ce qui est écrit maintenant : le prix appliqué est celui du catalogue, pas
+    // celui que la caisse croyait.
+    fr: 'L’écran Caisse sert à encaisser. Vous ajoutez des articles, vous choisissez le mode de paiement, vous imprimez ou envoyez le ticket. Le prix facturé est toujours celui du catalogue : c’est le serveur qui recalcule le total, de sorte qu’un changement de tarif s’applique immédiatement, même si l’écran affichait encore l’ancien prix.',
+    en: 'The POS screen is where you take payment. You add items, pick a payment method, then print or send the receipt. The price charged is always the catalogue price: the server recalculates the total, so a price change applies at once even if the screen was still showing the old one.',
+    es: 'La pantalla TPV sirve para cobrar. Añade artículos, elige el método de pago e imprime o envía el recibo. El precio cobrado es siempre el del catálogo: el servidor recalcula el total, de modo que un cambio de precio se aplica de inmediato aunque la pantalla siguiera mostrando el anterior.',
+    it: 'La schermata Cassa serve a incassare. Aggiungi gli articoli, scegli il metodo di pagamento, poi stampi o invii la ricevuta. Il prezzo applicato è sempre quello del catalogo: è il server a ricalcolare il totale, così una variazione di prezzo si applica subito anche se la schermata mostrava ancora il vecchio.',
   },
   etapes: [
     {
