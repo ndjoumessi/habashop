@@ -21,7 +21,8 @@
     "verify:seo-urls": "node scripts/verify-seo-urls.mjs",
     "verify:classes": "node scripts/verify-classes.mjs",
     "e2e:density": "playwright test --config playwright.density.config.ts",
-    "capture:demo": "playwright test --config playwright.capture.config.ts"
+    "capture:demo": "playwright test --config playwright.capture.config.ts",
+    "capture:encoder": "node scripts/encoder-apercus.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",

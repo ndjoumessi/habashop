@@ -28,12 +28,14 @@ import { fileURLToPath } from 'url'
  * puis on laisse le regard se poser.
  */
 
-const LANGUES = [
-  { code: 'fr', nom: 'francais' },
-  { code: 'en', nom: 'english' },
-  { code: 'es', nom: 'espanol' },
-  { code: 'it', nom: 'italiano' },
-] as const
+/**
+ * ⚠️ LE CODE EST LE SEUL IDENTIFIANT, et le titre du test en dérive. Le dossier de sortie de
+ * Playwright porte le titre (`test-results/parcours-demo-parcours-fr/`) : c'est lui que lit
+ * l'encodeur pour écrire `public/guide/apercu-fr.webm`. Un nom lisible en plus du code
+ * (« francais ») aurait créé une table de correspondance à tenir des deux côtés — un jumeau
+ * pour rien, là où `GuideLang` donne déjà le domaine.
+ */
+const LANGUES = ['fr', 'en', 'es', 'it'] as const
 
 /**
  * ⚠️ `ICI` N'EXISTE PAS ICI. Le workspace front est en ESM (`"type": "module"`), là où
@@ -60,12 +62,12 @@ async function ecran(page: Page, href: string, pose = POSE) {
 }
 
 for (const L of LANGUES) {
-  test(`parcours-${L.nom}`, async ({ page }) => {
+  test(`parcours-${L}`, async ({ page }) => {
     // ── 1. La vitrine, et le choix de la langue ──────────────────────────────
     await page.goto('/')
     // ⚠️ Le sélecteur est désigné par ses OPTIONS, pas par son rang : la barre en porte deux
     // (langue et devise) et leur ordre est une décision de mise en page, pas un contrat.
-    await page.locator('select:has(option[value="it"])').first().selectOption(L.code)
+    await page.locator('select:has(option[value="it"])').first().selectOption(L)
     await page.waitForTimeout(1_200)
 
     // ── 2. « Essayer la démo » → une vraie boutique peuplée ──────────────────

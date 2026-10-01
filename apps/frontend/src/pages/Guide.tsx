@@ -22,6 +22,18 @@ export default function Guide() {
   const titrePage = { fr: 'Manuel d’utilisation', en: 'User guide', es: 'Manual de uso', it: 'Manuale d’uso' }[l]
   const sommaire = { fr: 'Sommaire', en: 'Contents', es: 'Índice', it: 'Indice' }[l]
   const retour = { fr: '← Retour à HabaShop', en: '← Back to HabaShop', es: '← Volver a HabaShop', it: '← Torna a HabaShop' }[l]
+  /**
+   * ⚠️ LA LÉGENDE DIT CE QU'ON REGARDE, ET CE QU'ON N'ENTENDRA PAS. L'aperçu n'a ni son ni
+   * sous-titres : s'il portait de l'information que le texte ne porte pas, le manuel serait
+   * illisible pour qui ne peut pas le regarder. Il ILLUSTRE les sections ci-dessous, il ne
+   * les remplace pas — et la légende le dit, plutôt que de le laisser deviner.
+   */
+  const legende = {
+    fr: 'Le tour du produit en 25 secondes : caisse, stock, rapports, équipe. Sans son — tout ce qu’on y voit est décrit dans les sections ci-dessous.',
+    en: 'A 25-second tour: register, stock, reports, team. No sound — everything shown is described in the sections below.',
+    es: 'Un recorrido de 25 segundos: caja, stock, informes, equipo. Sin sonido: todo lo que se ve se describe en las secciones de abajo.',
+    it: 'Un giro di 25 secondi: cassa, magazzino, report, squadra. Senza audio: tutto ciò che si vede è descritto nelle sezioni qui sotto.',
+  }[l]
   const chapeau = {
     fr: 'Comment se servir d’HabaShop au quotidien, écran par écran.',
     en: 'How to use HabaShop day to day, screen by screen.',
@@ -39,6 +51,33 @@ export default function Guide() {
 
       <h1 style={{ marginBottom: 8 }}>{titrePage}</h1>
       <p className="legal-muted" style={{ marginBottom: 36 }}>{chapeau}</p>
+
+      {/*
+        ⚠️ `preload="metadata"` et PAS d'`autoplay`. Le manuel se LIT : démarrer seul parlerait
+        par-dessus le lecteur, ignorerait `prefers-reduced-motion`, et ferait payer 415 Ko à
+        quelqu'un venu chercher une phrase — sur un forfait ouest-africain ce n'est pas neutre.
+        C'est le lecteur qui décide, et il ne télécharge la vidéo que s'il la lance.
+
+        ⚠️ L'aperçu suit la LANGUE LUE : quatre fichiers, un par langue, et `guideApercu.test.tsx`
+        va vérifier leurs OCTETS sur le disque. Un `src` sans fichier compile et se rend — il
+        n'échoue que chez le commerçant, par une vidéo qui ne part jamais et sans message.
+      */}
+      <figure style={{ margin: '0 0 44px' }}>
+        <video
+          src={`/guide/apercu-${l}.webm`}
+          poster={`/guide/apercu-${l}.jpg`}
+          controls
+          preload="metadata"
+          playsInline
+          style={{
+            width: '100%', display: 'block', borderRadius: 12,
+            border: '1px solid var(--border2)', background: 'var(--bg2)',
+          }}
+        />
+        <figcaption className="legal-muted" style={{ marginTop: 10, fontSize: 'var(--fs-label)' }}>
+          {legende}
+        </figcaption>
+      </figure>
 
       <nav aria-label={sommaire} style={{ marginBottom: 44 }}>
         <h2 style={{ fontSize: 'var(--fs-body)', marginBottom: 10 }}>{sommaire}</h2>
