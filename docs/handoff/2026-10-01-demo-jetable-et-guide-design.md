@@ -303,6 +303,18 @@ que soit le `where` laisserait `demoPurge` vert même si le code cessait d'envoy
 2. **Durée de la transaction de création.** ~500 lignes en une transaction : à mesurer, et à
    borner si le temps de réponse dépasse ce qu'un bouton peut tenir. Ne pas répondre avant que
    le jeu soit complet — une démo à moitié remplie se lit comme un produit cassé.
+   ✅ **TRANCHÉ le 2026-10-01, APRÈS MESURE EN PRODUCTION — et la première réponse était
+   fausse.** Le jeu livré étalait 180 ventes uniformément sur quatre mois. Les seuils ci-dessus
+   étaient respectés (9 catégories, 3 mois, employés non notés), mais le point manquant n'était
+   pas un seuil : c'est **la part du jeu RÉELLEMENT VUE**. `/api/dashboard/stats` ne lit que le
+   mois EN COURS et le jour courant, si bien que le 1ᵉʳ octobre un prospect voyait **3 ventes
+   sur 180 — 1,7 % du jeu** sur le premier écran de l'application, et l'écran « Dépenses »
+   s'ouvrait VIDE (les quatre dépenses étaient datées à J−15, J−30, J−45, J−60).
+   Le jeu est désormais tiré **jour par jour sur 60 jours**, 8 à 14 ventes par jour ouvré, dans
+   des heures d'ouverture (08 h–21 h locales), avec un **plancher sur le jour courant** parce
+   qu'il est tronqué par `now` ; les charges sont **récurrentes, une par mois**.
+   *Un seuil de volume ne dit rien de la densité là où l'écran regarde.*
+
 3. **Le tri topologique n'est plus un point ouvert** — tranché au § 1.5 : dérivé du DMMF à
    l'exécution, sur le critère d'atteignabilité depuis `Tenant`. Reste à mesurer au plan : le
    coût d'un `tenant.delete()` complet sur un jeu de démonstration, pour dimensionner la passe

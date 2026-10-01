@@ -80,9 +80,43 @@ function alea(graine: number): () => number {
   }
 }
 
-const MOIS_D_HISTORIQUE = 4
+/**
+ * ⚠️ FENÊTRE DE DEUX MOIS, ET LA DENSITÉ SE COMPTE PAR JOUR — jamais en total.
+ *
+ * La première version étalait 180 ventes uniformément sur 120 jours. Mesuré en production
+ * le 2026-10-01 : `/api/dashboard/stats` ne lit que le mois EN COURS (`monthStart`) et le
+ * jour courant, si bien que le 1ᵉʳ du mois le prospect voyait **3 ventes sur 180 — 1,7 %
+ * du jeu** sur le premier écran de l'application. Rien n'était faux ; le jeu était trop
+ * clairsemé là où il est REGARDÉ.
+ *
+ * D'où un tirage JOUR PAR JOUR : chaque jour de la fenêtre porte son propre lot. Un
+ * tirage uniforme sur la fenêtre laisse des jours vides (94 jours distincts sur 120 à
+ * l'ancienne densité) et ne garantit RIEN sur le jour courant.
+ */
+const JOURS_D_HISTORIQUE = 60
+const VENTES_PAR_JOUR_MIN = 8
+const VENTES_PAR_JOUR_MAX = 14
 const PRODUITS_PAR_CATEGORIE = 4
-const VENTES = 180
+/**
+ * Heures d'ouverture, en heure LOCALE du serveur (Railway = UTC = heure de Dakar), la même
+ * convention que les frontières de `/api/dashboard/stats` et que les crons.
+ *
+ * ⚠️ Ce n'est pas de la décoration : « activité récente » affiche l'HEURE des cinq
+ * dernières ventes. À 1,5 vente par jour la question ne se posait pas ; à une dizaine, un
+ * horodatage à 3 h du matin se remarque — et une boutique qui vend la nuit n'est pas
+ * crédible.
+ */
+const OUVERTURE_H = 8
+const FERMETURE_H = 21
+/**
+ * ⚠️ PLANCHER DU JOUR COURANT — exemption NOMMÉE, et elle est assumée.
+ *
+ * Le jour courant est tronqué par `now` : au prorata des heures écoulées, une démo ouverte
+ * à 10 h le 1ᵉʳ du mois montrerait deux ventes, soit le défaut qu'on corrige. On pose donc
+ * un plancher : le prospect voit une matinée de boutique. Au-dessus du plancher, c'est le
+ * prorata qui décide — on ne compresse jamais une journée entière dans une heure.
+ */
+const VENTES_PLANCHER_JOUR_COURANT = 6
 const MODES = ['cash', 'mobile_money', 'card', 'mtn_momo'] as const
 /** ⚠️ TVA sénégalaise. Le taux du TENANT est dérivé du pays par la route, pas ici. */
 const TVA_DEMO = 18
@@ -156,34 +190,66 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
     })),
   })
 
-  // ── Ventes sur 4 mois ──────────────────────────────────────────────────────
-  const fenetreMs = MOIS_D_HISTORIQUE * 30 * 86_400_000
+  // ── Ventes : JOUR PAR JOUR sur deux mois (cf. l'en-tête des constantes) ────
+  const minuitAujourdhui = new Date(o.now)
+  minuitAujourdhui.setHours(0, 0, 0, 0)
   const lignesVentes: Prisma.SaleUncheckedCreateInput[] = []
   const lignesArticles: Prisma.SaleItemUncheckedCreateInput[] = []
-  for (let v = 0; v < VENTES; v++) {
-    const createdAt = new Date(o.now.getTime() - Math.floor(r() * fenetreMs))
-    const nbLignes = 1 + Math.floor(r() * 4)
-    const saleId = randomUUID()
-    let total = 0
-    for (let l = 0; l < nbLignes; l++) {
-      const p = produits[Math.floor(r() * produits.length)]
-      const qty = 1 + Math.floor(r() * 5)
-      const ligneTotal = p.sellPrice * qty
-      total += ligneTotal
-      lignesArticles.push({ id: randomUUID(), saleId, productId: p.id, qty, unitPrice: p.sellPrice, total: ligneTotal })
+
+  for (let j = JOURS_D_HISTORIQUE - 1; j >= 0; j--) {
+    const minuit = new Date(minuitAujourdhui.getTime() - j * 86_400_000)
+    const ouverture = new Date(minuit); ouverture.setHours(OUVERTURE_H, 0, 0, 0)
+    const fermeture = new Date(minuit); fermeture.setHours(FERMETURE_H, 0, 0, 0)
+
+    const parJour = VENTES_PAR_JOUR_MIN
+      + Math.floor(r() * (VENTES_PAR_JOUR_MAX - VENTES_PAR_JOUR_MIN + 1))
+
+    // Bornes de placement. Le jour COURANT est tronqué par `now` : jamais une vente dans
+    // l'avenir, et le nombre suit le prorata des heures ouvrées écoulées — avec le
+    // plancher ci-dessus pour que le premier écran ne soit pas désert.
+    let debut = ouverture.getTime()
+    let fin = fermeture.getTime()
+    let nb = parJour
+    if (j === 0) {
+      fin = Math.min(o.now.getTime(), fin)
+      if (fin <= debut) {
+        // `now` précède l'ouverture. Une boutique ne vend pas à 3 h du matin — mais un
+        // tableau de bord VIDE à 3 h du matin le 1ᵉʳ du mois perd le prospect, et c'est le
+        // seul écran qu'il regarde. On place le plancher dans l'heure qui précède `now`.
+        debut = Math.max(minuit.getTime(), o.now.getTime() - 3_600_000)
+        fin = o.now.getTime()
+        nb = VENTES_PLANCHER_JOUR_COURANT
+      } else {
+        const prorata = (fin - debut) / (fermeture.getTime() - ouverture.getTime())
+        nb = Math.max(VENTES_PLANCHER_JOUR_COURANT, Math.round(parJour * prorata))
+      }
     }
-    const avecClient = r() > 0.55
-    lignesVentes.push({
-      id: saleId,
-      tenantId: o.tenantId,
-      cashierId: o.cashierId,
-      // ⚠️ `total` est la SOMME des lignes. Un total découplé des lignes est l'ancien
-      // « trust client total », refusé par l'intégrité prix serveur-autoritaire.
-      total,
-      paymentMode: MODES[Math.floor(r() * MODES.length)],
-      customerId: avecClient ? clients[Math.floor(r() * clients.length)] : null,
-      createdAt,
-    })
+
+    for (let v = 0; v < nb; v++) {
+      const createdAt = new Date(debut + Math.floor(r() * Math.max(1, fin - debut)))
+      const nbLignes = 1 + Math.floor(r() * 4)
+      const saleId = randomUUID()
+      let total = 0
+      for (let l = 0; l < nbLignes; l++) {
+        const p = produits[Math.floor(r() * produits.length)]
+        const qty = 1 + Math.floor(r() * 5)
+        const ligneTotal = p.sellPrice * qty
+        total += ligneTotal
+        lignesArticles.push({ id: randomUUID(), saleId, productId: p.id, qty, unitPrice: p.sellPrice, total: ligneTotal })
+      }
+      const avecClient = r() > 0.55
+      lignesVentes.push({
+        id: saleId,
+        tenantId: o.tenantId,
+        cashierId: o.cashierId,
+        // ⚠️ `total` est la SOMME des lignes. Un total découplé des lignes est l'ancien
+        // « trust client total », refusé par l'intégrité prix serveur-autoritaire.
+        total,
+        paymentMode: MODES[Math.floor(r() * MODES.length)],
+        customerId: avecClient ? clients[Math.floor(r() * clients.length)] : null,
+        createdAt,
+      })
+    }
   }
   // ⚠️ Les ventes AVANT leurs lignes : `SaleItem.saleId` est une FK vers `Sale`.
   await tx.sale.createMany({ data: lignesVentes })
@@ -193,23 +259,41 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
   // ⚠️ `Expense` n'a PAS de champ `amount` : il porte `amountHT`, `vat`, `amountTTC` et un
   // `mode` REQUIS. Le TTC est DÉRIVÉ du HT et du taux — deux montants saisis à la main
   // divergeraient, et c'est le genre d'incohérence qu'une démo ne doit pas montrer.
-  const depenses = [
-    { label: 'Loyer',       ht: 150_000 },
-    { label: 'Électricité', ht: 42_000 },
-    { label: 'Transport',   ht: 25_000 },
-    { label: 'Emballages',  ht: 18_000 },
+  //
+  // ⚠️ MÊME DÉFAUT DE DENSITÉ QUE LES VENTES, AUTRE ÉCRAN. Les quatre dépenses étaient
+  // datées à J−15, J−30, J−45 et J−60 : le 1ᵉʳ du mois, AUCUNE ne tombait dans le mois en
+  // cours et l'écran « Dépenses » — un des huit modules du manuel — s'ouvrait vide. Elles
+  // sont désormais RÉCURRENTES, une occurrence par mois de la fenêtre, à un jour fixe du
+  // mois : le loyer tombe le 1ᵉʳ, ce qui est aussi ce que fait un vrai commerçant.
+  const charges = [
+    { label: 'Loyer',       ht: 150_000, jourDuMois: 1 },
+    { label: 'Électricité', ht: 42_000,  jourDuMois: 4 },
+    { label: 'Eau',         ht: 12_000,  jourDuMois: 6 },
+    { label: 'Transport',   ht: 25_000,  jourDuMois: 9 },
+    { label: 'Emballages',  ht: 18_000,  jourDuMois: 14 },
+    { label: 'Téléphone',   ht: 8_000,   jourDuMois: 20 },
   ]
-  await tx.expense.createMany({
-    data: depenses.map((d, k) => ({
-      id: randomUUID(),
-      tenantId: o.tenantId,
-      label: d.label,
-      category: 'Charges',
-      amountHT: d.ht,
-      vat: TVA_DEMO,
-      amountTTC: Math.round(d.ht * (1 + TVA_DEMO / 100) * 100) / 100,
-      mode: 'cash',
-      date: new Date(o.now.getTime() - (k + 1) * 15 * 86_400_000),
-    })),
-  })
+  const debutFenetre = minuitAujourdhui.getTime() - (JOURS_D_HISTORIQUE - 1) * 86_400_000
+  const lignesDepenses: Prisma.ExpenseUncheckedCreateInput[] = []
+  // Du mois le plus ancien de la fenêtre au mois courant inclus.
+  for (let reculMois = 2; reculMois >= 0; reculMois--) {
+    for (const c of charges) {
+      const date = new Date(o.now.getFullYear(), o.now.getMonth() - reculMois, c.jourDuMois, OUVERTURE_H, 30, 0, 0)
+      // ⚠️ Ni avant la fenêtre, ni dans l'avenir — une dépense future fausserait le
+      // « Budget vs Réel » du mois en cours.
+      if (date.getTime() < debutFenetre || date.getTime() > o.now.getTime()) continue
+      lignesDepenses.push({
+        id: randomUUID(),
+        tenantId: o.tenantId,
+        label: c.label,
+        category: 'Charges',
+        amountHT: c.ht,
+        vat: TVA_DEMO,
+        amountTTC: Math.round(c.ht * (1 + TVA_DEMO / 100) * 100) / 100,
+        mode: 'cash',
+        date,
+      })
+    }
+  }
+  await tx.expense.createMany({ data: lignesDepenses })
 }

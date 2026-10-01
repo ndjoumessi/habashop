@@ -36,7 +36,24 @@ function fauxTx() {
   }
 }
 
-const options = { tenantId: 'demo-tmp-x', cashierId: 'u-demo', now: new Date('2026-10-01T10:00:00.000Z') }
+/**
+ * ⚠️ `now` est le 1ᵉʳ du mois DÉLIBÉRÉMENT : c'est le jour où le tableau de bord — qui ne lit
+ * que le mois EN COURS — voit le moins de choses. Un jeu calibré sur le 15 ne démontre rien.
+ *
+ * ⚠️ `now` est construit en heure LOCALE, pas en `Z`. Le générateur raisonne en heures
+ * d'ouverture locales — comme `/api/dashboard/stats` et les crons — et la suite tourne en
+ * UTC en CI mais en Europe/Paris sur le poste. Une fixture écrite `15:00Z` vaut 17 h à
+ * Paris et 15 h à Londres : le MÊME test exerce alors deux branches différentes. C'est le
+ * piège qui a déjà fait écrire les tests de crons en UTC contre un module qui lit le local.
+ */
+const options = { tenantId: 'demo-tmp-x', cashierId: 'u-demo', now: new Date(2026, 9, 1, 15, 0, 0) }
+
+/** Minuit LOCAL du jour de `now` — la même frontière que celle de `/api/dashboard/stats`. */
+function minuitLocal(d: Date): Date {
+  const j = new Date(d)
+  j.setHours(0, 0, 0, 0)
+  return j
+}
 
 describe('buildDemoDataset', () => {
   it('⚠️ STRICTEMENT plus de 6 catégories — 6 est la valeur limite qui masque le reliquat', () => {
@@ -78,7 +95,10 @@ describe('buildDemoDataset', () => {
     const { tx, ecrit } = fauxTx()
     await buildDemoDataset(tx, options)
     const mois = new Set(ecrit.sale.map(s => (s.createdAt as Date).toISOString().slice(0, 7)))
-    expect(mois.size).toBeGreaterThanOrEqual(3)
+    // ⚠️ DEUX, pas trois. La fenêtre fait 60 jours : à `now` = 2026-10-01 elle touche août,
+    // septembre et octobre, mais à `now` = 31 janvier elle ne touche que décembre et janvier.
+    // Exiger 3 ici serait vrai par ACCIDENT de calendrier sur le `now` choisi.
+    expect(mois.size).toBeGreaterThanOrEqual(2)
   })
 
   it('aucune vente n’est postérieure à `now` — une démo ne montre pas l’avenir', async () => {
@@ -173,8 +193,100 @@ describe('buildDemoDataset', () => {
     const { tx, ecrit } = fauxTx()
     await buildDemoDataset(tx, options)
     expect(ecrit.product.length).toBe(36)
-    expect(ecrit.sale.length).toBe(180)
-    expect(ecrit.saleItem.length).toBeGreaterThanOrEqual(180)
+    // Bornes ÉCRITES ICI, pas dérivées des constantes du module : dérivées, elles
+    // suivraient une troncature au lieu de la signaler.
+    expect(ecrit.sale.length).toBeGreaterThanOrEqual(400)
+    expect(ecrit.sale.length).toBeLessThanOrEqual(1200)
+    expect(ecrit.saleItem.length).toBeGreaterThanOrEqual(ecrit.sale.length)
+  })
+
+  /**
+   * ⚠️ DENSITÉ — MESURÉE EN PRODUCTION LE 2026-10-01, ET C'EST CE TEST QUI MANQUAIT.
+   *
+   * Le jeu étalait 180 ventes uniformément sur QUATRE mois, soit 1,5 vente par jour. Or
+   * `/api/dashboard/stats` ne lit que le mois EN COURS (`monthStart`) et le jour courant.
+   * Le 1ᵉʳ octobre, le prospect voyait donc **3 ventes sur 180 — 1,7 % du jeu** sur le
+   * premier écran de l'application. Rien n'était faux : le jeu était trop clairsemé là où
+   * il est regardé.
+   *
+   * Ces quatre tests portent sur la part VUE, jamais sur le total.
+   */
+  /**
+   * ⚠️ LES TROIS HEURES COMPTENT, ET LA PREMIÈRE VERSION DE CE TEST N'EN EXERÇAIT QU'UNE.
+   *
+   * Écrit avec le seul `now` de 15 h, il restait VERT quand on retirait le plancher du jour
+   * courant — à 15 h le prorata des heures ouvrées suffit à lui seul. Mesuré par sabotage.
+   * Le plancher n'existe que pour le MATIN et pour l'avant-ouverture : ce sont ces deux
+   * moments qu'il faut exercer, sans quoi la garantie n'est portée par rien.
+   */
+  it.each([
+    ['03 h — avant l’ouverture', new Date(2026, 9, 1, 3, 0, 0)],
+    ['09 h — début de matinée', new Date(2026, 9, 1, 9, 0, 0)],
+    ['15 h — après-midi', new Date(2026, 9, 1, 15, 0, 0)],
+  ])('⚠️ DÉCISIF : le JOUR COURANT porte plusieurs ventes à %s — le 1ᵉʳ, le CA du mois EST le CA du jour', async (_libelle, now) => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, { ...options, now })
+    const minuit = minuitLocal(now).getTime()
+    const aujourdhui = ecrit.sale.filter(s => (s.createdAt as Date).getTime() >= minuit)
+    expect(aujourdhui.length, 'premier écran de l’application, et il serait désert').toBeGreaterThanOrEqual(5)
+    // Et jamais dans l'avenir, y compris sur la journée tronquée.
+    for (const s of aujourdhui) expect((s.createdAt as Date).getTime()).toBeLessThanOrEqual(now.getTime())
+  })
+
+  it('⚠️ aucun jour creux : les 60 jours de la fenêtre portent tous des ventes', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const jours = new Set(ecrit.sale.map(s => {
+      const d = minuitLocal(s.createdAt as Date)
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+    }))
+    expect(jours.size, 'un tirage uniforme sur la fenêtre laisse des jours vides').toBe(60)
+  })
+
+  it('⚠️ la fenêtre couvre DEUX mois — ni plus (jeu dilué), ni moins (pas d’historique)', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const plusAncienne = Math.min(...ecrit.sale.map(s => (s.createdAt as Date).getTime()))
+    const joursEnArriere = (options.now.getTime() - plusAncienne) / 86_400_000
+    expect(joursEnArriere).toBeGreaterThan(58)
+    expect(joursEnArriere).toBeLessThan(61)
+  })
+
+  /**
+   * ⚠️ Une boutique ne vend pas à 3 h du matin, et l'écran « activité récente » affiche
+   * l'HEURE des cinq dernières ventes. À 1,5 vente par jour la question ne se posait pas ;
+   * à une dizaine, un horodatage nocturne se remarque.
+   *
+   * L'assertion ne porte que sur les jours COMPLETS : le jour courant est tronqué par `now`,
+   * et son cas limite (démo ouverte avant l'ouverture) est traité dans le module.
+   */
+  it('⚠️ les ventes des jours COMPLETS tombent dans les heures d’ouverture', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const minuit = minuitLocal(options.now).getTime()
+    const joursComplets = ecrit.sale.filter(s => (s.createdAt as Date).getTime() < minuit)
+    expect(joursComplets.length).toBeGreaterThan(100)
+    for (const s of joursComplets) {
+      const h = (s.createdAt as Date).getHours()
+      expect(h, `vente à ${h} h — hors heures d'ouverture`).toBeGreaterThanOrEqual(8)
+      expect(h).toBeLessThan(21)
+    }
+  })
+
+  /**
+   * ⚠️ MÊME DÉFAUT, AUTRE ÉCRAN. Les quatre dépenses étaient datées à J−15, J−30, J−45 et
+   * J−60 : le 1ᵉʳ du mois, AUCUNE ne tombait dans le mois en cours, et l'écran « Dépenses »
+   * — un des huit modules du manuel — s'ouvrait vide.
+   */
+  it('⚠️ au moins une dépense dans le mois EN COURS, et aucune dans l’avenir', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const debutMois = new Date(options.now.getFullYear(), options.now.getMonth(), 1).getTime()
+    const duMois = ecrit.expense.filter(d => (d.date as Date).getTime() >= debutMois)
+    expect(duMois.length, 'écran Dépenses vide le 1ᵉʳ du mois').toBeGreaterThanOrEqual(1)
+    for (const d of ecrit.expense) {
+      expect((d.date as Date).getTime()).toBeLessThanOrEqual(options.now.getTime())
+    }
   })
 
   it('⚠️ aucune coordonnée personnelle : téléphone et e-mail nuls partout', async () => {
