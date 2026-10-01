@@ -303,6 +303,16 @@ que soit le `where` laisserait `demoPurge` vert même si le code cessait d'envoy
 2. **Durée de la transaction de création.** ~500 lignes en une transaction : à mesurer, et à
    borner si le temps de réponse dépasse ce qu'un bouton peut tenir. Ne pas répondre avant que
    le jeu soit complet — une démo à moitié remplie se lit comme un produit cassé.
+   ✅ **MESURÉ EN PRODUCTION le 2026-10-01**, sur quatre tenants jetables créés puis détruits.
+   À **2 342 lignes** par démo (658 ventes, 1 623 lignes de vente, 36 produits, 11 charges,
+   5 clients, 4 employés, 3 fournisseurs, 1 utilisateur) : **0,61 s · 0,63 s · 0,71 s · 1,00 s**
+   — contre 0,52 s à 695 lignes. Le volume a plus que triplé, le temps de réponse a gagné moins
+   de 0,5 s, parce que l'insertion reste en **sept `createMany`** : c'est le nombre d'allers-retours
+   qui coûte, pas le nombre de lignes. Aucune borne à poser.
+   ⚠️ La destruction d'une démo a pris **8,4 s** — mais mesurée **depuis un poste de travail**,
+   soit 28 `DELETE` et autant d'allers-retours Paris→Railway. Ce chiffre ne borne RIEN de la
+   passe quotidienne, qui tourne dans le conteneur, à côté du Postgres. Ce qui est mesuré et
+   transposable, c'est le volume : **2 342 lignes et 28 instructions par démo**.
    ✅ **TRANCHÉ le 2026-10-01, APRÈS MESURE EN PRODUCTION — et la première réponse était
    fausse.** Le jeu livré étalait 180 ventes uniformément sur quatre mois. Les seuils ci-dessus
    étaient respectés (9 catégories, 3 mois, employés non notés), mais le point manquant n'était
