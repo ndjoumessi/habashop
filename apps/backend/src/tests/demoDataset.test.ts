@@ -31,7 +31,7 @@ function fauxTx() {
     tx: {
       product: modele('product'), customer: modele('customer'), supplier: modele('supplier'),
       employee: modele('employee'), sale: modele('sale'), saleItem: modele('saleItem'),
-      expense: modele('expense'),
+      expense: modele('expense'), shift: modele('shift'),
     },
   }
 }
@@ -378,6 +378,74 @@ describe('buildDemoDataset', () => {
     // ⚠️ Et l'inverse compte autant : une boutique en alerte partout ne montre pas une
     // boutique qui va bien, et le panneau d'alertes y deviendrait du bruit.
     expect(compte.ok, 'la boutique doit majoritairement aller bien').toBeGreaterThanOrEqual(28)
+  })
+
+  /**
+   * ⚠️ LE PLANNING — MESURÉ À L'ÉCRAN le 2026-10-01 : la grille était VIDE. Quatre employés,
+   * sept colonnes, « – » partout, et la ligne COUVERTURE à « — ». Le module distingue
+   * pourtant « pas encore planifié » de « planifié mais non couvert » (cf. `planningTotals`),
+   * distinction qu'une démo vide ne montre jamais.
+   *
+   * ⚠️ UN PLANNING VA DANS L'AVENIR, ET C'EST L'INVERSE DE LA RÈGLE DES VENTES. Une vente
+   * postérieure à `now` est un défaut — elle gonflerait un chiffre d'affaires. Un service
+   * planifié pour demain est le PROPRE d'un planning : une grille qui s'arrête aujourd'hui
+   * n'est pas un planning, c'est un journal. Les deux règles coexistent, sur deux modèles.
+   */
+  it('⚠️ la semaine EN COURS est planifiée — chaque jour couvert par au moins une personne', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    expect(ecrit.shift?.length ?? 0, 'aucun service écrit').toBeGreaterThan(0)
+
+    const lundi = minuitLocal(options.now)
+    lundi.setDate(lundi.getDate() - ((lundi.getDay() + 6) % 7))   // lundi de la semaine de `now`
+    const jour = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const TRAVAILLE = new Set(['morning', 'afternoon', 'full', 'night'])
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(lundi); d.setDate(lundi.getDate() + i)
+      const duJour = ecrit.shift.filter(sv => sv.date === jour(d))
+      expect(duJour.length, `aucun service le ${jour(d)}`).toBeGreaterThan(0)
+      const couverts = duJour.filter(sv => TRAVAILLE.has(String(sv.shiftTypeKey)))
+      expect(couverts.length, `${jour(d)} n'est couvert par personne`).toBeGreaterThanOrEqual(1)
+    }
+  })
+
+  it('⚠️ « Préc. » et « Suiv. » ne tombent pas dans le vide — trois semaines sont planifiées', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const jours = new Set(ecrit.shift.map(sv => String(sv.date)))
+    expect(jours.size, 'une seule semaine planifiée : le bouton « Préc. » ouvre une grille vide').toBeGreaterThanOrEqual(21)
+  })
+
+  it('⚠️ chaque employé a du REPOS — sinon l’équipe travaille 7 j/7 et l’état « Repos » est inatteignable', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const parEmploye = new Map<string, string[]>()
+    for (const sv of ecrit.shift) {
+      const k = String(sv.employeeId)
+      parEmploye.set(k, [...(parEmploye.get(k) ?? []), String(sv.shiftTypeKey)])
+    }
+    expect(parEmploye.size, 'tous les employés doivent apparaître au planning').toBe(ecrit.employee.length)
+    for (const [emp, types] of parEmploye) {
+      expect(types.filter(t => t === 'rest').length, `${emp} ne se repose jamais`).toBeGreaterThan(0)
+    }
+    // Et les CINQ types que la rotation doit exercer. ⚠️ `leave` en fait partie : sans lui,
+    // la pastille « Congé » — l'un des six états de `SHIFT_TYPES` — n'apparaît jamais dans la
+    // démonstration, exactement comme le stock où rien n'alertait.
+    const types = new Set(ecrit.shift.map(sv => String(sv.shiftTypeKey)))
+    for (const attendu of ['morning', 'afternoon', 'full', 'rest', 'leave']) {
+      expect(types.has(attendu), `l'état « ${attendu} » est inatteignable dans la démo`).toBe(true)
+    }
+  })
+
+  it('⚠️ aucun doublon (employé, date, type) — la contrainte unique SQL refuserait l’insertion', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const cles = ecrit.shift.map(sv => `${sv.employeeId}|${sv.date}|${sv.shiftTypeKey}`)
+    expect(new Set(cles).size, 'doublon sur @@unique([tenantId, employeeId, date, shiftTypeKey])').toBe(cles.length)
+    // FK : chaque service pointe un employé réellement créé.
+    const employes = new Set(ecrit.employee.map(e => e.id))
+    expect(ecrit.shift.filter(sv => !employes.has(sv.employeeId))).toEqual([])
   })
 
   it('⚠️ aucune coordonnée personnelle : téléphone et e-mail nuls partout', async () => {

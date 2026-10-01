@@ -61,6 +61,7 @@ export interface DemoTx {
   sale:     { createMany(a: { data: Prisma.SaleUncheckedCreateInput[] }): Promise<{ count: number }> }
   saleItem: { createMany(a: { data: Prisma.SaleItemUncheckedCreateInput[] }): Promise<{ count: number }> }
   expense:  { createMany(a: { data: Prisma.ExpenseUncheckedCreateInput[] }): Promise<{ count: number }> }
+  shift:    { createMany(a: { data: Prisma.ShiftUncheckedCreateInput[] }): Promise<{ count: number }> }
 }
 
 export interface DemoDatasetOptions {
@@ -194,6 +195,11 @@ const TVA_DEMO = 18
 export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promise<void> {
   const r = alea(20261001)
 
+  /** Minuit LOCAL du jour de `now` — frontière partagée par les ventes, les charges et le
+   *  planning. La même convention que `/api/dashboard/stats` et que les crons. */
+  const minuitAujourdhui = new Date(o.now)
+  minuitAujourdhui.setHours(0, 0, 0, 0)
+
   // ── Fournisseurs — le troisième reste NON noté (état vide atteignable) ──────
   const fournisseurs: { nom: string; rating: number | null }[] = [
     { nom: 'Grossiste Sandaga', rating: 4 },
@@ -261,9 +267,12 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
     { name: 'Magasinier', role: 'Magasinier', dept: 'Stock',     salary: 110_000, perf: 3 },
     { name: 'Gérante',    role: 'Gérant',     dept: 'Direction', salary: 180_000, perf: null },
   ]
+  // ⚠️ Les identifiants sont capturés ICI : `Shift.employeeId` est une FK vers `Employee`,
+  // et le planning ci-dessous en a besoin.
+  const idsEquipe = equipe.map(() => randomUUID())
   await tx.employee.createMany({
     data: equipe.map((e, k) => ({
-      id: randomUUID(),
+      id: idsEquipe[k],
       tenantId: o.tenantId, name: e.name, role: e.role, dept: e.dept, type: 'CDI',
       salary: e.salary, perf: e.perf, avatar: String(k + 1),
       hiredAt: new Date(o.now.getTime() - (200 + k * 90) * 86_400_000),
@@ -271,9 +280,80 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
     })),
   })
 
+  // ── Planning : trois semaines, de la semaine PRÉCÉDENTE à la SUIVANTE ───────
+  //
+  // ⚠️ MESURÉ À L'ÉCRAN le 2026-10-01 : la grille était VIDE. Quatre employés, sept colonnes,
+  // « – » partout, ligne COUVERTURE à « — ». Le module distingue pourtant « pas encore
+  // planifié » de « planifié mais non couvert » (`planningTotals.ts`) — une distinction
+  // qu'une démo vide ne montre jamais.
+  //
+  // ⚠️ UN PLANNING VA DANS L'AVENIR, ET C'EST L'INVERSE DE LA RÈGLE DES VENTES. Une vente
+  // postérieure à `now` gonflerait un chiffre d'affaires et le générateur l'interdit ; un
+  // service planifié pour demain est le PROPRE d'un planning. Une grille qui s'arrête
+  // aujourd'hui n'est pas un planning, c'est un journal. Trois semaines, pour que « Préc. »
+  // et « Suiv. » n'ouvrent pas une grille vide.
+  //
+  // ⚠️ LIMITE ASSUMÉE, et elle vient du PRODUIT, pas du jeu : `SHIFT_TYPES` (front) s'arrête
+  // à 18 h — Matin 08-13, Après-midi 13-18, Journée 08-18 — et saute ensuite à Nuit 20-06.
+  // Aucun type ne couvre la tranche 18 h-21 h, pendant laquelle la courbe de ventes place
+  // pourtant une pointe. On ne la planifie donc pas plutôt que de la dire en « Nuit », qui
+  // désignerait autre chose.
+  //
+  // Rotation : les deux caissiers alternent matin et après-midi et se reposent des jours
+  // DIFFÉRENTS (sinon un jour n'est couvert par personne) ; le magasinier tient la semaine ;
+  // la gérante couvre le week-end, où les caissiers tournent.
+  //
+  // ⚠️ LES HEURES DOIVENT TENIR DEBOUT : la colonne « heures » du planning les additionne
+  // (`planningTotals`), et une gérante à 55 h par semaine se remarque. La rotation ci-dessous
+  // donne 35 h · 35 h · 40 h · 40 h, et laisse CHAQUE jour couvert par au moins deux
+  // personnes — les deux caissiers se reposent des jours DIFFÉRENTS, sinon un jour tomberait
+  // à découvert.
+  const ROTATION: ReadonlyArray<readonly string[]> = [
+    // lun         mar          mer          jeu          ven          sam          dim
+    ['morning',   'morning',   'morning',   'morning',   'morning',   'full',      'rest'     ], // Caissier 1 — 35 h
+    ['rest',      'afternoon', 'afternoon', 'afternoon', 'afternoon', 'morning',   'full'     ], // Caissier 2 — 35 h
+    ['full',      'full',      'rest',      'full',      'full',      'rest',      'rest'     ], // Magasinier — 40 h
+    ['afternoon', 'morning',   'full',      'full',      'rest',      'afternoon', 'morning'  ], // Gérante    — 40 h
+  ]
+  const SEMAINES_PLANIFIEES = 3
+
+  /**
+   * ⚠️ UN CONGÉ, SINON LE SIXIÈME ÉTAT EST INATTEIGNABLE. `SHIFT_TYPES` en compte six et la
+   * rotation n'en exerce que quatre : sans cette exception, la pastille « Congé » n'apparaît
+   * jamais dans la démonstration — même famille que le stock où rien n'alertait et que les
+   * employés tous notés. Il tombe la SEMAINE PROCHAINE, ce qui rend aussi les trois semaines
+   * distinctes : une rotation strictement identique trois fois se lit comme un gabarit.
+   *
+   * Clé : `semaine|employé|jour`. Le mercredi et le jeudi de la 3ᵉ semaine (indices 2 et 3)
+   * pour le Caissier 2 (indice 1). La couverture reste d'au moins deux ces jours-là.
+   */
+  const CONGES: ReadonlySet<string> = new Set(['2|1|2', '2|1|3'])
+
+  const lundi = new Date(minuitAujourdhui)
+  // `getDay()` rend 0 pour dimanche : on ramène au lundi de la semaine de `now`, puis on
+  // recule d'une semaine pour que « Préc. » soit servi.
+  lundi.setDate(lundi.getDate() - ((lundi.getDay() + 6) % 7) - 7)
+  const jourIso = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+  const lignesServices: Prisma.ShiftUncheckedCreateInput[] = []
+  for (let j = 0; j < SEMAINES_PLANIFIEES * 7; j++) {
+    const d = new Date(lundi)
+    d.setDate(lundi.getDate() + j)
+    const semaine = Math.floor(j / 7), jourSemaine = j % 7
+    for (const [k, id] of idsEquipe.entries()) {
+      lignesServices.push({
+        id: randomUUID(),
+        tenantId: o.tenantId,
+        employeeId: id,
+        date: jourIso(d),
+        shiftTypeKey: CONGES.has(`${semaine}|${k}|${jourSemaine}`) ? 'leave' : ROTATION[k][jourSemaine],
+      })
+    }
+  }
+  await tx.shift.createMany({ data: lignesServices })
+
   // ── Ventes : JOUR PAR JOUR sur deux mois (cf. l'en-tête des constantes) ────
-  const minuitAujourdhui = new Date(o.now)
-  minuitAujourdhui.setHours(0, 0, 0, 0)
   const lignesVentes: Prisma.SaleUncheckedCreateInput[] = []
   const lignesArticles: Prisma.SaleItemUncheckedCreateInput[] = []
 
