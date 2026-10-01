@@ -1,0 +1,14 @@
+{
+  "_comment": "JOURS D'ESSAI RESTANTS — cas PARTAGÉS backend ↔ frontend. Le serveur (routes/billing.ts) et l'en-tête de l'application affichaient DEUX nombres différents sur le même écran : « ESSAI · 14J » au-dessus de « 7 jour(s) d'essai restant(s) ». Ils ne s'accordaient que par une convention que rien n'appliquait. Modifier la règle d'un seul côté fait désormais rougir le test d'en face.",
+  "_lecture": "⚠️ Lus à l'EXÉCUTION (readFileSync), jamais par import : le contexte Docker du backend est apps/backend SEUL.",
+  "cases": [
+    { "nom": "quatorze jours pleins", "trialEnds": "2026-10-15T12:00:00.000Z", "now": "2026-10-01T12:00:00.000Z", "attendu": 14 },
+    { "nom": "sept jours — la démo jetable", "trialEnds": "2026-10-08T12:00:00.000Z", "now": "2026-10-01T12:00:00.000Z", "attendu": 7 },
+    { "nom": "un plan annuel activé repousse l'échéance", "trialEnds": "2027-10-01T12:00:00.000Z", "now": "2026-10-01T12:00:00.000Z", "attendu": 365 },
+    { "nom": "quelques heures restantes → le jour entamé compte", "trialEnds": "2026-10-01T23:00:00.000Z", "now": "2026-10-01T12:00:00.000Z", "attendu": 1 },
+    { "nom": "échéance atteinte à la seconde près", "trialEnds": "2026-10-01T12:00:00.000Z", "now": "2026-10-01T12:00:00.000Z", "attendu": 0 },
+    { "nom": "échéance DÉPASSÉE — jamais un nombre négatif", "trialEnds": "2026-09-20T12:00:00.000Z", "now": "2026-10-01T12:00:00.000Z", "attendu": 0 },
+    { "nom": "aucune échéance posée → zéro, pas quatorze", "trialEnds": null, "now": "2026-10-01T12:00:00.000Z", "attendu": 0 },
+    { "nom": "échéance illisible → zéro, jamais NaN", "trialEnds": "pas-une-date", "now": "2026-10-01T12:00:00.000Z", "attendu": 0 }
+  ]
+}

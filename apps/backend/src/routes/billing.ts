@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import { joursDEssaiRestants } from '../lib/trialDays'
 import { prisma } from '../db'
 import { writeAudit } from '../lib/writeAudit'
 import { getTenantId } from '../lib/tenantId'
@@ -109,9 +110,10 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
 
     if (!tenant) return reply.code(404).send({ error: 'Tenant introuvable' })
 
-    const trialDaysLeft = tenant.trialEnds
-      ? Math.max(0, Math.ceil((new Date(tenant.trialEnds).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-      : 0
+    // ⚠️ La règle vit dans `lib/trialDays.ts` — jumelée avec le frontend sur des cas
+    // partagés. Elle était écrite ici en ligne, et l'en-tête de l'application en avait une
+    // AUTRE : deux nombres d'essai sur le même écran.
+    const trialDaysLeft = joursDEssaiRestants(tenant.trialEnds, new Date())
     const isTrialExpired = tenant.status === 'trial' && trialDaysLeft === 0
 
     if (isTrialExpired && tenant.isActive) {

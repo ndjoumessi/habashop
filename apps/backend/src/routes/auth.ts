@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { joursDEssaiRestants } from '../lib/trialDays'
 import type { FastifyInstance } from 'fastify'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
@@ -242,7 +243,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     return reply.code(201).send({
       token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role, shopName: tenant.name, isPlatformAdmin: user.isPlatformAdmin },
-      tenant: { ...tenant, trialDaysLeft: 14, canUpgrade: true },
+      // ⚠️ DÉRIVÉ de l'échéance qu'on vient de poser, jamais le littéral `14` : il était
+      // juste par EMPRUNT à la ligne qui calcule `trialEnds`, et aurait survécu à son
+      // changement — c'est la forme même du défaut corrigé sur la pastille d'essai.
+      tenant: { ...tenant, trialDaysLeft: joursDEssaiRestants(trialEnds, new Date()), canUpgrade: true },
     })
   })
 
