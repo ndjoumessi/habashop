@@ -105,7 +105,9 @@ export default function LandingHero({ lp, i, navigate, onDemo, demoEnCours }: Pr
                 bouton : il n'a aucun champ à remplir, et un bouton éteint par la validation
                 gronde avant l'erreur sans dire ce qui manque, et n'affiche aucune infobulle
                 au toucher. */}
-            <button type="button" onClick={onDemo}
+            {/* ⚠️ `data-testid` parce que le libellé (`lp.cta_demo`) est TRADUIT : la capture de
+                parcours ouvre la démo dans les quatre langues, elle ne peut pas viser un texte. */}
+            <button type="button" onClick={onDemo} data-testid="landing-demo"
               disabled={demoEnCours}
               aria-busy={demoEnCours}
               style={{

@@ -147,6 +147,14 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
   return (
     <div
       role="button"
+      /**
+       * ⚠️ POIGNÉE STABLE, et elle est NÉCESSAIRE : l'`aria-label` porte le nom du produit et
+       * les libellés de l'écran sont traduits. Un sélecteur bâti sur du texte traduit se casse
+       * à la langue suivante — c'est ce que fait déjà `e2e/pos.spec.ts` avec ses
+       * `/Ouvrir la caisse|Open register/`. Consommée par la capture de parcours
+       * (`e2e/capture/`), qui rejoue le MÊME chemin dans les quatre langues.
+       */
+      data-testid="pos-product"
       tabIndex={blocked ? -1 : 0}
       aria-label={`${p.name} — ${priceLabel}`}
       aria-disabled={blocked}

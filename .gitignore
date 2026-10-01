@@ -63,3 +63,10 @@ graphify-out/
 
 # Rapports Playwright de la mesure de densité (harnais de dév)
 apps/frontend/test-results/
+
+# Capture vidéo du parcours de démonstration (`npm run capture:demo`).
+# ⚠️ Les vidéos sont des binaires lourds et REJOUABLES : c'est le SCRIPT qui est versionné,
+# pas son produit. Et `tenants-crees.txt` est le périmètre d'un ménage, pas une donnée du
+# dépôt — le committer ferait croire que ces tenants existent encore.
+apps/frontend/e2e/capture/tenants-crees.txt
+apps/frontend/e2e/capture/videos/

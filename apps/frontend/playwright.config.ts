@@ -12,7 +12,8 @@ export default defineConfig({
    * correctif lui-même. Ajouter son NOM ici aurait marché ce jour-là et cassé au deuxième
    * harnais ; un dossier ne se périme pas à l'ajout d'un fichier.
    */
-  testIgnore: '**/dev/**',
+  // ⚠️ `capture/` enregistre de la vidéo et CRÉE un tenant par exécution : jamais en CI.
+  testIgnore: ['**/dev/**', '**/capture/**'],
   timeout: 30000,
   retries: 1, // 1 retry en cas d'échec réseau
   // Backend prod = réplique unique Railway (cold start) → on SÉRIALISE pour ne pas le
@@ -40,7 +41,7 @@ export default defineConfig({
       use: { browserName: 'chromium', storageState: 'e2e/.auth/user.json' },
       dependencies: ['setup'],
       // ⚠️ Le `testIgnore` de PROJET écrase celui du niveau config : on répète `dev/`.
-      testIgnore: [/auth\.setup\.ts/, '**/dev/**'],
+      testIgnore: [/auth\.setup\.ts/, '**/dev/**', '**/capture/**'],
     },
   ],
 
