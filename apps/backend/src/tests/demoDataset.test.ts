@@ -34,6 +34,7 @@ function fauxTx() {
       product: modele('product'), customer: modele('customer'), supplier: modele('supplier'),
       employee: modele('employee'), sale: modele('sale'), saleItem: modele('saleItem'),
       expense: modele('expense'), shift: modele('shift'),
+      expenseBudget: modele('expenseBudget'),
     },
   }
 }
@@ -627,5 +628,122 @@ describe("équipe de démonstration — personnes nommées, rôles traduisibles"
 
     const couleurs = ecrit.employee.map(e => String(e.color ?? ''))
     expect(new Set(couleurs).size, 'quatre avatars de la même couleur ne distinguent personne').toBe(couleurs.length)
+  })
+})
+
+/**
+ * DÉPENSES — DEUX états de règlement, et des BUDGETS qui permettent de comparer.
+ *
+ * ⚠️ MESURÉ en production le 2026-10-01 : les 18 charges du jeu portaient TOUTES « EN ATTENTE »
+ * (le `@default` du schéma, jamais écrasé), et le tenant n'avait AUCUNE ligne `ExpenseBudget`.
+ * Conséquences à l'écran : le KPI « total en attente » valait la totalité des charges — un
+ * nombre qui ne distingue rien —, et l'onglet « Budget vs Réel » montrait huit catégories à
+ * zéro avec « budget restant 0 ». Même famille que le stock où rien n'alertait et que les
+ * employés tous notés : *une démonstration qui ne montre qu'un seul état ne démontre pas qu'il
+ * y en a deux.*
+ *
+ * ⚠️ `usagePct` est `null` sans budget (jamais `Infinity`, cf. `budgetSummary.ts`) : l'écran ne
+ * MENTAIT pas, il était muet. C'est précisément ce qui rend le manque facile à ne pas voir.
+ *
+ * ⚠️ LA RÈGLE DE STATUT EST CALENDAIRE, PAS ALÉATOIRE : un mois révolu est réglé, le mois en
+ * cours est en attente. C'est l'état réel d'une boutique, et c'est reproductible — un tirage
+ * rendrait le jeu non déterministe là où tout le reste l'est (`alea`).
+ *
+ * ⚠️ LE DÉPASSEMENT DOIT ÊTRE ATTEIGNABLE DÈS LE 1ᵉʳ DU MOIS. Les charges du mois courant sont
+ * bornées à `now`, donc le 1ᵉʳ il n'y a QUE le loyer : si la catégorie en dépassement n'était
+ * pas celle du jour 1, l'état « dépassé » serait invisible les cinq premiers jours. `options`
+ * place `now` au 1ᵉʳ, donc ce test l'exerce là où c'est le plus difficile.
+ */
+describe('dépenses de démonstration — règlement et budgets', () => {
+  it("⚠️ les DEUX statuts existent, et aucun hors du domaine binaire", async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+
+    const statuts = ecrit.expense.map(d => String(d.status))
+    expect(statuts.length).toBeGreaterThan(0)
+    // `ExpStatus = 'PAYÉ' | 'EN ATTENTE'` (expensesShared.tsx) — rien d'autre.
+    for (const s of statuts) expect(['PAYÉ', 'EN ATTENTE'], `statut « ${s} » hors domaine`).toContain(s)
+    expect(statuts.filter(s => s === 'PAYÉ').length, 'aucune charge réglée').toBeGreaterThan(0)
+    expect(statuts.filter(s => s === 'EN ATTENTE').length, 'aucune charge en attente').toBeGreaterThan(0)
+  })
+
+  it('⚠️ un mois révolu est RÉGLÉ, le mois en cours est EN ATTENTE', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+
+    const moisCourant = (d: Date) =>
+      d.getFullYear() === options.now.getFullYear() && d.getMonth() === options.now.getMonth()
+
+    for (const d of ecrit.expense) {
+      const date = new Date(d.date as string | Date)
+      const attendu = moisCourant(date) ? 'EN ATTENTE' : 'PAYÉ'
+      expect(String(d.status), `${String(d.label)} du ${date.toISOString().slice(0, 10)}`).toBe(attendu)
+    }
+  })
+
+  it("⚠️ `recurrent` prend les DEUX valeurs — une charge fixe n'est pas un achat ponctuel", async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+
+    const rec = ecrit.expense.map(d => d.recurrent === true)
+    expect(rec.filter(Boolean).length, 'aucune charge récurrente').toBeGreaterThan(0)
+    expect(rec.filter(v => !v).length, 'aucune charge ponctuelle').toBeGreaterThan(0)
+  })
+
+  it('⚠️ des budgets sont posés, dans le domaine CANONIQUE et sans doublon', async () => {
+    // Domaine partagé front ↔ back, lu à l'EXÉCUTION (jamais par import : contexte Docker).
+    const domaine: string[] = JSON.parse(readFileSync(
+      join(__dirname, '..', '..', '..', '..', 'docs', 'shared-fixtures', 'expense-categories.json'), 'utf-8',
+    )).categories
+    expect(domaine.length, 'fixture des catégories doit être lue').toBeGreaterThanOrEqual(8)
+
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+
+    const budgets = ecrit.expenseBudget ?? []
+    expect(budgets.length, 'aucun budget posé → « Budget vs Réel » reste muet').toBeGreaterThan(0)
+
+    const cats = budgets.map(b => String(b.category))
+    for (const c of cats) expect(domaine, `catégorie budgétée « ${c} » hors domaine`).toContain(c)
+    // `@@unique([tenantId, category])` — un doublon ferait échouer l'insertion en base.
+    expect(new Set(cats).size, 'doublon de catégorie budgétée').toBe(cats.length)
+    for (const b of budgets) expect(Number(b.amount), `budget de ${b.category}`).toBeGreaterThan(0)
+  })
+
+  it("⚠️ dès le 1ᵉʳ du mois : un DÉPASSEMENT visible, et un budget SANS dépense", async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+
+    // La population du panneau : les charges du MOIS COURANT, en HT (`e.amount` = `amountHT`).
+    const duMois = ecrit.expense.filter(d => {
+      const date = new Date(d.date as string | Date)
+      return date.getFullYear() === options.now.getFullYear() && date.getMonth() === options.now.getMonth()
+    })
+    const depenseParCat = new Map<string, number>()
+    for (const d of duMois) {
+      const c = String(d.category)
+      depenseParCat.set(c, (depenseParCat.get(c) ?? 0) + Number(d.amountHT))
+    }
+
+    const budgets = new Map((ecrit.expenseBudget ?? []).map(b => [String(b.category), Number(b.amount)]))
+
+    const depasses = [...budgets].filter(([c, montant]) => (depenseParCat.get(c) ?? 0) > montant)
+    expect(depasses.length, "l'état « dépassé » doit être atteignable dès le 1ᵉʳ").toBeGreaterThan(0)
+
+    /**
+     * ⚠️ CETTE ASSERTION A D'ABORD ÉTÉ ÉCRITE SUR LE MOIS COURANT, ET ELLE EST PASSÉE VERTE
+     * SOUS SABOTAGE. Le 1ᵉʳ du mois, seul le loyer est encaissé : quatre AUTRES catégories ont
+     * donc zéro dépense ce jour-là, et retirer les deux budgets délibérément sans dépense
+     * (Maintenance, Marketing) laissait l'assertion satisfaite — par le CALENDRIER, pas par le
+     * jeu. Elle ne gardait pas ce qu'elle annonçait.
+     *
+     * La population est donc TOUT l'historique : une catégorie budgétée sur laquelle la
+     * boutique n'a JAMAIS rien dépensé. C'est l'état que le panneau doit savoir rendre
+     * (« 0 dépensé sur 20 000 »), et il est indépendant du jour où la démo est ouverte.
+     */
+    const depenseToutHistorique = new Set(ecrit.expense.map(d => String(d.category)))
+    const jamaisDepensees = [...budgets.keys()].filter(c => !depenseToutHistorique.has(c))
+    expect(jamaisDepensees.length, 'un budget sans AUCUNE dépense est un état légitime à montrer')
+      .toBeGreaterThan(0)
   })
 })

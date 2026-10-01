@@ -62,6 +62,7 @@ export interface DemoTx {
   saleItem: { createMany(a: { data: Prisma.SaleItemUncheckedCreateInput[] }): Promise<{ count: number }> }
   expense:  { createMany(a: { data: Prisma.ExpenseUncheckedCreateInput[] }): Promise<{ count: number }> }
   shift:    { createMany(a: { data: Prisma.ShiftUncheckedCreateInput[] }): Promise<{ count: number }> }
+  expenseBudget: { createMany(a: { data: Prisma.ExpenseBudgetUncheckedCreateInput[] }): Promise<{ count: number }> }
 }
 
 export interface DemoDatasetOptions {
@@ -475,13 +476,17 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
   // Domaine faisant autorité : `apps/frontend/src/components/expenses/expensesShared.tsx`
   // (`CATEGORIES`). Recopié par le test, qui crie si la liste bouge — le contexte Docker du
   // backend est `apps/backend` seul, l'import est impossible.
+  // ⚠️ `recurrent` DISTINGUE une charge fixe d'un achat ponctuel, et le jeu les mettait toutes
+  // à `false` (le défaut du schéma) : la colonne existait, l'export CSV la rendait, et elle ne
+  // discriminait rien. Le loyer, l'énergie et l'abonnement télécom reviennent chaque mois ; le
+  // carburant et les emballages s'achètent au coup par coup.
   const charges = [
-    { label: 'Loyer boutique',      categorie: 'Loyer',       ht: 150_000, jourDuMois: 1 },
-    { label: 'Électricité',         categorie: 'Énergie',     ht: 42_000,  jourDuMois: 4 },
-    { label: 'Eau',                 categorie: 'Énergie',     ht: 12_000,  jourDuMois: 6 },
-    { label: 'Carburant livraison', categorie: 'Transport',   ht: 25_000,  jourDuMois: 9 },
-    { label: 'Emballages',          categorie: 'Fournitures', ht: 18_000,  jourDuMois: 14 },
-    { label: 'Téléphone & internet', categorie: 'Autre',      ht: 8_000,   jourDuMois: 20 },
+    { label: 'Loyer boutique',      categorie: 'Loyer',       ht: 150_000, jourDuMois: 1,  recurrent: true  },
+    { label: 'Électricité',         categorie: 'Énergie',     ht: 42_000,  jourDuMois: 4,  recurrent: true  },
+    { label: 'Eau',                 categorie: 'Énergie',     ht: 12_000,  jourDuMois: 6,  recurrent: true  },
+    { label: 'Carburant livraison', categorie: 'Transport',   ht: 25_000,  jourDuMois: 9,  recurrent: false },
+    { label: 'Emballages',          categorie: 'Fournitures', ht: 18_000,  jourDuMois: 14, recurrent: false },
+    { label: 'Téléphone & internet', categorie: 'Autre',      ht: 8_000,   jourDuMois: 20, recurrent: true  },
   ]
   const debutFenetre = minuitAujourdhui.getTime() - (JOURS_D_HISTORIQUE - 1) * 86_400_000
   const lignesDepenses: Prisma.ExpenseUncheckedCreateInput[] = []
@@ -501,9 +506,51 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
         vat: TVA_DEMO,
         amountTTC: Math.round(c.ht * (1 + TVA_DEMO / 100) * 100) / 100,
         mode: 'cash',
+        recurrent: c.recurrent,
+        // ⚠️ RÈGLE CALENDAIRE, PAS UN TIRAGE : un mois révolu est réglé, le mois en cours est
+        // en attente. C'est l'état réel d'une boutique, et c'est reproductible — un tirage
+        // rendrait le jeu non déterministe là où tout le reste vient d'`alea`. Le jeu écrivait
+        // auparavant le `@default("EN ATTENTE")` du schéma pour TOUTES les charges : le KPI
+        // « total en attente » valait donc la totalité des charges et ne distinguait rien.
+        status: reculMois > 0 ? 'PAYÉ' : 'EN ATTENTE',
         date,
       })
     }
   }
   await tx.expense.createMany({ data: lignesDepenses })
+
+  // ── Budgets de dépense — sans eux, « Budget vs Réel » est MUET ──────────────
+  //
+  // ⚠️ Le tenant n'en portait AUCUN : les huit catégories s'affichaient à zéro et « budget
+  // restant 0 ». `usagePct` vaut `null` sans budget (jamais `Infinity`, cf. `budgetSummary.ts`),
+  // donc l'écran ne MENTAIT pas — il était muet, et c'est ce qui rend le manque facile à ne
+  // pas voir. Même famille que le stock où rien n'alertait.
+  //
+  // ⚠️ MONTANTS MENSUELS EN HT : le panneau compare au `amountHT` des charges (`e.amount` dans
+  // `Expenses.tsx`), pas au TTC. Comparer un budget à un TTC gonflerait tout de 18 %.
+  //
+  // ⚠️ LE DÉPASSEMENT PORTE SUR LE LOYER, ET C'EST UN CHOIX DE JEU. Les charges du mois en
+  // cours sont bornées à `now`, donc le 1ᵉʳ il n'y a QUE le loyer : placer le dépassement sur
+  // l'énergie (jours 4 et 6) rendrait l'état « dépassé » invisible les cinq premiers jours —
+  // exactement le piège de la démonstration calée sur la valeur limite. Un loyer qui a
+  // augmenté de 5 000 sans que le budget ait été mis à jour est par ailleurs la situation la
+  // plus banale qui soit.
+  //
+  // ⚠️ `Formation` n'a VOLONTAIREMENT pas de ligne : `amount` a `@default(0)` et le front part
+  // de `BUDGETS_INIT` à zéro, donc « ligne à 0 » et « pas de ligne » sont INDISCERNABLES à
+  // l'écran. On ne fabrique pas une ligne pour mimer une distinction que le modèle ne porte pas.
+  const BUDGETS_MENSUELS: ReadonlyArray<readonly [string, number]> = [
+    ['Loyer',       145_000], // dépense 150 000 → DÉPASSÉ de 5 000, visible dès le 1ᵉʳ
+    ['Énergie',      60_000], // dépense  54 000 → 90 %
+    ['Transport',    30_000], // dépense  25 000 → 83 %
+    ['Maintenance',  20_000], // dépense       0 → budget SANS dépense (état légitime)
+    ['Fournitures',  20_000], // dépense  18 000 → 90 %
+    ['Marketing',    25_000], // dépense       0 → budget SANS dépense
+    ['Autre',        15_000], // dépense   8 000 → 53 %
+  ]
+  await tx.expenseBudget.createMany({
+    data: BUDGETS_MENSUELS.map(([category, amount]) => ({
+      id: randomUUID(), tenantId: o.tenantId, category, amount,
+    })),
+  })
 }
