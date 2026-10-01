@@ -1,4 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import { buildDemoDataset, DEMO_CATEGORIES } from '../lib/demoDataset'
 
 /**
@@ -494,5 +496,136 @@ describe('buildDemoDataset', () => {
         expect(l.email ?? null, `${m}.email doit être nul`).toBeNull()
       }
     }
+  })
+})
+
+/**
+ * L'ÉQUIPE DE DÉMONSTRATION — des PERSONNES, et des rôles qui SE TRADUISENT.
+ *
+ * ⚠️ MESURÉ le 2026-10-01, en réponse à « est-ce que la démo tient compte de la langue ? ».
+ * Le jeu écrivait `name: 'Caissier 1'` / `'Magasinier'` / `'Gérante'` — des MÉTIERS dans le
+ * champ d'un NOM. L'interface se traduit, eux non : un visiteur hispanophone lisait le rôle
+ * « Cajero » au-dessus d'un employé nommé « Caissier 1 ». Le nom d'une personne ne se traduit
+ * pas — donc il ne doit pas en être un.
+ *
+ * ⚠️ Et DEUX champs sur trois tombaient hors du domaine traduit : `role: 'Gérant'` (absent de
+ * `ROLE_LABELS`) et `dept: 'Vente'` (les trois tables du front portent `'Ventes'`, au
+ * PLURIEL). `roleLabel`/`deptLabel` replient en `?? r` — pas de crash, mais la valeur
+ * FRANÇAISE s'affiche telle quelle dans les quatre langues, et `DEPT_COLORS` ne rend aucune
+ * couleur. Même famille que le `category: 'Charges'` de la 2.24.11 : un jeu de démonstration
+ * qui écrit en dehors d'un domaine que l'affichage ne peut qu'approximer.
+ *
+ * ⚠️ Le verrou juge la FORME, jamais des identifiants : un nom ne contient pas son propre
+ * métier, et le domaine des rôles est DÉRIVÉ de la table du front, lue à l'EXÉCUTION (jamais
+ * par `import` — le contexte Docker est `apps/backend` seul). Même mécanique que
+ * `msisdnShared.test.ts`, qui lit déjà `apps/frontend/src/lib/msisdn.ts`.
+ */
+const FRONT = join(__dirname, '..', '..', '..', '..', 'apps', 'frontend', 'src')
+const HR_SHARED = join(FRONT, 'components', 'hr', 'hrShared.tsx')
+/**
+ * ⚠️ DEUX TABLES DE RÔLES, ET C'EST UN JUMEAU. `payrollShared.tsx` porte son propre `ROLE_T` :
+ * un rôle présent dans l'une et absent de l'autre s'affiche traduit sur l'écran RH et BRUT sur
+ * le bulletin de paie. L'ancien `'Gérant'` manquait aux DEUX — c'est ce qui l'a rendu invisible.
+ * Le verrou exige donc l'INTERSECTION, pas la première table trouvée.
+ */
+const PAYROLL_SHARED = join(FRONT, 'components', 'payroll', 'payrollShared.tsx')
+
+/**
+ * Clés d'une table `Record<string, Record<string, string>>` du front, extraites de la SOURCE.
+ *
+ * ⚠️ Le bloc est délimité par appariement de l'accolade ouvrante avec la PREMIÈRE accolade
+ * fermante en colonne 0 — pas par une regex sur la structure, qui se ferait piéger par les
+ * accolades internes de chaque ligne de traduction.
+ */
+function clesDeTable(src: string, nom: string): Set<string> {
+  // `const X` matche aussi bien `export const X` : ROLE_T n'est PAS exportée.
+  const debut = src.indexOf(`const ${nom}`)
+  if (debut < 0) throw new Error(`table ${nom} introuvable dans hrShared.tsx`)
+  const fin = src.indexOf('\n}', debut)
+  if (fin < 0) throw new Error(`fin de la table ${nom} introuvable`)
+  const bloc = src.slice(debut, fin)
+  return new Set([...bloc.matchAll(/^\s{2}'([^']+)':/gm)].map(m => m[1]))
+}
+
+describe("équipe de démonstration — personnes nommées, rôles traduisibles", () => {
+  it('⚠️ le domaine est bien LU : témoin positif présent, témoin inexistant absent', () => {
+    const src = readFileSync(HR_SHARED, 'utf-8')
+    const roles = clesDeTable(src, 'ROLE_LABELS')
+    const depts = clesDeTable(src, 'DEPT_LABELS')
+
+    // Couverture : une extraction cassée rend un ensemble vide, donc un vert qui ne garde rien.
+    expect(roles.size, 'ROLE_LABELS doit être lue').toBeGreaterThanOrEqual(10)
+    expect(depts.size, 'DEPT_LABELS doit être lue').toBeGreaterThanOrEqual(8)
+
+    // Témoin POSITIF : une clé qu'on sait présente.
+    expect(roles.has('Caissier'), 'témoin positif rôle').toBe(true)
+    expect(depts.has('Ventes'), 'témoin positif département').toBe(true)
+
+    // Témoin INEXISTANT : l'extraction doit distinguer le singulier du pluriel, sinon
+    // l'assertion de domaine ci-dessous serait satisfaite par le défaut même qu'elle vise.
+    expect(depts.has('Vente'), "'Vente' au singulier n'est PAS une clé").toBe(false)
+  })
+
+  it("⚠️ aucun nom d'employé ne contient son propre métier ni son département", async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+
+    expect(ecrit.employee.length).toBeGreaterThan(0)
+    for (const e of ecrit.employee) {
+      const nom = String(e.name), role = String(e.role), dept = String(e.dept)
+      expect(nom.includes(role), `« ${nom} » porte son rôle « ${role} » comme nom`).toBe(false)
+      expect(nom.includes(dept), `« ${nom} » porte son département « ${dept} » comme nom`).toBe(false)
+    }
+  })
+
+  it('⚠️ rôle ET département appartiennent au domaine TRADUIT du front', async () => {
+    const src = readFileSync(HR_SHARED, 'utf-8')
+    const roles = clesDeTable(src, 'ROLE_LABELS')
+    const depts = clesDeTable(src, 'DEPT_LABELS')
+    const couleurs = clesDeTable(src, 'DEPT_COLORS')
+    const rolesPaie = clesDeTable(readFileSync(PAYROLL_SHARED, 'utf-8'), 'ROLE_T')
+    expect(rolesPaie.size, 'ROLE_T doit être lue').toBeGreaterThanOrEqual(8)
+
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+
+    for (const e of ecrit.employee) {
+      expect(roles.has(String(e.role)), `rôle « ${e.role} » hors de ROLE_LABELS`).toBe(true)
+      expect(rolesPaie.has(String(e.role)), `rôle « ${e.role} » hors du ROLE_T de la paie`).toBe(true)
+      expect(depts.has(String(e.dept)), `département « ${e.dept} » hors de DEPT_LABELS`).toBe(true)
+      // Une pastille sans couleur se distingue de rien : le département doit aussi en avoir une.
+      expect(couleurs.has(String(e.dept)), `département « ${e.dept} » hors de DEPT_COLORS`).toBe(true)
+    }
+  })
+
+  it("⚠️ l'avatar laisse dériver les INITIALES — jamais un numéro de rang", async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+
+    for (const e of ecrit.employee) {
+      const av = String(e.avatar ?? '')
+      // `hrShared.tsx` fait `e.avatar || initialesDe(e.name)` : un '1' GAGNE sur les initiales
+      // et affiche un rang là où le lecteur attend une personne.
+      expect(/^\d+$/.test(av), `avatar « ${av} » est un numéro de rang`).toBe(false)
+    }
+  })
+
+  it('⚠️ chaque employé est DISTINGUABLE : nom, initiales et couleur', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+
+    const noms = ecrit.employee.map(e => String(e.name))
+    expect(new Set(noms).size, 'deux employés homonymes').toBe(noms.length)
+
+    // Deux mots au moins : `initialesDe` découpe sur l'espace et rend sinon UNE lettre.
+    for (const n of noms) {
+      expect(n.trim().split(/\s+/).length, `« ${n} » doit porter prénom ET nom`).toBeGreaterThanOrEqual(2)
+    }
+
+    const initiales = noms.map(n => n.trim().split(/\s+/).map(m => m[0]).join('').slice(0, 2).toUpperCase())
+    expect(new Set(initiales).size, `initiales en collision : ${initiales.join(', ')}`).toBe(initiales.length)
+
+    const couleurs = ecrit.employee.map(e => String(e.color ?? ''))
+    expect(new Set(couleurs).size, 'quatre avatars de la même couleur ne distinguent personne').toBe(couleurs.length)
   })
 })

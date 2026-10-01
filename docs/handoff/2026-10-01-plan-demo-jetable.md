@@ -756,6 +756,14 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
     clients.push(c.id)
   }
 
+  // ⚠️⚠️ CE BLOC EST PÉRIMÉ — NE PAS LE RECOPIER. Tel que planifié ci-dessous, il écrivait des
+  // MÉTIERS dans le champ `name` (« Caissier 1 », « Gérante »), un `role: 'Gérant'` absent de
+  // `ROLE_LABELS` et du `ROLE_T` de la paie, un `dept: 'Vente'` au singulier quand les trois
+  // tables du front portent `'Ventes'`, et un `avatar` numéroté qui court-circuite les
+  // initiales. Corrigé le 2026-10-01 — la forme qui fait foi est dans
+  // `apps/backend/src/lib/demoDataset.ts`, verrouillée par `demoDataset.test.ts`.
+  // Le plan reste ci-dessous tel qu'il a été écrit : c'est le registre de ce qui a été prévu.
+
   // ── Employés — ⚠️ une partie NON évaluée (`perf: null`) ────────────────────
   // Une démonstration qui note tout le monde ne montre jamais l'état vide, et c'est
   // précisément l'état que `ratingSummary` doit rendre en « — » plutôt qu'en « 0,0/5 ».

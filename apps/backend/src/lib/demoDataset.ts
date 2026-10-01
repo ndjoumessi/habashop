@@ -261,11 +261,44 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
   await tx.customer.createMany({ data: lignesClients })
 
   // ── Employés — ⚠️ une partie NON évaluée (`perf: null`) ────────────────────
-  const equipe: { name: string; role: string; dept: string; salary: number; perf: number | null }[] = [
-    { name: 'Caissier 1', role: 'Caissier',   dept: 'Vente',     salary: 90_000,  perf: 4 },
-    { name: 'Caissier 2', role: 'Caissier',   dept: 'Vente',     salary: 90_000,  perf: null },
-    { name: 'Magasinier', role: 'Magasinier', dept: 'Stock',     salary: 110_000, perf: 3 },
-    { name: 'Gérante',    role: 'Gérant',     dept: 'Direction', salary: 180_000, perf: null },
+  //
+  // ⚠️ DES PERSONNES, PAS DES MÉTIERS. Le jeu écrivait `name: 'Caissier 1'`, `'Magasinier'`,
+  // `'Gérante'` : un métier dans le champ d'un NOM. Le rôle à côté se traduit (`ROLE_LABELS`),
+  // le nom non — un visiteur hispanophone lisait donc « Cajero » au-dessus de « Caissier 1 ».
+  // Un nom de personne ne se traduit pas, donc il ne doit pas en être un.
+  //
+  // ⚠️ `role` ET `dept` SONT DES CLÉS, pas du texte libre — et deux tombaient à côté :
+  // `'Gérant'` est absent de `ROLE_LABELS`, et les trois tables du front (`DEPT_LABELS`,
+  // `DEPT_COLORS`, et le sélecteur) portent `'Ventes'` au PLURIEL. `roleLabel`/`deptLabel`
+  // replient en `?? r`, donc rien ne cassait : la valeur française s'affichait simplement
+  // telle quelle dans les quatre langues, et la pastille de département restait sans couleur.
+  // Même famille que le `category: 'Charges'` de la 2.24.11.
+  //
+  // ⚠️ LA CONVENTION EXISTAIT DÉJÀ, CE GÉNÉRATEUR ÉTAIT LE SEUL À NE PAS LA SUIVRE —
+  // `prisma/seed.ts:103-110` (« Marie Bakayoko », rôle `'Caissière'`, dept `'Ventes'`,
+  // `avatar: 'MB'`, couleurs distinctes, un `perf: null`) et `prisma/seed-demo.ts:112-113`
+  // (« Kouadio N'Guessan », « Aya Konan ») la respectaient avant lui. Elle n'était juste
+  // écrite nulle part, comme la lecture des fixtures à l'exécution avant qu'un verrou ne la
+  // fixe. D'où `demoDataset.test.ts` § « équipe de démonstration ».
+  //
+  // ⚠️ L'ORDRE EST PORTEUR : `ROTATION` ci-dessous s'applique par INDICE (35 h · 35 h · 40 h
+  // · 40 h). Réordonner cette liste redistribue les heures sans toucher au planning.
+  //
+  // ⚠️ `avatar: ''` est VOLONTAIRE — `hrShared.tsx` fait `e.avatar || initialesDe(e.name)`.
+  // Le jeu y écrivait le rang (`'1'`…`'4'`), qui GAGNE sur les initiales : l'écran RH
+  // affichait un numéro là où le lecteur attend quelqu'un. Laisser le champ vide garde UNE
+  // source aux initiales — en écrire une seconde ici serait un jumeau sans raison d'être.
+  //
+  // ⚠️ `color` est posée ICI parce que le schéma a `@default("#6C3FD6")` : sans elle, les
+  // quatre avatars sortaient du même violet et ne distinguaient personne. Valeurs tirées de
+  // `COLORS` (`hrShared.tsx`).
+  const equipe: {
+    name: string; role: string; dept: string; salary: number; perf: number | null; color: string
+  }[] = [
+    { name: 'Awa Traoré',     role: 'Caissière',  dept: 'Ventes',    salary: 90_000,  perf: 4,    color: '#6C3FD6' },
+    { name: 'Moussa Diop',    role: 'Caissier',   dept: 'Ventes',    salary: 90_000,  perf: null, color: '#3B82F6' },
+    { name: 'Ibrahima Keïta', role: 'Magasinier', dept: 'Stock',     salary: 110_000, perf: 3,    color: '#10B981' },
+    { name: 'Fatou Sow',      role: 'Manager',    dept: 'Direction', salary: 180_000, perf: null, color: '#F59E0B' },
   ]
   // ⚠️ Les identifiants sont capturés ICI : `Shift.employeeId` est une FK vers `Employee`,
   // et le planning ci-dessous en a besoin.
@@ -274,7 +307,7 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
     data: equipe.map((e, k) => ({
       id: idsEquipe[k],
       tenantId: o.tenantId, name: e.name, role: e.role, dept: e.dept, type: 'CDI',
-      salary: e.salary, perf: e.perf, avatar: String(k + 1),
+      salary: e.salary, perf: e.perf, avatar: '', color: e.color,
       hiredAt: new Date(o.now.getTime() - (200 + k * 90) * 86_400_000),
       phone: null, email: null,
     })),
@@ -304,16 +337,16 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
   // la gérante couvre le week-end, où les caissiers tournent.
   //
   // ⚠️ LES HEURES DOIVENT TENIR DEBOUT : la colonne « heures » du planning les additionne
-  // (`planningTotals`), et une gérante à 55 h par semaine se remarque. La rotation ci-dessous
+  // (`planningTotals`), et un responsable à 55 h par semaine se remarque. La rotation ci-dessous
   // donne 35 h · 35 h · 40 h · 40 h, et laisse CHAQUE jour couvert par au moins deux
   // personnes — les deux caissiers se reposent des jours DIFFÉRENTS, sinon un jour tomberait
   // à découvert.
   const ROTATION: ReadonlyArray<readonly string[]> = [
     // lun         mar          mer          jeu          ven          sam          dim
-    ['morning',   'morning',   'morning',   'morning',   'morning',   'full',      'rest'     ], // Caissier 1 — 35 h
-    ['rest',      'afternoon', 'afternoon', 'afternoon', 'afternoon', 'morning',   'full'     ], // Caissier 2 — 35 h
-    ['full',      'full',      'rest',      'full',      'full',      'rest',      'rest'     ], // Magasinier — 40 h
-    ['afternoon', 'morning',   'full',      'full',      'rest',      'afternoon', 'morning'  ], // Gérante    — 40 h
+    ['morning',   'morning',   'morning',   'morning',   'morning',   'full',      'rest'     ], // Awa Traoré     — 35 h
+    ['rest',      'afternoon', 'afternoon', 'afternoon', 'afternoon', 'morning',   'full'     ], // Moussa Diop    — 35 h
+    ['full',      'full',      'rest',      'full',      'full',      'rest',      'rest'     ], // Ibrahima Keïta — 40 h
+    ['afternoon', 'morning',   'full',      'full',      'rest',      'afternoon', 'morning'  ], // Fatou Sow      — 40 h
   ]
   const SEMAINES_PLANIFIEES = 3
 
@@ -325,7 +358,7 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
    * distinctes : une rotation strictement identique trois fois se lit comme un gabarit.
    *
    * Clé : `semaine|employé|jour`. Le mercredi et le jeudi de la 3ᵉ semaine (indices 2 et 3)
-   * pour le Caissier 2 (indice 1). La couverture reste d'au moins deux ces jours-là.
+   * pour Moussa Diop (indice 1). La couverture reste d'au moins deux ces jours-là.
    */
   const CONGES: ReadonlySet<string> = new Set(['2|1|2', '2|1|3'])
 
