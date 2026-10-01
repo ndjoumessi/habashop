@@ -473,7 +473,7 @@ const fr: TranslationMap = {
   today: 'Résumé de votre activité',
   quick_actions: 'Actions rapides',
   recent_activity: 'Activité récente',
-  top_products: 'Top produits du mois',
+  top_products: 'Top produits',
   stock_alerts: 'Alertes Rupture',
 
   // Documents PDF
@@ -887,7 +887,7 @@ const en: TranslationMap = {
 
   hello: 'Hello', today: 'Your activity summary',
   quick_actions: 'Quick actions', recent_activity: 'Recent activity',
-  top_products: 'Top products this month', stock_alerts: 'Stock Alerts',
+  top_products: 'Top products', stock_alerts: 'Stock Alerts',
 
   doc_edited_on: 'Generated on', doc_at: 'at',
   doc_confidential: 'Confidential document', doc_auto_generated: 'Auto-generated',

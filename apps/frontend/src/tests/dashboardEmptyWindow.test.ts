@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { t } from '@/i18n'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import {
   CHART_PERIODS, isChartPeriod, periodOptionLabel, salesChartTitle,
   noSalesInPeriodLabel, noSalesIn30dLabel, type ChartPeriod,
@@ -120,6 +122,37 @@ describe('états vides du dashboard — le vide nomme sa fenêtre', () => {
       expect(monthWord[lang].test(libelle), `« ${libelle} » annonce un MOIS`).toBe(false)
     })
   }
+
+  /**
+   * ⚠️ PÉRIMÈTRE DÉRIVÉ, parce que le mien écrit à la main était FAUX.
+   *
+   * Après la bascule en 30 jours glissants, j'ai balayé les cinq fichiers qui LISENT le
+   * nombre et conclu « zéro occurrence ». Le DOM rendu en production affichait
+   * « Top produits du mois · 30 jours » : la chaîne ne vit pas dans ces fichiers, elle vit
+   * dans `i18n/index.ts` sous la clé `top_products`, qui n'était pas dans mon périmètre.
+   * Un périmètre listé à la main est faux dès qu'on ajoute quelque chose, et son assertion
+   * de couverture ne le dira pas : elle prouve qu'on a lu N fichiers, jamais que N était
+   * le bon N.
+   *
+   * Ce test DÉRIVE donc ses clés des appels `t('…')` de `Dashboard.tsx` et les confronte
+   * aux quatre blocs de traduction. Il n'y a rien à maintenir : une clé ajoutée à l'écran
+   * entre dans le périmètre d'elle-même.
+   */
+  it('⚠️ aucune clé i18n du tableau de bord n’annonce un MOIS — périmètre dérivé de la page', () => {
+    const page = readFileSync(resolve(__dirname, '../pages/Dashboard.tsx'), 'utf-8')
+    const cles = [...new Set([...page.matchAll(/t\('([a-z0-9_]+)'\)/g)].map(m => m[1]))]
+    expect(cles.length, 'extraction des clés cassée → verrou qui ne garde rien').toBeGreaterThan(5)
+
+    const moisDit = /mensuel|mensual|mensile|monthly|du mois|ce mois|this month|questo mese|este mes|del mes|del mese/i
+    const fautifs: string[] = []
+    for (const cle of cles) {
+      for (const lang of LANGS) {
+        const valeur = t(cle, lang)
+        if (valeur !== cle && moisDit.test(valeur)) fautifs.push(`${cle}/${lang} = « ${valeur} »`)
+      }
+    }
+    expect(fautifs, 'le tableau de bord mesure 30 jours glissants').toEqual([])
+  })
 
   it('les 3 fenêtres ont des messages DISTINCTS dans chaque langue', () => {
     // Un copier-coller qui laisserait « 7 derniers jours » sur la période 30 jours nommerait
