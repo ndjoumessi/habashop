@@ -349,6 +349,37 @@ describe('buildDemoDataset', () => {
     expect(pointe / creux, `pointe=${pointe} creux=${creux}`).toBeGreaterThan(1.8)
   })
 
+  /**
+   * ⚠️ LES TROIS ÉTATS DE STOCK DOIVENT ÊTRE ATTEIGNABLES — MESURÉ À L'ÉCRAN le 2026-10-01.
+   *
+   * Les 36 produits étaient tirés entre 4 et 124 avec un seuil à 5 : en pratique AUCUN ne
+   * passait sous son seuil. Le tableau de bord affichait « 0 alertes stock » et le panneau
+   * « Alertes Rupture » son état vide, si bien qu'un prospect ne voyait JAMAIS fonctionner
+   * l'alerte de stock — un argument de vente, et l'un des modules du manuel.
+   *
+   * C'est la même règle que pour `perf` et `rating` : une démonstration qui note tout le
+   * monde ne montre jamais le « — ». Ici, une démonstration où tout va bien ne montre jamais
+   * l'alerte. Les trois états du produit — `statusOf` côté stock, `niveauStock` côté caisse —
+   * sont `0` → RUPTURE, `≤ seuil` → BAS, au-dessus → OK. Les trois doivent exister.
+   */
+  it('⚠️ le jeu porte les TROIS états de stock — rupture, bas, et OK', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const etat = (p: Record<string, unknown>) => {
+      const q = Number(p.stockQty), seuil = Number(p.stockMin)
+      expect(seuil, 'un seuil nul rendrait l’alerte inatteignable par construction').toBeGreaterThan(0)
+      return q === 0 ? 'rupture' : q <= seuil ? 'bas' : 'ok'
+    }
+    const compte = { rupture: 0, bas: 0, ok: 0 }
+    for (const p of ecrit.product) compte[etat(p) as keyof typeof compte]++
+
+    expect(compte.rupture, 'aucune rupture → le badge rouge est inatteignable').toBeGreaterThanOrEqual(1)
+    expect(compte.bas, 'aucun stock bas → le badge ambre est inatteignable').toBeGreaterThanOrEqual(2)
+    // ⚠️ Et l'inverse compte autant : une boutique en alerte partout ne montre pas une
+    // boutique qui va bien, et le panneau d'alertes y deviendrait du bruit.
+    expect(compte.ok, 'la boutique doit majoritairement aller bien').toBeGreaterThanOrEqual(28)
+  })
+
   it('⚠️ aucune coordonnée personnelle : téléphone et e-mail nuls partout', async () => {
     const { tx, ecrit } = fauxTx()
     await buildDemoDataset(tx, options)

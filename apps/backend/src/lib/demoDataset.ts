@@ -167,6 +167,27 @@ function poidsEcoule(ms: number): number {
  */
 const VENTES_PLANCHER_JOUR_COURANT = 5
 const MODES = ['cash', 'mobile_money', 'card', 'mtn_momo'] as const
+
+/** Seuil d'alerte de chaque produit (`Product.stockMin`). */
+const SEUIL_STOCK = 5
+
+/**
+ * ⚠️ QUATRE PRODUITS SOUS LEUR SEUIL, PAR POSITION FIXE — dont UNE rupture franche.
+ *
+ * MESURÉ À L'ÉCRAN le 2026-10-01 : les 36 produits étaient tirés entre 4 et 124 pour un
+ * seuil à 5, donc en pratique aucun n'y passait. Le tableau de bord annonçait « 0 alertes
+ * stock », le panneau « Alertes Rupture » montrait son état vide, et un prospect ne voyait
+ * JAMAIS fonctionner l'alerte de stock — l'un des modules du manuel.
+ *
+ * Même règle que `perf` et `rating` : une démonstration qui note tout le monde ne montre
+ * jamais le « — ». Ici, une démonstration où tout va bien ne montre jamais l'alerte. Les
+ * trois états existent donc : `0` → RUPTURE, `≤ seuil` → BAS, au-dessus → OK.
+ *
+ * ⚠️ Et l'inverse compte autant : une boutique en alerte partout ne démontre pas une
+ * boutique qui va bien, et le panneau d'alertes y deviendrait du bruit. Quatre sur
+ * trente-six.
+ */
+const STOCKS_EN_ALERTE: Record<number, number> = { 2: 0, 9: 2, 17: 4, 28: 3 }
 /** ⚠️ TVA sénégalaise. Le taux du TENANT est dérivé du pays par la route, pas ici. */
 const TVA_DEMO = 18
 
@@ -192,6 +213,17 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
     for (let k = 0; k < PRODUITS_PAR_CATEGORIE; k++) {
       const buyPrice = 250 + Math.round(r() * 20) * 125
       const sellPrice = buyPrice + 100 + Math.round(r() * 12) * 50
+      /**
+       * ⚠️ LE TIRAGE EST SORTI DU LITTÉRAL, ET CE N'EST PAS DU STYLE. Écrit
+       * `STOCKS_EN_ALERTE[i] ?? (8 + Math.round(r() * 118))`, le `??` COURT-CIRCUITE son
+       * opérande droit : les quatre produits en alerte ne tiraient pas, et toute la suite du
+       * générateur congruentiel se décalait de quatre crans — prix, quantités, dates. Le
+       * commentaire qui l'accompagnait affirmait le contraire. Ici, le tirage a lieu pour
+       * TOUS, et ça se lit sur une ligne au lieu de se raisonner.
+       *
+       * Plancher à 8 : seuls les produits NOMMÉS dans `STOCKS_EN_ALERTE` passent sous le seuil.
+       */
+      const stockTire = 8 + Math.round(r() * 118)
       const id = randomUUID()
       lignesProduits.push({
         id,
@@ -200,8 +232,8 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
         name: `${categorie} — article ${k + 1}`,
         category: categorie,
         buyPrice, sellPrice,
-        stockQty: 4 + Math.round(r() * 120),
-        stockMin: 5,
+        stockQty: STOCKS_EN_ALERTE[produits.length] ?? stockTire,
+        stockMin: SEUIL_STOCK,
         taxRate: TVA_DEMO,
         emoji: '📦',
       })
