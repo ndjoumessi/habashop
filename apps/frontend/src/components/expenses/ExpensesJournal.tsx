@@ -3,7 +3,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { fmtDate } from '@/lib/formatDate'
 import { Plus, Search, BarChart2, Download, RefreshCw, Check, Clock, Pencil, Trash2 } from 'lucide-react'
-import { CATEGORIES, CATEGORY_STYLE, CatPill, catLabel, ttcAmount } from './expensesShared'
+import { CATEGORIES, styleCategorie, CatPill, catLabel, ttcAmount } from './expensesShared'
 import type { Category, Expense, ExpStatus } from './expensesShared'
 
 interface Props {
@@ -98,7 +98,9 @@ export default function ExpensesJournal(props: Props) {
               <tr><td colSpan={10} style={{ padding: '8px 14px' }}><Skeleton height={32} count={6} radius={8} /></td></tr>
             ) : (<>
             {filtered.map(e => {
-              const catStyle = CATEGORY_STYLE[e.category]
+              // ⚠️ Résolveur, pas un accès direct : une catégorie hors domaine rendait
+              // `undefined` et faisait tomber l'écran entier (crash mesuré en prod).
+              const catStyle = styleCategorie(e.category)
               return (
                 <tr key={e.id} style={{ borderLeft:`3px solid ${catStyle.color}40` }}>
                   <td className="td-mono text-xs">{fmtDate(e.date)}</td>

@@ -431,13 +431,24 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
   // cours et l'écran « Dépenses » — un des huit modules du manuel — s'ouvrait vide. Elles
   // sont désormais RÉCURRENTES, une occurrence par mois de la fenêtre, à un jour fixe du
   // mois : le loyer tombe le 1ᵉʳ, ce qui est aussi ce que fait un vrai commerçant.
+  //
+  // ⚠️ `categorie` APPARTIENT AU DOMAINE, et `label` reste le nom précis de la charge — ce
+  // sont deux rôles distincts. Le jeu écrivait `category: 'Charges'` pour tout : l'écran
+  // Dépenses indexe sa table de styles avec cette valeur, obtenait `undefined`, et TOMBAIT
+  // (« Cannot read properties of undefined (reading 'color') », mesuré en production le
+  // 2026-10-01). L'écran ne tombe plus — `styleCategorie` rend un style neutre — mais une
+  // démonstration qui écrit hors domaine démontre un produit cassé.
+  //
+  // Domaine faisant autorité : `apps/frontend/src/components/expenses/expensesShared.tsx`
+  // (`CATEGORIES`). Recopié par le test, qui crie si la liste bouge — le contexte Docker du
+  // backend est `apps/backend` seul, l'import est impossible.
   const charges = [
-    { label: 'Loyer',       ht: 150_000, jourDuMois: 1 },
-    { label: 'Électricité', ht: 42_000,  jourDuMois: 4 },
-    { label: 'Eau',         ht: 12_000,  jourDuMois: 6 },
-    { label: 'Transport',   ht: 25_000,  jourDuMois: 9 },
-    { label: 'Emballages',  ht: 18_000,  jourDuMois: 14 },
-    { label: 'Téléphone',   ht: 8_000,   jourDuMois: 20 },
+    { label: 'Loyer boutique',      categorie: 'Loyer',       ht: 150_000, jourDuMois: 1 },
+    { label: 'Électricité',         categorie: 'Énergie',     ht: 42_000,  jourDuMois: 4 },
+    { label: 'Eau',                 categorie: 'Énergie',     ht: 12_000,  jourDuMois: 6 },
+    { label: 'Carburant livraison', categorie: 'Transport',   ht: 25_000,  jourDuMois: 9 },
+    { label: 'Emballages',          categorie: 'Fournitures', ht: 18_000,  jourDuMois: 14 },
+    { label: 'Téléphone & internet', categorie: 'Autre',      ht: 8_000,   jourDuMois: 20 },
   ]
   const debutFenetre = minuitAujourdhui.getTime() - (JOURS_D_HISTORIQUE - 1) * 86_400_000
   const lignesDepenses: Prisma.ExpenseUncheckedCreateInput[] = []
@@ -452,7 +463,7 @@ export async function buildDemoDataset(tx: DemoTx, o: DemoDatasetOptions): Promi
         id: randomUUID(),
         tenantId: o.tenantId,
         label: c.label,
-        category: 'Charges',
+        category: c.categorie,
         amountHT: c.ht,
         vat: TVA_DEMO,
         amountTTC: Math.round(c.ht * (1 + TVA_DEMO / 100) * 100) / 100,

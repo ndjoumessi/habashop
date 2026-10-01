@@ -1,4 +1,4 @@
-import { Home, Zap, Car, Wrench, Package, Megaphone, GraduationCap, Tag } from 'lucide-react'
+import { Home, Zap, Car, Wrench, Package, Megaphone, GraduationCap, Tag, HelpCircle } from 'lucide-react'
 
 export type Category = 'Loyer' | 'Énergie' | 'Transport' | 'Maintenance' | 'Fournitures' | 'Marketing' | 'Formation' | 'Autre'
 export type ExpStatus = 'PAYÉ' | 'EN ATTENTE'
@@ -67,11 +67,34 @@ export const CATEGORY_STYLE: Record<Category, { bg: string; color: string; icon:
   Autre:       { bg:'rgba(136,134,168,.15)', color:'#8886A8', icon:<Tag size={14}/> },
 }
 
+/**
+ * ⚠️ STYLE D'UNE CATÉGORIE — RÉSOLVEUR, PAS UN ACCÈS DIRECT À LA TABLE.
+ *
+ * CRASH RÉEL EN PRODUCTION le 2026-10-01 : « Cannot read properties of undefined (reading
+ * 'color') », l'écran Dépenses entier remplacé par la frontière d'erreur. Trois surfaces
+ * indexaient `CATEGORY_STYLE[cat]` directement, sur une donnée qui n'est pas contrainte.
+ *
+ * ⚠️ `Expense.category` est une colonne `String` SANS enum, et le schéma zod du serveur la
+ * laisse libre (`z.string().optional()`). Toute valeur venue d'un import, d'une version
+ * antérieure du produit ou d'un appel direct à l'API fait donc tomber la page — indexer un
+ * `Record` figé avec une donnée libre est un `undefined` qui attend son tour.
+ *
+ * ⚠️ L'INCONNU N'EST PAS RANGÉ SOUS « Autre », QUI EST UNE CATÉGORIE RÉELLE du domaine :
+ * l'y mettre confondrait deux choses différentes, comme le `?? 'cash'` des modes de
+ * paiement. Il reçoit un style NEUTRE, et son libellé reste affiché tel quel — le
+ * commerçant doit VOIR la valeur pour pouvoir la corriger.
+ */
+export const STYLE_CATEGORIE_INCONNUE = { bg: 'rgba(136,134,168,.10)', color: '#8886A8', icon: <HelpCircle size={14}/> }
+
+export function styleCategorie(cat: string): { bg: string; color: string; icon: JSX.Element } {
+  return CATEGORY_STYLE[cat as Category] ?? STYLE_CATEGORIE_INCONNUE
+}
+
 export const MODES = ['Espèces','Carte','Chèque','Virement','Prélèvement']
 export const VAT_RATES = [0, 10, 18, 20]
 
 export function CatPill({ cat, lang }: { cat: Category; lang: string }) {
-  const s = CATEGORY_STYLE[cat]
+  const s = styleCategorie(cat)
   return (
     <span style={{
       display:'inline-flex', alignItems:'center', gap:4, padding:'3px 9px',

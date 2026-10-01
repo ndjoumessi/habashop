@@ -448,6 +448,43 @@ describe('buildDemoDataset', () => {
     expect(ecrit.shift.filter(sv => !employes.has(sv.employeeId))).toEqual([])
   })
 
+  /**
+   * ⚠️ CRASH RÉEL EN PRODUCTION le 2026-10-01 : l'écran Dépenses d'une démo tombait sur
+   * « Cannot read properties of undefined (reading 'color') ». Ce jeu écrivait
+   * `category: 'Charges'`, qui n'appartient PAS au domaine des catégories de dépense ; le
+   * front indexait sa table de styles avec et obtenait `undefined`.
+   *
+   * La fragilité a été traitée côté écran (`styleCategorie` rend un style neutre), mais la
+   * CAUSE est ici : une démonstration doit écrire des valeurs du domaine, sinon elle
+   * démontre un produit cassé. `label` porte déjà le nom précis de la charge ; `category`
+   * porte la clé canonique, et les deux ont des rôles distincts.
+   *
+   * ⚠️ La liste fait AUTORITÉ côté front (`components/expenses/expensesShared.tsx`,
+   * `CATEGORIES`). Elle est recopiée ici faute de pouvoir l'importer — le contexte Docker du
+   * backend est `apps/backend` seul. Si elle bouge, c'est ce test qui doit crier.
+   */
+  it('⚠️ les dépenses portent des catégories du DOMAINE — « Charges » n’en est pas une', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const DOMAINE = ['Loyer', 'Énergie', 'Transport', 'Maintenance', 'Fournitures', 'Marketing', 'Formation', 'Autre']
+    expect(ecrit.expense.length).toBeGreaterThan(0)
+    const horsDomaine = [...new Set(ecrit.expense.map(d => String(d.category)))].filter(c => !DOMAINE.includes(c))
+    expect(horsDomaine, 'l’écran Dépenses indexe une table de styles avec cette valeur').toEqual([])
+  })
+
+  it('⚠️ et PLUSIEURS catégories sont représentées — sinon le filtre par catégorie ne montre rien', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    expect(new Set(ecrit.expense.map(d => d.category)).size).toBeGreaterThanOrEqual(3)
+  })
+
+  it('⚠️ le LIBELLÉ reste précis — la catégorie ne doit pas effacer la nature de la charge', async () => {
+    const { tx, ecrit } = fauxTx()
+    await buildDemoDataset(tx, options)
+    const libelles = new Set(ecrit.expense.map(d => String(d.label)))
+    expect(libelles.size, 'des libellés tous identiques rendraient le journal illisible').toBeGreaterThanOrEqual(5)
+  })
+
   it('⚠️ aucune coordonnée personnelle : téléphone et e-mail nuls partout', async () => {
     const { tx, ecrit } = fauxTx()
     await buildDemoDataset(tx, options)

@@ -2,7 +2,7 @@ import { useConfig } from '@/stores/appStore'
 import IconButton from '@/components/ui/IconButton'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { X, Settings } from 'lucide-react'
-import { CATEGORIES, CATEGORY_STYLE, catLabel } from './expensesShared'
+import { CATEGORIES, styleCategorie, catLabel } from './expensesShared'
 import type { Category } from './expensesShared'
 
 interface Props {
@@ -27,7 +27,7 @@ export default function EditBudgetsModal({ editBudgets, setEditBudgets, onClose,
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {CATEGORIES.map(cat => {
-            const s = CATEGORY_STYLE[cat]
+            const s = styleCategorie(cat)
             return (
               <div key={cat} style={{ display:'flex', alignItems:'center', gap:12 }}>
                 <span style={{ fontSize:'var(--fs-md)' }}>{s.icon}</span>
