@@ -213,70 +213,24 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
     })
   })
 
-  app.get('/api/analytics/summary', { preHandler: [authenticate] }, async (request, reply) => {
-    const tenantId = request.tenantId
-    return getCached(`analytics:${tenantId}:summary`, 300, async () => {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-      const [salesDay, salesMonth, customers, products] = await Promise.all([
-        prisma.sale.aggregate({ where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: today } }, _sum: { total: true }, _count: { id: true } }),
-        prisma.sale.aggregate({ where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
-        prisma.customer.count({ where: { tenantId, deletedAt: null } }),
-        prisma.product.count({ where: { tenantId, isActive: true, deletedAt: null } }),
-      ])
-      return {
-        caToday:  salesDay._sum.total   ?? 0,
-        txToday:  salesDay._count.id    ?? 0,
-        caMonth:  salesMonth._sum.total ?? 0,
-        txMonth:  salesMonth._count.id  ?? 0,
-        customers, products,
-      }
-    })
-  })
-
-  app.get('/api/analytics', { preHandler: [authenticate] }, async (request, reply) => {
-    const tenantId = request.tenantId
-    return getCached(`analytics:${tenantId}:full`, 300, async () => {
-      const now = new Date()
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      const last30d = new Date(now.getTime() - 30*24*60*60*1000)
-      const [salesDay, salesMonth, customers, products, salesByDay, salesByPayment] = await Promise.all([
-        prisma.sale.aggregate({ where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: today } }, _sum: { total: true }, _count: { id: true } }),
-        prisma.sale.aggregate({ where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
-        prisma.customer.count({ where: { tenantId, deletedAt: null } }),
-        prisma.product.count({ where: { tenantId, isActive: true, deletedAt: null } }),
-        prisma.sale.findMany({ where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: last30d } }, select: { createdAt: true, total: true }, orderBy: { createdAt: 'asc' } }),
-        prisma.sale.groupBy({ by: ['paymentMode'], where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
-      ])
-      const dayMap = new Map<string, { ca: number; count: number }>()
-      salesByDay.forEach((s) => {
-        const day = new Date(s.createdAt).toISOString().slice(0, 10)
-        const curr = dayMap.get(day) ?? { ca: 0, count: 0 }
-        dayMap.set(day, { ca: curr.ca + s.total, count: curr.count + 1 })
-      })
-      const salesChartData = Array.from(dayMap.entries()).map(([day, v]) => ({
-        day: new Date(day).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
-        ca: v.ca, count: v.count,
-      }))
-      return {
-        kpis: {
-          caToday: salesDay._sum.total ?? 0,
-          txToday: salesDay._count.id ?? 0,
-          caMonth: salesMonth._sum.total ?? 0,
-          txMonth: salesMonth._count.id ?? 0,
-          avgBasket: (salesMonth._count.id ?? 0) > 0 ? Math.round((salesMonth._sum.total ?? 0) / (salesMonth._count.id ?? 1)) : 0,
-          customers, products,
-        },
-        charts: {
-          salesByDay: salesChartData,
-          salesByPayment: salesByPayment.map((p) => ({ mode: p.paymentMode ?? 'Autre', total: p._sum.total ?? 0, count: p._count.id ?? 0 })),
-        },
-        generatedAt: new Date().toISOString(),
-      }
-    })
-  })
+  /*
+   * ⚠️ `/api/analytics` ET `/api/analytics/summary` ONT ÉTÉ SUPPRIMÉES le 2026-10-02.
+   *
+   * MESURÉ : zéro consommateur. Ni le front, ni `mobile/src`, ni les specs E2E, ni la page
+   * `/api-docs`, ni `docs/`. L'app mobile ne les a JAMAIS appelées — vérifié sur toute
+   * l'histoire git, l'unique mention sous `mobile/` étant une ligne de sa documentation qui
+   * dit que `/api/analytics/dashboard` N'EXISTE PAS. Seuls deux cas d'un test d'intégration
+   * les exerçaient : un test qui couvre une route que personne n'appelle teste du code mort.
+   *
+   * ⚠️ ET ELLES PORTAIENT UNE SECONDE DÉFINITION DU « MOIS ». `/api/analytics/summary` rendait
+   * un `caMonth` calculé sur le mois CALENDAIRE (`new Date(y, m, 1)`), quand le tableau de bord
+   * lit 30 jours GLISSANTS depuis le 2026-10-01 — une seule borne, `salesWindowStart`. Dormante,
+   * la contradiction ne se voyait pas ; câblée un jour par quelqu'un, elle aurait rendu deux
+   * chiffres d'affaires « du mois » différents sur le même écran. *Le code mort n'est pas neutre
+   * quand il porte une règle périmée.*
+   *
+   * Ne pas les rétablir sans un consommateur réel — et alors sur `salesWindowStart`.
+   */
 
   /** Plafond de lignes du journal — la troncature est ANNONCÉE, jamais silencieuse. */
   const PLAFOND_JOURNAL = 100

@@ -215,7 +215,7 @@ export default function Dashboard() {
           // déjà les produits sans catégorie sous « Autre », et rien n'empêche une vraie
           // catégorie de s'appeler « Autres » : les fusionner par le nom ferait disparaître
           // l'une dans l'autre. Clé réservée, impossible à produire par `normCat`.
-          const key = c?.other ? ' reliquat' : normCat(String(c?.name ?? ''))
+          const key = c?.other ? ' reliquat' : normCat(String(c?.name ?? ''))
           const value = Number(c?.value ?? 0)
           const at = catIndex.get(key)
           if (at !== undefined) {

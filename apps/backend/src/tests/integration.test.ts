@@ -82,7 +82,7 @@ describe('Integration — Auth', () => {
   })
 
   it('Routes protégées sans token → 401', async () => {
-    const routes = ['/api/products', '/api/customers', '/api/analytics/summary', '/api/billing/status']
+    const routes = ['/api/products', '/api/customers', '/api/dashboard/stats', '/api/billing/status']
     for (const route of routes) {
       const { status } = await apiCall(route)
       expect(status, `${route} devrait être 401`).toBe(401)
@@ -115,22 +115,13 @@ describe('Integration — Customers', () => {
 })
 
 // ── Analytics ─────────────────────────────────
-describe('Integration — Analytics', () => {
-  it('GET /api/analytics/summary → KPIs', async () => {
-    const { status, body } = await apiCall('/api/analytics/summary', { headers: auth() })
-    expect(status).toBe(200)
-    expect(body.caToday).toBeDefined()
-    expect(body.customers).toBeDefined()
-    expect(typeof body.caToday).toBe('number')
-  })
-
-  it('GET /api/analytics → complet', async () => {
-    const { status, body } = await apiCall('/api/analytics', { headers: auth() })
-    expect(status).toBe(200)
-    expect(body.kpis).toBeDefined()
-    expect(body.charts).toBeDefined()
-  })
-})
+// ⚠️ LES DEUX TESTS DE CE BLOC ONT ÉTÉ SUPPRIMÉS avec les routes qu'ils exerçaient
+// (`/api/analytics` et `/api/analytics/summary`, le 2026-10-02) : zéro consommateur mesuré, et
+// un `caMonth` sur le mois CALENDAIRE qui contredisait les 30 jours glissants du tableau de
+// bord. *Un test qui couvre une route que personne n'appelle teste du code mort* — et il la
+// fait paraître vivante, ce qui est pire que son absence.
+// Le tableau de bord, lui, EST couvert : `/api/dashboard/stats` ci-dessus et
+// `dashboardFenetre30j.test.ts` côté unitaire.
 
 // ── Billing ───────────────────────────────────
 describe('Integration — Billing', () => {
