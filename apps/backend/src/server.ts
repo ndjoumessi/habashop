@@ -58,6 +58,7 @@ import { runMonthlyPayrollReports } from './services/payrollReport'
 import { payrollRoutes } from './routes/payroll'
 import { runTrialReminders, runDailyStockAlerts, runDemoPiiSweep } from './services/notificationCrons'
 import { runDemoPurge } from './services/demoPurge'
+import { doitTourner, PAS_MS } from './lib/cronWindow'
 import { isR2Configured } from './lib/spend/r2Client'
 
 // ─── Validation des variables d'environnement obligatoires ───
@@ -324,50 +325,40 @@ async function start() {
     runTrialReminders().catch(err => console.error('❌ Cron trial reminders:', err))
   }, 60 * 60 * 1000)
 
-  // Rapport hebdomadaire — lundi 8h (vérifié chaque heure)
-  setInterval(() => {
-    const now = new Date()
-    if (now.getDay() !== 1 || now.getHours() !== 8 || now.getMinutes() > 5) return
-    runWeeklyReports().catch(err => console.error('❌ Cron weekly reports:', err))
-  }, 60 * 60 * 1000)
-
-  // Balayage PII des démos — lundi 9h (vérifié chaque heure). Après le rapport hebdo, pour
-  // ne pas empiler deux tâches sur le même créneau.
-  setInterval(() => {
-    const now = new Date()
-    if (now.getDay() !== 1 || now.getHours() !== 9 || now.getMinutes() > 5) return
-    runDemoPiiSweep().catch(err => console.error('❌ Cron balayage PII démo:', err))
-  }, 60 * 60 * 1000)
-
-  // Alertes stock — quotidien 7h (vérifié chaque heure)
-  setInterval(() => {
-    const now = new Date()
-    if (now.getHours() !== 7 || now.getMinutes() > 5) return
-    runDailyStockAlerts().catch(err => console.error('❌ Cron stock alerts:', err))
-  }, 60 * 60 * 1000)
-
-  // Récap paie — 1er du mois 8h (vérifié chaque heure) ; récap du mois qui vient de se clôturer
-  setInterval(() => {
-    const now = new Date()
-    if (now.getDate() !== 1 || now.getHours() !== 8 || now.getMinutes() > 5) return
-    runMonthlyPayrollReports().catch(err => console.error('❌ Cron récap paie:', err))
-  }, 60 * 60 * 1000)
-
-  // Purge des démos jetables — quotidien 3h.
+  // ─── CRONS À FENÊTRE — tous par `doitTourner` ────────────────────────────────
   //
-  // ⚠️ PAS DE 5 MINUTES, pas une heure comme les crons voisins, et c'est MESURÉ : un
-  // `setInterval` HORAIRE déclenche toujours à la minute de démarrage du conteneur. Avec la
-  // garde `getMinutes() > 5`, un conteneur démarré à la minute 37 ne verrait JAMAIS la
-  // fenêtre s'ouvrir, et la purge ne tournerait jamais sans que rien ne le signale. Un pas
-  // de 5 minutes touche forcément [0,5] puisque 5 divise 60.
+  // ⚠️ POURQUOI UN MODULE ET NON UNE GARDE EN LIGNE. Ces cinq crons portaient
+  // `if (now.getHours() !== H || now.getMinutes() > 5) return` avec un `setInterval` d'UNE
+  // HEURE. Un `setInterval` horaire déclenche toujours à la minute de démarrage du conteneur :
+  // démarré à la minute 37, chaque tick voyait `getMinutes() === 37`, donc `> 5`, donc la
+  // garde retournait TOUJOURS. MESURÉ — **54 minutes de démarrage sur 60** rendaient la tâche
+  // inexécutable à vie, balayage PII des démos et alertes de stock compris, sans qu'aucun
+  // signal ne parte. Voir `lib/cronWindow.ts` et `cronWindow.test.ts`.
   //
-  // ⚠️ Deux ticks peuvent tomber dans la fenêtre (minutes 0 et 5) : sans effet, la passe est
-  // idempotente par construction (elle sélectionne sur l'échéance).
-  setInterval(() => {
-    const now = new Date()
-    if (now.getHours() !== 3 || now.getMinutes() > 5) return
-    runDemoPurge().catch(err => console.error('❌ Cron purge démos:', err))
-  }, 5 * 60 * 1000)
+  // ⚠️ `doitTourner` DÉCIDE ET ENREGISTRE d'un seul geste : l'appeler deux fois pour le même
+  // tick rendrait `false` la seconde fois. Un appel par tick, dans la condition.
+  const planifier = (nom: string, cible: Parameters<typeof doitTourner>[2], tache: () => Promise<unknown>) =>
+    setInterval(() => {
+      if (!doitTourner(nom, new Date(), cible)) return
+      tache().catch(err => console.error(`❌ Cron ${nom}:`, err))
+    }, PAS_MS)
+
+  // Rapport hebdomadaire — lundi 8 h
+  planifier('rapport-hebdo', { heure: 8, jourDeSemaine: 1 }, runWeeklyReports)
+
+  // Balayage PII des démos — lundi 9 h. Après le rapport hebdo, pour ne pas empiler deux
+  // tâches sur le même créneau.
+  planifier('balayage-pii-demo', { heure: 9, jourDeSemaine: 1 }, runDemoPiiSweep)
+
+  // Alertes stock — quotidien 7 h
+  planifier('alertes-stock', { heure: 7 }, runDailyStockAlerts)
+
+  // Récap paie — 1er du mois 8 h ; récap du mois qui vient de se clôturer
+  planifier('recap-paie', { heure: 8, dateDuMois: 1 }, runMonthlyPayrollReports)
+
+  // Purge des démos jetables — quotidien 3 h. Idempotente par construction (elle sélectionne
+  // sur l'échéance), mais elle passe par le même chemin : une seule manière de planifier.
+  planifier('purge-demos', { heure: 3 }, runDemoPurge)
 
   // ─── DÉMARRAGE ──────────────────────────
   try {
