@@ -74,11 +74,22 @@ export default function ExpensesBudget({ budgets, summary, monthLabel, onEditBud
         {CATEGORIES.filter(cat => budgets[cat] > 0).map(cat => {
           const spent = catSpent[cat] ?? 0
           const budget = budgets[cat]
-          const pct = Math.min(100, Math.round(spent / budget * 100))
+          /**
+           * ⚠️ DEUX VALEURS, ET C'EST LE CORRECTIF. Une seule bornée à 100 servait la largeur de
+           * la barre ET le nombre affiché : la carte annonçait « 100 % » sous un badge
+           * « Dépassé ! », soit deux affirmations contradictoires. Une barre se plafonne (une
+           * largeur ne dépasse pas sa piste) ; un NOMBRE non — le tronquer, c'est laisser
+           * l'information réelle à la seule couleur, qui ne porte aucune magnitude.
+           *
+           * Le « taux d'utilisation » du résumé mensuel (`usagePct`) n'était PAS borné : les
+           * deux taux d'une même grandeur divergeaient donc sur la même page.
+           */
+          const tauxReel = Math.round(spent / budget * 100)
+          const largeurBarre = Math.min(100, tauxReel)
           const over = spent > budget
-          const barColor = pct < 70 ? 'var(--acc2)' : pct < 90 ? 'var(--acc)' : 'var(--danger)'
+          const barColor = tauxReel < 70 ? 'var(--acc2)' : tauxReel < 90 ? 'var(--acc)' : 'var(--danger)'
           return (
-            <div key={cat} style={{
+            <div key={cat} data-categorie={cat} style={{
               background:'var(--bg2)', border:'1px solid var(--border2)',
               borderRadius:12, padding:16, transition:'all .15s ease',
             }}
@@ -97,13 +108,13 @@ export default function ExpensesBudget({ budgets, summary, monthLabel, onEditBud
               </div>
               <div style={{ height:9, background:'var(--bg4)', borderRadius:99, overflow:'hidden', marginBottom:8 }}>
                 <div style={{
-                  width:`${pct}%`, height:'100%',
+                  width:`${largeurBarre}%`, height:'100%',
                   background: barColor,
                   borderRadius:99, transition:'width .4s',
                 }} />
               </div>
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:'var(--fs-label)' }}>
-                <span style={{ fontWeight:'var(--fw-semibold)', color: barColor, fontFamily:'var(--mono)' }}>{pct} %</span>
+                <span style={{ fontWeight:'var(--fw-semibold)', color: barColor, fontFamily:'var(--mono)' }}>{tauxReel} %</span>
                 <span style={{ color: over ? 'var(--danger)' : 'var(--acc2)', fontWeight:'var(--fw-regular)' }}>
                   {over ? `${tr('Dépassé de','Over by','Excedido en','Superato di')} ${fmt(spent - budget)}` : `${tr('Restant','Remaining','Restante','Rimanente')} : ${fmt(budget - spent)}`}
                 </span>

@@ -7,7 +7,7 @@ import { announce } from '@/lib/announce'
 import { saved } from '@/lib/saved'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
 import {
-  BUDGETS_INIT, CATEGORIES, ttcAmount, mapApiExpense, nextExpId, monthYearLabel,
+  BUDGETS_INIT, CATEGORIES, ttcAmount, enAttenteTTC, mapApiExpense, nextExpId, monthYearLabel,
   type Category, type Expense, type ExpStatus,
 } from '@/components/expenses/expensesShared'
 import ExpensesKpis from '@/components/expenses/ExpensesKpis'
@@ -108,22 +108,23 @@ export default function Expenses() {
   const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   const thisMonth = expenses.filter(e => e.date.startsWith(monthPrefix))
   const totalThisMonth = thisMonth.reduce((s, e) => s + e.amount, 0)
-  const totalPending = expenses.filter(e => e.status === 'EN ATTENTE').reduce((s, e) => s + e.amount, 0)
+  // ⚠️ EN TTC, et par la SOURCE UNIQUE : l'écran sommait en HT ce que le PDF imprimait en TTC.
+  const totalPending = enAttenteTTC(expenses)
   const pendingCount = expenses.filter(e => e.status === 'EN ATTENTE').length
   const recurrentCount = expenses.filter(e => e.recurrent).length
   /**
-   * SOURCE UNIQUE du panneau budgétaire. `totalBudget` et `budgetLeft` en
-   * dérivent — ils étaient calculés ICI pendant que le total et le taux affichés
-   * l'étaient dans `ExpensesBudget` à partir d'une AUTRE population. Deux calculs
-   * séparés d'une même grandeur n'ont aucune raison de rester d'accord, et ils ne
-   * l'étaient pas : 1 350 000 contre 285 000.
+   * SOURCE UNIQUE du panneau budgétaire ET de la carte de KPI. Le total et le taux
+   * affichés étaient calculés ICI pendant que `ExpensesBudget` les refaisait sur une
+   * AUTRE population. Deux calculs séparés d'une même grandeur n'ont aucune raison de
+   * rester d'accord, et ils ne l'étaient pas : 1 350 000 contre 285 000.
    */
   const budgetSummary = buildBudgetSummary(thisMonth, budgets, CATEGORIES)
   const monthLabel = monthYearLabel(lang, now)
-  // ⚠️ `catSpent` et `totalBudget` ne sont plus des locaux : le panneau reçoit le
-  // résumé ENTIER. Les redéclarer ici recréerait deux chemins vers la même grandeur,
-  // c'est-à-dire exactement la structure qui avait produit la divergence.
-  const budgetLeft = budgetSummary.variance
+  // ⚠️ AUCUN local dérivé ici — ni `catSpent`, ni `totalBudget`, ni `budgetLeft` : les DEUX
+  // consommateurs reçoivent le résumé ENTIER. En extraire un champ pour l'un d'eux recréerait
+  // un second chemin vers la même grandeur, la structure même qui avait produit la divergence.
+  // Et `budgetLeft` seul ne portait pas l'état « aucun budget posé » : la carte de KPI y lisait
+  // un dépassement là où aucun plafond n'existait.
 
   // Filtered journal
   const filtered = expenses.filter(e => {
@@ -136,11 +137,14 @@ export default function Expenses() {
   const printExpensesPDF = () => {
     const total = expenses.reduce((s, e) => s + ttcAmount(e), 0)
     const paid  = expenses.filter(e => e.status === 'PAYÉ').reduce((s, e) => s + ttcAmount(e), 0)
+    // ⚠️ MÊME fonction que la carte de KPI : `total - paid` en était un second calcul, juste
+    // par coïncidence arithmétique, et c'est ce qui laissait les deux bases diverger en paix.
+    const pending = enAttenteTTC(expenses)
     const body = `
       ${htmlKPIs([
         { label: t('expense_pdf_total'),   value: fmt(total) },
         { label: t('expense_pdf_paid'),    value: fmt(paid)  },
-        { label: t('expense_pdf_pending'), value: fmt(total - paid) },
+        { label: t('expense_pdf_pending'), value: fmt(pending) },
         { label: t('expenses_recurrent'),  value: String(expenses.filter(e => e.recurrent).length) },
       ])}
       <h2>${t('expense_pdf_title')}</h2>
@@ -295,7 +299,7 @@ export default function Expenses() {
         totalPending={totalPending}
         pendingCount={pendingCount}
         recurrentCount={recurrentCount}
-        budgetLeft={budgetLeft}
+        summary={budgetSummary}
       />
 
       {/* Tabs */}

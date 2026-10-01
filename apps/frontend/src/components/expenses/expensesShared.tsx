@@ -106,6 +106,26 @@ export function CatPill({ cat, lang }: { cat: Category; lang: string }) {
 
 export function ttcAmount(e: Expense) { return Math.round(e.amount * (1 + e.vat / 100)) }
 
+/**
+ * CHARGES EN ATTENTE DE PAIEMENT — SOURCE UNIQUE, et la base est le **TTC**.
+ *
+ * ⚠️ MESURÉ le 2026-10-01 : l'écran sommait cette grandeur en HT (150 000) pendant que le PDF
+ * l'imprimait en TTC (177 000). Chaque surface était cohérente CHEZ ELLE et aucune ne disait sa
+ * base — un commerçant lisait deux nombres pour une seule chose. Famille des deux totaux d'une
+ * même grandeur sur deux populations, ici sur deux BASES.
+ *
+ * ⚠️ POURQUOI LE TTC : le libellé dit « en attente de PAIEMENT ». Ce qui doit encore sortir de
+ * la caisse est le montant TTC ; le HT est une grandeur comptable, celle que compare le panneau
+ * budgétaire. Les deux sont légitimes, mais pas sous le même nom.
+ *
+ * ⚠️ Les DEUX appelants (carte de KPI et PDF) passent par ici. Un second calcul redeviendrait un
+ * second résultat — c'est la règle du goulot, pas de l'entonnoir : la fonction rend le total,
+ * l'appelant garde la décision de ce qu'il en affiche.
+ */
+export function enAttenteTTC(expenses: readonly Expense[]): number {
+  return expenses.filter(e => e.status === 'EN ATTENTE').reduce((s, e) => s + ttcAmount(e), 0)
+}
+
 let _expIdCounter = 1000
 export const nextExpId = () => ++_expIdCounter
 
