@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
+import { t } from '@/i18n'
 import {
   CHART_PERIODS, isChartPeriod, periodOptionLabel, salesChartTitle,
-  noSalesInPeriodLabel, noSalesThisMonthLabel, type ChartPeriod,
+  noSalesInPeriodLabel, noSalesIn30dLabel, type ChartPeriod,
 } from '@/components/dashboard/dashboardShared'
 import type { Lang } from '@/stores/appStore'
 
@@ -65,17 +66,58 @@ describe('états vides du dashboard — le vide nomme sa fenêtre', () => {
     }
   }
 
+  /**
+   * ⚠️ CE BLOC A ÉTÉ RETOURNÉ LE 2026-10-01, ET C'EST LE POINT DE LA MODIFICATION.
+   *
+   * Il exigeait que le message NOMME LE MOIS, parce que les deux panneaux étaient scopés
+   * `createdAt >= monthStart`. La fenêtre est devenue GLISSANTE sur 30 jours : la même
+   * exigence, appliquée telle quelle, ferait annoncer « ce mois-ci » sur une période qui
+   * n'est pas un mois. Un libellé qui survit au changement de ce qu'il décrit est un
+   * libellé qui mentira.
+   *
+   * L'exigence inverse n'est donc pas un relâchement : nommer sa fenêtre reste obligatoire,
+   * c'est la FENÊTRE qui a changé. Le mot « mois » devient INTERDIT ici.
+   */
   for (const lang of LANGS) {
-    it(`top produits / CA par catégorie (${lang}) : nomme le MOIS`, () => {
-      // Les deux panneaux sont scopés `createdAt >= monthStart` côté serveur : le mois
-      // précédent peut être plein, donc le vide ne doit pas se lire « aucune vente ».
-      const msg = noSalesThisMonthLabel(lang)
-      const monthWord: Record<Lang, RegExp> = { fr: /mois/i, en: /month/i, es: /mes\b/i, it: /mese/i }
+    it(`top produits / CA par catégorie (${lang}) : nomme les 30 JOURS, jamais le mois`, () => {
+      const msg = noSalesIn30dLabel(lang)
+      const monthWord: Record<Lang, RegExp> = { fr: /mois/i, en: /month/i, es: /mes\b/i, it: /mes[ei]/i }
+      const dayWord: Record<Lang, RegExp> = { fr: /jours/i, en: /days/i, es: /días/i, it: /giorni/i }
 
-      expect(monthWord[lang].test(msg), `« ${msg} » ne nomme pas le mois`).toBe(true)
+      expect(msg).toMatch(/\b30\b/)
+      expect(dayWord[lang].test(msg), `« ${msg} » ne nomme pas son unité`).toBe(true)
+      expect(monthWord[lang].test(msg), `« ${msg} » annonce un MOIS sur une fenêtre de 30 jours`).toBe(false)
       for (const banned of UNBOUNDED) {
         expect(banned.test(msg), `« ${msg} » affirme « jamais » (${banned})`).toBe(false)
       }
+    })
+  }
+
+  /**
+   * ⚠️ ET IL DOIT RESTER DISTINCT DE CELUI DU GRAPHE. `NO_SALES_IN_PERIOD['30days']` dit
+   * DÉJÀ « Aucune vente sur les 30 derniers jours » : maintenant que les deux panneaux
+   * couvrent la même fenêtre, le réflexe est d'y mettre la même phrase. Trois panneaux qui
+   * disent la même chose deviennent indistinguables — y compris pour un test de rendu. Le
+   * message du camembert et du top produits nomme donc son SUJET, pas seulement sa fenêtre.
+   */
+  for (const lang of LANGS) {
+    it(`le vide des produits (${lang}) se distingue du vide du GRAPHE sur la même fenêtre`, () => {
+      expect(noSalesIn30dLabel(lang)).not.toBe(noSalesInPeriodLabel('30days', lang))
+    })
+  }
+
+  /**
+   * ⚠️ LE KPI LUI-MÊME, dans les quatre langues. C'est le plus gros chiffre du premier écran
+   * de l'application : il portait « CA mensuel » / « Monthly Revenue » / « Ingresos
+   * mensuales » / « Fatturato mensile » au-dessus d'une valeur qui ne mesure plus un mois.
+   */
+  for (const lang of LANGS) {
+    it(`le KPI de période (${lang}) : nomme les 30 jours, jamais le mois`, () => {
+      const libelle = t('kpi_revenue_30d', lang)
+      const monthWord: Record<Lang, RegExp> = { fr: /mensuel|mois/i, en: /month/i, es: /mensual|mes\b/i, it: /mensile|mes[ei]/i }
+      expect(libelle, `clé i18n absente en ${lang}`).not.toBe('kpi_revenue_30d')
+      expect(libelle).toMatch(/\b30\b/)
+      expect(monthWord[lang].test(libelle), `« ${libelle} » annonce un MOIS`).toBe(false)
     })
   }
 

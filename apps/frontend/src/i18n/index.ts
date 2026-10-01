@@ -36,7 +36,7 @@ const fr: TranslationMap = {
 
   // KPIs (compat)
   kpi_sales_today: 'Ventes du jour',
-  kpi_monthly_revenue: 'CA mensuel',
+  kpi_revenue_30d: 'CA 30 jours',
   kpi_employees: 'Employés actifs',
   kpi_stock: 'Articles en stock',
 
@@ -695,7 +695,7 @@ const en: TranslationMap = {
   nav_sec_daily: 'Daily', nav_sec_sell: 'Sell', nav_sec_manage: 'Manage',
   nav_sec_analyze: 'Analyze', nav_sec_configure: 'Configure',
 
-  kpi_sales_today: "Today's Sales", kpi_monthly_revenue: 'Monthly Revenue',
+  kpi_sales_today: "Today's Sales", kpi_revenue_30d: '30-day revenue',
   kpi_employees: 'Active Employees', kpi_stock: 'Items in Stock',
 
   col_ref: 'Reference', col_name: 'Name', col_product: 'Product',
@@ -1053,7 +1053,7 @@ const es: TranslationMap = {
   nav_sec_daily: 'Diario', nav_sec_sell: 'Vender', nav_sec_manage: 'Gestionar',
   nav_sec_analyze: 'Analizar', nav_sec_configure: 'Configurar',
 
-  kpi_sales_today: 'Ventas del día', kpi_monthly_revenue: 'Ingresos mensuales',
+  kpi_sales_today: 'Ventas del día', kpi_revenue_30d: 'Ingresos 30 días',
   kpi_employees: 'Empleados activos', kpi_stock: 'Artículos en stock',
 
   col_ref: 'Referencia', col_name: 'Nombre', col_product: 'Producto',
@@ -1412,7 +1412,7 @@ const it: TranslationMap = {
   nav_sec_daily: 'Quotidiano', nav_sec_sell: 'Vendere', nav_sec_manage: 'Gestire',
   nav_sec_analyze: 'Analizzare', nav_sec_configure: 'Configurare',
 
-  kpi_sales_today: 'Vendite oggi', kpi_monthly_revenue: 'Fatturato mensile',
+  kpi_sales_today: 'Vendite oggi', kpi_revenue_30d: 'Fatturato 30 giorni',
   kpi_employees: 'Dipendenti attivi', kpi_stock: 'Articoli in stock',
 
   col_ref: 'Riferimento', col_name: 'Nome', col_product: 'Prodotto',

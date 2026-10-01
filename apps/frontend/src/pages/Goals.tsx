@@ -19,7 +19,7 @@ interface Goal {
   color: string
   icon: string
   category: 'revenue' | 'stock' | 'customers' | 'team'
-  linkedMetric?: string | null  // salesMonth | transactionsMonth | avgBasket | null
+  linkedMetric?: string | null  // sales30d | transactions30d | avgBasket | null
 }
 
 /**
@@ -83,9 +83,16 @@ export default function Goals() {
     dashboardApi.stats()
       .then(data => {
         setGoals(prev => prev.map(g => {
-          if (g.linkedMetric === 'salesMonth')         return { ...g, current: data.salesMonth ?? 0 }
-          if (g.linkedMetric === 'transactionsMonth')  return { ...g, current: data.transactionsMonth ?? 0 }
-          if (g.linkedMetric === 'avgBasket')          return { ...g, current: data.transactionsMonth > 0 ? Math.round(data.salesMonth / data.transactionsMonth) : 0 }
+          // ⚠️ `linkedMetric` est PERSISTÉ : un champ persisté n'a pas de domaine « actuel »,
+          // il a l'union de tous ceux qu'il a eus. Les anciennes clés `salesMonth` /
+          // `transactionsMonth` sont donc encore LUES — la production n'en portait aucune au
+          // 2026-10-01 (compté : zéro objectif en base), mais une ligne écrite avant le
+          // renommage ne doit pas rendre un objectif muet. Elles ne sont plus ÉCRITES.
+          const ca = data.sales30d ?? 0
+          const tx = data.transactions30d ?? 0
+          if (g.linkedMetric === 'sales30d' || g.linkedMetric === 'salesMonth')               return { ...g, current: ca }
+          if (g.linkedMetric === 'transactions30d' || g.linkedMetric === 'transactionsMonth') return { ...g, current: tx }
+          if (g.linkedMetric === 'avgBasket')                                                 return { ...g, current: tx > 0 ? Math.round(ca / tx) : 0 }
           return g
         }))
       })
@@ -138,7 +145,7 @@ export default function Goals() {
             {lang === 'fr' ? 'Objectifs & KPIs' : lang === 'en' ? 'Goals & KPIs' : lang === 'es' ? 'Objetivos & KPIs' : 'Obiettivi & KPI'}
           </h1>
           <p className="page-subtitle">
-            {lang === 'fr' ? 'Suivez vos objectifs mensuels en temps réel' : lang === 'en' ? 'Track your monthly goals in real time' : lang === 'es' ? 'Siga sus objetivos mensuales' : 'Monitora i tuoi obiettivi mensili'}
+            {lang === 'fr' ? 'Suivez vos objectifs en temps réel — mesurés sur 30 jours glissants' : lang === 'en' ? 'Track your goals in real time — measured over a rolling 30 days' : lang === 'es' ? 'Siga sus objetivos en tiempo real — medidos sobre 30 días móviles' : 'Monitora i tuoi obiettivi in tempo reale — misurati su 30 giorni mobili'}
           </p>
         </div>
         <button className="topbar-btn" onClick={() => openModal(null)}>
@@ -165,7 +172,7 @@ export default function Goals() {
           <div>
             <div style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:4, display:'flex', alignItems:'center', gap:6 }}>
               <Trophy size={14} style={{ color:'var(--acc)' }} />
-              {lang === 'en' ? 'Monthly global score' : lang === 'es' ? 'Puntuación global del mes' : lang === 'it' ? 'Punteggio globale del mese' : 'Score global du mois'}
+              {lang === 'en' ? 'Global score' : lang === 'es' ? 'Puntuación global' : lang === 'it' ? 'Punteggio globale' : 'Score global'}
             </div>
             <div style={{ fontSize:'var(--fs-label)', color:'var(--text3)' }}>
               {achieved}/{goals.length} {lang === 'en' ? 'goals achieved' : lang === 'es' ? 'objetivos alcanzados' : lang === 'it' ? 'obiettivi raggiunti' : 'objectifs atteints'}
@@ -354,7 +361,7 @@ export default function Goals() {
                 </div>
                 <div>
                   <label style={{ display:'block', fontSize:'var(--fs-caption)', fontWeight:'var(--fw-semibold)', textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Label' : lang === 'es' ? 'Etiqueta' : lang === 'it' ? 'Etichetta' : 'Libellé'}</label>
-                  <input aria-label={lang === 'en' ? 'Label' : lang === 'es' ? 'Etiqueta' : lang === 'it' ? 'Etichetta' : 'Libellé'} className="input" placeholder={lang === 'en' ? 'Ex: Monthly revenue' : lang === 'es' ? 'Ej: Ingresos mensuales' : lang === 'it' ? 'Es: Ricavi mensili' : 'Ex: CA mensuel'} value={goalForm.label} onChange={e => setGoalForm(f => ({...f, label:e.target.value}))} />
+                  <input aria-label={lang === 'en' ? 'Label' : lang === 'es' ? 'Etiqueta' : lang === 'it' ? 'Etichetta' : 'Libellé'} className="input" placeholder={lang === 'en' ? 'Ex: Revenue over 30 days' : lang === 'es' ? 'Ej: Ingresos en 30 días' : lang === 'it' ? 'Es: Ricavi su 30 giorni' : 'Ex: CA sur 30 jours'} value={goalForm.label} onChange={e => setGoalForm(f => ({...f, label:e.target.value}))} />
                 </div>
               </div>
 

@@ -292,7 +292,13 @@ export interface DashboardStockAlert { name: string; stockQty: number; stockMin:
 export interface DashboardStats {
   salesToday?: number
   transactionsToday?: number
-  salesMonth?: number
+  /**
+   * ⚠️ Fenêtre GLISSANTE de 30 jours, pas le mois calendaire (changé le 2026-10-01 côté
+   * backend, `analytics.ts`). Le champ s'appelait `salesMonth` ; le nom a bougé AVEC la
+   * mesure, sans alias — un champ nommé « mois » qui porte 30 jours glissants se relit
+   * trois fois sans qu'on voie le défaut.
+   */
+  sales30d?: number
   totalProducts?: number
   activeEmployees?: number
   pendingOrders?: number

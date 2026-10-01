@@ -175,12 +175,17 @@ const PRODUCT_FALLBACK: Record<string, string> = {
  * Top produits SUR LA PÉRIODE reçue — reçoit les ventes DÉJÀ filtrées (comme `salesByWeekday`
  * / `bestCalendarDay`) et agrège leurs lignes par NOM. Tri par CA décroissant, top N.
  *
- * ⚠️ POURQUOI : l'écran Rapports affichait `dash.topProducts`, calculé côté backend sur le
- * MOIS calendaire (`monthStart`), INDÉPENDANT du sélecteur de période. Sous « 90 jours » le CA
- * portait sur 90 j mais le top produits sur le mois seul — d'où « Huile végétale 25,91 € »
+ * ⚠️ POURQUOI : l'écran Rapports affichait `dash.topProducts`, calculé côté backend sur une
+ * fenêtre FIXE, INDÉPENDANTE du sélecteur de période. Sous « 90 jours » le CA portait sur
+ * 90 j mais le top produits sur cette fenêtre seule — d'où « Huile végétale 25,91 € »
  * (≈ CA de juillet) à côté d'un CA de 17 010 €, immobile en 7 j / 30 j / 90 j. En repartant du
  * MÊME `filtered` que les KPI, le top colle toujours au CA affiché (même plafond `limit` sur
  * les ventes chargées) : deux surfaces, une seule fenêtre.
+ *
+ * ⚠️ La fenêtre backend était le MOIS calendaire (`monthStart`) à l'époque du défaut ; elle
+ * est passée aux 30 jours GLISSANTS le 2026-10-01. Le motif ne change pas d'un pouce — une
+ * fenêtre fixe reste indépendante d'un sélecteur qui offre 7 j / 30 j / 90 j — mais la
+ * leçon ne doit pas affirmer du backend ce qui n'est plus vrai.
  *
  * Agrégation par NOM comme le web (`Reports.tsx`), pour que les deux plateformes disent la même
  * chose. `total` en XOF sommé brut ; la conversion est faite à l'affichage par `fmt()`.

@@ -77,14 +77,21 @@ const NO_SALES_IN_PERIOD: Record<ChartPeriod, Record<Lang, string>> = {
 }
 
 /**
- * Top produits et CA par catégorie : les deux sont scopés au MOIS EN COURS côté serveur
- * (`analytics.ts`, `createdAt: { gte: monthStart }`). Le mois précédent peut être plein.
+ * Top produits et CA par catégorie : les deux sont scopés sur la fenêtre GLISSANTE de 30
+ * jours côté serveur (`analytics.ts`, `createdAt: { gte: fenetre30 }`, borne lue dans
+ * `salesWindowStart`) — la MÊME que le KPI de période, par construction.
+ *
+ * ⚠️ Le message nomme son SUJET, pas seulement sa fenêtre : `NO_SALES_IN_PERIOD['30days']`
+ * porte déjà « Aucune vente sur les 30 derniers jours » pour le GRAPHE, et deux panneaux qui
+ * disent la même phrase deviennent indistinguables — y compris pour un test de rendu. La
+ * distinction est verrouillée dans `dashboardEmptyWindow.test.ts`, qui a attrapé la
+ * duplication au premier tir.
  */
-const NO_SALES_THIS_MONTH: Record<Lang, string> = {
-  fr: 'Aucune vente ce mois-ci',
-  en: 'No sales this month',
-  es: 'Ninguna venta este mes',
-  it: 'Nessuna vendita questo mese',
+const NO_SALES_IN_30D: Record<Lang, string> = {
+  fr: 'Aucun produit vendu sur les 30 derniers jours',
+  en: 'No products sold in the last 30 days',
+  es: 'Ningún producto vendido en los últimos 30 días',
+  it: 'Nessun prodotto venduto negli ultimi 30 giorni',
 }
 
 /** Source unique de la liste des périodes — le `<select>` en dérive, ainsi que les tests. */
@@ -107,41 +114,48 @@ export function noSalesInPeriodLabel(period: ChartPeriod, lang: Lang): string {
   return NO_SALES_IN_PERIOD[period][lang]
 }
 
-export function noSalesThisMonthLabel(lang: Lang): string {
-  return NO_SALES_THIS_MONTH[lang]
+export function noSalesIn30dLabel(lang: Lang): string {
+  return NO_SALES_IN_30D[lang]
 }
 
 /**
  * FRONTIÈRE — `GET /api/dashboard/stats` (#185).
  *
  * ⚠️ OBJET LITTÉRAL construit par le handler (`analytics.ts`), PAS un modèle Prisma : rien ici
- * ne se déduit du schéma. Les quatre blocs détaillés sont scopés au MOIS EN COURS côté serveur
- * (`createdAt: { gte: monthStart }`) — sauf `recentActivity`, qui n'a AUCUNE borne de date.
- * C'est précisément cette asymétrie qui justifie les messages d'état vide de ce module.
+ * ne se déduit du schéma. Les blocs détaillés sont scopés sur la fenêtre GLISSANTE de 30
+ * jours côté serveur (`createdAt: { gte: fenetre30 }`) — sauf `recentActivity`, qui n'a
+ * AUCUNE borne de date. C'est précisément cette asymétrie qui justifie les messages d'état
+ * vide de ce module.
+ *
+ * ⚠️ `sales30d` / `transactions30d` / `sales30dTrend` s'appelaient `salesMonth` /
+ * `transactionsMonth` / `salesMonthTrend` jusqu'au 2026-10-01, quand la fenêtre portait le
+ * mois calendaire. Le nom a été changé AVEC la mesure, délibérément et sans alias : un champ
+ * nommé « mois » qui porte 30 jours glissants se relit trois fois sans qu'on voie le défaut,
+ * et deux noms pour un même nombre est le motif du jumeau.
  */
 export interface ApiDashboardStats {
   salesToday: number
   transactionsToday: number
-  salesMonth: number
-  transactionsMonth: number
+  sales30d: number
+  transactions30d: number
   totalProducts: number
   lowStockProducts: number
   activeEmployees: number
   pendingOrders: number
   /** `null` = pas d'historique comparable → aucun badge de tendance affiché. */
   salesTodayTrend: number | null
-  salesMonthTrend: number | null
-  /** Top 5 du MOIS ; `name` retombe sur « Produit supprimé » si le produit n'existe plus. */
+  sales30dTrend: number | null
+  /** Top 5 des 30 DERNIERS JOURS ; `name` retombe sur « Produit supprimé » si le produit n'existe plus. */
   topProducts: { name: string; ca: number }[]
   stockAlerts: { name: string; stockQty: number; stockMin: number }[]
   /** ⚠️ AUCUN filtre de date côté serveur : 5 dernières ventes, tous temps confondus. */
   recentActivity: { id: string; total: number; paymentMode: string; createdAt: string }[]
-  /** Mois en cours, 6 catégories max, triées par CA décroissant. */
+  /** 30 derniers jours, 6 catégories max, triées par CA décroissant. */
   /**
    * ⚠️ Les catégories les plus grosses **PLUS un reliquat explicite**. Le serveur tronque
    * (`regrouperCategories`, 6 lignes max) et rend la ligne « Autres » qui porte le reste :
    * sans elle, le client sommerait ce qu'il reçoit et répartirait 100 % d'un sous-ensemble
-   * en l'appelant le CA du mois. Mesuré sur demo-tenant-002 : 77 000 XOF absents en mars.
+   * en l'appelant le CA de la période. Mesuré sur demo-tenant-002 : 77 000 XOF absents en mars.
    * `other` est le SEUL moyen de reconnaître le reliquat — « Autre(s) » est aussi un nom de
    * catégorie légitime (le serveur y range les produits sans catégorie).
    */

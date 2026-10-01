@@ -16,7 +16,7 @@ interface ChatMessage {
 type Lang4 = 'fr' | 'en' | 'es' | 'it'
 
 const ANALYSIS_BUTTONS: { type: string; Icon: typeof BarChart2; color: string; label: Record<Lang4, string> }[] = [
-  { type:'full',      Icon: BarChart2,  color:'#6C47FF', label:{ fr:'Analyse mensuelle',  en:'Monthly analysis',   es:'Análisis mensual',     it:'Analisi mensile'     } },
+  { type:'full',      Icon: BarChart2,  color:'#6C47FF', label:{ fr:'Analyse 30 jours',   en:'30-day analysis',    es:'Análisis 30 días',     it:'Analisi 30 giorni'   } },
   { type:'stock',     Icon: Package,    color:'#FF9500', label:{ fr:'Analyse stock',      en:'Stock analysis',     es:'Análisis de stock',    it:'Analisi magazzino'   } },
   { type:'revenue',   Icon: TrendingUp, color:'#00D084', label:{ fr:'Analyse financière', en:'Financial analysis', es:'Análisis financiero',  it:'Analisi finanziaria' } },
   { type:'customers', Icon: Users,      color:'#00B8FF', label:{ fr:'Analyse clients',    en:'Customer analysis',  es:'Análisis de clientes', it:'Analisi clienti'     } },
@@ -26,7 +26,7 @@ interface QuickAction { Icon: typeof BarChart2; color: string; label: Record<Lan
 const QUICK_ACTIONS: QuickAction[] = [
   { Icon: BarChart2,    color:'#6C47FF',
     label:{fr:'Analyse des ventes',en:'Sales analysis',es:'Análisis de ventas',it:'Analisi vendite'},
-    prompt:{fr:'Analyse mes ventes du mois et donne-moi les tendances clés.',en:'Analyze my monthly sales and give me the key trends.',es:'Analiza mis ventas del mes y dame las tendencias clave.',it:'Analizza le mie vendite del mese e dammi le tendenze chiave.'} },
+    prompt:{fr:'Analyse mes ventes des 30 derniers jours et donne-moi les tendances clés.',en:'Analyze my sales over the last 30 days and give me the key trends.',es:'Analiza mis ventas de los últimos 30 días y dame las tendencias clave.',it:'Analizza le mie vendite degli ultimi 30 giorni e dammi le tendenze chiave.'} },
   { Icon: Package,      color:'#FF9500',
     label:{fr:'Alertes stock',en:'Stock alerts',es:'Alertas de stock',it:'Avvisi magazzino'},
     prompt:{fr:'Quels produits sont en rupture ou en stock critique ?',en:'Which products are out of stock or critically low?',es:'¿Qué productos están agotados o en nivel crítico?',it:'Quali prodotti sono esauriti o a livello critico?'} },
@@ -38,10 +38,10 @@ const QUICK_ACTIONS: QuickAction[] = [
     prompt:{fr:'Analyse mon portefeuille clients et identifie les plus rentables.',en:'Analyze my customer portfolio and identify the most profitable.',es:'Analiza mi cartera de clientes e identifica los más rentables.',it:'Analizza il mio portafoglio clienti e identifica i più redditizi.'} },
   { Icon: DollarSign,   color:'#F472B6',
     label:{fr:'Santé financière',en:'Financial health',es:'Salud financiera',it:'Salute finanziaria'},
-    prompt:{fr:'Donne-moi un bilan de la santé financière de ma boutique ce mois.',en:'Give me a financial health summary of my shop this month.',es:'Dame un resumen de la salud financiera de mi tienda este mes.',it:'Dammi un riepilogo della salute finanziaria del mio negozio questo mese.'} },
+    prompt:{fr:'Donne-moi un bilan de la santé financière de ma boutique sur 30 jours.',en:'Give me a financial health summary of my shop over the last 30 days.',es:'Dame un resumen de la salud financiera de mi tienda en los últimos 30 días.',it:'Dammi un riepilogo della salute finanziaria del mio negozio negli ultimi 30 giorni.'} },
   { Icon: ShoppingCart, color:'#34D399',
     label:{fr:'Top produits',en:'Top products',es:'Top productos',it:'Top prodotti'},
-    prompt:{fr:'Quels sont mes 10 meilleurs produits en termes de CA ce mois-ci ?',en:'What are my top 10 products by revenue this month?',es:'¿Cuáles son mis 10 mejores productos por ingresos este mes?',it:'Quali sono i miei 10 migliori prodotti per fatturato questo mese?'} },
+    prompt:{fr:'Quels sont mes 10 meilleurs produits en termes de CA sur 30 jours ?',en:'What are my top 10 products by revenue over the last 30 days?',es:'¿Cuáles son mis 10 mejores productos por ingresos en los últimos 30 días?',it:'Quali sono i miei 10 migliori prodotti per fatturato negli ultimi 30 giorni?'} },
 ]
 
 const QUICK_QUESTIONS = {
@@ -87,7 +87,7 @@ export default function AIAssistant() {
   const fmt = useFormatAmount()
   const T = (fr: string, en: string, es: string, it: string) =>
     lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it
-  const [shopStats, setShopStats] = useState({ caMonth: 0, products: 0, customers: 0 })
+  const [shopStats, setShopStats] = useState({ ca30d: 0, products: 0, customers: 0 })
   const [messages, setMessages]             = useState<ChatMessage[]>([])
   const [input, setInput]                   = useState('')
   const [analyzing, setAnalyzing]           = useState(false)
@@ -109,7 +109,7 @@ export default function AIAssistant() {
       customersApi.list().catch(() => []),
     ]).then(([stats, customers]: [any, any]) => {
       setShopStats(s => ({
-        caMonth:   stats?.salesMonth ?? s.caMonth,
+        ca30d:     stats?.sales30d ?? s.ca30d,
         products:  stats?.totalProducts ?? s.products,
         customers: Array.isArray(customers) ? customers.length : s.customers,
       }))
@@ -186,7 +186,7 @@ export default function AIAssistant() {
   const shopContext = [
     { label: T('Type boutique', 'Shop type', 'Tipo de tienda', 'Tipo negozio'),         value: T('Commerce général', 'General retail', 'Comercio general', 'Commercio generale') },
     { label: T('Articles actifs', 'Active items', 'Artículos activos', 'Articoli attivi'), value: String(shopStats.products) },
-    { label: T('CA ce mois', 'Revenue this month', 'Ingresos del mes', 'Fatturato del mese'), value: fmt(shopStats.caMonth) },
+    { label: T('CA 30 jours', 'Revenue 30 days', 'Ingresos 30 días', 'Fatturato 30 giorni'), value: fmt(shopStats.ca30d) },
     { label: T('Clients actifs', 'Active customers', 'Clientes activos', 'Clienti attivi'), value: String(shopStats.customers) },
   ]
 

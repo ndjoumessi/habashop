@@ -22,17 +22,31 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       const now = new Date()
       const today = new Date(now)
       today.setHours(0, 0, 0, 0)
-      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-      // Période PRÉCÉDENTE comparable = même durée écoulée (jour/mois glissant), pour des
-      // tendances honnêtes (on ne compare pas un mois partiel à un mois complet).
+      /**
+       * ⚠️ FENÊTRE GLISSANTE DE 30 JOURS, PAS LE MOIS CALENDAIRE — et la borne vient de la
+       * SOURCE UNIQUE `salesWindowStart`, celle de `/api/reports/sales`, qui a déjà un
+       * jumeau front et des cas partagés. En écrire une seconde ici ferait divergier l'axe
+       * du graphe de la période des KPI.
+       *
+       * Mesuré en production le 2026-10-01 : avec `monthStart`, le 1ᵉʳ du mois le KPI
+       * « CA mensuel » valait le CA de la matinée — sur le PREMIER écran de l'application.
+       * Et la comparaison « mois précédent sur la même durée écoulée » portait alors sur
+       * quelques heures, donc rendait le badge de tendance nul.
+       *
+       * ⚠️ LA MÊME BORNE sert le KPI, le top produits ET le camembert. Deux bornes
+       * distinctes rendraient un camembert dont les parts ne somment pas au chiffre affiché
+       * juste au-dessus — c'est la famille des quatre dénominateurs sur un seul camembert.
+       */
+      const fenetre30 = salesWindowStart('30days', now)
+      /** Les 30 jours PLEINS d'avant : contigus à `fenetre30`, même durée. */
+      const precedent30 = salesWindowStart('30days', fenetre30)
+      // Le JOUR reste calendaire (minuit local), comparé à la même plage horaire écoulée
+      // la veille — là, comparer des durées égales a un sens.
       const elapsedToday = now.getTime() - today.getTime()
       const yesterday = new Date(today.getTime() - 86_400_000)
       const prevDayEnd = new Date(yesterday.getTime() + elapsedToday)
-      const elapsedMonth = now.getTime() - monthStart.getTime()
-      const prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-      const prevMonthEnd = new Date(prevMonthStart.getTime() + elapsedMonth)
 
-      const [salesToday, salesMonth, prevDaySales, prevMonthSales, totalProducts, activeEmployees, pendingOrders, allProducts] =
+      const [salesToday, sales30d, prevDaySales, prev30dSales, totalProducts, activeEmployees, pendingOrders, allProducts] =
         await Promise.all([
           prisma.sale.aggregate({
             where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: today } },
@@ -40,7 +54,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
             _count: true,
           }),
           prisma.sale.aggregate({
-            where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: monthStart } },
+            where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: fenetre30 } },
             _sum: { total: true },
             _count: true,
           }),
@@ -49,9 +63,9 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
             where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: yesterday, lt: prevDayEnd } },
             _sum: { total: true },
           }),
-          // CA du mois précédent sur la même durée écoulée (remboursées exclues — cohérent).
+          // CA des 30 jours PRÉCÉDENTS, période PLEINE et contiguë (remboursées exclues).
           prisma.sale.aggregate({
-            where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: prevMonthStart, lt: prevMonthEnd } },
+            where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: precedent30, lt: fenetre30 } },
             _sum: { total: true },
           }),
           prisma.product.count({ where: { tenantId, isActive: true, deletedAt: null } }),
@@ -69,7 +83,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       const [topProductsRaw, stockAlertsRaw, recentActivity, categoryItems] = await Promise.all([
         prisma.saleItem.groupBy({
           by: ['productId'],
-          where: { sale: { tenantId, status: { not: 'refunded' }, createdAt: { gte: monthStart } } },
+          where: { sale: { tenantId, status: { not: 'refunded' }, createdAt: { gte: fenetre30 } } },
           _sum: { total: true },
           orderBy: { _sum: { total: 'desc' } },
           take: 5,
@@ -87,7 +101,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
           select: { id: true, total: true, paymentMode: true, createdAt: true },
         }).catch(() => []),
         prisma.saleItem.findMany({
-          where: { sale: { tenantId, status: { not: 'refunded' }, createdAt: { gte: monthStart } } },
+          where: { sale: { tenantId, status: { not: 'refunded' }, createdAt: { gte: fenetre30 } } },
           select: { total: true, product: { select: { category: true } } },
         }).catch(() => []),
       ])
@@ -105,7 +119,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       }
       // ⚠️ Le `.slice(0, 6)` nu vivait ici. Il tronquait SANS rien dire du reste, et le
       // client calculait son dénominateur sur ce qu'il recevait — donc sur un sous-ensemble
-      // présenté comme le CA du mois. `regrouperCategories` rend un reliquat EXPLICITE, ce
+      // présenté comme le CA de la période. `regrouperCategories` rend un reliquat EXPLICITE, ce
       // qui rend l'invariant vérifiable : Σ(rendu) === Σ(toutes catégories). Cf. le module.
       const categoryBreakdown = regrouperCategories(
         Object.entries(catMap).map(([name, value]) => ({ name, value })),
@@ -115,11 +129,11 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       return {
         salesToday: salesToday._sum.total ?? 0,
         transactionsToday: salesToday._count,
-        salesMonth: salesMonth._sum.total ?? 0,
-        transactionsMonth: salesMonth._count,
+        sales30d: sales30d._sum.total ?? 0,
+        transactions30d: sales30d._count,
         // Tendances réelles vs période précédente (null = pas d'historique → pas de badge).
         salesTodayTrend: computeTrend(salesToday._sum.total ?? 0, prevDaySales._sum.total ?? 0),
-        salesMonthTrend: computeTrend(salesMonth._sum.total ?? 0, prevMonthSales._sum.total ?? 0),
+        sales30dTrend: computeTrend(sales30d._sum.total ?? 0, prev30dSales._sum.total ?? 0),
         totalProducts,
         lowStockProducts,
         activeEmployees,

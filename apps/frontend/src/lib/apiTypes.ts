@@ -280,7 +280,13 @@ export interface ApiGoal {
   icon: string
   /** revenue | stock | customers | team */
   category: string
-  /** salesMonth | transactionsMonth | avgBasket — `null` = objectif saisi à la main. */
+  /**
+   * `sales30d` | `transactions30d` | `avgBasket` — `null` = objectif saisi à la main.
+   *
+   * ⚠️ CHAMP PERSISTÉ : son domaine est l'union de tous ceux qu'il a eus, pas celui
+   * d'aujourd'hui. Les clés `salesMonth` / `transactionsMonth` (avant le 2026-10-01)
+   * restent LUES par `Goals.tsx` ; elles ne sont plus écrites.
+   */
   linkedMetric: string | null
   createdAt: string
   updatedAt: string

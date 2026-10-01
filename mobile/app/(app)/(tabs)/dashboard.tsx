@@ -209,8 +209,8 @@ export default function DashboardScreen() {
                 sub={`${d.transactionsToday ?? 0} ${i('ventes','sales','ventas','vendite')}`}
               />
               <KpiCard
-                label={i('Ce mois','This month','Este mes','Questo mese')}
-                value={fmt(d.salesMonth ?? 0)}
+                label={i('30 jours','30 days','30 días','30 giorni')}
+                value={fmt(d.sales30d ?? 0)}
                 icon="trending-up"
                 color={C.accent}
               />
@@ -308,7 +308,9 @@ export default function DashboardScreen() {
         {topProds.length > 0 && (
           <View style={s.section}>
             <Text style={s.sectionTitle}>
-              🏆 {i('Top produits','Top products',
+              {/* ⚠️ Fenêtre du SERVEUR : 30 jours glissants. Elle se nomme, sinon ce panneau est le
+                    seul de l'écran dont la période est muette. */}
+                  🏆 {i('Top produits · 30 j','Top products · 30 d',
                     'Mejores productos','Prodotti top')}
             </Text>
             <View style={s.topCard}>

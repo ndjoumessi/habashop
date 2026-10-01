@@ -41,7 +41,7 @@ export default function SectionShop() {
       tenantApi.users().catch(() => [] as any[]),
     ]).then(([st, cust, usr]: any[]) => setStats({
       products: st?.totalProducts ?? 0,
-      sales: st?.transactionsMonth ?? 0,
+      sales: st?.transactions30d ?? 0,
       customers: Array.isArray(cust) ? cust.length : 0,
       users: Array.isArray(usr) ? usr.length : 0,
     }))
@@ -105,7 +105,7 @@ export default function SectionShop() {
           { label: i('Utilisateurs', 'Users', 'Usuarios', 'Utenti'), value: stats.users, icon: <User size={20} />, color: 'var(--p2)' },
           { label: i('Produits', 'Products', 'Productos', 'Prodotti'), value: stats.products, icon: <Package size={20} />, color: 'var(--acc3,#00B8FF)' },
           { label: i('Clients', 'Customers', 'Clientes', 'Clienti'), value: stats.customers, icon: <Users size={20} />, color: 'var(--acc)' },
-          { label: i('Ventes (mois)', 'Sales (month)', 'Ventas (mes)', 'Vendite (mese)'), value: stats.sales, icon: <ShoppingCart size={20} />, color: 'var(--acc2)' },
+          { label: i('Ventes (30 j)', 'Sales (30 d)', 'Ventas (30 d)', 'Vendite (30 g)'), value: stats.sales, icon: <ShoppingCart size={20} />, color: 'var(--acc2)' },
         ] as { label: string; value: number; icon: React.ReactNode; color: string }[]).map(s => (
           <div key={s.label} style={{ ...panel, border: `1px solid color-mix(in srgb, ${s.color} 14%, transparent)`, borderRadius: 14, padding: '14px 16px', textAlign: 'center' }}>
             <div style={{ marginBottom: 6, display: 'flex', justifyContent: 'center', color: s.color }}>{s.icon}</div>

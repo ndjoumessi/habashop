@@ -17,7 +17,7 @@ import { payModeLabel } from '@/components/pos/posShared'
 import ConsolidatedShops from '@/components/dashboard/ConsolidatedShops'
 import ChartDataTable from '@/components/charts/ChartDataTable'
 import {
-  noSalesInPeriodLabel, noSalesThisMonthLabel, salesChartTitle, periodOptionLabel,
+  noSalesInPeriodLabel, noSalesIn30dLabel, salesChartTitle, periodOptionLabel,
   isChartPeriod, buildSalesSeries, salesPointLabel, pickAxisTicks, CHART_PERIODS, type ChartPeriod,
 } from '@/components/dashboard/dashboardShared'
 // Charts isolés dans le chunk `charts` (visx) → lazy pour ne pas bloquer le rendu des KPIs
@@ -146,13 +146,13 @@ export default function Dashboard() {
   const [stats, setStats] = useState({
     salesToday: 0,
     transactionsToday: 0,
-    salesMonth: 0,
+    sales30d: 0,
     totalProducts: 0,
     lowStockProducts: 0,
     activeEmployees: 0,
     pendingOrders: 0,
     salesTodayTrend: null as number | null,
-    salesMonthTrend: null as number | null,
+    sales30dTrend: null as number | null,
   })
   // Chargement des KPIs → skeletons (évite le flash 0 → valeur + réserve l'espace).
   const [kpiLoading, setKpiLoading] = useState(true)
@@ -174,7 +174,7 @@ export default function Dashboard() {
       // afficherait « 0 à réapprovisionner » sur une requête en échec mentirait.
       .catch(() => {})
   }, [])
-  // Dénominateur = CA du mois. ⚠️ Ce `reduce` n'est légitime QUE parce que le serveur rend
+  // Dénominateur = CA des 30 derniers jours. ⚠️ Ce `reduce` n'est légitime QUE parce que le serveur rend
   // désormais un reliquat « Autres » explicite (`regrouperCategories`, backend) : avant, il
   // sommait les six premières catégories et le camembert répartissait 100 % d'un
   // sous-ensemble en l'appelant le mois. Mesuré sur demo-tenant-002 : 77 000 XOF absents en
@@ -194,13 +194,13 @@ export default function Dashboard() {
         if (data) setStats({
           salesToday:        data.salesToday        ?? stats.salesToday,
           transactionsToday: data.transactionsToday ?? stats.transactionsToday,
-          salesMonth:        data.salesMonth        ?? stats.salesMonth,
+          sales30d:          data.sales30d          ?? stats.sales30d,
           totalProducts:     data.totalProducts     ?? stats.totalProducts,
           lowStockProducts:  data.lowStockProducts  ?? stats.lowStockProducts,
           activeEmployees:   data.activeEmployees   ?? stats.activeEmployees,
           pendingOrders:     data.pendingOrders     ?? stats.pendingOrders,
           salesTodayTrend:   data.salesTodayTrend ?? null,
-          salesMonthTrend:   data.salesMonthTrend ?? null,
+          sales30dTrend:     data.sales30dTrend ?? null,
         })
         setTopProducts(data?.topProducts ?? [])
         setStockAlerts(data?.stockAlerts ?? [])
@@ -235,7 +235,7 @@ export default function Dashboard() {
         })))
         // Nouvel ADMIN sans produits ni ventes, non encore onboardé → wizard
         if (
-          data.totalProducts === 0 && data.transactionsToday === 0 && data.salesMonth === 0 &&
+          data.totalProducts === 0 && data.transactionsToday === 0 && data.sales30d === 0 &&
           user?.role === 'ADMIN' && !localStorage.getItem('habashop_onboarded')
         ) {
           navigate('/onboarding')
@@ -278,7 +278,7 @@ export default function Dashboard() {
 
   // Toutes les sections sont alimentées par l'API ; états vides sinon (pas de démo).
   const emptyHint = lang === 'en' ? 'Start by recording your first sales' : lang === 'es' ? 'Comience registrando sus primeras ventas' : lang === 'it' ? 'Inizia registrando le tue prime vendite' : 'Commencez par enregistrer vos premières ventes'
-  const isNewTenant = stats.transactionsToday === 0 && stats.salesMonth === 0 && stats.totalProducts === 0
+  const isNewTenant = stats.transactionsToday === 0 && stats.sales30d === 0 && stats.totalProducts === 0
 
   return (
     <div className="space-y-5 animate-in">
@@ -379,7 +379,7 @@ export default function Dashboard() {
           { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),         sub: `${stats.transactionsToday} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`,  trend: stats.salesTodayTrend, Icon: DollarSign, color: 'var(--p2)',   hero: true  },
           { label: t('kpi_stock'),           value: String(stats.totalProducts),   sub: `${stats.lowStockProducts} ${lang === 'en' ? 'stock alerts' : lang === 'es' ? 'alertas stock' : lang === 'it' ? 'avvisi stock' : 'alertes stock'}`,   trend: null,                  Icon: Package,    color: 'var(--acc)',  hero: false },
           { label: t('kpi_employees'),       value: String(stats.activeEmployees), sub: `${stats.pendingOrders} ${lang === 'en' ? 'pending orders' : lang === 'es' ? 'ped. pendientes' : lang === 'it' ? 'ord. in attesa' : 'cmd. en attente'}`,   trend: null,                  Icon: Users,      color: 'var(--acc2)', hero: false },
-          { label: t('kpi_monthly_revenue'), value: fmt(stats.salesMonth),         sub: lang === 'en' ? 'vs last month' : lang === 'es' ? 'vs mes pasado' : lang === 'it' ? 'vs mese scorso' : 'vs mois dernier',                           trend: stats.salesMonthTrend, Icon: TrendingUp, color: 'var(--acc3)', hero: false },
+          { label: t('kpi_revenue_30d'), value: fmt(stats.sales30d),         sub: lang === 'en' ? 'vs previous 30 days' : lang === 'es' ? 'vs 30 días anteriores' : lang === 'it' ? 'vs 30 giorni precedenti' : 'vs 30 jours précédents', trend: stats.sales30dTrend, Icon: TrendingUp, color: 'var(--acc3)', hero: false },
         ].map((k, idx) => {
           const up = k.trend != null && k.trend > 0
           const down = k.trend != null && k.trend < 0
@@ -506,12 +506,12 @@ export default function Dashboard() {
         {/* Donut chart */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
-            <span className="panel-title">{lang === 'en' ? 'Revenue by category' : lang === 'es' ? 'Ingresos por categoría' : lang === 'it' ? 'Ricavi per categoria' : 'CA par catégorie'}</span>
+            <span className="panel-title">{(lang === 'en' ? 'Revenue by category' : lang === 'es' ? 'Ingresos por categoría' : lang === 'it' ? 'Ricavi per categoria' : 'CA par catégorie') + ' · ' + periodOptionLabel('30days', lang)}</span>
           </div>
           {catData.length === 0 ? (
             <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 'var(--fs-sm)' }}>
               {/* ⚠️ `categoryBreakdown` est scopé au MOIS EN COURS côté serveur — cf. `dashboardShared`. */}
-              {noSalesThisMonthLabel(lang)}
+              {noSalesIn30dLabel(lang)}
             </div>
           ) : (<>
           <div style={{ position: 'relative', margin: '0 -8px', overflow: 'visible' }}>
@@ -642,13 +642,17 @@ export default function Dashboard() {
         {/* Top products with progress bars */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
-            <span className="panel-title">{t('top_products')}</span>
+            {/* ⚠️ Ces deux panneaux NE SUIVENT PAS le sélecteur du graphe : le serveur les rend sur
+                  30 jours glissants, fixes. Le sélecteur à côté offre 7 j / 30 j / 3 mois — sans
+                  cette mention, deux fenêtres cohabitent sur un écran sans que rien le dise, et
+                  c'est le défaut qu'a vécu l'écran Rapports mobile (cf. `reportsAggregate.ts`). */}
+              <span className="panel-title">{t('top_products') + ' · ' + periodOptionLabel('30days', lang)}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {topProducts.length === 0 ? (
               <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 'var(--fs-sm)', lineHeight: 1.6 }}>
-                {/* ⚠️ « Top produits DU MOIS » : le vide est celui du MOIS EN COURS — cf. `dashboardShared`. */}
-                {noSalesThisMonthLabel(lang)}
+                {/* ⚠️ Top produits des 30 DERNIERS JOURS : le vide est celui de cette fenêtre — cf. `dashboardShared`. */}
+                {noSalesIn30dLabel(lang)}
               </div>
             ) : topProducts.map((p, i) => {
               const maxCa = topProducts[0]?.ca || 1

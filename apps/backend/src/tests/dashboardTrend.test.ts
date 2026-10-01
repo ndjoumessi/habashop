@@ -18,6 +18,13 @@ describe('computeTrend', () => {
 })
 
 // ── 2. Route /api/dashboard/stats ──
+//
+// ⚠️ PORTÉE DE CE FICHIER : l'ARITHMÉTIQUE des tendances, pas les BORNES. Les mocks
+// ci-dessous rendent leur valeur dans l'ORDRE d'appel et ignorent le `where` reçu : ils
+// resteraient verts si la fenêtre changeait de définition. Les bornes — fenêtre glissante
+// de 30 jours, période précédente contiguë, borne UNIQUE partagée par le KPI, le camembert
+// et le top produits — sont verrouillées dans `dashboardFenetre30j.test.ts`, qui assert sur
+// le `where` réellement passé à Prisma.
 const { db } = vi.hoisted(() => ({
   db: {
     sale: { aggregate: vi.fn(), findMany: vi.fn() },
@@ -54,18 +61,18 @@ beforeEach(() => {
 })
 
 describe('GET /api/dashboard/stats — tendances réelles', () => {
-  it('renvoie salesTodayTrend / salesMonthTrend calculés vs période précédente', async () => {
+  it('renvoie salesTodayTrend / sales30dTrend calculés vs période précédente', async () => {
     db.sale.aggregate
       .mockResolvedValueOnce({ _sum: { total: 1200 }, _count: 3 })  // today
-      .mockResolvedValueOnce({ _sum: { total: 5000 }, _count: 10 }) // month
+      .mockResolvedValueOnce({ _sum: { total: 5000 }, _count: 10 }) // 30 jours glissants
       .mockResolvedValueOnce({ _sum: { total: 1000 } })            // prev day
-      .mockResolvedValueOnce({ _sum: { total: 4000 } })            // prev month
+      .mockResolvedValueOnce({ _sum: { total: 4000 } })            // 30 jours précédents
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/dashboard/stats', headers: { 'x-test-tenant': 'T1' } })
     expect(res.statusCode).toBe(200)
     const b = res.json()
     expect(b.salesTodayTrend).toBe(20)   // (1200-1000)/1000
-    expect(b.salesMonthTrend).toBe(25)   // (5000-4000)/4000
+    expect(b.sales30dTrend).toBe(25)   // (5000-4000)/4000
   })
 
   it('trend null si pas d’historique (prev = 0)', async () => {
@@ -73,12 +80,12 @@ describe('GET /api/dashboard/stats — tendances réelles', () => {
       .mockResolvedValueOnce({ _sum: { total: 1200 }, _count: 3 })
       .mockResolvedValueOnce({ _sum: { total: 5000 }, _count: 10 })
       .mockResolvedValueOnce({ _sum: { total: 0 } })   // pas de vente hier
-      .mockResolvedValueOnce({ _sum: { total: null } }) // pas de mois précédent
+      .mockResolvedValueOnce({ _sum: { total: null } }) // pas de période précédente
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/api/dashboard/stats', headers: { 'x-test-tenant': 'T1' } })
     const b = res.json()
     expect(b.salesTodayTrend).toBeNull()
-    expect(b.salesMonthTrend).toBeNull()
+    expect(b.sales30dTrend).toBeNull()
   })
 
   it('isolation tenant : les agrégats période précédente sont scopés au tenant', async () => {

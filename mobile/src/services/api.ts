@@ -153,7 +153,7 @@ export const salesApi = {
 }
 
 export const analyticsApi = {
-  // Endpoint réel du backend (réponse à plat : salesToday, salesMonth,
+  // Endpoint réel du backend (réponse à plat : salesToday, sales30d,
   // totalProducts, activeEmployees, pendingOrders, topProducts[], stockAlerts[]…)
   dashboard: (): Promise<DashboardStats> =>
     apiClient.get<DashboardStats>('/api/dashboard/stats').then(r => r.data),
