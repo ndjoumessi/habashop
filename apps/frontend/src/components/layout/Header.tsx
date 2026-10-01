@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Search, Plus, Bell, Wifi, WifiOff, ShoppingCart, Package, User, Receipt, Users, Truck, X, ChevronDown, Zap, Clock, Crown } from 'lucide-react'
-import { useAppStore, t, getTrialInfo } from '@/stores/appStore'
+import { useAppStore, t } from '@/stores/appStore'
+import { useBillingStore } from '@/stores/billingStore'
 import { useAuthStore, canAccess } from '@/stores/authStore'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import CurrencyBadge from '@/components/ui/CurrencyBadge'
@@ -134,6 +135,8 @@ export default function Header() {
 
   const role = useAuthStore(s => s.user?.role)
   const tenant    = useAppStore(s => s.tenant)
+  // ⚠️ Même source que le bandeau de facturation — cf. `billingStore`.
+  const facturation = useBillingStore(s => s.etat)
   const setTenant = useAppStore(s => s.setTenant)
 
   // Charge le tenant depuis l'API si absent du store (session déjà ouverte)
@@ -364,7 +367,19 @@ export default function Header() {
 
         {/* ── Plan / trial badge ── */}
         {tenant && (() => {
-          const trial = getTrialInfo(tenant)
+          /**
+           * ⚠️ LE COMPTE VIENT DU SERVEUR, cette pastille n'en calcule aucun. Elle refaisait
+           * `createdAt + 14 jours` et annonçait « ESSAI · 14J » au-dessus d'un bandeau qui
+           * disait « 7 jour(s) restant(s) ». Son critère était en outre une liste de PLANS
+           * contenant `'starter'` — un plan PAYANT : un client qui paie était badgé
+           * « Essai · 0 j » en rouge.
+           *
+           * ⚠️ `etat` nul = pas encore lu, OU lecture échouée. Dans les deux cas on montre le
+           * PLAN, jamais une durée d'essai qu'on n'a pas pu lire.
+           */
+          const trial = facturation && (facturation.status === 'trial' || facturation.isTrialExpired)
+            ? { isTrial: true, daysLeft: facturation.trialDaysLeft }
+            : { isTrial: false, daysLeft: 0 }
           const planLabel = tenant.plan ? tenant.plan.charAt(0).toUpperCase() + tenant.plan.slice(1) : 'Free'
           const danger = trial.isTrial && trial.daysLeft <= 3
           const color  = danger ? 'var(--danger)' : trial.isTrial ? 'var(--warn)' : 'var(--p3)'

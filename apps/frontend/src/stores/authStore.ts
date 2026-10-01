@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { invaliderFacturation } from '@/stores/billingStore'
 import { persist } from 'zustand/middleware'
 import { authApi, demoApi, type AccessibleTenant } from '@/lib/api'
 import { markDemoSession, clearDemoSession } from '@/lib/demoSession'
@@ -128,6 +129,9 @@ export const useAuthStore = create<AuthState>()(
           useAppStore.getState().setTenant(tenant ?? null)
           useAppStore.getState().resetCashierSession() // pas de session caisse héritée — mais la caisse n'est pas « fermée » pour autant
           useAppStore.getState().clearCart()    // panier vide à chaque nouvelle session
+          // ⚠️ L'état de facturation est propre à la BOUTIQUE : garder celui de la session
+          // précédente afficherait son essai sur la nouvelle. Même hygiène que la caisse.
+          invaliderFacturation()
           set({
             user, token, isAuthenticated: true, isLoading: false,
             tenants: tenants ?? [],
@@ -165,6 +169,7 @@ export const useAuthStore = create<AuthState>()(
         // visiteur voit un produit cassé.
         useAppStore.getState().resetCashierSession()
         useAppStore.getState().clearCart()
+        invaliderFacturation()
         set({
           // ⚠️ `role` arrive en CHAÎNE LIBRE du serveur — même garde que le chemin de
           // rafraîchissement (`App.tsx`) : un rôle inconnu retombe sur le MOINS privilégié,
@@ -210,6 +215,7 @@ export const useAuthStore = create<AuthState>()(
         useAppStore.getState().setTenant(tenant ?? null)
         useAppStore.getState().resetCashierSession() // session caisse propre à chaque boutique
         useAppStore.getState().clearCart()
+        invaliderFacturation()
         set((state) => ({
           token,
           activeTenantId: tenantId,
@@ -223,6 +229,7 @@ export const useAuthStore = create<AuthState>()(
         useAppStore.getState().clearTenant()
         useAppStore.getState().resetCashierSession()
         useAppStore.getState().clearCart() // panier vide — pas hérité d'une session précédente
+        invaliderFacturation()
         set({ user: null, token: null, isAuthenticated: false, tenants: [], activeTenantId: null })
       },
 

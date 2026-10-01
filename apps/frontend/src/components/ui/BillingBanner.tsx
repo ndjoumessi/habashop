@@ -3,37 +3,30 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Zap } from 'lucide-react'
 import { useAppStore } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
-import { billingApi } from '@/lib/api'
-
-interface BillingStatus {
-  plan: string
-  status: string
-  trialDaysLeft: number
-  isTrialExpired: boolean
-  hasPendingRequest: boolean
-  canContinue: boolean
-}
+import { useBillingStore } from '@/stores/billingStore'
 
 export default function BillingBanner() {
   const lang = useAppStore(s => s.lang)
   const navigate = useNavigate()
   const location = useLocation()
-  const [status, setStatus] = useState<BillingStatus | null>(null)
+  // ⚠️ SOURCE UNIQUE, partagée avec la pastille de l'en-tête : les deux annonçaient des
+  // nombres différents sur le même écran. Le `charger()` est idempotent — monter deux
+  // surfaces ne fait pas deux appels.
+  const status = useBillingStore(s => s.etat)
+  const charger = useBillingStore(s => s.charger)
   const [dismissed, setDismissed] = useState(false)
 
   const { i } = useI18n()
 
-  useEffect(() => {
-    billingApi.status().then(setStatus).catch(() => {})
-  }, [])
+  useEffect(() => { void charger() }, [charger])
 
   // Zone de travail POS (item 11) : pas de bannière au-dessus de la caisse —
   // l'info d'essai reste visible sur toutes les autres pages.
   if (location.pathname.startsWith('/app/pos')) return null
+  // ⚠️ La garde de forme (« backend billing pas déployé → {} ») vit maintenant DANS le
+  // store, une fois pour toutes les surfaces : une réponse malformée y est un ÉCHEC, donc
+  // `etat` reste nul et l'on n'affiche jamais « undefined jour(s) d'essai restant(s) ».
   if (!status || dismissed) return null
-  // Réponse malformée/partielle (ex. backend billing pas déployé → {}) → rien,
-  // plutôt que « undefined jour(s) d'essai restant(s) ».
-  if (typeof status.status !== 'string' || typeof status.trialDaysLeft !== 'number') return null
   if (status.status === 'active' && !status.isTrialExpired) return null
 
   // Demande en cours

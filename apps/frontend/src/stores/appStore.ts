@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { joursDEssaiRestants } from '@/lib/trialDays'
 import { persist } from 'zustand/middleware'
 import { translations } from '@/i18n'
 import type { CartItem } from '@/components/pos/posShared'
@@ -404,30 +403,17 @@ export interface Tenant {
 }
 
 /**
- * ÉTAT D'ESSAI D'UN TENANT — UNE SEULE SOURCE, ET C'EST LE SERVEUR.
+ * ⚠️ `getTrialInfo` A ÉTÉ SUPPRIMÉ, ET IL NE DOIT PAS REVENIR.
  *
- * ⚠️ MESURÉ À L'ÉCRAN le 2026-10-01 : l'en-tête affichait « ESSAI · 14J » et, deux lignes
- * plus bas, le bandeau « 7 jour(s) d'essai restant(s) ». Deux nombres sur le même écran, à
- * propos de la même chose. Cette fonction recalculait `createdAt + 14 jours` et IGNORAIT la
- * colonne `trialEnds`, que le bandeau lit du serveur (`routes/billing.ts`).
+ * Il calculait les jours d'essai côté client (`createdAt + 14 jours`), pendant que le
+ * bandeau de facturation lisait le compte du SERVEUR. Résultat mesuré à l'écran le
+ * 2026-10-01 : « ESSAI · 14J » au-dessus de « 7 jour(s) d'essai restant(s) ».
  *
- * Les deux ne coïncidaient que par la convention de l'inscription (`trialEnds = now + 14 j`),
- * que RIEN n'applique. Une démo jetable (7 j) la casse — et surtout une ACTIVATION DE PLAN,
- * qui repousse `trialEnds` à 30 ou 365 jours (`admin.ts`, `payments.ts`).
- *
- * ⚠️ ET LE CRITÈRE ÉTAIT FAUX AUSSI. C'était une liste de PLANS contenant `'starter'` — qui
- * est un plan PAYANT (9 900 FCFA/mois). Mesuré en production : `demo-tenant-002` porte
- * `plan = 'starter'` et `status = 'active'`, si bien qu'un client qui PAIE se voyait badger
- * « Essai · 0 j » en ROUGE pendant que le bandeau se taisait. Le critère est désormais celui
- * du serveur : le STATUT.
- *
- * ⚠️ `now` INJECTABLE, jamais `Date.now()` en dur dans le calcul — même convention que le
- * reste du dépôt, et c'est ce qui rend le jumeau testable sur des cas partagés.
+ * Le compte vit désormais à UN SEUL endroit — `routes/billing.ts` — et toutes les surfaces
+ * le lisent par `stores/billingStore.ts`. *Deux calculs d'une même grandeur n'ont aucune
+ * raison de rester d'accord.* Verrou : `billingUneSeuleSource.test.tsx` échoue si cet export
+ * réapparaît.
  */
-export function getTrialInfo(tenant: Tenant | null, now: Date = new Date()): { isTrial: boolean; daysLeft: number } {
-  if (tenant?.status !== 'trial' || !tenant.trialEnds) return { isTrial: false, daysLeft: 0 }
-  return { isTrial: true, daysLeft: joursDEssaiRestants(tenant.trialEnds, now) }
-}
 
 // ─── Store interface ───────────────────────────────────────────────────────────
 
