@@ -59,6 +59,7 @@ import { payrollRoutes } from './routes/payroll'
 import { runTrialReminders, runDailyStockAlerts, runDemoPiiSweep } from './services/notificationCrons'
 import { runDemoPurge } from './services/demoPurge'
 import { doitTourner, PAS_MS } from './lib/cronWindow'
+import { sonderRedis, declarer } from './lib/healthProbe'
 import { isR2Configured } from './lib/spend/r2Client'
 
 // ─── Validation des variables d'environnement obligatoires ───
@@ -229,25 +230,43 @@ async function start() {
     } catch {
       dbStatus = 'error'
     }
+    // ⚠️ Sonde Redis RÉELLE, bornée en temps et qui ne lève jamais : l'endpoint rapporte la
+    // panne, il ne la propage pas. Un `/api/health-extended` qui tombe parce que Redis est
+    // tombé ne dit plus rien du reste.
+    const redisProbe = await sonderRedis(redis, 1_500)
     const mem = process.memoryUsage()
     return reply.send({
-      status: dbStatus === 'ok' ? 'ok' : 'degraded',
+      // ⚠️ `degraded` inclut désormais un Redis TOMBÉ — pas un Redis absent, qui est une
+      // configuration délibérée. Trois états, jamais deux.
+      status: dbStatus === 'ok' && redisProbe.etat !== 'down' ? 'ok' : 'degraded',
       version: getAppVersion(), // source unique = package.json racine
 
       uptime: Math.round(process.uptime()),
       latency: Date.now() - start,
+      // ⚠️ DEUX VOCABULAIRES, et le NOM porte la moitié de l'information.
+      //
+      //   `status`   = MESURÉ. Une sonde a réellement parlé au service, et le champ peut
+      //                rougir. `database` (SELECT 1) et `redis` (PING) sont dans ce cas.
+      //   `declared` = CONFIGURATION déclarée. Reflète la présence de variables
+      //                d'environnement, RIEN DE PLUS — aucune requête n'a été émise.
+      //
+      // `redis` rendait `{ status: 'configured' }` : un champ déclaré portant le nom d'une
+      // mesure, donc un signal qui ne pouvait pas être faux. Il est désormais SONDÉ, et ça
+      // compte depuis que `POST /api/demo/start` est fail-closed sur lui — sans Redis, le
+      // bouton « Essayer la démo » ne fonctionne plus, et « configured » ne l'aurait jamais dit.
       services: {
         database: { status: dbStatus, latency: dbLatency },
-        redis:    { status: process.env.REDIS_URL ? 'configured' : 'not-configured' },
-        whatsapp: { status: process.env.TWILIO_ACCOUNT_SID ? 'configured' : 'not-configured' },
-        ai:       { status: process.env.ANTHROPIC_API_KEY ? 'configured' : 'not-configured' },
-        // ⚠️ `isR2Configured()` plutôt qu'une seule variable : le stockage exige
-        // CINQ valeurs, dont l'URL publique. Tester `R2_BUCKET` seul annoncerait
-        // « configured » sur une configuration à moitié posée, qui écrit sans
-        // savoir rendre l'adresse — un champ déclaré qui se fait passer pour une
-        // mesure. Ce reste une CONFIGURATION DÉCLARÉE, pas une sonde : rien ici
-        // n'a joint R2.
-        storage:  { status: isR2Configured() ? 'configured' : 'not-configured' },
+        redis:    redisProbe,
+        // ⚠️ Les trois suivants ne sont PAS sondés, et leur champ le dit. Les sonder
+        // signifierait appeler un SDK facturé (Twilio, Anthropic) ou écrire dans un bucket :
+        // une page de santé ne doit pas dépenser pour se rassurer. Dette assumée et ÉCRITE,
+        // plutôt qu'une pastille verte.
+        whatsapp: declarer(!!process.env.TWILIO_ACCOUNT_SID),
+        ai:       declarer(!!process.env.ANTHROPIC_API_KEY),
+        // ⚠️ `isR2Configured()` plutôt qu'une seule variable : le stockage exige CINQ
+        // valeurs, dont l'URL publique. Tester `R2_BUCKET` seul annoncerait « configuré » sur
+        // une configuration à moitié posée, qui écrit sans savoir rendre l'adresse.
+        storage:  declarer(isR2Configured()),
       },
       memory: {
         used:  Math.round(mem.heapUsed / 1024 / 1024),

@@ -82,16 +82,28 @@ function useResendProbe() {
 }
 
 function useApiProbe() {
-  const [etat, setEtat] = useState<{ ok: boolean | null; a: number | null; ms: number | null }>({ ok: null, a: null, ms: null })
+  const [etat, setEtat] = useState<{ ok: boolean | null; a: number | null; ms: number | null; redis: EtatRedis | null }>(
+    { ok: null, a: null, ms: null, redis: null })
   useEffect(() => {
     let vivant = true
     const sonder = async () => {
       const t0 = Date.now()
       try {
         const r = await fetch(`${API_BASE}/api/health-extended`, { signal: AbortSignal.timeout(6000), cache: 'no-store' })
-        if (vivant) setEtat({ ok: r.ok, a: Date.now(), ms: Date.now() - t0 })
+        // ⚠️ Le CORPS était récupéré puis JETÉ. Il porte désormais une sonde Redis RÉELLE
+        // (`services.redis.etat`), et Redis compte depuis que la démo en libre-service est
+        // fail-closed sur lui : s'il tombe, le bouton de la vitrine cesse de fonctionner.
+        let redis: EtatRedis | null = null
+        try {
+          const corps = await r.json() as { services?: { redis?: { etat?: unknown } } }
+          const brut = corps?.services?.redis?.etat
+          // ⚠️ Valeur venue du réseau : on n'accepte QUE les trois états connus. Une valeur
+          // inattendue reste `null` — neutre — plutôt que d'être lue comme un succès.
+          if (brut === 'absent' || brut === 'up' || brut === 'down') redis = brut
+        } catch { /* corps illisible : on ne conclut pas sur Redis */ }
+        if (vivant) setEtat({ ok: r.ok, a: Date.now(), ms: Date.now() - t0, redis })
       } catch {
-        if (vivant) setEtat({ ok: false, a: Date.now(), ms: null })
+        if (vivant) setEtat({ ok: false, a: Date.now(), ms: null, redis: null })
       }
     }
     sonder()
@@ -99,6 +111,47 @@ function useApiProbe() {
     return () => { vivant = false; clearInterval(id) }
   }, [])
   return etat
+}
+
+/** Les trois états que la sonde serveur peut rendre. `null` = pas encore revenue. */
+export type EtatRedis = 'absent' | 'up' | 'down'
+
+/**
+ * Libellé et ton de la ligne Redis.
+ *
+ * ⚠️ QUATRE états, dans l'ordre de la PRUDENCE : tant que la sonde n'a pas répondu on n'est
+ * pas optimiste ; `absent` est une CONFIGURATION délibérée (déploiement sans cache) et reste
+ * NEUTRE, pas rouge ; le vert est le dernier cas, jamais le premier.
+ *
+ * ⚠️ Le cas `down` dit la CONSÉQUENCE, pas seulement l'état : un exploitant qui lit
+ * « Redis down » ne sait pas ce qu'il perd. Il perd la démo en libre-service, parce que son
+ * plafond global y vit et qu'il est fail-closed.
+ */
+export function libelleRedis(etat: EtatRedis | null, lang: string): { texte: string; ton: string } {
+  if (etat === null) return {
+    ton: 'var(--text4)',
+    texte: lang === 'en' ? 'Redis — checking…' : lang === 'es' ? 'Redis — verificando…'
+      : lang === 'it' ? 'Redis — verifica…' : 'Redis — vérification…',
+  }
+  if (etat === 'absent') return {
+    ton: 'var(--text4)',
+    texte: lang === 'en' ? 'Redis — not configured (cache disabled, demo unavailable)'
+      : lang === 'es' ? 'Redis — sin configurar (caché desactivada, demo no disponible)'
+      : lang === 'it' ? 'Redis — non configurato (cache disattivata, demo non disponibile)'
+      : 'Redis — non configuré (cache désactivé, démo indisponible)',
+  }
+  if (etat === 'up') return {
+    ton: 'var(--acc2)',
+    texte: lang === 'en' ? 'Redis — responding' : lang === 'es' ? 'Redis — responde'
+      : lang === 'it' ? 'Redis — risponde' : 'Redis — répond',
+  }
+  return {
+    ton: 'var(--danger)',
+    texte: lang === 'en' ? 'Redis — DOWN: the self-serve demo is refusing'
+      : lang === 'es' ? 'Redis — CAÍDO: la demo autoservicio está rechazando'
+      : lang === 'it' ? 'Redis — NON RISPONDE: la demo self-service rifiuta'
+      : 'Redis — TOMBÉ : la démo en libre-service refuse',
+  }
 }
 
 export default function OpsInfrastructure() {
@@ -137,6 +190,16 @@ export default function OpsInfrastructure() {
             {lang === 'en' ? `checked ${ilYA}s ago` : lang === 'es' ? `verificado hace ${ilYA}s` : lang === 'it' ? `verificato ${ilYA}s fa` : `vérifié il y a ${ilYA} s`}
           </span>
         )}
+        {/* ── Redis, SONDÉ par le serveur et lu dans la même réponse ── */}
+        {(() => {
+          const r = libelleRedis(probe.redis, lang)
+          return (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, flexBasis: '100%' }}>
+              <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: r.ton }}/>
+              <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: r.ton }}>{r.texte}</span>
+            </span>
+          )
+        })()}
       </div>
 
       {/* ── SONDE D'EXPÉDITION E-MAIL — mesurée, datée, capable de ne PAS conclure ── */}
