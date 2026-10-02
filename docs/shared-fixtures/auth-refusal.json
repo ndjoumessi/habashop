@@ -1,0 +1,8 @@
+{
+  "_pourquoi": "Un 401 n'a pas un seul sens dans cette API : trois routes l'emploient pour « mot de passe incorrect » et deux pour « signature de webhook invalide ». Ce code identifie POSITIVEMENT le seul cas qui exige une reconnexion — le jeton porté est illisible, expiré, ou rattaché à un compte disparu. Émis par apps/backend/src/lib/authRefusal.ts, exigé par mobile/src/lib/sessionExpiree.ts.",
+  "_jumeaux": [
+    "apps/backend/src/tests/codeJetonInvalide.test.ts",
+    "mobile/src/__tests__/sessionExpiree.test.ts"
+  ],
+  "tokenInvalid": "TOKEN_INVALID"
+}

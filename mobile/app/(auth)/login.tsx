@@ -9,7 +9,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useI18n, useTheme } from '@/stores/appStore'
 import { authApi, apiErrorMessage } from '@/services/api'
 import type { User, Tenant } from '@/types'
-import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
+import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
 import AccessibleButton from '@/components/ui/AccessibleButton'
 import {
   isBiometricAvailable, isBiometricEnabled, authenticateWithBiometric,
@@ -22,7 +22,7 @@ import DemoAccountsRow from '@/components/DemoAccountsRow'
 export default function LoginScreen() {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
-  const { setAuth } = useAuthStore()
+  const { setAuth, sessionExpired } = useAuthStore()
   const { i } = useI18n()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -140,6 +140,20 @@ export default function LoginScreen() {
           <Text style={s.title}>
             {i('Se connecter','Sign in','Iniciar sesión','Accedi')}
           </Text>
+
+          {/* Le serveur a rejeté le jeton PENDANT la session (jeton expiré, compte
+              désactivé). Sans ce bandeau, le commerçant se retrouve ici sans savoir
+              pourquoi — et croit à un bug. `role=alert` pour TalkBack. */}
+          {sessionExpired && (
+            <Text style={s.expire} accessibilityRole="alert">
+              {i(
+                'Votre session a expiré. Reconnectez-vous.',
+                'Your session has expired. Please sign in again.',
+                'Tu sesión ha caducado. Vuelve a iniciar sesión.',
+                'La tua sessione è scaduta. Accedi di nuovo.',
+              )}
+            </Text>
+          )}
 
           {biometricAvailable && biometricEnabled && !usePassword ? (
             // ── Vue biométrique : AUCUN champ mot de passe affiché ──
@@ -311,6 +325,15 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   title:{
     fontSize:FontSize.xl,fontFamily:'Geist_800ExtraBold',
     color:C.text,
+  },
+  expire:{
+    // ⚠️ Texte en `text`, PAS en `warn` : mesuré, `warn` sur ce fond teinté rend
+    // 2,55:1 en thème CLAIR — sous le seuil AA de 4,5. Le signal est porté par le
+    // fond et la bordure ambre ; le texte, lui, doit rester lisible.
+    fontSize:FontSize.sm,fontFamily:'Geist_600SemiBold',color:C.text,
+    backgroundColor:withAlpha(C.warn,0.12),
+    borderWidth:1,borderColor:withAlpha(C.warn,0.3),
+    borderRadius:BorderRadius.md,padding:Spacing.md,
   },
   field:{gap:Spacing.xs},
   label:{

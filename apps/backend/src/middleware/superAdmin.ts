@@ -1,4 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
+import { TOKEN_INVALID } from '../lib/authRefusal'
 
 // Gate PLATEFORME (super-admin SaaS) pour /api/admin/* et les crons WhatsApp de test.
 // ⚠️ Gate sur isPlatformAdmin (propriété per-user signée serveur), JAMAIS sur le rôle
@@ -13,6 +14,6 @@ export async function authenticateAdmin(request: FastifyRequest, reply: FastifyR
       return reply.code(403).send({ error: 'Accès refusé — administrateur plateforme requis' })
     }
   } catch {
-    reply.code(401).send({ error: 'Non autorisé' })
+    reply.code(401).send({ error: 'Non autorisé', code: TOKEN_INVALID })
   }
 }

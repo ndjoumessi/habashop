@@ -52,3 +52,28 @@ describe('Contraste WCAG AA — paires texte/fond (Dark + Light)', () => {
     expect(Math.round(contrast('#000000', '#FFFFFF'))).toBe(21)
   })
 })
+
+// ── Bandeau « session expirée » de l'écran de connexion ──────────────────────
+// Fond teinté `withAlpha(warn, 0.12)` par-dessus la carte. ⚠️ Le texte y est en
+// `text`, pas en `warn` : mesuré le 2026-10-02, `warn` sur ce fond rend 2,55:1 en
+// thème CLAIR. Le signal passe par le fond et la bordure, jamais au prix de la lecture.
+describe('bandeau session expirée — lisible dans les deux thèmes', () => {
+  function melange(fg: string, bg: string, a: number): string {
+    const h = (x: string) => [1, 3, 5].map(i => parseInt(x.slice(i, i + 2), 16))
+    const [fr, fg2, fb] = h(fg)
+    const [br, bg3, bb] = h(bg)
+    const m = [fr * a + br * (1 - a), fg2 * a + bg3 * (1 - a), fb * a + bb * (1 - a)]
+    return '#' + m.map(v => Math.round(v).toString(16).padStart(2, '0')).join('')
+  }
+  for (const [nom, P] of [['sombre', DarkColors], ['clair', LightColors]] as const) {
+    it(`thème ${nom} — texte du bandeau ≥ AA`, () => {
+      const fond = melange(P.warn, P.card, 0.12)
+      expect(contrast(P.text, fond)).toBeGreaterThanOrEqual(AA_NORMAL)
+    })
+  }
+  // Contrôle discriminant : la couleur qu'on a ÉCARTÉE échoue bien en clair.
+  it('`warn` sur ce fond échouerait en thème clair — c’est pourquoi on ne l’emploie pas', () => {
+    const fond = melange(LightColors.warn, LightColors.card, 0.12)
+    expect(contrast(LightColors.warn, fond)).toBeLessThan(AA_NORMAL)
+  })
+})

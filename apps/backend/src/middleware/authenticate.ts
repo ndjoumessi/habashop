@@ -1,6 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { isUserActive } from '../lib/userStatus'
 import { bindActiveTenant } from '../lib/tenantContext'
+import { TOKEN_INVALID } from '../lib/authRefusal'
 
 // Chemins accessibles SANS boutique active (sélection multi-boutiques + dashboard consolidé).
 // `request.url` peut contenir une query string → on teste le préfixe du pathname.
@@ -25,7 +26,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
   try {
     await request.jwtVerify()
   } catch {
-    return reply.code(401).send({ error: 'Non autorisé' })
+    return reply.code(401).send({ error: 'Non autorisé', code: TOKEN_INVALID })
   }
 
   const u = request.user
@@ -42,7 +43,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
   bindActiveTenant(request.tenantId ?? null) // frontière ALS : attend `string | null`
 
   if (!(await isUserActive(u?.userId))) {
-    return reply.code(401).send({ error: 'Compte introuvable' })
+    return reply.code(401).send({ error: 'Compte introuvable', code: TOKEN_INVALID })
   }
 
   if (!request.tenantId && !allowsNoActiveTenant(String(request.url))) {

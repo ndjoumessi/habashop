@@ -881,6 +881,20 @@ Ce qui décide encore un geste :
 - **Un ≥500 ne renvoie JAMAIS `error.message` au client** (fuite Prisma/DB) → « Erreur serveur »,
   le vrai message reste journalisé. Les 4xx INTENTIONNELS gardent le leur — ils sont écrits pour
   l'appelant. Verrou `errorHandler.test.ts`.
+- ⚠️ **UN 401 N'A PAS UN SEUL SENS — seules les gardes de JETON posent `code: 'TOKEN_INVALID'`**
+  (`lib/authRefusal.ts`, posé par `authenticate` et `authenticateAdmin`). **Cinq** autres 401
+  refusent une PREUVE fournie dans la requête : mot de passe (`/api/auth/login`,
+  `PATCH /api/auth/password`, `DELETE /api/account/me`) et signature de webhook (PayDunya,
+  Campay). Un client qui déduit « session expirée » du seul statut **éjecte un commerçant sur
+  une faute de frappe** ; un client qui le déduit d'une liste d'URL exemptées se trompe au
+  prochain ajout de route. D'où une identification **POSITIVE**, et un défaut de prudence qui
+  va vers « je ne déconnecte pas ». Mesuré le 2026-10-02 : sans ce code, un jeton périmé
+  (TTL **7 j**) laissait le commerçant mobile **visuellement connecté** devant « Erreur —
+  toucher pour réessayer » sur tous les écrans — un message qui nomme une panne RÉSEAU et
+  invite à un réessai qui ne peut pas aboutir ; seul un redémarrage de l'app en sortait.
+  Verrous : `codeJetonInvalide.test.ts` (**périmètre DÉRIVÉ de `src/`** — tout `code(401)` y
+  est classé garde ou refus d'identifiants, 4 sabotages) · jumeau mobile
+  `sessionExpiree.test.ts` (4 sabotages), cas partagés `docs/shared-fixtures/auth-refusal.json`.
 - **Validation zod déclarative** : `setValidatorCompiler` global (⚠️ le **validator** SEUL, pas le
   serializer — sinon les réponses changent). Erreurs zod → **400 `{ error, code:'VALIDATION' }`**.
   ⚠️ Les règles MÉTIER (nom requis, `total<0`, MSISDN, force mdp) **restent dans les handlers** :

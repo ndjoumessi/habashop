@@ -3,13 +3,18 @@ import * as SecureStore from 'expo-secure-store'
 import { useAppStore, whenAppStoreHydrated } from './appStore'
 import { shouldApplyTenantCurrency } from '@/lib/prefs'
 import { getStoredPushToken, clearStoredPushToken } from '@/services/notifications'
+import { apiClient } from '@/services/api'
+import { estSessionExpiree } from '@/lib/sessionExpiree'
 import type { User, Tenant } from '@/types'
 
 interface AuthState {
   user: User | null; tenant: Tenant | null
   token: string | null; isLoading: boolean; isLoggedIn: boolean
+  /** Le serveur a rejeté le jeton EN COURS DE SESSION → l'écran de connexion le dit. */
+  sessionExpired: boolean
   setAuth: (token: string, user: User, tenant: Tenant) => Promise<void>
   logout: () => Promise<void>
+  expireSession: () => Promise<void>
   restoreSession: () => Promise<void>
 }
 
@@ -32,11 +37,12 @@ async function syncCurrencyFromTenant(tenant: Tenant | null | undefined): Promis
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null, tenant: null, token: null,
-  isLoading: true, isLoggedIn: false,
+  isLoading: true, isLoggedIn: false, sessionExpired: false,
 
   setAuth: async (token, user, tenant) => {
     await SecureStore.setItemAsync('auth_token', token)
-    set({ token, user, tenant, isLoggedIn: true, isLoading: false })
+    // Une reconnexion réussie efface le bandeau : sinon il resterait pour toujours.
+    set({ token, user, tenant, isLoggedIn: true, isLoading: false, sessionExpired: false })
     syncCurrencyFromTenant(tenant)
   },
 
@@ -51,8 +57,27 @@ export const useAuthStore = create<AuthState>((set) => ({
       await clearStoredPushToken()
     }
     await SecureStore.deleteItemAsync('auth_token')
-    set({ user:null, tenant:null, token:null, isLoggedIn:false })
+    // Déconnexion VOULUE : pas de bandeau « session expirée », rien n'a expiré.
+    set({ user:null, tenant:null, token:null, isLoggedIn:false, sessionExpired:false })
   },
+
+  /**
+   * Le serveur a rejeté le JETON pendant que l'application tournait (cf.
+   * `lib/sessionExpiree.ts`). On purge et on l'ANNONCE — un écran muet laisserait le
+   * commerçant devant des erreurs réseau qu'aucun réessai ne peut résoudre.
+   *
+   * ⚠️ Idempotente : une page qui charge quatre requêtes en parallèle produit quatre
+   * 401 d'un coup. Sans cette garde, on repurgerait et on écraserait l'état quatre fois.
+   * On NE désenregistre PAS le jeton push ici (contrairement à `logout`) : l'appel
+   * exigerait le jeton qu'on vient de constater mort, et rendrait un nouveau 401.
+   */
+  expireSession: async () => {
+    if (useAuthStore.getState().sessionExpired) return
+    await SecureStore.deleteItemAsync('auth_token')
+    set({ user:null, tenant:null, token:null, isLoggedIn:false, isLoading:false, sessionExpired:true })
+  },
+
+  // (l'intercepteur qui l'appelle est installé en bas de ce fichier)
 
   restoreSession: async () => {
     set({ isLoading: true })
@@ -110,3 +135,29 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 }))
+
+/**
+ * UN JETON REJETÉ EN COURS DE SESSION DÉCONNECTE — il n'affiche pas « réessayer ».
+ *
+ * `restoreSession` ne traite le 401 qu'au DÉMARRAGE. Un jeton qui meurt pendant que
+ * l'application tourne n'était traité NULLE PART (mesuré le 2026-10-02) : le commerçant
+ * restait visuellement connecté devant des écrans en erreur réseau, et seul un
+ * redémarrage de l'application le sortait de là.
+ *
+ * ⚠️ POSÉ ICI, PAS DANS `services/api.ts` : le sens de l'import est une contrainte, pas
+ * un goût. `api → authStore` boucle (`authStore → notifications → api`) ; `authStore →
+ * api` est acyclique. Et l'import dynamique qui aurait contourné le cycle N'EST PAS
+ * TESTABLE — jest le refuse sans `--experimental-vm-modules`, si bien que le garde
+ * aurait été silencieusement mort sous un test vert.
+ *
+ * ⚠️ L'erreur est RE-REJETÉE : l'appelant garde son traitement (toast, bascule hors
+ * ligne, écran d'erreur). On ajoute une conséquence, on n'en retire aucune.
+ *
+ * La règle de décision vit dans `lib/sessionExpiree.ts` : elle exige un code POSITIF
+ * émis par les gardes de jeton, pour ne pas confondre un jeton mort avec un mot de
+ * passe mal tapé (trois routes rendent 401 pour ça).
+ */
+apiClient.interceptors.response.use(undefined, async (err: unknown) => {
+  if (estSessionExpiree(err)) await useAuthStore.getState().expireSession()
+  return Promise.reject(err)
+})
