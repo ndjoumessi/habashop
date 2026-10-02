@@ -1,5 +1,13 @@
 import { logger } from '@/lib/logger'
 import { isDemoSession, clearDemoSession } from '@/lib/demoSession'
+
+/**
+ * Code de refus posé par les GARDES DE JETON du backend (`apps/backend/src/lib/authRefusal.ts`)
+ * — et par elles seules. Troisième exemplaire de la règle (backend, mobile, web) ; les trois
+ * sont tenus par les cas partagés `docs/shared-fixtures/auth-refusal.json`, lus par les tests
+ * de chaque côté. Renommer d'un seul côté fait rougir les deux autres.
+ */
+const CODE_JETON_INVALIDE = 'TOKEN_INVALID'
 import type { ApiSupplier, SupplierCreate, SupplierWrite } from '@/components/suppliers/suppliersShared'
 import type { ApiOrder, OrderWrite } from '@/components/orders/ordersShared'
 import type { ApiCustomer, ApiCustomerSearchHit, ApiCustomerSale, CustomerWrite } from '@/components/customers/customersShared'
@@ -100,22 +108,44 @@ async function request<T>(
     })
 
     if (res.status === 401) {
-      logger.warn('Token expiré → sortie de session')
-      localStorage.removeItem('habashop_token')
-      localStorage.removeItem('habashop-auth')
-      // ⚠️ Un visiteur de DÉMO n'a PAS de compte : l'envoyer sur /login après l'expiration
-      // de sa démo lui présente un formulaire qu'il ne peut pas remplir. Le backend rend un
-      // 401 propre dans ce cas (`authenticate` → `isUserActive` ne trouve plus l'utilisateur
-      // purgé), donc c'est bien ici, et seulement ici, que la destination se décide.
-      if (isDemoSession()) {
-        clearDemoSession()
-        if (window.location.pathname !== '/') window.location.href = '/?demo=expiree'
-        throw new Error('Votre démonstration a expiré')
+      // Le corps d'une réponse ne se lit QU'UNE FOIS : on le lit ici, et les deux issues
+      // ci-dessous s'en servent.
+      const brut = await res.text()
+      let corps: { error?: string; code?: string } = {}
+      try { corps = JSON.parse(brut) } catch { /* corps vide ou non JSON */ }
+
+      // ⚠️ UN 401 N'A PAS UN SEUL SENS, et les confondre a déconnecté des commerçants.
+      // `PATCH /api/auth/password` (Réglages → Changer le mot de passe) rend 401 quand le
+      // mot de passe ACTUEL est faux ; `/api/auth/login` et `DELETE /api/account/me` aussi.
+      // Avant ce garde, une faute de frappe purgeait la session et annonçait « Session
+      // expirée » — un diagnostic faux sur une erreur que l'utilisateur venait de commettre.
+      // Seules les gardes de JETON du backend posent ce code (`lib/authRefusal.ts`) ;
+      // cas partagés : `docs/shared-fixtures/auth-refusal.json`.
+      // ⚠️ Le défaut de prudence va vers « je ne déconnecte pas » : un 401 sans code (corps
+      // illisible, backend plus ancien) laisse l'erreur remonter à l'appelant.
+      if (corps.code === CODE_JETON_INVALIDE) {
+        logger.warn('Jeton rejeté par le serveur → sortie de session')
+        localStorage.removeItem('habashop_token')
+        localStorage.removeItem('habashop-auth')
+        // ⚠️ Un visiteur de DÉMO n'a PAS de compte : l'envoyer sur /login après l'expiration
+        // de sa démo lui présente un formulaire qu'il ne peut pas remplir. Le backend rend un
+        // 401 propre dans ce cas (`authenticate` → `isUserActive` ne trouve plus l'utilisateur
+        // purgé, et ce 401-là PORTE le code), donc c'est bien ici que la destination se décide.
+        if (isDemoSession()) {
+          clearDemoSession()
+          if (window.location.pathname !== '/') window.location.href = '/?demo=expiree'
+          throw new Error('Votre démonstration a expiré')
+        }
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login'
+        }
+        throw new Error('Session expirée — reconnectez-vous')
       }
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login'
-      }
-      throw new Error('Session expirée — reconnectez-vous')
+
+      // Refus d'IDENTIFIANTS : erreur ordinaire, message du serveur, session intacte.
+      const refus = new Error(corps.error ?? 'Erreur 401') as Error & { status?: number }
+      refus.status = 401
+      throw refus
     }
 
     if (res.status === 404) {

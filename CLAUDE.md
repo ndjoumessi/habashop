@@ -892,9 +892,17 @@ Ce qui décide encore un geste :
   (TTL **7 j**) laissait le commerçant mobile **visuellement connecté** devant « Erreur —
   toucher pour réessayer » sur tous les écrans — un message qui nomme une panne RÉSEAU et
   invite à un réessai qui ne peut pas aboutir ; seul un redémarrage de l'app en sortait.
+  ⚠️ **ET LE WEB AVAIT LE DÉFAUT MIROIR, EN SERVICE** : `lib/api.ts` purgeait la session sur
+  TOUT 401, donc une faute de frappe dans Réglages → Changer le mot de passe **déconnectait**
+  le commerçant en lui annonçant « Session expirée ». Corrigé le 2026-10-02. ⚠️ **Il y avait
+  DEUX clients HTTP** — `src/services/api.ts`, mort depuis le premier commit de la vitrine
+  (0 importateur contre 127, absent du `dist/`), portait sa propre politique « tout 401 ⇒
+  /login » et une route `/api/auth/refresh` **qui n'existe pas** : supprimé, et le périmètre
+  est verrouillé (aucun module non nommé ne manipule un 401).
   Verrous : `codeJetonInvalide.test.ts` (**périmètre DÉRIVÉ de `src/`** — tout `code(401)` y
   est classé garde ou refus d'identifiants, 4 sabotages) · jumeau mobile
-  `sessionExpiree.test.ts` (4 sabotages), cas partagés `docs/shared-fixtures/auth-refusal.json`.
+  `sessionExpiree.test.ts` (4 sabotages) · jumeau web `refus401.test.ts` (4 sabotages), cas
+  partagés `docs/shared-fixtures/auth-refusal.json`.
 - **Validation zod déclarative** : `setValidatorCompiler` global (⚠️ le **validator** SEUL, pas le
   serializer — sinon les réponses changent). Erreurs zod → **400 `{ error, code:'VALIDATION' }`**.
   ⚠️ Les règles MÉTIER (nom requis, `total<0`, MSISDN, force mdp) **restent dans les handlers** :
