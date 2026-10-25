@@ -62,7 +62,19 @@ on:
 jobs:
   density:
     name: Géométrie réelle — 390 / 1440 / 2560 px
-    runs-on: ubuntu-latest
+    # ⚠️ OS ÉPINGLÉ, et seulement sur les jobs Playwright. Le 2026-10-25, GitHub a fait
+    # passer `ubuntu-latest` sur **26.04**, que le Playwright épinglé ici ne connaît pas :
+    # « ERROR: Playwright does not support chromium on ubuntu26.04-x64 ». Les jobs ont bien
+    # exécuté des étapes — c'est une incompatibilité d'ENVIRONNEMENT, pas une panne de
+    # plateforme ni un défaut du dépôt (cf. CLAUDE.md § « CI ROUGE ≠ CODE FAUTIF »).
+    #
+    # ⚠️ Les AUTRES jobs restent sur `ubuntu-latest` : les figer tous gèlerait toute la CI
+    # sur une image ancienne pour un problème qui ne touche que le navigateur.
+    #
+    # ⚠️ POUR DÉSÉPINGLER : monter `@playwright/test` vers une version qui supporte 26.04,
+    # puis REVALIDER les seuils du workflow densité — il mesure des pixels, et changer le
+    # moteur de rendu change ce qu'il mesure. C'est un chantier à part, pas un effet de bord.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
