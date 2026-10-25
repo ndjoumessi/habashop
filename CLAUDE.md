@@ -146,6 +146,23 @@ Ce n'est pas le cliquet franchi qui compte, c'est que l'échec soit **passé ina
 
 ⚠️ **Le motif ne se répète PAS ailleurs — vérifié, pas supposé.** Les deux `continue-on-error: true` (npm audit) sont **délibérés, nommés « non bloquant », et l'étape reste visiblement en échec**. Ne pas les « corriger » par analogie. 📖 *`docs/lessons/deploiement-et-ci.md`.*
 
+⚠️ **ET UNE ALARME SE JUGE AUSSI À SON PÉRIMÈTRE, PAS SEULEMENT À SA CAPACITÉ D'ÉCHOUER.**
+Corrigé le 2026-10-25, et c'est le même défaut d'un cran plus haut : `notify-failure` était
+réparé (plus d'`exit 0` silencieux) mais ses `needs` ne listaient que les **suites unitaires**.
+Or `failure()` ne juge QUE les `needs` : sur un run où `deploy-landed` était rouge et la
+production en 404, le job était **IGNORÉ** — l'alarme ne regardait pas l'incendie pour lequel
+elle avait été écrite. Même run, même famille : `summary` écrivait **« ✅ CI réussie »** en tête
+de page (bannière inconditionnelle, `$GITHUB_STEP_SUMMARY`) et sondait la santé de la prod par
+un `echo` sans `::error::` ni `::warning::`. **Règle : tout job qui ALERTE ou qui RÉSUME dépend
+de TOUS les jobs du run**, sa bannière se **DÉRIVE** de `needs.*.result` (jamais un littéral), et
+il échoue quand l'un d'eux est `failure`/`cancelled` — `skipped` n'étant pas un échec, pour
+nommer la cause racine et non ses conséquences. ⚠️ `always()` devient alors OBLIGATOIRE sur le
+résumé : sans lui, un seul besoin rouge le fait SAUTER, donc disparaître les jours où il a
+quelque chose à dire. ⚠️ Un seul fait, un seul propriétaire : la santé du back appartient à
+`deploy-landed` (preuve par l'ÂGE du conteneur, et il échoue) — la sonde faible du résumé a été
+**supprimée**, pas réparée. Deux gardes sur un même fait dont l'un ne peut pas rougir, c'est la
+paire qui se désigne mutuellement comme filet sans qu'aucun ne tienne.
+
 ### ⚠️ CI ROUGE ≠ CODE FAUTIF — lire l'exécution AVANT d'accuser le dépôt
 
 Deux causes **indépendantes** se superposent sur une série de runs rouges — notre code, et une panne de plateforme. Les confondre a produit deux diagnostics faux d'affilée.

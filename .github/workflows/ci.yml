@@ -280,21 +280,76 @@ jobs:
   summary:
     name: Résumé déploiement
     runs-on: ubuntu-latest
-    needs: [unit-tests-backend, unit-tests-frontend, unit-tests-mobile, security]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # ⚠️ TOUS les jobs du run, pas seulement les suites unitaires. Ce job écrit la bannière
+    # qu'on lit en haut de la page ; une bannière qui ne VOIT pas les jobs de déploiement ne
+    # peut rien dire de vrai à leur sujet. MESURÉ le 2026-10-25 : « ✅ CI réussie » s'affichait
+    # sur un run où `deploy-landed`, l'intégration et l'E2E étaient rouges et où la production
+    # répondait 404. C'est « le champ déclaré qui se fait passer pour une mesure », appliqué à
+    # la CI — et le haut de page contredisait le bas, comme toujours au profit du haut.
+    needs: [unit-tests-backend, unit-tests-frontend, unit-tests-mobile, security, deploy-landed, integration-tests, e2e-tests]
+    # ⚠️ `always()` est OBLIGATOIRE avec ces `needs` : sans lui, un seul besoin en échec ou
+    # ignoré suffit à SAUTER ce job — donc à le faire disparaître exactement les jours où il
+    # a quelque chose à dire.
+    if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - name: Vérifier la santé de la prod
-        run: |
-          echo "Vérification santé production…"
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            https://habashop-production.up.railway.app/api/health-extended)
-          if [ "$STATUS" != "200" ]; then
-            echo "⚠️ Health check prod: HTTP $STATUS (déploiement peut-être en attente)"
-          else
-            echo "✅ Production saine: HTTP $STATUS"
-          fi
+      # ⚠️ LA SANTÉ DE LA PROD N'EST PLUS SONDÉE ICI, et c'est une suppression, pas un oubli.
+      # Cette étape faisait un `curl` puis `echo "⚠️ … (déploiement peut-être en attente)"` et
+      # CONTINUAIT : ni `::error::`, ni `::warning::`, donc rien hors du job — un fail-open non
+      # tracé, le motif que ce fichier combat deux jobs plus bas. Le fait appartient à
+      # `deploy-landed`, qui en a une preuve plus forte (l'ÂGE du conteneur, `boot = serverTime
+      # − uptime`) et qui ÉCHOUE. Deux gardes sur un même fait, dont l'un ne peut pas rougir,
+      # c'est la paire qui se désigne mutuellement comme filet sans qu'aucun ne tienne.
       - name: Note de déploiement
+        env:
+          # ⚠️ Résultats passés en VARIABLES, jamais interpolés dans le corps du `run:` — même
+          # convention que l'alerte Discord plus bas. Syntaxe à crochets : les identifiants de
+          # job portent des tirets.
+          R_BACK:   ${{ needs['unit-tests-backend'].result }}
+          R_FRONT:  ${{ needs['unit-tests-frontend'].result }}
+          R_MOBILE: ${{ needs['unit-tests-mobile'].result }}
+          R_SECU:   ${{ needs['security'].result }}
+          R_DEPLOY: ${{ needs['deploy-landed'].result }}
+          R_INTEG:  ${{ needs['integration-tests'].result }}
+          R_E2E:    ${{ needs['e2e-tests'].result }}
+          # Même convention, et pas seulement par principe : tant que ces deux-là étaient
+          # interpolés dans le corps du `run:`, le script n'était pas exécutable hors de
+          # GitHub — donc invérifiable autrement qu'en poussant. En `env:`, on le rejoue tel
+          # quel en local avec des résultats simulés.
+          SHA:     ${{ github.sha }}
+          AUTEUR:  ${{ github.actor }}
         run: |
+          # `skipped` n'est pas un échec : sur un run où les tests unitaires tombent, les jobs
+          # d'intégration et E2E sont ignorés — c'est la cause RACINE qu'il faut nommer, pas
+          # ses conséquences. `cancelled` en est un : un job annulé n'a rien prouvé.
+          ECHECS=""
+          verifie() {
+            case "$2" in
+              success|skipped) ;;
+              *) ECHECS="${ECHECS}- ${1} : ${2}"$'\n' ;;
+            esac
+          }
+          verifie "Tests backend"               "$R_BACK"
+          verifie "Tests frontend"              "$R_FRONT"
+          verifie "Tests mobile"                "$R_MOBILE"
+          verifie "Security Scan"               "$R_SECU"
+          verifie "Déploiement backend atterri" "$R_DEPLOY"
+          verifie "Tests d'intégration (prod)"  "$R_INTEG"
+          verifie "Tests E2E (prod)"            "$R_E2E"
+          if [ -n "$ECHECS" ]; then
+            {
+              echo "## ❌ CI en échec — NE PAS considérer ce commit comme déployé"
+              echo ""
+              echo "Jobs non verts :"
+              echo ""
+              printf '%b' "$ECHECS"
+              echo ""
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::CI en échec — voir la liste des jobs non verts dans le résumé du run."
+            # ⚠️ On ÉCHOUE. Un « Résumé déploiement » vert au-dessus d'un run rouge est pire
+            # qu'un résumé absent : c'est la ligne qu'on lit en premier, et l'œil croit la
+            # couleur avant la phrase. Le run étant déjà rouge, ce rouge-ci ne coûte rien.
+            exit 1
+          fi
           echo "## ✅ CI réussie" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Le déploiement est **automatique** sur push \`main\` — Railway (back) ET Vercel (front)." >> $GITHUB_STEP_SUMMARY
@@ -311,8 +366,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Item | Valeur |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Auteur | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`$SHA\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Auteur | $AUTEUR |" >> $GITHUB_STEP_SUMMARY
           echo "| Frontend | https://habashop.vercel.app |" >> $GITHUB_STEP_SUMMARY
           echo "| Backend | https://habashop-production.up.railway.app |" >> $GITHUB_STEP_SUMMARY
 
@@ -320,7 +375,12 @@ jobs:
   notify-failure:
     name: Notify on failure
     runs-on: ubuntu-latest
-    needs: [unit-tests-backend, unit-tests-frontend, unit-tests-mobile]
+    # ⚠️ TOUS les jobs, et c'est le cœur du correctif du 2026-10-25. `failure()` ne juge que
+    # les `needs` : avec les seules suites unitaires, ce job restait IGNORÉ sur un run où
+    # `deploy-landed` était rouge — c'est-à-dire précisément la panne pour laquelle il existe
+    # (« dix déploiements Railway échoués en deux mois sans qu'aucun signal ne parte »).
+    # L'alarme ne regardait pas l'incendie qu'elle devait signaler.
+    needs: [unit-tests-backend, unit-tests-frontend, unit-tests-mobile, security, deploy-landed, integration-tests, e2e-tests]
     if: failure()
     steps:
       # ⚠️ CE JOB EST L'ALARME. Il ne doit JAMAIS se déclarer vert sans avoir sonné.
