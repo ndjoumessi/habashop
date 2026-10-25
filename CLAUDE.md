@@ -923,6 +923,11 @@ Ce qui décide encore un geste :
 - ⚠️ **Rotation secrets (P0.1, action Nelson, TOUJOURS OUVERTE)** : `apps/backend/.env` fut commité
   sur un dépôt **PUBLIC** — `JWT_SECRET` + `TWILIO_AUTH_TOKEN` à tourner. Purge d'historique =
   destructive, après rotation + accord.
+  ⚠️ **ET CETTE ROTATION A UN EFFET DE BORD HORS SESSION** : le QR code au pied des factures
+  encode un jeton signé, à défaut avec `JWT_SECRET` — tourner ce secret rendrait donc muet le
+  lien de **toutes les factures DÉJÀ REMISES aux clients**, sur du papier qu'on ne peut pas
+  reprendre, et sans qu'aucun signal ne parte. Poser **`INVOICE_LINK_SECRET`** (Railway) AVANT
+  la rotation découple les deux. 📖 *`docs/env-vars.md`, `docs/modules.md` § Facture PDF.*
 
 ### Garde de DÉPENSE externe ⚠️ (2026-07 — Anthropic / Twilio / Resend)
 

@@ -498,6 +498,60 @@ export interface ApiPublicProduct {
 
 export type ApiPublicCatalog = { tenant: ApiPublicTenant; products: ApiPublicProduct[] }
 
+/* ─── Facture publique (`GET /api/public/invoice/:token`) ───
+ * La page que le client du commerçant ouvre en scannant le QR code du pied de facture.
+ *
+ * ⚠️ Ce type décrit un contrat de CONFIDENTIALITÉ autant qu'une forme : il n'y a
+ * volontairement **aucun contact du client** (ni téléphone ni e-mail) et aucun champ
+ * interne de la vente (caissier, clé d'idempotence, références de prestataire). Ajouter
+ * un champ ici sans l'ajouter au `select` de la route le ferait lire comme disponible —
+ * le défaut déjà commis sur `ApiPublicTenant.phone` juste au-dessus.
+ */
+export interface ApiPublicInvoiceItem {
+  /** `null` si le produit a été supprimé depuis la vente — la ligne reste, le nom part. */
+  name: string | null
+  qty: number
+  unitPrice: number
+  total: number
+}
+
+export interface ApiPublicInvoiceShop {
+  name: string
+  address: string | null
+  /** Contact de la BOUTIQUE (déjà imprimé sur la facture), pas celui du client. */
+  phone: string | null
+  email: string | null
+  currency: string
+  vatRate: number
+  lang: string
+  ninea: string | null
+  rccm: string | null
+  vatNumber: string | null
+}
+
+export interface ApiPublicInvoice {
+  invoiceNumber: string
+  /** ISO. Jamais rendue brute à l'écran → `fmtDate`. */
+  date: string
+  /** `completed` | `refunded` — colonne `String` sans enum : une valeur inconnue reste neutre. */
+  status: string
+  paymentMode: string
+  /** Montants en base XOF (comme partout) → conversion à l'affichage seulement. */
+  total: number
+  /** ⚠️ HT et TVA viennent du SERVEUR (`lib/invoiceTotals.ts`) : la page n'en calcule aucun. */
+  subtotalHT: number
+  vatAmount: number
+  discountAmount: number
+  /** Ventilation du paiement mixte. `null` sur les ventes antérieures au split. */
+  cashAmount: number | null
+  mobileMoneyAmount: number | null
+  cardAmount: number | null
+  items: ApiPublicInvoiceItem[]
+  /** Nom seul, et `null` sur une vente de passage (aucune fiche client rattachée). */
+  customerName: string | null
+  shop: ApiPublicInvoiceShop
+}
+
 /* ──────────────────────── Session ──────────────────────── */
 
 /**

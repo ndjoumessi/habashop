@@ -307,6 +307,19 @@ const INVOICE_LOGO_SVG = `<svg viewBox="0 0 100 100" width="42" height="42" role
  * UNE SEULE FOIS, sur `InvoiceSale.items` dans `apps/backend/src/lib/invoicePdf.ts`.
  * Les DEUX générateurs sont vivants : ce qui change ici change là-bas.
  */
+/**
+ * ⚠️ **AUCUN QR CODE ICI, et c'est une exemption NOMMÉE** — pas un oubli du chantier du
+ * 2026-10-25, qui a mis un QR code au pied de la facture backend (`lib/invoicePdf.ts`).
+ *
+ * Le guide dit « deux générateurs vivants, corriger les DEUX ». Ce générateur-ci ne produit
+ * pas la même chose : son seul appelant vivant (`CustomersList`) demande un **devis**, qui
+ * n'est pas une vente persistée. Il n'y a donc aucun `saleId` à signer, donc aucune facture
+ * à faire voir — un QR code pointerait sur une page qui n'existe pas.
+ *
+ * Le jour où un appelant passerait ici une vente RÉELLE, le lien à encoder est celui que le
+ * serveur signe (`invoicePublicUrl(sale.id)`, servi par la route) — jamais un lien recalculé
+ * côté navigateur : le secret de signature n'y est pas, et il n'a rien à y faire.
+ */
 export function generateInvoice(opts: InvoiceOptions) {
   const { type, lang, customer, items, discount, paymentMode, ref, status } = opts
   const state = useAppStore.getState()

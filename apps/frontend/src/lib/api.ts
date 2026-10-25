@@ -17,7 +17,7 @@ import type {
   ApiSale, ApiSaleWithItems, ApiReportSales, SaleWrite, ApiExpense, ExpenseWrite, ApiGoal, GoalWrite,
   ApiSubscription, ApiSubscriptionWithItems, SubscriptionWrite, ApiAiAnalysis, ApiAiChat,
   ApiAdminTenant, ApiAdminStats, ApiPlanRequest, AdminCreateTenantWrite, ApiAdminSecurityEvent,
-  ApiPublicCatalog, ApiMe, ApiSessionUser, ApiTenant,
+  ApiPublicCatalog, ApiPublicInvoice, ApiMe, ApiSessionUser, ApiTenant,
   ApiTenantUser, ApiTicketZ, ApiLoyalty, ApiInvoiceOcr, WhatsAppBroadcastWrite, ApiAuditLogPage,
 } from '@/lib/apiTypes'
 import type { ApiDashboardStats } from '@/components/dashboard/dashboardShared'
@@ -567,6 +567,18 @@ export const publicApi = {
   // ⚠️ Contrat PUBLIC (aucun jeton) — forme visible de l'extérieur, cf. `apiTypes`.
   catalog: async (slug: string): Promise<ApiPublicCatalog | null> => {
     const res = await fetch(`${BASE_URL}/api/public/catalog/${encodeURIComponent(slug)}`)
+    if (res.status === 404) return null
+    if (!res.ok) throw new Error(`Erreur ${res.status}`)
+    return res.json()
+  },
+  /**
+   * Facture scannée depuis le QR code du pied de page — AUCUN jeton d'authentification :
+   * le jeton signé de l'URL est lui-même l'accès (cf. `lib/invoiceLink.ts` côté backend).
+   * ⚠️ Ne PAS la faire passer par `api.get` : ce client purge la session sur certains 401,
+   * et un visiteur qui n'est pas connecté n'a pas de session à perdre.
+   */
+  invoice: async (token: string): Promise<ApiPublicInvoice | null> => {
+    const res = await fetch(`${BASE_URL}/api/public/invoice/${encodeURIComponent(token)}`)
     if (res.status === 404) return null
     if (!res.ok) throw new Error(`Erreur ${res.status}`)
     return res.json()

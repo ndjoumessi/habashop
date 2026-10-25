@@ -52,6 +52,7 @@ const Privacy        = lazyRoute(() => import('@/pages/Privacy'))
 const Terms          = lazyRoute(() => import('@/pages/Terms'))
 const LegalNotice    = lazyRoute(() => import('@/pages/LegalNotice'))
 const PublicCatalog  = lazyRoute(() => import('@/pages/PublicCatalog'))
+const PublicInvoice  = lazyRoute(() => import('@/pages/PublicInvoice'))
 
 /**
  * HARNAIS DE MESURE — DÉV UNIQUEMENT (`/__dev/table`).
@@ -191,6 +192,10 @@ export default function App() {
       <Route path="/terms" element={<Terms />} />
       <Route path="/mentions-legales" element={<LegalNotice />} />
       <Route path="/c/:slug" element={<PublicCatalog />} />
+      {/* `/f/:token` — facture d'un client, ouverte depuis le QR code imprimé au pied du
+          PDF. Route PUBLIQUE par conception : le client d'une boutique n'a pas de compte,
+          le jeton signé de l'URL est tout l'accès (cf. `lib/invoiceLink.ts` backend). */}
+      <Route path="/f/:token" element={<PublicInvoice />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/select-shop" element={<ProtectedSelectShop />} />
       <Route

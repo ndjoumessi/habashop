@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify'
-import { prisma } from '../db'
+import { prisma, basePrisma } from '../db'
+import { parseInvoiceToken } from '../lib/invoiceLink'
+import { invoiceTotals } from '../lib/invoiceTotals'
 
 // Routes publiques (sans authentification).
 // IMPORTANT : ne JAMAIS exposer ici de champs sensibles (buyPrice, marges,
@@ -65,6 +67,91 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
         phone: undefined,
       },
       products,
+    }
+  })
+
+  /**
+   * `GET /api/public/invoice/:token` — la facture que le client du commerçant ouvre en
+   * scannant le QR code imprimé au pied du PDF. Aucune session : ce client n'a pas de
+   * compte (`Customer` est une fiche tenue par la boutique, il ne se connecte jamais).
+   * Le jeton signé EST l'accès ; `lib/invoiceLink.ts` dit pourquoi il en est la SEULE
+   * garde, et pourquoi le plafond par IP n'en est pas un repli.
+   */
+  app.get('/api/public/invoice/:token', async (req, reply) => {
+    const { token } = req.params as { token: string }
+    const saleId = parseInvoiceToken(token)
+    // Jeton illisible, tronqué ou mal signé → 404, exactement comme une facture
+    // inexistante. ⚠️ Jamais 401 : cette page n'a aucune session à expirer, et un 401 sur
+    // un chemin public se lirait « jeton périmé » côté client (cf. § Sécurité, « UN 401
+    // N'A PAS UN SEUL SENS »). Jamais 403 non plus — un code par cause dirait à un
+    // attaquant quelle moitié du jeton il a déjà juste.
+    if (!saleId) return reply.code(404).send({ error: 'Facture introuvable' })
+
+    // ⚠️ `basePrisma` (client NON étendu) : la lecture est cross-tenant par NATURE — on
+    // découvre la boutique DEPUIS la vente, il n'y a aucun contexte tenant à injecter.
+    // S'appuyer sur « le client étendu n'injecte rien hors contexte ALS » serait une
+    // justesse empruntée à un invariant distant ; ici le choix est explicite.
+    //
+    // ⚠️ `invoiceNumber: { not: null }` est une CONDITION, pas un filtre cosmétique : une
+    // page publique de facture n'existe que pour une facture ÉMISE. Le jeton, lui, dérive
+    // de l'id de vente et existe donc avant toute émission.
+    //
+    // ⚠️ `tenant.deletedAt: null` : une boutique fermée cesse de publier. Le client garde
+    // le PAPIER, qui est la pièce comptable ; la consultation en ligne est un service de
+    // la boutique et s'arrête avec elle.
+    const sale = await basePrisma.sale.findFirst({
+      where: { id: saleId, invoiceNumber: { not: null }, tenant: { deletedAt: null } },
+      select: {
+        invoiceNumber: true, total: true, discountAmount: true, paymentMode: true,
+        createdAt: true, status: true, customerId: true,
+        cashAmount: true, mobileMoneyAmount: true, cardAmount: true,
+        items: { select: { qty: true, unitPrice: true, total: true, product: { select: { name: true } } } },
+        // Contact de la boutique : déjà imprimé sur la facture ET déjà public dans le
+        // catalogue. Rien d'interne ici — ni `buyPrice`, ni marge, ni caissier, ni
+        // référence de prestataire de paiement.
+        tenant: {
+          select: {
+            name: true, address: true, phone: true, email: true,
+            currency: true, vatRate: true, lang: true,
+            ninea: true, rccm: true, vatNumber: true,
+          },
+        },
+      },
+    })
+    if (!sale) return reply.code(404).send({ error: 'Facture introuvable' })
+
+    // ⚠️ Le NOM seul — jamais le téléphone, jamais l'e-mail. Le papier porte le nom (c'est
+    // ce qui fait reconnaître « sa » facture) ; un lien qui fuiterait ne doit pas, en plus,
+    // livrer un numéro joignable. Même règle que la PII bannie des logs Railway.
+    const customer = sale.customerId
+      ? await basePrisma.customer.findUnique({ where: { id: sale.customerId }, select: { name: true } })
+      : null
+
+    // Une facture est personnelle : aucun cache, ni navigateur ni CDN.
+    reply.header('Cache-Control', 'no-store')
+
+    // ⚠️ HT et TVA sont CALCULÉS ICI, par la même fonction que le PDF : la page ne refait
+    // aucun calcul d'argent. Deux décompositions d'un même TTC divergent au premier cas
+    // limite, et c'est l'écran du client qui porterait l'écart.
+    const totaux = invoiceTotals(sale.total, Number(sale.tenant.vatRate) || 0)
+
+    return {
+      invoiceNumber: sale.invoiceNumber,
+      date: sale.createdAt,
+      status: sale.status,
+      paymentMode: sale.paymentMode,
+      total: totaux.totalTTC,
+      subtotalHT: totaux.subtotalHT,
+      vatAmount: totaux.vatAmount,
+      discountAmount: sale.discountAmount,
+      cashAmount: sale.cashAmount,
+      mobileMoneyAmount: sale.mobileMoneyAmount,
+      cardAmount: sale.cardAmount,
+      items: sale.items.map((it) => ({
+        name: it.product?.name ?? null, qty: it.qty, unitPrice: it.unitPrice, total: it.total,
+      })),
+      customerName: customer?.name ?? null,
+      shop: sale.tenant,
     }
   })
 }

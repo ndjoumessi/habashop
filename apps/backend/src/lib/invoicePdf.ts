@@ -1,4 +1,6 @@
 import PDFDocument from 'pdfkit'
+import QRCode from 'qrcode'
+import { invoiceTotals } from './invoiceTotals'
 import { TO_XOF_RATES } from './currency'
 
 // ── Numérotation (pure, testable) ──
@@ -101,8 +103,61 @@ export function drawLogo(doc: PDFKit.PDFDocument, x: number, y: number, size: nu
   doc.restore()
 }
 
-/** Rend la facture A4 en Buffer PDF (pdfkit). Localisée selon tenant.lang. */
-export function buildInvoicePdf(sale: InvoiceSale, tenant: InvoiceTenant, customer: InvoiceCustomer | null): Promise<Buffer> {
+/**
+ * Zone de silence du QR code, en modules. La norme en exige **4** : sans elle un scanner
+ * ne trouve pas les trois motifs de repérage, et le code devient illisible alors qu'il est
+ * imprimé correctement. Elle est RÉSERVÉE dans la boîte allouée (la page pdfkit est déjà
+ * blanche, il n'y a rien à peindre) — pas ajoutée autour, sinon le code mordrait sur le
+ * bord de page.
+ */
+const QR_QUIET_MODULES = 4
+
+/**
+ * QR code VECTORIEL tracé en pdfkit : net à n'importe quelle échelle d'impression, aucun
+ * asset à embarquer, et pas de requête sortante (contrairement à une photo produit, cf.
+ * `InvoiceSale.items`).
+ *
+ * ⚠️ **Un seul `fill()` pour tout le code, et c'est ce qui le rend lisible** : les modules
+ * sont accumulés dans UN SEUL chemin, donc les carrés voisins fusionnent en une région
+ * unique. Peints un par un, le rendu laisserait entre eux des liserés clairs
+ * d'anti-aliasing — et un scanner lit des contrastes, pas nos intentions.
+ *
+ * `size` est la boîte TOTALE (modules + zone de silence), pour que l'appelant raisonne sur
+ * la place qu'il donne et non sur une géométrie qu'il devrait recalculer.
+ */
+export function drawQr(doc: PDFKit.PDFDocument, text: string, x: number, y: number, size: number) {
+  const { modules } = QRCode.create(text, { errorCorrectionLevel: 'M' })
+  const n = modules.size
+  const cell = size / (n + 2 * QR_QUIET_MODULES)
+  const ox = x + QR_QUIET_MODULES * cell
+  const oy = y + QR_QUIET_MODULES * cell
+  doc.save()
+  for (let row = 0; row < n; row++) {
+    // Fusion des modules noirs CONSÉCUTIFS en un seul rectangle : une quarantaine
+    // d'opérations de tracé au lieu de plusieurs centaines, et une jointure de moins.
+    let runStart = -1
+    for (let col = 0; col <= n; col++) {
+      const on = col < n && Boolean(modules.get(row, col))
+      if (on && runStart < 0) runStart = col
+      if (!on && runStart >= 0) {
+        doc.rect(ox + runStart * cell, oy + row * cell, (col - runStart) * cell, cell)
+        runStart = -1
+      }
+    }
+  }
+  doc.fill('#000000')
+  doc.restore()
+}
+
+/**
+ * Rend la facture A4 en Buffer PDF (pdfkit). Localisée selon tenant.lang.
+ *
+ * `publicUrl` = l'adresse encodée dans le QR code du pied (`lib/invoiceLink.ts`). Paramètre
+ * **OBLIGATOIRE**, sans valeur par défaut : le compilateur force ainsi tout futur appelant à
+ * répondre « cette facture porte-t-elle un lien scannable ? », comme le `owner` de
+ * `sendWhatsApp` ou la `policy` de `normalizeMsisdn`. `null` = aucun QR.
+ */
+export function buildInvoicePdf(sale: InvoiceSale, tenant: InvoiceTenant, customer: InvoiceCustomer | null, publicUrl: string | null): Promise<Buffer> {
   const lang = (tenant.lang as Lang) || 'fr'
   const i = L(lang)
   const cur = tenant.currency || 'XOF'
@@ -110,11 +165,11 @@ export function buildInvoicePdf(sale: InvoiceSale, tenant: InvoiceTenant, custom
   const date = new Date(sale.createdAt)
   const dateStr = date.toLocaleDateString(dloc(lang), { day: '2-digit', month: 'long', year: 'numeric' })
 
-  // Totaux : sale.total = TTC. On dérive HT + TVA si vatRate > 0.
-  const totalTTC = sale.total
+  // Totaux : `sale.total` = TTC, HT et TVA en DÉRIVENT — via `lib/invoiceTotals.ts`, que
+  // la page publique de la même facture lit aussi. Recalculer ici ferait deux chiffres
+  // pour une seule grandeur, sur le document qui porte de l'argent.
   const vat = Number(tenant.vatRate) || 0
-  const subtotalHT = vat > 0 ? totalTTC / (1 + vat / 100) : totalTTC
-  const vatAmount = totalTTC - subtotalHT
+  const { totalTTC, subtotalHT, vatAmount } = invoiceTotals(sale.total, vat)
 
   const doc = new PDFDocument({ size: 'A4', margin: 50 })
   const chunks: Buffer[] = []
@@ -226,17 +281,55 @@ export function buildInvoicePdf(sale: InvoiceSale, tenant: InvoiceTenant, custom
     tenant.rccm ? `RC ${tenant.rccm}` : null,
     tenant.vatNumber ? `N° TVA ${tenant.vatNumber}` : null,
   ].filter(Boolean) as string[]
-  doc.moveTo(left, 742).lineTo(right, 742).strokeColor('#ECECF2').stroke()
-  if (legalParts.length) {
+  // ⚠️ LE QR CODE N'EXISTE QUE S'IL Y A QUELQU'UN POUR LE SCANNER : une vente de passage
+  // n'a aucun client rattaché, donc personne à qui promettre « votre facture ». La règle
+  // vit ICI, en un seul endroit — pas dans la route : le test du PDF peut alors l'exercer
+  // dans les DEUX sens, et un futur appelant ne peut pas l'oublier au passage.
+  const qrUrl = customer && publicUrl ? publicUrl : null
+
+  if (qrUrl) {
+    // Bande à deux colonnes, à position FIXE (indépendante du nombre de lignes, comme le
+    // pied sans QR) : code à gauche, invite + mentions légales + remerciement à droite.
+    // 716 + 66 = 782 < 792 (marge basse A4) → le code ne mord jamais sur le bord de page.
+    const sepY = 706
+    const qrSize = 66
+    const tx = left + qrSize + 16
+    const tw = right - tx
+    doc.moveTo(left, sepY).lineTo(right, sepY).strokeColor('#ECECF2').stroke()
+    drawQr(doc, qrUrl, left, sepY + 10, qrSize)
+    doc.fillColor('#111111').font('Helvetica-Bold').fontSize(9.5).text(
+      i('Votre facture en ligne', 'Your invoice online', 'Su factura en línea', 'La tua fattura online'),
+      tx, sepY + 12, { width: tw },
+    )
     doc.fillColor(GREY).font('Helvetica').fontSize(8).text(
-      `${tenant.name} · ${legalParts.join(' · ')}`,
-      left, 750, { width: right - left, align: 'center' },
+      i(
+        'Scannez ce code pour la retrouver à tout moment.',
+        'Scan this code to view it at any time.',
+        'Escanee este código para consultarla en cualquier momento.',
+        'Scansiona questo codice per rivederla quando vuoi.',
+      ),
+      tx, sepY + 26, { width: tw },
+    )
+    if (legalParts.length) {
+      doc.fontSize(8).text(`${tenant.name} · ${legalParts.join(' · ')}`, tx, sepY + 42, { width: tw })
+    }
+    doc.fillColor(VIOLET).font('Helvetica-Bold').fontSize(9.5).text(
+      i('Merci de votre confiance', 'Thank you for your business', 'Gracias por su confianza', 'Grazie per la fiducia'),
+      tx, sepY + (legalParts.length ? 56 : 44), { width: tw },
+    )
+  } else {
+    doc.moveTo(left, 742).lineTo(right, 742).strokeColor('#ECECF2').stroke()
+    if (legalParts.length) {
+      doc.fillColor(GREY).font('Helvetica').fontSize(8).text(
+        `${tenant.name} · ${legalParts.join(' · ')}`,
+        left, 750, { width: right - left, align: 'center' },
+      )
+    }
+    doc.fillColor(VIOLET).font('Helvetica-Bold').fontSize(9.5).text(
+      i('Merci de votre confiance', 'Thank you for your business', 'Gracias por su confianza', 'Grazie per la fiducia'),
+      left, legalParts.length ? 763 : 752, { width: right - left, align: 'center' },
     )
   }
-  doc.fillColor(VIOLET).font('Helvetica-Bold').fontSize(9.5).text(
-    i('Merci de votre confiance', 'Thank you for your business', 'Gracias por su confianza', 'Grazie per la fiducia'),
-    left, legalParts.length ? 763 : 752, { width: right - left, align: 'center' },
-  )
 
   doc.end()
   return done

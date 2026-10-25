@@ -77,6 +77,27 @@ export default defineConfig(({ mode }) => {
             },
           },
           {
+            // ⚠️ FACTURE PUBLIQUE (`/f/<jeton>`) — JAMAIS EN CACHE, et cette règle doit rester
+            // AVANT celle de `/api/` : workbox retourne le PREMIER match
+            // (workbox-routing/Router.js, findMatchingRoute), donc placée après elle serait
+            // MORTE — exactement le défaut de l'ancienne `products-cache`.
+            //
+            // Pourquoi : le client du commerçant scanne le QR code depuis SON téléphone, donc
+            // il charge notre origine et y enregistre le service worker. Sans cette règle, sa
+            // facture — nom, articles, montants — atterrirait dans `api-cache` pour 24 h, alors
+            // que la route la sert en `Cache-Control: no-store`. Un en-tête que notre propre
+            // service worker contredit n'est pas une garde.
+            //
+            // ⚠️ Le `cacheName` sur une stratégie qui ne cache RIEN est VOLONTAIRE : c'est à lui
+            // que `scripts/verify-sw-routes.mjs` reconnaît une règle dans le `sw.js` livré. Sans
+            // nom, la règle serait invisible au garde, et l'ordre ne serait vérifié par personne.
+            // `NetworkOnly` n'écrit jamais dans un cache (workbox-strategies : son `_handle` ne
+            // fait qu'un `fetch`), donc aucun cache de ce nom n'est jamais créé.
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/public/invoice/'),
+            handler: 'NetworkOnly',
+            options: { cacheName: 'no-store-invoice' },
+          },
+          {
             // TOUTES les requêtes d'API, quelle que soit l'ORIGINE. ⚠️ L'ancien motif codait
             // l'hôte Railway en dur : si l'API déménage (cf. .env.production qui pointe déjà
             // ailleurs), la règle cesse de matcher SANS BRUIT et le POS perd tout cache

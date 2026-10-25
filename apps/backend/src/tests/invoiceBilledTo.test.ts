@@ -42,18 +42,20 @@ const SALE: InvoiceSale = {
 }
 const TENANT: InvoiceTenant = { name: 'Ma Boutique', currency: 'XOF', vatRate: 18, lang: 'fr' }
 
+// `publicUrl = null` partout : ce fichier juge le bloc « FACTURÉ À ». Le QR code du pied
+// et son absence sur une vente de passage sont verrouillés à part (`invoiceQr.test.ts`).
 beforeEach(() => { drawnTexts.length = 0 })
 
 describe('buildInvoicePdf — bloc « FACTURÉ À » conditionnel (vente de passage)', () => {
   it('AVEC client → « FACTURÉ À » présent + nom du client', async () => {
-    await buildInvoicePdf(SALE, TENANT, { name: 'Awa Diop', phone: '+221 77 123 45 67' })
+    await buildInvoicePdf(SALE, TENANT, { name: 'Awa Diop', phone: '+221 77 123 45 67' }, null)
     expect(drawnTexts).toContain('FACTURÉ À')
     expect(drawnTexts).toContain('Awa Diop')
     expect(drawnTexts).toContain('+221 77 123 45 67')
   })
 
   it('SANS client → bloc entièrement masqué (ni libellé, ni « — »)', async () => {
-    await buildInvoicePdf(SALE, TENANT, null)
+    await buildInvoicePdf(SALE, TENANT, null, null)
     expect(drawnTexts).not.toContain('FACTURÉ À')
     expect(drawnTexts).not.toContain('—')
     // La pill de statut reste dessinée (indépendante du client)
@@ -61,7 +63,7 @@ describe('buildInvoicePdf — bloc « FACTURÉ À » conditionnel (vente de pass
   })
 
   it('SANS client (en) → « BILLED TO » absent, statut « Paid » présent', async () => {
-    await buildInvoicePdf(SALE, { ...TENANT, lang: 'en' }, null)
+    await buildInvoicePdf(SALE, { ...TENANT, lang: 'en' }, null, null)
     expect(drawnTexts).not.toContain('BILLED TO')
     expect(drawnTexts).toContain('Paid')
   })

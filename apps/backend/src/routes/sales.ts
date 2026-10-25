@@ -9,6 +9,7 @@ import { getTenantId } from '../lib/tenantId'
 import { expectedPrice, normalizeTariff, toPricingSet, isPromotionActive, type PriceTier } from '../utils/pricing'
 import { pointsForAmount, tierForPoints, discountForTier, computeLoyaltyDiscount } from '../lib/loyalty'
 import { buildInvoicePdf, nextInvoiceNumber } from '../lib/invoicePdf'
+import { invoicePublicUrl } from '../lib/invoiceLink'
 import { resolvePaymentSplit } from '../lib/paymentSplit'
 import { sendSaleWhatsApp } from '../services/whatsappSend'
 import * as pushService from '../services/pushService'
@@ -549,7 +550,10 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       }
     }
 
-    const pdf = await buildInvoicePdf({ ...sale, invoiceNumber }, tenant, customer)
+    // Lien du QR code — TOUJOURS calculé ici ; c'est `buildInvoicePdf` qui décide de
+    // l'imprimer ou non (il ne le fait que si un client est rattaché). Le gating ne se
+    // dédouble pas : une route qui déciderait aussi ferait deux endroits à corriger.
+    const pdf = await buildInvoicePdf({ ...sale, invoiceNumber }, tenant, customer, invoicePublicUrl(sale.id))
     return reply
       .header('Content-Type', 'application/pdf')
       .header('Content-Disposition', `attachment; filename="facture-${invoiceNumber}.pdf"`)
