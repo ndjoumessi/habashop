@@ -35,7 +35,7 @@ const FACTURE = {
   },
 }
 
-function monter(token = 'vente.AbCdEfGhIjKlMnOp') {
+function monter(token = 'vente~AbCdEfGhIjKlMnOp') {
   return render(
     <MemoryRouter initialEntries={[`/f/${token}`]}>
       <Routes><Route path="/f/:token" element={<PublicInvoice />} /></Routes>

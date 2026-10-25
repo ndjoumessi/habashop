@@ -866,6 +866,19 @@ CSS, compter ses points d'appel dans `src/`, dans `e2e/` ET dans le `dist/` livr
 témoin positif à côté** — un 0 sans témoin ne prouve rien. 📖 *`docs/lessons/audit-uiux-2026-08.md`
 (les 8 livraisons, les 5 verrous, et les DOUZE fois où ma propre mesure était fausse).*
 
+⚠️ **TROISIÈME FORME, MESURÉE EN PROD le 2026-10-25 : l'artefact est juste, c'est la
+CONFIGURATION DE L'HÔTE qui décide.** `vercel.json` ne réécrit vers l'application que les
+chemins **SANS POINT** (`"source": "/((?!.*\\.).*)"`, pour qu'un `index-ABC.js` périmé ne
+reçoive pas du HTML) — et le service worker porte la même règle (`navigateFallbackDenylist:
+[/\.[a-zA-Z0-9]+$/]`). Un jeton de facture écrit `<id>.<sceau>` rendait donc **404** là où
+`/f/abcdef` rendait 200, sur la même route. **Aucun garde ne pouvait le voir** : le PDF était
+juste, la route d'API vivante, 49 tests verts — les tests de rendu montent un `MemoryRouter`,
+qui ne connaît ni Vercel ni le service worker. ⚠️ **RÈGLE : tout identifiant qu'on place dans
+un CHEMIN d'URL se limite à `[A-Za-z0-9_~-]`** — jamais de point, jamais rien qui se lise comme
+une extension. C'est le format qui s'adapte à l'hébergement, pas l'inverse. Verrou :
+`routageJetonFacture.test.ts` (front) **LIT et ÉVALUE** les deux règles réelles, avec
+contre-preuve sur la forme fautive ; `invoiceLink.test.ts` garde le producteur.
+
 ⚠️ **Corollaire — un fait peut être encodé en DONNÉES, pas en texte.** Le JSON-LD portait
 `serviceArea.geoMidpoint = 14.6928 / -17.4467` : Dakar. Un signal de ciblage géographique aussi
 fort que le mot, **qu'aucune recherche de chaînes ne peut trouver** — vu en balayant les surfaces

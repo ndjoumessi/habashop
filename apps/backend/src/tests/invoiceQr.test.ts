@@ -68,7 +68,7 @@ const SALE: InvoiceSale = {
 }
 const TENANT: InvoiceTenant = { name: 'Ma Boutique', currency: 'XOF', vatRate: 18, lang: 'fr' }
 const CUSTOMER = { name: 'Awa Diop', phone: '+221 77 123 45 67' }
-const URL = 'https://exemple.test/f/s1.AbCdEfGhIjKlMnOp'
+const URL = 'https://exemple.test/f/s1~AbCdEfGhIjKlMnOp'
 
 /** Rectangles du QR : ceux tracés DANS la bande du pied (le reste du PDF n'en pose pas). */
 const qrRects = () => rects.filter(r => r.y >= 700)

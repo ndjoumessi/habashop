@@ -24,8 +24,27 @@ import { appUrl } from './appUrl'
 
 /** Longueur du sceau en caractères base64url. 16 × 6 = 96 bits. */
 const TAG_CHARS = 16
-/** Séparateur id/sceau. Absent des cuid ([a-z0-9]) comme du base64url ([A-Za-z0-9-_]). */
-const SEP = '.'
+/**
+ * Séparateur id/sceau. Absent des cuid (`[a-z0-9]`) comme du base64url (`[A-Za-z0-9-_]`),
+ * donc `lastIndexOf` ne peut pas couper à l'intérieur d'une des deux moitiés.
+ *
+ * ⚠️ **SURTOUT PAS UN POINT, et ce n'est pas une préférence — c'est MESURÉ en production
+ * le 2026-10-25.** `vercel.json` réécrit vers l'application avec
+ * `{ "source": "/((?!.*\\.).*)" }` : un chemin contenant un point est traité comme une
+ * demande de FICHIER, donc **404**. `/f/abcdef` rendait 200 et `/f/abc.def` rendait 404,
+ * sur la même route. Le service worker porte le même piège de son côté
+ * (`navigateFallbackDenylist: [/\.[a-zA-Z0-9]+$/]`).
+ *
+ * Cette règle de Vercel est là pour qu'un `index-ABC.js` périmé ne reçoive pas du HTML :
+ * c'est le FORMAT DU JETON qui s'adapte à l'hébergement, jamais l'inverse. `~` est
+ * « unreserved » (RFC 3986), donc jamais échappé dans un chemin, et il n'appartient à
+ * aucun des deux alphabets.
+ *
+ * Verrous : `invoiceLink.test.ts` (le producteur n'émet aucun caractère qui casse le
+ * routage) et `routageJetonFacture.test.ts` côté front (la règle RÉELLE de `vercel.json`
+ * et la denylist RÉELLE du service worker acceptent bien un chemin de facture).
+ */
+const SEP = '~'
 
 /**
  * Secret de signature des liens de facture — lu **À L'APPEL** (un test doit pouvoir

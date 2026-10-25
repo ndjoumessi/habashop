@@ -26,7 +26,7 @@ describe('invoiceLink — aller-retour', () => {
 
   it('le jeton porte l’identifiant ET un sceau de 16 caractères', () => {
     const t = invoiceToken(SALE) as string
-    const [id, seal] = t.split('.')
+    const [id, seal] = t.split('~')
     expect(id).toBe(SALE)
     expect(seal).toHaveLength(16)
     // base64url uniquement : le jeton voyage dans un CHEMIN d'URL, sans échappement.
@@ -35,6 +35,30 @@ describe('invoiceLink — aller-retour', () => {
 
   it('l’URL publique pointe sur /f/<jeton> de l’app', () => {
     expect(invoicePublicUrl(SALE)).toBe(`https://exemple.test/f/${invoiceToken(SALE)}`)
+  })
+
+  /**
+   * ⚠️ MESURÉ EN PRODUCTION le 2026-10-25, et aucune autre vérification ne pouvait le voir.
+   * Le jeton était `<id>.<sceau>` ; `vercel.json` ne réécrit vers l'application que les
+   * chemins SANS POINT (`/((?!.*\.).*)`), donc `/f/<id>.<sceau>` rendait **404** quand
+   * `/f/abcdef` rendait 200. Le PDF était juste, la route d'API vivante, les 49 tests verts
+   * — et le QR imprimé menait à une page d'erreur. Même piège côté service worker
+   * (`navigateFallbackDenylist`). Ce qui suit garde le PRODUCTEUR ; `routageJetonFacture`
+   * (front) garde les règles de l'HÔTE, qui sont l'autre moitié du contrat.
+   */
+  it('⚠️ le jeton ne contient AUCUN caractère qui casse le routage de l’application', () => {
+    const t = invoiceToken(SALE) as string
+    expect(t).not.toContain('.')
+    // Jeu de caractères sûr dans un chemin d'URL : alphanumérique + les « unreserved »
+    // de la RFC 3986. Rien qui soit échappé, interprété comme une extension, ou coupé.
+    expect(t).toMatch(/^[A-Za-z0-9_~-]+$/)
+  })
+
+  it('⚠️ et l’URL complète non plus, hors le point des noms de domaine', () => {
+    const url = invoicePublicUrl(SALE) as string
+    const chemin = new URL(url).pathname
+    expect(chemin.startsWith('/f/')).toBe(true)
+    expect(chemin).not.toContain('.')
   })
 })
 

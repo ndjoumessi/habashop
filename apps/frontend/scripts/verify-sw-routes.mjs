@@ -35,7 +35,7 @@ const EXPECTATIONS = [
   // qui la protège est enregistrée avant celle de `/api/` — si quelqu'un l'y range après,
   // elle devient morte et c'est CETTE ligne qui le dit. La route la sert en `no-store` ;
   // un cache côté service worker contredirait l'en-tête, sur la facture d'un client.
-  ['https://api.habashop.com/api/public/invoice/abc.DEF123', 'no-store-invoice'],
+  ['https://api.habashop.com/api/public/invoice/abc~DEF123', 'no-store-invoice'],
   // Témoin de DISCRIMINATION : une autre route publique garde bien le cache d'API — la
   // règle ne vise pas `/api/public/` en entier.
   ['https://api.habashop.com/api/public/catalog/ma-boutique', 'api-cache'],

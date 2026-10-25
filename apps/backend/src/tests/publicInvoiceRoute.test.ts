@@ -103,7 +103,7 @@ describe('GET /api/public/invoice/:token — accès', () => {
 
   it('sceau falsifié → 404 (jamais 401 : aucune session à expirer ici)', async () => {
     const app = build()
-    const res = await app.inject({ url: '/api/public/invoice/vente-emise.AAAAAAAAAAAAAAAA' })
+    const res = await app.inject({ url: '/api/public/invoice/vente-emise~AAAAAAAAAAAAAAAA' })
     expect(res.statusCode).toBe(404)
   })
 
@@ -135,7 +135,7 @@ describe('GET /api/public/invoice/:token — accès', () => {
   it('aucun secret posé → 404, et aucune requête (fonctionnalité inerte, pas d’erreur 500)', async () => {
     delete process.env.JWT_SECRET
     const app = build()
-    const res = await app.inject({ url: '/api/public/invoice/vente-emise.AAAAAAAAAAAAAAAA' })
+    const res = await app.inject({ url: '/api/public/invoice/vente-emise~AAAAAAAAAAAAAAAA' })
     expect(res.statusCode).toBe(404)
     expect(saleFindFirst).not.toHaveBeenCalled()
   })
