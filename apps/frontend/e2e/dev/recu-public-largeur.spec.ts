@@ -112,6 +112,34 @@ test('au-dessus de 560 px, la table reste une TABLE (le repliement ne déborde p
   expect(part, 'le nom prend toute la ligne → replié à tort sur grand écran').toBeLessThan(0.9)
 })
 
+/**
+ * ⚠️ Mesuré sur capture le 2026-10-26 : replié, le bloc de référence prenait la largeur de
+ * sa plus longue ligne, et `text-align:right` calait les autres sur CE bord — « FACTURE »,
+ * « N° FAC-… » et « Date : » ne partageaient aucun bord commun. Invisible à tsc, invisible
+ * à la mesure de débordement : il n'y avait aucun débordement, juste un escalier.
+ */
+test('⚠️ sous 560 px, les trois lignes de l’en-tête partagent le MÊME bord gauche', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 })
+  await page.route('**/api/public/invoice/**', r =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ...FACTURE, invoiceNumber: 'FAC-2026-00015' }) }))
+  await page.goto('/f/vente-test~AAAAAAAAAAAAAAAA')
+  await page.waitForSelector('.pi-ref')
+  // ⚠️ On mesure le TEXTE, pas la boîte. Les trois `<div>` sont de niveau bloc : leur
+  // `getBoundingClientRect()` vaut la pleine largeur quel que soit l'alignement, donc une
+  // assertion sur leurs bords est VIDE — vérifié, le sabotage passait au vert. Un `Range`
+  // sur le contenu rend la boîte réellement encrée.
+  const bords = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('.pi-ref > div')].map(el => {
+      const r = document.createRange()
+      r.selectNodeContents(el)
+      return Math.round(r.getBoundingClientRect().left)
+    }))
+  expect(bords.length, 'en-tête incomplet').toBeGreaterThanOrEqual(3)
+  // Tolérance 1 px : on juge l'alignement, jamais un pixel exact (la géométrie diffère
+  // entre Ubuntu et macOS).
+  expect(Math.max(...bords) - Math.min(...bords), `bords : ${bords.join(', ')}`).toBeLessThanOrEqual(1)
+})
+
 test('reçu public — le montant reste lisible, pas tronqué par une ellipse', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 780 })
   await page.route('**/api/public/invoice/**', r =>

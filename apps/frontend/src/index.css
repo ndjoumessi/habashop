@@ -1183,6 +1183,12 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
    de traits sous les cellules repliées. Vu à la capture, pas à la mesure. */
 .pi-items tbody td { border-bottom:1px solid var(--border) }
 
+/* ⚠️ L'alignement du bloc de référence vit DANS LA FEUILLE, pas en style en ligne — un
+   style en ligne bat n'importe quel sélecteur, et le repliement ne pourrait pas le
+   reprendre. C'est la DEUXIÈME fois dans ce fichier (cf. le filet de ligne ci-dessus) :
+   sur cette page, toute propriété qu'une media query doit pouvoir changer sort du `style`. */
+.pi-ref { text-align:right }
+
 @media (max-width:560px) {
   /* Les lignes se replient en blocs : le nom sur sa ligne, « qté × PU » et le
      total sur la suivante. Plus de 4ᵉ colonne à aller chercher hors écran. */
@@ -1201,6 +1207,11 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
   .pi-items .pi-qte, .pi-items .pi-pu { font-size:var(--fs-label); color:var(--text3) }
   .pi-items .pi-pu::before { content:"\00d7\00a0" }  /* espace INSÉCABLE : un espace ordinaire est avalé */
   .pi-items .pi-total { margin-left:auto; text-align:right; font-weight:var(--fw-semibold) }
+
+  /* En-tête : le bloc de référence passe en pleine largeur et s'aligne à GAUCHE, sur le
+     même bord que le nom de la boutique. Replié à droite, il se calait sur sa propre
+     largeur de contenu et les trois lignes partaient en escalier. */
+  .pi-ref { flex:1 0 100%; text-align:left; margin-top:2px }
 }
 
 /* ⚠️ IMPRESSION — le navigateur n'imprime PAS les fonds. En thème sombre, le texte

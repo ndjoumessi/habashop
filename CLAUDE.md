@@ -415,6 +415,16 @@ les règles **transverses** : celles qu'on enfreint sans même travailler sur le
 ### Frontend
 - **QR/barcode** : noir sur blanc opaque (jamais `var(--text)`/`transparent`).
 - **`transform` sur ancêtre** → casse `position:fixed`. Animer opacité seule.
+- ⚠️ **UN STYLE EN LIGNE BAT TOUTE MEDIA QUERY — la règle existe, elle PERD, et rien ne le
+  dit.** Deux fois dans la même session (2026-10-26, page `/f/<jeton>`) : un
+  `borderBottom` et un `textAlign` posés en `style={{…}}` ont rendu inertes les
+  `border:none` et `text-align:left` du repliement mobile — filets résiduels, puis en-tête
+  en escalier. Ni tsc, ni les tests de rendu (jsdom ne met rien en page), ni une relecture
+  ne le voient : seule la CAPTURE l'a montré. **Toute propriété qu'une media query doit
+  pouvoir reprendre sort du `style` en ligne et vit dans la feuille.** ⚠️ Corollaire
+  mesuré : une assertion sur `getBoundingClientRect()` d'un élément de niveau BLOC ne voit
+  pas un changement d'alignement — la boîte fait toute la largeur quoi qu'il arrive. Le
+  sabotage est resté vert jusqu'à ce que la mesure passe par un `Range` sur le contenu.
 - **`applyAccentColor()`** écrase `--p/--p2/--p3` via `ACCENT_PAIRS` (plus de verrouillage `body.className` depuis le retrait de `gold`/`soleil`). Détection clair = **`isThemeLight(theme)`** d'appStore (résout `system`), jamais une comparaison littérale à `'light'`/`'soleil'`.
 - **Date « now »** : param injectable défaut `new Date()` — jamais de littéral `new Date('...')`.
 - **Dates SAISIES** ⚠️ : jamais un `<input type="date">` nu — tout passe par `components/ui/DatePicker.tsx` (`DateField`/`MonthField`/`DateRangeField`). Le composant **conserve l'input natif** comme porteur de valeur (clavier, lecteurs d'écran, sélecteur au doigt sur mobile, et `hrContractDomain.test.ts` qui interdit la saisie libre) : on ne remplace que le CALENDRIER. Panneau en **portail** — `.modal-box` porte `overflow:hidden` et la plupart des champs vivent dans une modale. Méta-test à périmètre dérivé de `src/`.

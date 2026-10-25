@@ -206,7 +206,13 @@ export default function PublicInvoice() {
               )}
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
+          {/* ⚠️ `pi-ref` : sous 560 px ce bloc passe à la ligne, et sa largeur devient celle
+              de sa plus longue ligne (« N° FAC-… »). Un `text-align:right` cale alors les
+              lignes plus courtes sur CE bord-là, pas sur celui de la page — d'où un en-tête
+              dont les trois lignes ne partagent aucun bord. Mesuré sur capture le
+              2026-10-26. La feuille le passe en pleine largeur, aligné à gauche comme le
+              nom de la boutique juste au-dessus. */}
+          <div className="pi-ref">
             <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-bold)', color: 'var(--p)', letterSpacing: 1 }}>
               {titre}
             </div>
