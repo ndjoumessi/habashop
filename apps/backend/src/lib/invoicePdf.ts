@@ -281,11 +281,17 @@ export function buildInvoicePdf(sale: InvoiceSale, tenant: InvoiceTenant, custom
     tenant.rccm ? `RC ${tenant.rccm}` : null,
     tenant.vatNumber ? `N° TVA ${tenant.vatNumber}` : null,
   ].filter(Boolean) as string[]
-  // ⚠️ LE QR CODE N'EXISTE QUE S'IL Y A QUELQU'UN POUR LE SCANNER : une vente de passage
-  // n'a aucun client rattaché, donc personne à qui promettre « votre facture ». La règle
-  // vit ICI, en un seul endroit — pas dans la route : le test du PDF peut alors l'exercer
-  // dans les DEUX sens, et un futur appelant ne peut pas l'oublier au passage.
-  const qrUrl = customer && publicUrl ? publicUrl : null
+  // ⚠️ **LA GARDE « PAS DE CLIENT, PAS DE QR » A ÉTÉ RETIRÉE le 2026-10-25, délibérément.**
+  // Elle disait : personne à qui promettre « votre facture ». Sa justification était donc le
+  // LIBELLÉ, pas la sûreté — et elle tombe dès que le mot se dérive de la donnée (une vente
+  // sans numéro de facture s'affiche « Reçu »). Mesuré : au POS, la plupart des ventes n'ont
+  // pas de client ; la maintenir privait de lien précisément ceux qui repartent avec un
+  // ticket et rien d'autre. La page ne porte aucune donnée personnelle sur eux —
+  // `customerName` y vaut simplement `null`.
+  //
+  // ⚠️ Retirée des DEUX surfaces, facture ET ticket : deux règles pour une même question
+  // divergent au premier changement, c'est le motif du jumeau non traité.
+  const qrUrl = publicUrl
 
   if (qrUrl) {
     // Bande à deux colonnes, à position FIXE (indépendante du nombre de lignes, comme le

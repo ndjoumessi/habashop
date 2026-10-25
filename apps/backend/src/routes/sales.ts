@@ -399,7 +399,10 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       })()
     }
 
-    return newSale
+    // ⚠️ `publicUrl` est rendu ICI parce que le CAISSIER ne peut pas le fabriquer : le jeton
+    // est signé avec un secret serveur. C'est ce qui permet d'imprimer le QR sur le TICKET,
+    // à la seconde de la vente — là où la facture A4 est générée plus tard et à la demande.
+    return { ...newSale, publicUrl: invoicePublicUrl(newSale.id) }
   })
 
   // ── Remboursement TOTAL d'une vente ──

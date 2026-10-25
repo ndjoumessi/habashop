@@ -146,6 +146,7 @@ const fr: TranslationMap = {
   pos_ticket_number: 'N° ticket :', pos_ticket_articles: 'ARTICLES', pos_ticket_payment: 'Mode paiement :',
   pos_ticket_received: 'Reçu :', pos_ticket_change: 'Monnaie rendue :',
   pos_ticket_thanks: 'Merci de votre achat !', pos_ticket_keep: 'Conservez ce ticket',
+  pos_ticket_qr_title: 'Votre reçu en ligne', pos_ticket_qr_hint: 'Scannez pour le retrouver',
   pos_ticket_subtitle: 'Logiciel de gestion commerciale',
 
   // Stock
@@ -737,6 +738,7 @@ const en: TranslationMap = {
   pos_ticket_number: 'Receipt #:', pos_ticket_articles: 'ITEMS', pos_ticket_payment: 'Payment:',
   pos_ticket_received: 'Received:', pos_ticket_change: 'Change:',
   pos_ticket_thanks: 'Thank you for your purchase!', pos_ticket_keep: 'Keep this receipt',
+  pos_ticket_qr_title: 'Your receipt online', pos_ticket_qr_hint: 'Scan to find it again',
   pos_ticket_subtitle: 'Commercial management software',
 
   stock_title: 'Product Inventory', stock_sku: 'SKU Reference',
@@ -1095,6 +1097,7 @@ const es: TranslationMap = {
   pos_ticket_number: 'N° ticket:', pos_ticket_articles: 'ARTÍCULOS', pos_ticket_payment: 'Pago:',
   pos_ticket_received: 'Recibido:', pos_ticket_change: 'Cambio:',
   pos_ticket_thanks: '¡Gracias por su compra!', pos_ticket_keep: 'Conserve este ticket',
+  pos_ticket_qr_title: 'Su recibo en línea', pos_ticket_qr_hint: 'Escanee para recuperarlo',
   pos_ticket_subtitle: 'Software de gestión comercial',
 
   stock_title: 'Inventario', stock_sku: 'Referencia SKU',
@@ -1454,6 +1457,7 @@ const it: TranslationMap = {
   pos_ticket_number: 'N° scontrino:', pos_ticket_articles: 'ARTICOLI', pos_ticket_payment: 'Pagamento:',
   pos_ticket_received: 'Ricevuto:', pos_ticket_change: 'Resto:',
   pos_ticket_thanks: 'Grazie per il suo acquisto!', pos_ticket_keep: 'Conservi questo scontrino',
+  pos_ticket_qr_title: 'La tua ricevuta online', pos_ticket_qr_hint: 'Scansiona per ritrovarla',
   pos_ticket_subtitle: 'Software di gestione commerciale',
 
   stock_title: 'Inventario Prodotti', stock_sku: 'Codice SKU',

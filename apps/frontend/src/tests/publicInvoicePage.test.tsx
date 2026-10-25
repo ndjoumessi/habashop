@@ -100,6 +100,49 @@ describe('PublicInvoice — la facture s’affiche', () => {
   })
 })
 
+describe('PublicInvoice — « Reçu » ou « Facture », dérivé du numéro', () => {
+  /**
+   * ⚠️ Le mot vient du CHAMP, pas d'un second champ qui dirait la même chose autrement.
+   * Une vente encaissée au comptoir n'a pas de numéro tant que personne n'a généré le PDF :
+   * l'appeler « Facture » promettrait une pièce qui n'a pas été émise.
+   */
+  it('⚠️ sans numéro → « REÇU », et AUCUNE ligne « N° »', async () => {
+    invoice.mockResolvedValue({ ...FACTURE, invoiceNumber: null })
+    monter()
+    expect(await screen.findByText('REÇU')).toBeTruthy()
+    expect(screen.queryByText('FACTURE')).toBeNull()
+    expect(screen.queryByText(/^N°/)).toBeNull()
+  })
+
+  it('avec numéro → « FACTURE » et la ligne « N° »', async () => {
+    monter()
+    expect(await screen.findByText('FACTURE')).toBeTruthy()
+    expect(screen.getByText('N° FAC-2026-00042')).toBeTruthy()
+    expect(screen.queryByText('REÇU')).toBeNull()
+  })
+
+  it('le destinataire se dit « Client » sur un reçu, « Facturé à » sur une facture', async () => {
+    invoice.mockResolvedValue({ ...FACTURE, invoiceNumber: null })
+    const vue = monter()
+    expect(await screen.findByText('Client')).toBeTruthy()
+    expect(screen.queryByText(/Facturé à/)).toBeNull()
+    vue.unmount()
+    invoice.mockResolvedValue(FACTURE)
+    monter()
+    expect(await screen.findByText(/Facturé à/)).toBeTruthy()
+  })
+
+  it.each([
+    ['en', 'RECEIPT'],
+    ['es', 'RECIBO'],
+    ['it', 'RICEVUTA'],
+  ])('sans numéro, lang=%s → « %s »', async (lang, attendu) => {
+    invoice.mockResolvedValue({ ...FACTURE, invoiceNumber: null, shop: { ...FACTURE.shop, lang } })
+    monter()
+    expect(await screen.findByText(attendu)).toBeTruthy()
+  })
+})
+
 describe('PublicInvoice — statuts', () => {
   it('remboursée → « Remboursée », JAMAIS « Payée »', async () => {
     invoice.mockResolvedValue({ ...FACTURE, status: 'refunded' })
@@ -118,10 +161,10 @@ describe('PublicInvoice — statuts', () => {
 })
 
 describe('PublicInvoice — trois états, jamais deux', () => {
-  it('404 → « Facture introuvable », et AUCUN contenu de facture', async () => {
+  it('404 → « Document introuvable » (mot NEUTRE : on ignore ce que le lien visait), et AUCUN contenu', async () => {
     invoice.mockResolvedValue(null)
     monter()
-    expect(await screen.findByText('Facture introuvable')).toBeTruthy()
+    expect(await screen.findByText('Document introuvable')).toBeTruthy()
     expect(screen.queryByText('Bifaka')).toBeNull()
     expect(screen.queryByText(/FAC-2026/)).toBeNull()
   })
@@ -129,8 +172,8 @@ describe('PublicInvoice — trois états, jamais deux', () => {
   it('⚠️ panne réseau → la page DIT une panne, elle n’affirme pas que la facture n’existe pas', async () => {
     invoice.mockRejectedValue(new Error('Failed to fetch'))
     monter()
-    expect(await screen.findByText(/Impossible de charger la facture/)).toBeTruthy()
-    expect(screen.queryByText('Facture introuvable')).toBeNull()
+    expect(await screen.findByText(/Impossible de charger le document/)).toBeTruthy()
+    expect(screen.queryByText('Document introuvable')).toBeNull()
   })
 
   it('vente de passage → aucun bloc « Facturé à » (jamais un tiret nu sur une pièce comptable)', async () => {

@@ -90,17 +90,27 @@ export default function PublicInvoice() {
   // Montants en base XOF → devise de la boutique. Jamais de formatage manuel.
   const m = (xof: number) => formatInCurrency(convertAmount(xof, 'XOF', devise), devise)
 
+  /**
+   * ⚠️ Le MOT se dérive du numéro de facture, il ne vient pas d'un champ à part. Une vente
+   * encaissée au comptoir n'a pas de numéro tant que personne n'a généré le PDF — l'appeler
+   * « Facture » serait promettre une pièce qui n'a pas été émise.
+   */
+  const estFacture = Boolean(data?.invoiceNumber)
+  const titre = estFacture
+    ? i(lang, 'FACTURE', 'INVOICE', 'FACTURA', 'FATTURA')
+    : i(lang, 'REÇU', 'RECEIPT', 'RECIBO', 'RICEVUTA')
+
   useEffect(() => {
     if (!data) return
-    document.title = `${data.shop.name} — ${i(lang, 'Facture', 'Invoice', 'Factura', 'Fattura')} ${data.invoiceNumber}`
-  }, [data, lang])
+    document.title = `${data.shop.name} — ${titre}${data.invoiceNumber ? ` ${data.invoiceNumber}` : ''}`
+  }, [data, titre])
 
   // ⚠️ Avant la réponse, la langue de la boutique est INCONNUE : ces trois états se
   // rendent donc en français, la langue du marché principal, et pas dans une langue
   // qu'on aurait devinée. Ils n'affirment rien sur la facture — ni qu'elle existe, ni
   // qu'elle n'existe pas.
   if (chargement) {
-    return <Etat>Chargement de votre facture…</Etat>
+    return <Etat>Chargement de votre document…</Etat>
   }
 
   if (erreur) {
@@ -108,7 +118,7 @@ export default function PublicInvoice() {
       <Etat>
         <AlertCircle size={28} style={{ color: 'var(--danger)' }} />
         <div style={{ color: 'var(--text)', fontWeight: 'var(--fw-semibold)' }}>
-          Impossible de charger la facture
+          Impossible de charger le document
         </div>
         {/* Un défaut réseau DIT qu'il est un défaut réseau : il n'affirme pas que la
             facture n'existe pas, et il n'invite pas à un réessai qui ne peut pas aboutir
@@ -122,7 +132,9 @@ export default function PublicInvoice() {
     return (
       <Etat>
         <FileText size={28} style={{ color: 'var(--text3)' }} />
-        <div style={{ color: 'var(--text)', fontWeight: 'var(--fw-semibold)' }}>Facture introuvable</div>
+        {/* ⚠️ Mot NEUTRE : sur un lien illisible, on ne sait pas s'il visait une facture ou un
+            reçu. Nommer l'un des deux serait affirmer ce qu'on ignore. */}
+        <div style={{ color: 'var(--text)', fontWeight: 'var(--fw-semibold)' }}>Document introuvable</div>
         {/* L'état vide DIT pourquoi il est vide — les trois causes réelles, sans en
             privilégier une qu'on ne peut pas distinguer (le serveur ne le dit pas, et
             c'est volontaire : un code par cause renseignerait un attaquant). */}
@@ -196,11 +208,15 @@ export default function PublicInvoice() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-bold)', color: 'var(--p)', letterSpacing: 1 }}>
-              {i(lang, 'FACTURE', 'INVOICE', 'FACTURA', 'FATTURA')}
+              {titre}
             </div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginTop: 2 }}>
-              N° {data.invoiceNumber}
-            </div>
+            {/* Pas de « N° » quand il n'y en a pas : un champ vide sur une pièce qui porte de
+                l'argent se lit comme une donnée perdue, pas comme une absence voulue. */}
+            {data.invoiceNumber && (
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginTop: 2 }}>
+                N° {data.invoiceNumber}
+              </div>
+            )}
             <div style={{ fontSize: 'var(--fs-label)', color: 'var(--text3)', marginTop: 2 }}>
               {i(lang, 'Date', 'Date', 'Fecha', 'Data')} : {fmtDate(data.date)}
             </div>
@@ -217,7 +233,9 @@ export default function PublicInvoice() {
           {data.customerName ? (
             <div>
               <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', letterSpacing: .8, textTransform: 'uppercase', color: 'var(--text3)' }}>
-                {i(lang, 'Facturé à', 'Billed to', 'Facturado a', 'Fatturato a')}
+                {estFacture
+                  ? i(lang, 'Facturé à', 'Billed to', 'Facturado a', 'Fatturato a')
+                  : i(lang, 'Client', 'Customer', 'Cliente', 'Cliente')}
               </div>
               <div style={{ fontSize: 'var(--fs-md)', fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginTop: 3 }}>
                 {data.customerName}

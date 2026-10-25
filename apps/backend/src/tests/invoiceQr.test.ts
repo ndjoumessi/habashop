@@ -75,7 +75,7 @@ const qrRects = () => rects.filter(r => r.y >= 700)
 
 beforeEach(() => { drawnTexts.length = 0; rects.length = 0; lines.length = 0; encoded.length = 0 })
 
-describe('buildInvoicePdf — le QR code n’existe que s’il y a quelqu’un pour le scanner', () => {
+describe('buildInvoicePdf — le QR code suit le LIEN, plus le client', () => {
   it('client rattaché + URL → QR encodé avec CETTE URL, et l’invite est imprimée', async () => {
     await buildInvoicePdf(SALE, TENANT, CUSTOMER, URL)
     expect(encoded).toEqual([URL])
@@ -84,11 +84,19 @@ describe('buildInvoicePdf — le QR code n’existe que s’il y a quelqu’un p
     expect(drawnTexts.some(t => t.startsWith('Scannez ce code'))).toBe(true)
   })
 
-  it('vente de passage (aucun client) → AUCUN QR, aucune invite', async () => {
+  /**
+   * ⚠️ RÈGLE RETOURNÉE le 2026-10-25, et ce test énonce la nouvelle — il n'a pas été
+   * « réparé ». L'ancienne cachait le QR sur une vente sans client, au motif qu'il n'y
+   * avait personne à qui dire « votre facture ». Mesuré : au POS, la plupart des ventes
+   * sont des ventes de passage — la règle privait de lien exactement ceux qui repartent
+   * avec un ticket et rien d'autre. Le libellé se dérive désormais de la donnée, et la
+   * page ne porte aucune information personnelle sur eux.
+   */
+  it('⚠️ vente de passage (aucun client) → le QR est là QUAND MÊME', async () => {
     await buildInvoicePdf(SALE, TENANT, null, URL)
-    expect(encoded).toEqual([])
-    expect(qrRects()).toEqual([])
-    expect(drawnTexts).not.toContain('Votre facture en ligne')
+    expect(encoded).toEqual([URL])
+    expect(qrRects().length).toBeGreaterThan(10)
+    expect(drawnTexts).toContain('Votre facture en ligne')
   })
 
   it('aucun secret posé en amont (URL nulle) → AUCUN QR, et la facture se rend quand même', async () => {
@@ -99,7 +107,8 @@ describe('buildInvoicePdf — le QR code n’existe que s’il y a quelqu’un p
   })
 
   it('le pied SANS QR garde sa géométrie d’origine (filet à 742)', async () => {
-    await buildInvoicePdf(SALE, TENANT, null, URL)
+    // Sans LIEN — et non plus sans client : c'est `publicUrl` qui décide maintenant.
+    await buildInvoicePdf(SALE, TENANT, CUSTOMER, null)
     expect(lines).toContain(742)
     expect(lines).not.toContain(706)
   })

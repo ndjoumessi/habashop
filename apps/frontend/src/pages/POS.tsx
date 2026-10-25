@@ -515,11 +515,17 @@ export default function POS() {
   // l'enregistrement, un state n'y serait pas encore à jour — et garder la signature à zéro
   // argument évite le piège `onPrint={printTicket}` qui passerait l'événement en 1er argument.
   const billedTotalRef = useRef<number | null>(null)
+  // Lien public de la vente en cours, SIGNÉ PAR LE SERVEUR et rendu par `POST /api/sales`.
+  // En `ref` pour la même raison que le total : `printTicket` est appelé dans la même passe
+  // que l'enregistrement, un state n'y serait pas encore à jour. Le caissier ne peut pas
+  // fabriquer ce lien — le jeton porte une signature dont le secret vit côté serveur.
+  const salePublicUrlRef = useRef<string | null>(null)
   const printTicket = () => buildAndPrintTicket({
     lang, locale, cart, discount, discountAmount,
     // Le serveur fait foi : sinon le ticket papier remis en main propre contredit la facture PDF.
     totalHT, tva, posTaxRate, total: billedTotalRef.current ?? netTotal, payMode, cashGiven, currency, monnaie, fmt,
     mixed: mixedOn ? mixedSplit : null,
+    publicUrl: salePublicUrlRef.current,
   })
 
   // ── MTN MoMo — normalisation MSISDN ──────────────────────────────────────
@@ -845,6 +851,7 @@ export default function POS() {
     // encaissé — cf. saleReconcile.ts.
     let createdSale: unknown = null
     billedTotalRef.current = null // repart à zéro : ne jamais réutiliser le total d'une vente précédente
+    salePublicUrlRef.current = null // idem : un QR qui pointerait vers la vente PRÉCÉDENTE serait pire qu'absent
     try {
       createdSale = await salesApi.create({
         items: toSaleItemPayload(cart),
@@ -875,6 +882,10 @@ export default function POS() {
     const serverTotal = (createdSale as { total?: unknown } | null)?.total
     const billedTotal = authoritativeTotal(serverTotal, netTotal)
     billedTotalRef.current = billedTotal // ticket imprimé + reçu WhatsApp : le serveur fait foi
+    // ⚠️ Lu tel quel, jamais reconstruit : une URL fabriquée côté caisse n'aurait pas de signature
+    // valide, et mènerait à un 404 sur le papier qu'on vient de remettre au client.
+    const urlPublique = (createdSale as { publicUrl?: unknown } | null)?.publicUrl
+    salePublicUrlRef.current = typeof urlPublique === 'string' && urlPublique ? urlPublique : null
     const gap = reconcileSaleTotal(serverTotal, netTotal)
     if (gap) {
       const amount = fmt(Math.abs(gap.gap))

@@ -291,6 +291,13 @@ Ce qui mord depuis l'EXTÉRIEUR du POS, donc reste ici :
   signature à zéro argument de `printTicket`.
 - ⚠️ **`cart` et les états de caisse sont EXCLUS de `partialize`** (cf. § Pièges critiques) —
   sélecteur `useCashierIsOpen()` partout.
+- ⚠️ **Le QR du TICKET imprime une URL SIGNÉE PAR LE SERVEUR, jamais reconstruite.** Le jeton
+  de `/f/<jeton>` porte un sceau HMAC dont le secret vit côté backend : `POST /api/sales` rend
+  `publicUrl`, le POS le range dans un `ref` (comme le total facturé, et remis à `null` à chaque
+  nouvelle vente — un QR pointant vers la vente PRÉCÉDENTE serait pire qu'absent) et le passe à
+  `printTicket`. **Le fabriquer côté caisse donnerait un 404 sur un papier déjà remis.**
+  `publicUrl` est **OBLIGATOIRE** dans `PrintTicketParams` comme dans `buildInvoicePdf` : le
+  compilateur force tout futur appelant à décider. 📖 *`docs/modules.md` § Facture PDF.*
 
 ### Paiements mobiles
 

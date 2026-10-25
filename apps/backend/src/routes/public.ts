@@ -92,15 +92,20 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
     // S'appuyer sur « le client étendu n'injecte rien hors contexte ALS » serait une
     // justesse empruntée à un invariant distant ; ici le choix est explicite.
     //
-    // ⚠️ `invoiceNumber: { not: null }` est une CONDITION, pas un filtre cosmétique : une
-    // page publique de facture n'existe que pour une facture ÉMISE. Le jeton, lui, dérive
-    // de l'id de vente et existe donc avant toute émission.
+    // ⚠️ **AUCUNE condition sur `invoiceNumber`, et c'est un renversement ASSUMÉ du
+    // 2026-10-25.** La première version exigeait une facture ÉMISE. Mais le QR vit désormais
+    // sur le TICKET DE CAISSE, imprimé à la seconde de la vente — or le numéro n'est attribué
+    // qu'à la première génération du PDF, qui pour une vente de passage n'arrive jamais. Le
+    // lien aurait donc mené à un 404 dans le cas le plus courant.
+    // L'alternative était d'attribuer un numéro à CHAQUE vente : ç'aurait changé le sens de la
+    // séquence comptable pour une raison d'affichage. Ici, une vente sans numéro est rendue
+    // comme un **REÇU** — le front dérive le mot du champ — et la numérotation garde son sens.
     //
     // ⚠️ `tenant.deletedAt: null` : une boutique fermée cesse de publier. Le client garde
     // le PAPIER, qui est la pièce comptable ; la consultation en ligne est un service de
     // la boutique et s'arrête avec elle.
     const sale = await basePrisma.sale.findFirst({
-      where: { id: saleId, invoiceNumber: { not: null }, tenant: { deletedAt: null } },
+      where: { id: saleId, tenant: { deletedAt: null } },
       select: {
         invoiceNumber: true, total: true, discountAmount: true, paymentMode: true,
         createdAt: true, status: true, customerId: true,

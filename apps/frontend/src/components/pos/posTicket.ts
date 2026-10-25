@@ -2,6 +2,7 @@ import { t, formatInCurrency } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
 import type { CartItem } from './posShared'
 import { printableAmount } from '@/utils/export'
+import { qrSvg } from '@/lib/qrSvg'
 
 interface PrintTicketParams {
   lang: string
@@ -20,11 +21,25 @@ interface PrintTicketParams {
   fmt: (n: number) => string
   // Paiement mixte (split) — montants base XOF ; si fourni, remplace la ligne paiement unique.
   mixed?: { cashAmount: number; mobileMoneyAmount: number; cardAmount: number } | null
+  /**
+   * Lien public de la vente (`/f/<jeton>`), **rendu par le SERVEUR** à la création.
+   *
+   * ⚠️ **OBLIGATOIRE, sans valeur par défaut** — comme `owner` de `sendWhatsApp` ou le
+   * `publicUrl` de `buildInvoicePdf` : le compilateur force tout futur appelant à répondre
+   * « ce ticket porte-t-il un lien scannable ? ». Optionnel, il se serait perdu au premier
+   * nouvel appelant, en silence et sur du papier déjà remis.
+   *
+   * (`POST /api/sales`). Le caissier ne peut pas le fabriquer : le jeton est signé avec un
+   * secret serveur. `null`/absent ⇒ aucun QR — c'est le cas d'une réimpression hors du flux
+   * de vente, ou d'un serveur sans secret de signature (fonctionnalité inerte, jamais une
+   * erreur). Un QR vers une adresse qu'on aurait devinée vaudrait moins que pas de QR.
+   */
+  publicUrl: string | null
 }
 
 // Ouvre une fenêtre d'impression avec le ticket de caisse formaté (80mm).
 export function printTicket(p: PrintTicketParams) {
-  const { lang, locale, cart, discount, discountAmount, totalHT, tva, posTaxRate, total, payMode, cashGiven, currency, monnaie, fmt: rawFmt, mixed } = p
+  const { lang, locale, cart, discount, discountAmount, totalHT, tva, posTaxRate, total, payMode, cashGiven, currency, monnaie, fmt: rawFmt, mixed, publicUrl } = p
   // Corps du ticket en 'Courier New' (monospace) : sans glyphe U+202F, le séparateur
   // de milliers d'Intl fr-FR est rendu « / » (« 2 /800 ») → normalisation systématique.
   const fmt = (n: number) => printableAmount(rawFmt(n))
@@ -93,6 +108,10 @@ export function printTicket(p: PrintTicketParams) {
   <div class="center footer">
     <div>${t('pos_ticket_thanks')}</div>
     <div style="margin-top:4px;">${t('pos_ticket_keep')}</div>
+    ${publicUrl ? `
+    <div style="margin-top:10px;">${qrSvg(publicUrl, '22mm')}</div>
+    <div style="margin-top:2px;font-weight:bold;">${t('pos_ticket_qr_title')}</div>
+    <div style="font-size:9px;">${t('pos_ticket_qr_hint')}</div>` : ''}
     <div style="margin-top:8px;font-size:9px;">HabaShop — ${now.toLocaleDateString(locale)}</div>
   </div>
   <script>window.onload=function(){setTimeout(function(){window.print();window.close();},300);}<\/script>

@@ -530,7 +530,14 @@ export interface ApiPublicInvoiceShop {
 }
 
 export interface ApiPublicInvoice {
-  invoiceNumber: string
+  /**
+   * ⚠️ **NULLABLE, et c'est le champ qui décide du MOT affiché.** Le numéro n'est attribué
+   * qu'à la première génération du PDF de facture ; une vente dont le client repart avec le
+   * seul ticket n'en a jamais. `null` ⇒ la page s'intitule « Reçu », pas « Facture ».
+   * Le mot se DÉRIVE donc de la donnée — pas d'un second champ qui dirait la même chose
+   * autrement, et qui divergerait au premier cas limite.
+   */
+  invoiceNumber: string | null
   /** ISO. Jamais rendue brute à l'écran → `fmtDate`. */
   date: string
   /** `completed` | `refunded` — colonne `String` sans enum : une valeur inconnue reste neutre. */

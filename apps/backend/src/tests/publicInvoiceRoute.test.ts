@@ -120,10 +120,20 @@ describe('GET /api/public/invoice/:token — accès', () => {
     expect(res.statusCode).toBe(404)
   })
 
-  it('⚠️ vente sans numéro de facture → 404 : une page publique n’existe que pour une facture ÉMISE', async () => {
+  /**
+   * ⚠️ RÈGLE RETOURNÉE le 2026-10-25. La première version exigeait une facture ÉMISE. Mais
+   * le QR vit désormais sur le TICKET DE CAISSE, imprimé à la seconde de la vente, quand
+   * aucun numéro n'a encore été attribué — le lien aurait mené à un 404 dans le cas le plus
+   * courant. Le numéro reste réservé aux factures RÉELLEMENT émises : c'est le mot affiché
+   * qui s'adapte (« Reçu »), pas la séquence comptable qui se dilue.
+   */
+  it('⚠️ vente SANS numéro de facture → 200, servie comme un reçu', async () => {
     const app = build()
     const res = await app.inject({ url: `/api/public/invoice/${invoiceToken('vente-sans-num')}` })
-    expect(res.statusCode).toBe(404)
+    expect(res.statusCode).toBe(200)
+    // `null` et non une chaîne vide : c'est ce champ qui fait dire « Reçu » au front.
+    expect(res.json().invoiceNumber).toBeNull()
+    expect(res.json().total).toBe(1000)
   })
 
   it('⚠️ boutique fermée (soft delete) → 404 : elle cesse de publier', async () => {
