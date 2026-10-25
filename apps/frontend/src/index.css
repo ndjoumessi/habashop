@@ -1167,3 +1167,49 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
   text-transform: uppercase; letter-spacing: .6px;
   padding: 6px 10px 2px;
 }
+
+/* ─── Facture / reçu PUBLIC (`/f/<jeton>`) ───────────────────────────────────────
+   ⚠️ Écrit À LA MAIN : tailwind n'émet RIEN dans ce projet (aucune directive
+   `@tailwind` dans ce fichier), donc une classe `sm:`/`lg:` dans un `className`
+   serait inerte. Cf. CLAUDE.md § « TAILWIND N'ÉMET RIEN ».
+
+   Le défaut corrigé, mesuré sur un vrai téléphone le 2026-10-26 : la table des
+   articles était forcée à `min-width:380px` dans un écran de 360, et la colonne
+   TOTAL sortait du champ. Le client devait faire défiler latéralement pour voir
+   ce qu'il avait payé — sur la page dont l'usage EST d'être ouverte au téléphone
+   après un scan de QR. */
+/* Filet de ligne : dans la FEUILLE, pas en style en ligne — sinon le repliement ne peut
+   pas le retirer (un style en ligne bat n'importe quel sélecteur), et il reste des bouts
+   de traits sous les cellules repliées. Vu à la capture, pas à la mesure. */
+.pi-items tbody td { border-bottom:1px solid var(--border) }
+
+@media (max-width:560px) {
+  /* Les lignes se replient en blocs : le nom sur sa ligne, « qté × PU » et le
+     total sur la suivante. Plus de 4ᵉ colonne à aller chercher hors écran. */
+  .pi-items thead { display:none }
+  .pi-items, .pi-items tbody { display:block; width:100% }
+  .pi-items tr {
+    display:flex; flex-wrap:wrap; align-items:baseline; gap:0 8px;
+    padding:9px 0; border-bottom:1px solid var(--border);
+  }
+  /* ⚠️ `tbody td` et non `td` : le filet de ligne est posé par `.pi-items tbody td`
+     (spécificité 0,1,2). Un simple `.pi-items td` (0,1,1) PERDAIT, et il restait des
+     bouts de traits sous les cellules repliées — vu à la capture, invisible à la mesure
+     de débordement comme à tsc. */
+  .pi-items tbody td { display:block; border:none; padding:0 }
+  .pi-items .pi-nom { flex:1 0 100%; margin-bottom:3px; font-weight:var(--fw-semibold) }
+  .pi-items .pi-qte, .pi-items .pi-pu { font-size:var(--fs-label); color:var(--text3) }
+  .pi-items .pi-pu::before { content:"\00d7\00a0" }  /* espace INSÉCABLE : un espace ordinaire est avalé */
+  .pi-items .pi-total { margin-left:auto; text-align:right; font-weight:var(--fw-semibold) }
+}
+
+/* ⚠️ IMPRESSION — le navigateur n'imprime PAS les fonds. En thème sombre, le texte
+   clair partait donc sur du papier blanc : illisible (mesuré sur l'export PDF du
+   2026-10-26). On force noir sur blanc, on masque ce qui n'a pas de sens sur
+   papier, et on annule le `min-height:100vh` qui produisait une 2ᵉ page vide. */
+@media print {
+  .pi-noprint { display:none }
+  .pi-page { min-height:0; padding:0; background:#fff }
+  .pi-page, .pi-page * { background:transparent; color:#000; box-shadow:none }
+  .pi-page [style*="var(--p)"] { color:#000 }
+}

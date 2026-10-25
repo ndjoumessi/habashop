@@ -178,7 +178,7 @@ export default function PublicInvoice() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font)', padding: '24px 16px 48px' }}>
+    <div className="pi-page" style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font)', padding: '24px 16px 48px' }}>
       <div style={{ maxWidth: 760, margin: '0 auto' }}>
 
         {/* ── En-tête boutique ── */}
@@ -253,9 +253,15 @@ export default function PublicInvoice() {
           </div>
         </div>
 
-        {/* ── Lignes ── */}
-        <div style={{ background: 'var(--grad-card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '4px 16px 14px', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 380 }}>
+        {/* ── Lignes ──
+            ⚠️ **NI `minWidth`, NI `overflowX`** — c'était le défaut, mesuré sur le téléphone de
+            Nelson le 2026-10-26 : une table à 4 colonnes forcée à 380 px déborde d'un écran de
+            360, et la colonne TOTAL partait hors champ. Sur la page dont l'usage est
+            précisément d'être ouverte au téléphone après un scan, il fallait faire défiler
+            latéralement pour voir ce qu'on avait payé. Sous 560 px, les lignes se replient en
+            blocs (`.pi-items`, `index.css`) : plus rien à faire défiler. */}
+        <div style={{ background: 'var(--grad-card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '4px 16px 14px' }}>
+          <table className="pi-items" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
                 {[
@@ -276,13 +282,13 @@ export default function PublicInvoice() {
             <tbody>
               {data.items.map((it, idx) => (
                 <tr key={idx}>
-                  <td style={{ padding: '10px 8px', borderBottom: '1px solid var(--border)', color: 'var(--text)', fontSize: 'var(--fs-sm)' }}>
+                  <td className="pi-nom" style={{ padding: '10px 8px', color: 'var(--text)', fontSize: 'var(--fs-sm)' }}>
                     {/* Produit supprimé depuis la vente → la ligne reste, et le dit. */}
                     {it.name ?? i(lang, 'Article retiré du catalogue', 'Item removed from catalog', 'Artículo retirado del catálogo', 'Articolo rimosso dal catalogo')}
                   </td>
-                  <td style={{ padding: '10px 8px', borderBottom: '1px solid var(--border)', textAlign: 'center', color: 'var(--text2)', fontSize: 'var(--fs-sm)' }}>{it.qty}</td>
-                  <td style={{ padding: '10px 8px', borderBottom: '1px solid var(--border)', textAlign: 'right', color: 'var(--text2)', fontFamily: 'var(--mono)', fontSize: 'var(--fs-sm)' }}>{m(it.unitPrice)}</td>
-                  <td style={{ padding: '10px 8px', borderBottom: '1px solid var(--border)', textAlign: 'right', color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)' }}>{m(it.total)}</td>
+                  <td className="pi-qte" style={{ padding: '10px 8px', textAlign: 'center', color: 'var(--text2)', fontSize: 'var(--fs-sm)' }}>{it.qty}</td>
+                  <td className="pi-pu" style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text2)', fontFamily: 'var(--mono)', fontSize: 'var(--fs-sm)' }}>{m(it.unitPrice)}</td>
+                  <td className="pi-total" style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semibold)' }}>{m(it.total)}</td>
                 </tr>
               ))}
             </tbody>
@@ -325,6 +331,7 @@ export default function PublicInvoice() {
           {/* CTA JAMAIS désactivé par une validation : il n'y a rien à remplir ici, et un
               bouton éteint ne dirait pas ce qui manque (§ landingClaims). */}
           <button
+            className="pi-noprint"
             type="button"
             onClick={() => window.print()}
             style={{
